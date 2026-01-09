@@ -2,7 +2,7 @@ feedstream.swallow-cliff.ts.net {
 	# API reverse proxy - strip /api prefix
 	handle /api/* {
 		uri strip_prefix /api
-		reverse_proxy 127.0.0.1:3000
+		reverse_proxy 127.0.0.1:3060
 	}
 
 	# Static file serving with caching
