@@ -23,4 +23,8 @@
 		color: #e4e4e4;
 		min-height: 100vh;
 	}
+
+	:global(*) {
+		box-sizing: border-box;
+	}
 </style>
