@@ -433,53 +433,52 @@
 				</div>
 			{:else}
 				<div class="items-list">
-					{#each items as item}
-						<div class="item-card" class:unread={item.is_read === 0}>
-							<div class="item-header">
-								<span class="item-source-badge {item.source}">
-									{#if item.source === 'youtube'}▶️{:else if item.source === 'reddit'}🔗{:else}📰{/if}
-								</span>
-								<h3 class="item-title">
-									{#if item.url}
-										<a href={item.url} target="_blank" rel="noopener noreferrer">
-											{item.title || 'Untitled'}
-										</a>
-									{:else}
+				{#each items as item}
+					<div class="item-card" class:unread={item.is_read === 0}>
+						<div class="item-header">
+							<span class="item-source-badge {item.source}">
+								{#if item.source === 'youtube'}▶️{:else if item.source === 'reddit'}🔗{:else}📰{/if}
+							</span>
+							<h3 class="item-title">
+								{#if item.url}
+									<a href={item.url} target="_blank" rel="noopener noreferrer">
 										{item.title || 'Untitled'}
-									{/if}
-								</h3>
-								<button 
-									on:click={() => toggleRead(item)} 
-									class="read-toggle"
-									class:read={item.is_read === 1}
-								>
-									{item.is_read === 1 ? '✓ Read' : '○ Unread'}
-								</button>
-							</div>
-							
-							{#if item.author || item.published}
-								<div class="item-meta">
-									{#if item.author}
-										<span class="meta-item">👤 {item.author}</span>
-									{/if}
-									{#if item.published}
-										<span class="meta-item">📅 {formatDate(item.published)}</span>
-									{/if}
-								</div>
+									</a>
+								{:else}
+									{item.title || 'Untitled'}
+								{/if}
+							</h3>
+							<button 
+								on:click={() => toggleRead(item)} 
+								class="read-indicator"
+								class:read={item.is_read === 1}
+								title={item.is_read === 1 ? 'Mark as unread' : 'Mark as read'}
+							>
+								<span class="dot"></span>
+							</button>
+						</div>
+						
+						<div class="item-meta">
+							{#if item.author}
+								<span class="meta-item">{item.author}</span>
 							{/if}
-
-							{#if item.summary}
-								<p class="item-summary">{item.summary}</p>
-							{/if}
-
-							{#if item.media_thumbnail}
-								<div class="item-thumbnail">
-									<img src={item.media_thumbnail} alt={item.title || 'Thumbnail'} />
-								</div>
+							{#if item.published}
+								<span class="meta-item meta-date">{formatDate(item.published)}</span>
 							{/if}
 						</div>
-					{/each}
-				</div>
+
+						{#if item.summary}
+							<p class="item-summary">{item.summary}</p>
+						{/if}
+
+						{#if item.media_thumbnail}
+							<div class="item-thumbnail">
+								<img src={item.media_thumbnail} alt={item.title || 'Thumbnail'} loading="lazy" />
+							</div>
+						{/if}
+					</div>
+				{/each}
+			</div>
 			{/if}
 		</div>
 	</div>
@@ -632,8 +631,9 @@
 	}
 
 	.feed-item.active {
-		background: rgba(102, 126, 234, 0.2);
-		border-color: rgba(102, 126, 234, 0.4);
+		background: rgba(0, 230, 118, 0.08);
+		border-left: 3px solid var(--accent);
+		border-color: rgba(0, 230, 118, 0.2);
 	}
 
 	.feed-icon {
@@ -649,11 +649,11 @@
 	}
 
 	.unread-badge {
-		background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
-		color: white;
-		padding: 0.25rem 0.5rem;
-		border-radius: 12px;
-		font-size: 0.75rem;
+		background: var(--accent);
+		color: var(--bg);
+		padding: 0.2rem 0.5rem;
+		border-radius: 10px;
+		font-size: 0.7rem;
 		font-weight: 700;
 	}
 
@@ -860,21 +860,20 @@
 	}
 
 	.item-card {
-		padding: 1.5rem;
+		padding: 0.75rem 1rem;
 		background: var(--panel);
 		border: 1px solid var(--border);
-		border-radius: 12px;
-		transition: transform 0.2s, box-shadow 0.2s;
+		border-radius: 4px;
+		transition: transform 0.15s, box-shadow 0.15s;
 	}
 
 	.item-card:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 4px 12px var(--panel);
+		transform: translateY(-1px);
+		box-shadow: 0 2px 8px var(--shadow);
 	}
 
 	.item-card.unread {
-		border-color: rgba(102, 126, 234, 0.4);
-		background: rgba(102, 126, 234, 0.05);
+		border-left: 3px solid var(--accent);
 	}
 
 	.item-header {
@@ -906,12 +905,13 @@
 	.item-title {
 		flex: 1;
 		margin: 0;
-		font-size: 1.1rem;
-		line-height: 1.4;
+		font-size: 0.95rem;
+		line-height: 1.5;
+		font-weight: 400;
 	}
 
 	.item-card.unread .item-title {
-		font-weight: 700;
+		font-weight: 600;
 	}
 
 	.item-title a {
@@ -924,48 +924,64 @@
 		color: var(--accent);
 	}
 
-	.read-toggle {
-		padding: 0.4rem 0.8rem;
-		font-size: 0.85rem;
-		font-weight: 600;
+	/* Green dot indicator for unread state */
+	.read-indicator {
+		width: 24px;
+		height: 24px;
+		padding: 0;
 		border: none;
-		border-radius: 6px;
+		background: transparent;
 		cursor: pointer;
-		transition: all 0.2s;
-		background: var(--border);
-		color: var(--text);
-		border: 1px solid rgba(255, 255, 255, 0.2);
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		flex-shrink: 0;
+		transition: transform 0.15s;
 	}
 
-	.read-toggle:hover {
-		background: rgba(255, 255, 255, 0.15);
-		transform: scale(1.05);
+	.read-indicator:hover {
+		transform: scale(1.2);
 	}
 
-	.read-toggle.read {
-		background: rgba(34, 197, 94, 0.2);
-		border-color: rgba(34, 197, 94, 0.3);
-		color: #86efac;
+	.read-indicator .dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: var(--accent);
+		transition: all 0.2s;
+	}
+
+	.read-indicator.read .dot {
+		width: 6px;
+		height: 6px;
+		background: var(--border);
+		opacity: 0.5;
 	}
 
 	.item-meta {
 		display: flex;
-		gap: 1.5rem;
-		margin-bottom: 0.75rem;
+		gap: 1rem;
+		margin-bottom: 0.5rem;
+		margin-top: 0.25rem;
 		flex-wrap: wrap;
 	}
 
 	.meta-item {
-		font-size: 0.85rem;
+		font-size: 0.8rem;
 		color: var(--muted);
 	}
 
+	.meta-date::before {
+		content: "•";
+		margin-right: 0.5rem;
+		color: var(--border);
+	}
+
 	.item-summary {
-		margin: 0 0 0.75rem 0;
-		color: #c0c0c0;
+		margin: 0.5rem 0 0 0;
+		color: var(--muted);
 		line-height: 1.6;
-		font-size: 0.95rem;
+		font-size: 0.875rem;
 	}
 
 	.item-thumbnail {
