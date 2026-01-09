@@ -1,11 +1,22 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
-	// Feed refresh state
-	let feedUrls = '';
-	let loading = false;
-	let error: string | null = null;
-	let results: any[] = [];
+	// Feed subscription state
+	let feeds: any[] = [];
+	let selectedFeedUrl: string | null = null;
+	let feedsLoading = false;
+	let feedsError: string | null = null;
+
+	// Add feed state
+	let newFeedUrl = '';
+	let addingFeed = false;
+
+	// Bulk refresh state
+	let bulkFeedUrls = '';
+	let bulkRefreshing = false;
+	let bulkResults: any[] = [];
+	let bulkError: string | null = null;
+	let showBulkRefresh = false;
 
 	// Items state
 	let items: any[] = [];
@@ -20,23 +31,152 @@
 	let healthLoading = false;
 	let healthError: string | null = null;
 
-	// Preset feed examples
-	const presets = {
-		rss: 'https://hnrss.org/frontpage',
-		youtube: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCXuqSBlHAE6Xw-yeJA0Tunw',
-		reddit: 'https://www.reddit.com/r/selfhosted/.rss'
-	};
-
 	onMount(() => {
+		loadFeeds();
 		loadItems();
 	});
 
-	function loadPreset(type: 'rss' | 'youtube' | 'reddit') {
-		feedUrls = presets[type];
+	async function loadFeeds() {
+		feedsLoading = true;
+		feedsError = null;
+
+		try {
+			const response = await fetch('/api/feeds');
+			if (!response.ok) {
+				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+			}
+
+			const data = await response.json();
+			feeds = data.feeds || [];
+		} catch (err) {
+			feedsError = err instanceof Error ? err.message : 'Unknown error occurred';
+		} finally {
+			feedsLoading = false;
+		}
 	}
 
-	function loadAllPresets() {
-		feedUrls = Object.values(presets).join('\n');
+	async function addFeed() {
+		if (!newFeedUrl.trim()) return;
+
+		addingFeed = true;
+
+		try {
+			const response = await fetch('/api/feeds', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ url: newFeedUrl.trim(), refresh: true })
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+			}
+
+			newFeedUrl = '';
+			await loadFeeds();
+			await loadItems();
+		} catch (err) {
+			alert(err instanceof Error ? err.message : 'Failed to add feed');
+		} finally {
+			addingFeed = false;
+		}
+	}
+
+	async function deleteFeed(url: string) {
+		if (!confirm(`Delete feed: ${url}?`)) return;
+
+		try {
+			const response = await fetch(`/api/feeds?url=${encodeURIComponent(url)}`, {
+				method: 'DELETE'
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+			}
+
+			if (selectedFeedUrl === url) {
+				selectedFeedUrl = null;
+			}
+
+			await loadFeeds();
+			await loadItems();
+		} catch (err) {
+			alert(err instanceof Error ? err.message : 'Failed to delete feed');
+		}
+	}
+
+	async function refreshAll() {
+		bulkRefreshing = true;
+		bulkError = null;
+		bulkResults = [];
+
+		try {
+			const response = await fetch('/api/refresh', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({})
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+			}
+
+			const data = await response.json();
+			bulkResults = data.results || [];
+
+			await loadFeeds();
+			await loadItems();
+		} catch (err) {
+			bulkError = err instanceof Error ? err.message : 'Unknown error occurred';
+		} finally {
+			bulkRefreshing = false;
+		}
+	}
+
+	async function bulkRefresh() {
+		bulkRefreshing = true;
+		bulkError = null;
+		bulkResults = [];
+
+		try {
+			const urls = bulkFeedUrls
+				.split('\n')
+				.map(url => url.trim())
+				.filter(url => url.length > 0);
+
+			if (urls.length === 0) {
+				throw new Error('Please enter at least one feed URL');
+			}
+
+			const response = await fetch('/api/refresh', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ urls, force: false })
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+			}
+
+			const data = await response.json();
+			bulkResults = data.results || [];
+
+			await loadFeeds();
+			await loadItems();
+		} catch (err) {
+			bulkError = err instanceof Error ? err.message : 'Unknown error occurred';
+		} finally {
+			bulkRefreshing = false;
+		}
 	}
 
 	async function loadItems() {
@@ -48,6 +188,10 @@
 				limit: '100',
 				offset: '0'
 			});
+
+			if (selectedFeedUrl) {
+				params.set('feed', selectedFeedUrl);
+			}
 
 			if (sourceFilter !== 'all') {
 				params.set('source', sourceFilter);
@@ -90,50 +234,12 @@
 
 			// Update local state
 			item.is_read = newReadState ? 1 : 0;
-			items = [...items]; // Trigger reactivity
+			items = [...items];
+
+			// Refresh feed list to update unread counts
+			await loadFeeds();
 		} catch (err) {
 			alert(err instanceof Error ? err.message : 'Failed to update read status');
-		}
-	}
-
-	async function refreshFeeds() {
-		loading = true;
-		error = null;
-		results = [];
-
-		try {
-			// Parse URLs from textarea (one per line)
-			const urls = feedUrls
-				.split('\n')
-				.map(url => url.trim())
-				.filter(url => url.length > 0);
-
-			if (urls.length === 0) {
-				throw new Error('Please enter at least one feed URL');
-			}
-
-			const response = await fetch('/api/refresh', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({ urls, force: false })
-			});
-
-			if (!response.ok) {
-				const errorData = await response.json();
-				throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-			}
-
-			const data = await response.json();
-			results = data.results || [];
-
-			// Reload items after successful refresh
-			await loadItems();
-		} catch (err) {
-			error = err instanceof Error ? err.message : 'Unknown error occurred';
-		} finally {
-			loading = false;
 		}
 	}
 
@@ -165,18 +271,17 @@
 		}
 	}
 
+	function selectFeed(url: string | null) {
+		selectedFeedUrl = url;
+		loadItems();
+	}
+
 	// Reactive stats
-	$: totalNew = results.reduce((sum, r) => sum + (r.newItems || 0), 0);
-	$: totalParsed = results.reduce((sum, r) => sum + (r.totalItemsParsed || 0), 0);
-	$: successCount = results.filter(r => r.status === 200 || r.status === 304).length;
-	$: errorCount = results.filter(r => r.error).length;
-	$: youtubeCount = results.filter(r => r.kind === 'youtube').length;
-	$: redditCount = results.filter(r => r.kind === 'reddit').length;
-	$: genericCount = results.filter(r => r.kind === 'generic').length;
 	$: unreadCount = items.filter(i => i.is_read === 0).length;
+	$: totalUnread = feeds.reduce((sum, f) => sum + (f.unreadCount || 0), 0);
 
 	// Reload items when filters change
-	$: if (sourceFilter || unreadOnly !== undefined) {
+	$: if (sourceFilter || unreadOnly !== undefined || selectedFeedUrl !== undefined) {
 		loadItems();
 	}
 </script>
@@ -186,149 +291,121 @@
 </svelte:head>
 
 <main>
-	<div class="container">
-		<h1>FeedStream</h1>
-		<p class="subtitle">Private feed reader</p>
-
-		<!-- Feed Refresh Section -->
-		<div class="section">
-			<h2>📥 Refresh Feeds</h2>
-			<p class="help-text">Enter feed URLs (one per line) or use presets:</p>
+	<div class="app-container">
+		<!-- Sidebar -->
+		<aside class="sidebar">
+			<h1>FeedStream</h1>
 			
-			<div class="preset-buttons">
-				<button on:click={() => loadPreset('rss')} class="preset-btn rss">
-					📰 RSS Example
-				</button>
-				<button on:click={() => loadPreset('youtube')} class="preset-btn youtube">
-					▶️ YouTube Example
-				</button>
-				<button on:click={() => loadPreset('reddit')} class="preset-btn reddit">
-					🔗 Reddit Example
-				</button>
-				<button on:click={loadAllPresets} class="preset-btn all">
-					📚 All Examples
+			<div class="add-feed-section">
+				<input
+					type="text"
+					bind:value={newFeedUrl}
+					placeholder="https://example.com/feed.xml"
+					on:keydown={(e) => e.key === 'Enter' && addFeed()}
+					disabled={addingFeed}
+				/>
+				<button on:click={addFeed} disabled={addingFeed} class="add-btn">
+					{addingFeed ? '...' : '+'}
 				</button>
 			</div>
 
-			<textarea
-				bind:value={feedUrls}
-				placeholder="https://hnrss.org/frontpage&#10;https://www.youtube.com/feeds/videos.xml?channel_id=...&#10;https://www.reddit.com/r/selfhosted/.rss"
-				rows="4"
-			/>
-
-			<div class="button-group">
-				<button on:click={refreshFeeds} disabled={loading} class="primary-btn">
-					{loading ? 'Refreshing...' : 'Refresh feeds'}
+			<div class="actions">
+				<button on:click={refreshAll} disabled={bulkRefreshing} class="refresh-all-btn">
+					{bulkRefreshing ? 'Refreshing...' : '🔄 Refresh All'}
 				</button>
-				<button on:click={checkHealth} disabled={healthLoading} class="secondary-btn">
-					{healthLoading ? 'Checking...' : 'Health check'}
+				<button on:click={() => showBulkRefresh = !showBulkRefresh} class="advanced-btn">
+					⚙️ Advanced
 				</button>
 			</div>
-		</div>
 
-		{#if error}
-			<div class="error-box">
-				<strong>Error:</strong> {error}
-			</div>
-		{/if}
+			{#if feedsLoading}
+				<div class="loading">Loading feeds...</div>
+			{:else if feedsError}
+				<div class="error-text">{feedsError}</div>
+			{:else}
+				<div class="feeds-list">
+					<button
+						class="feed-item"
+						class:active={selectedFeedUrl === null}
+						on:click={() => selectFeed(null)}
+					>
+						<span class="feed-name">📚 All Feeds</span>
+						{#if totalUnread > 0}
+							<span class="unread-badge">{totalUnread}</span>
+						{/if}
+					</button>
 
-		{#if healthError}
-			<div class="error-box">
-				<strong>Health Check Error:</strong> {healthError}
-			</div>
-		{/if}
-
-		{#if healthData}
-			<div class="result-box">
-				<h3>Health Check Result</h3>
-				<pre>{JSON.stringify(healthData, null, 2)}</pre>
-			</div>
-		{/if}
-
-		{#if results.length > 0}
-			<div class="results">
-				<h2>Refresh Results</h2>
-				<div class="stats">
-					<div class="stat">
-						<span class="stat-value">{results.length}</span>
-						<span class="stat-label">Feeds</span>
-					</div>
-					<div class="stat">
-						<span class="stat-value">{successCount}</span>
-						<span class="stat-label">Success</span>
-					</div>
-					<div class="stat">
-						<span class="stat-value">{errorCount}</span>
-						<span class="stat-label">Errors</span>
-					</div>
-					<div class="stat">
-						<span class="stat-value">{totalNew}</span>
-						<span class="stat-label">New Items</span>
-					</div>
-					<div class="stat">
-						<span class="stat-value">{totalParsed}</span>
-						<span class="stat-label">Total Parsed</span>
-					</div>
-				</div>
-
-				<div class="kind-stats">
-					{#if youtubeCount > 0}
-						<span class="kind-stat youtube">▶️ YouTube: {youtubeCount}</span>
-					{/if}
-					{#if redditCount > 0}
-						<span class="kind-stat reddit">🔗 Reddit: {redditCount}</span>
-					{/if}
-					{#if genericCount > 0}
-						<span class="kind-stat generic">📰 RSS: {genericCount}</span>
-					{/if}
-				</div>
-
-				<div class="result-list">
-					{#each results as result}
-						<div class="result-item" class:has-error={result.error}>
-							<div class="result-header">
-								<span class="kind-badge {result.kind}">
-									{#if result.kind === 'youtube'}
-										▶️ YouTube
-									{:else if result.kind === 'reddit'}
-										🔗 Reddit
+					{#each feeds as feed}
+						<div class="feed-item-wrapper">
+							<button
+								class="feed-item"
+								class:active={selectedFeedUrl === feed.url}
+								on:click={() => selectFeed(feed.url)}
+							>
+								<span class="feed-icon">
+									{#if feed.kind === 'youtube'}
+										▶️
+									{:else if feed.kind === 'reddit'}
+										🔗
 									{:else}
-										📰 RSS
+										📰
 									{/if}
 								</span>
-								<span class="status-badge" class:success={result.status === 200 || result.status === 304} class:error={result.error}>
-									{result.status || 'ERR'}
-								</span>
-								<span class="feed-title">{result.title || result.url}</span>
-							</div>
-							<div class="result-details">
-								<div class="detail-row">
-									<span class="label">URL:</span>
-									<span class="value url">{result.url}</span>
-								</div>
-								{#if result.newItems !== undefined}
-									<div class="detail-row">
-										<span class="label">New items:</span>
-										<span class="value highlight">{result.newItems}</span>
-									</div>
+								<span class="feed-name">{feed.title || feed.url}</span>
+								{#if feed.unreadCount > 0}
+									<span class="unread-badge">{feed.unreadCount}</span>
 								{/if}
-								{#if result.error}
-									<div class="detail-row error-row">
-										<span class="label">Error:</span>
-										<span class="value">{result.error}</span>
-									</div>
-								{/if}
-							</div>
+							</button>
+							<button class="delete-btn" on:click={() => deleteFeed(feed.url)} title="Delete feed">
+								×
+							</button>
 						</div>
 					{/each}
 				</div>
-			</div>
-		{/if}
+			{/if}
+		</aside>
 
-		<!-- Items List Section -->
-		<div class="section items-section">
-			<div class="section-header">
-				<h2>📚 Items ({itemsTotal})</h2>
+		<!-- Main Content -->
+		<div class="main-content">
+			{#if showBulkRefresh}
+				<div class="bulk-refresh-section">
+					<h2>Advanced: Bulk Refresh</h2>
+					<textarea
+						bind:value={bulkFeedUrls}
+						placeholder="https://hnrss.org/frontpage&#10;https://www.youtube.com/feeds/videos.xml?channel_id=...&#10;https://www.reddit.com/r/selfhosted/.rss"
+						rows="4"
+					/>
+					<button on:click={bulkRefresh} disabled={bulkRefreshing} class="primary-btn">
+						{bulkRefreshing ? 'Refreshing...' : 'Bulk Refresh'}
+					</button>
+					{#if bulkError}
+						<div class="error-box">{bulkError}</div>
+					{/if}
+					{#if bulkResults.length > 0}
+						<div class="bulk-results">
+							{#each bulkResults as result}
+								<div class="bulk-result-item">
+									<span class="kind-badge {result.kind}">
+										{#if result.kind === 'youtube'}▶️{:else if result.kind === 'reddit'}🔗{:else}📰{/if}
+									</span>
+									<span>{result.title || result.url}</span>
+									<span class="new-items">+{result.newItems}</span>
+								</div>
+							{/each}
+						</div>
+					{/if}
+				</div>
+			{/if}
+
+			<div class="items-header">
+				<h2>
+					{#if selectedFeedUrl}
+						{feeds.find(f => f.url === selectedFeedUrl)?.title || 'Feed'}
+					{:else}
+						All Items
+					{/if}
+					<span class="item-count">({itemsTotal})</span>
+				</h2>
 				<div class="filters">
 					<label class="filter-label">
 						<span>Source:</span>
@@ -349,12 +426,10 @@
 			{#if itemsLoading}
 				<div class="loading-box">Loading items...</div>
 			{:else if itemsError}
-				<div class="error-box">
-					<strong>Error:</strong> {itemsError}
-				</div>
+				<div class="error-box">{itemsError}</div>
 			{:else if items.length === 0}
 				<div class="empty-box">
-					No items found. Try refreshing some feeds first!
+					No items found. Try adding and refreshing some feeds!
 				</div>
 			{:else}
 				<div class="items-list">
@@ -362,13 +437,7 @@
 						<div class="item-card" class:unread={item.is_read === 0}>
 							<div class="item-header">
 								<span class="item-source-badge {item.source}">
-									{#if item.source === 'youtube'}
-										▶️
-									{:else if item.source === 'reddit'}
-										🔗
-									{:else}
-										📰
-									{/if}
+									{#if item.source === 'youtube'}▶️{:else if item.source === 'reddit'}🔗{:else}📰{/if}
 								</span>
 								<h3 class="item-title">
 									{#if item.url}
@@ -417,44 +486,292 @@
 </main>
 
 <style>
-	main {
-		padding: 2rem;
-		max-width: 1200px;
-		margin: 0 auto;
+	:global(body) {
+		margin: 0;
+		padding: 0;
+		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+		background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+		color: #e4e4e4;
+		min-height: 100vh;
 	}
 
-	.container {
-		width: 100%;
+	main {
+		height: 100vh;
+		overflow: hidden;
+	}
+
+	.app-container {
+		display: flex;
+		height: 100%;
+	}
+
+	/* Sidebar */
+	.sidebar {
+		width: 300px;
+		background: rgba(0, 0, 0, 0.3);
+		border-right: 1px solid rgba(255, 255, 255, 0.1);
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
 	}
 
 	h1 {
-		font-size: 3rem;
-		margin: 0 0 0.5rem 0;
+		font-size: 1.5rem;
+		margin: 0;
+		padding: 1.5rem;
 		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 		background-clip: text;
 	}
 
-	.subtitle {
-		font-size: 1.25rem;
-		color: #a0a0a0;
-		margin: 0 0 2rem 0;
+	.add-feed-section {
+		padding: 1rem;
+		display: flex;
+		gap: 0.5rem;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
-	.section {
-		margin-bottom: 3rem;
+	.add-feed-section input {
+		flex: 1;
+		padding: 0.75rem;
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 6px;
+		color: #e4e4e4;
+		font-size: 0.9rem;
+	}
+
+	.add-feed-section input:focus {
+		outline: none;
+		border-color: #667eea;
+	}
+
+	.add-btn {
+		width: 40px;
+		height: 40px;
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		border: none;
+		border-radius: 6px;
+		color: white;
+		font-size: 1.5rem;
+		cursor: pointer;
+		transition: transform 0.2s;
+	}
+
+	.add-btn:hover:not(:disabled) {
+		transform: scale(1.05);
+	}
+
+	.add-btn:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.actions {
+		padding: 1rem;
+		display: flex;
+		gap: 0.5rem;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+	}
+
+	.refresh-all-btn, .advanced-btn {
+		flex: 1;
+		padding: 0.75rem;
+		background: rgba(255, 255, 255, 0.1);
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		border-radius: 6px;
+		color: #e4e4e4;
+		font-size: 0.9rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.refresh-all-btn:hover:not(:disabled),
+	.advanced-btn:hover {
+		background: rgba(255, 255, 255, 0.15);
+		transform: translateY(-2px);
+	}
+
+	.refresh-all-btn:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.feeds-list {
+		flex: 1;
+		overflow-y: auto;
+		padding: 0.5rem;
+	}
+
+	.feed-item-wrapper {
+		display: flex;
+		gap: 0.25rem;
+		margin-bottom: 0.25rem;
+	}
+
+	.feed-item {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.75rem;
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 6px;
+		color: #e4e4e4;
+		text-align: left;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.feed-item:hover {
+		background: rgba(255, 255, 255, 0.1);
+		transform: translateX(4px);
+	}
+
+	.feed-item.active {
+		background: rgba(102, 126, 234, 0.2);
+		border-color: rgba(102, 126, 234, 0.4);
+	}
+
+	.feed-icon {
+		font-size: 1.2rem;
+	}
+
+	.feed-name {
+		flex: 1;
+		font-size: 0.9rem;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.unread-badge {
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		color: white;
+		padding: 0.25rem 0.5rem;
+		border-radius: 12px;
+		font-size: 0.75rem;
+		font-weight: 700;
+	}
+
+	.delete-btn {
+		width: 32px;
+		height: 32px;
+		background: rgba(239, 68, 68, 0.2);
+		border: 1px solid rgba(239, 68, 68, 0.3);
+		border-radius: 6px;
+		color: #fca5a5;
+		font-size: 1.5rem;
+		line-height: 1;
+		cursor: pointer;
+		transition: all 0.2s;
+		align-self: center;
+	}
+
+	.delete-btn:hover {
+		background: rgba(239, 68, 68, 0.3);
+		transform: scale(1.1);
+	}
+
+	.loading, .error-text {
+		padding: 1rem;
+		text-align: center;
+		color: #a0a0a0;
+		font-size: 0.9rem;
+	}
+
+	.error-text {
+		color: #fca5a5;
+	}
+
+	/* Main Content */
+	.main-content {
+		flex: 1;
+		overflow-y: auto;
+		padding: 2rem;
+	}
+
+	.bulk-refresh-section {
+		margin-bottom: 2rem;
 		padding: 1.5rem;
 		background: rgba(255, 255, 255, 0.03);
 		border: 1px solid rgba(255, 255, 255, 0.1);
 		border-radius: 12px;
 	}
 
-	.items-section {
-		background: rgba(255, 255, 255, 0.05);
+	.bulk-refresh-section h2 {
+		margin: 0 0 1rem 0;
+		font-size: 1.25rem;
+		color: #667eea;
 	}
 
-	.section-header {
+	.bulk-refresh-section textarea {
+		width: 100%;
+		padding: 1rem;
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 8px;
+		color: #e4e4e4;
+		font-family: 'Courier New', monospace;
+		font-size: 0.9rem;
+		resize: vertical;
+		margin-bottom: 1rem;
+	}
+
+	.bulk-refresh-section textarea:focus {
+		outline: none;
+		border-color: #667eea;
+	}
+
+	.primary-btn {
+		padding: 1rem 2rem;
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		border: none;
+		border-radius: 8px;
+		color: white;
+		font-size: 1rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.primary-btn:hover:not(:disabled) {
+		transform: translateY(-2px);
+		box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+	}
+
+	.primary-btn:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.bulk-results {
+		margin-top: 1rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.bulk-result-item {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.75rem;
+		background: rgba(255, 255, 255, 0.05);
+		border-radius: 6px;
+		font-size: 0.9rem;
+	}
+
+	.new-items {
+		margin-left: auto;
+		color: #86efac;
+		font-weight: 600;
+	}
+
+	.items-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
@@ -469,124 +786,9 @@
 		color: #667eea;
 	}
 
-	h3 {
-		font-size: 1.25rem;
-		margin: 0 0 1rem 0;
-		color: #667eea;
-	}
-
-	.help-text {
-		font-size: 0.9rem;
+	.item-count {
 		color: #a0a0a0;
-		margin: 0 0 0.75rem 0;
-	}
-
-	.preset-buttons {
-		display: flex;
-		gap: 0.5rem;
-		margin-bottom: 1rem;
-		flex-wrap: wrap;
-	}
-
-	.preset-btn {
-		padding: 0.5rem 1rem;
-		font-size: 0.9rem;
-		font-weight: 600;
-		border: none;
-		border-radius: 6px;
-		cursor: pointer;
-		transition: transform 0.2s, box-shadow 0.2s;
-		background: rgba(255, 255, 255, 0.1);
-		color: #e4e4e4;
-		border: 1px solid rgba(255, 255, 255, 0.2);
-	}
-
-	.preset-btn:hover {
-		transform: translateY(-2px);
-		background: rgba(255, 255, 255, 0.15);
-	}
-
-	.preset-btn.rss {
-		border-color: rgba(102, 126, 234, 0.4);
-	}
-
-	.preset-btn.youtube {
-		border-color: rgba(255, 0, 0, 0.4);
-	}
-
-	.preset-btn.reddit {
-		border-color: rgba(255, 69, 0, 0.4);
-	}
-
-	.preset-btn.all {
-		border-color: rgba(118, 75, 162, 0.4);
-	}
-
-	textarea {
-		width: 100%;
-		padding: 1rem;
-		background: rgba(255, 255, 255, 0.05);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		border-radius: 8px;
-		color: #e4e4e4;
-		font-family: 'Courier New', monospace;
-		font-size: 0.9rem;
-		resize: vertical;
-		margin-bottom: 1rem;
-	}
-
-	textarea:focus {
-		outline: none;
-		border-color: #667eea;
-	}
-
-	.button-group {
-		display: flex;
-		gap: 1rem;
-		flex-wrap: wrap;
-	}
-
-	.primary-btn, .secondary-btn {
-		padding: 1rem 2rem;
-		font-size: 1rem;
-		font-weight: 600;
-		border: none;
-		border-radius: 8px;
-		cursor: pointer;
-		transition: transform 0.2s, box-shadow 0.2s;
-	}
-
-	.primary-btn {
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		color: white;
-		box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-	}
-
-	.primary-btn:hover:not(:disabled) {
-		transform: translateY(-2px);
-		box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-	}
-
-	.secondary-btn {
-		background: rgba(255, 255, 255, 0.1);
-		color: #e4e4e4;
-		border: 1px solid rgba(255, 255, 255, 0.2);
-	}
-
-	.secondary-btn:hover:not(:disabled) {
-		background: rgba(255, 255, 255, 0.15);
-		transform: translateY(-2px);
-	}
-
-	.primary-btn:active:not(:disabled),
-	.secondary-btn:active:not(:disabled) {
-		transform: translateY(0);
-	}
-
-	.primary-btn:disabled,
-	.secondary-btn:disabled {
-		opacity: 0.6;
-		cursor: not-allowed;
+		font-weight: normal;
 	}
 
 	.filters {
@@ -635,227 +837,22 @@
 	}
 
 	.loading-box, .empty-box {
-		padding: 2rem;
+		padding: 3rem;
 		text-align: center;
 		color: #a0a0a0;
 		font-size: 1.1rem;
 	}
 
 	.error-box {
-		margin-top: 1rem;
 		padding: 1rem;
 		background: rgba(239, 68, 68, 0.1);
 		border: 1px solid rgba(239, 68, 68, 0.3);
 		border-radius: 8px;
 		color: #fca5a5;
+		margin-top: 1rem;
 	}
 
-	.result-box {
-		margin-top: 2rem;
-		padding: 1.5rem;
-		background: rgba(255, 255, 255, 0.05);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		border-radius: 12px;
-		backdrop-filter: blur(10px);
-	}
-
-	.result-box pre {
-		margin: 0;
-		padding: 1rem;
-		background: rgba(0, 0, 0, 0.3);
-		border-radius: 8px;
-		overflow-x: auto;
-		font-family: 'Courier New', monospace;
-		font-size: 0.9rem;
-		line-height: 1.5;
-	}
-
-	.results {
-		margin-top: 2rem;
-	}
-
-	.stats {
-		display: flex;
-		gap: 1rem;
-		margin-bottom: 1rem;
-		flex-wrap: wrap;
-	}
-
-	.stat {
-		flex: 1;
-		min-width: 100px;
-		padding: 1rem;
-		background: rgba(255, 255, 255, 0.05);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		border-radius: 8px;
-		text-align: center;
-	}
-
-	.stat-value {
-		display: block;
-		font-size: 2rem;
-		font-weight: 700;
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
-	}
-
-	.stat-label {
-		display: block;
-		font-size: 0.85rem;
-		color: #a0a0a0;
-		margin-top: 0.25rem;
-	}
-
-	.kind-stats {
-		display: flex;
-		gap: 1rem;
-		margin-bottom: 1.5rem;
-		flex-wrap: wrap;
-	}
-
-	.kind-stat {
-		padding: 0.5rem 1rem;
-		border-radius: 6px;
-		font-size: 0.9rem;
-		font-weight: 600;
-	}
-
-	.kind-stat.youtube {
-		background: rgba(255, 0, 0, 0.1);
-		border: 1px solid rgba(255, 0, 0, 0.3);
-		color: #ff6b6b;
-	}
-
-	.kind-stat.reddit {
-		background: rgba(255, 69, 0, 0.1);
-		border: 1px solid rgba(255, 69, 0, 0.3);
-		color: #ff8c42;
-	}
-
-	.kind-stat.generic {
-		background: rgba(102, 126, 234, 0.1);
-		border: 1px solid rgba(102, 126, 234, 0.3);
-		color: #8b9aff;
-	}
-
-	.result-list {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	.result-item {
-		padding: 1.5rem;
-		background: rgba(255, 255, 255, 0.05);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		border-radius: 12px;
-		backdrop-filter: blur(10px);
-	}
-
-	.result-item.has-error {
-		border-color: rgba(239, 68, 68, 0.3);
-		background: rgba(239, 68, 68, 0.05);
-	}
-
-	.result-header {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		margin-bottom: 1rem;
-		flex-wrap: wrap;
-	}
-
-	.kind-badge {
-		padding: 0.25rem 0.75rem;
-		border-radius: 4px;
-		font-size: 0.85rem;
-		font-weight: 600;
-	}
-
-	.kind-badge.youtube {
-		background: rgba(255, 0, 0, 0.2);
-		color: #ff6b6b;
-		border: 1px solid rgba(255, 0, 0, 0.3);
-	}
-
-	.kind-badge.reddit {
-		background: rgba(255, 69, 0, 0.2);
-		color: #ff8c42;
-		border: 1px solid rgba(255, 69, 0, 0.3);
-	}
-
-	.kind-badge.generic {
-		background: rgba(102, 126, 234, 0.2);
-		color: #8b9aff;
-		border: 1px solid rgba(102, 126, 234, 0.3);
-	}
-
-	.status-badge {
-		padding: 0.25rem 0.75rem;
-		border-radius: 4px;
-		font-size: 0.85rem;
-		font-weight: 600;
-		font-family: 'Courier New', monospace;
-	}
-
-	.status-badge.success {
-		background: rgba(34, 197, 94, 0.2);
-		color: #86efac;
-		border: 1px solid rgba(34, 197, 94, 0.3);
-	}
-
-	.status-badge.error {
-		background: rgba(239, 68, 68, 0.2);
-		color: #fca5a5;
-		border: 1px solid rgba(239, 68, 68, 0.3);
-	}
-
-	.feed-title {
-		font-weight: 600;
-		font-size: 1.1rem;
-		flex: 1;
-	}
-
-	.result-details {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.detail-row {
-		display: flex;
-		gap: 0.5rem;
-		font-size: 0.9rem;
-	}
-
-	.detail-row .label {
-		color: #a0a0a0;
-		min-width: 100px;
-	}
-
-	.detail-row .value {
-		color: #e4e4e4;
-		flex: 1;
-	}
-
-	.detail-row .value.url {
-		font-family: 'Courier New', monospace;
-		font-size: 0.85rem;
-		word-break: break-all;
-	}
-
-	.detail-row .value.highlight {
-		color: #86efac;
-		font-weight: 600;
-	}
-
-	.detail-row.error-row .value {
-		color: #fca5a5;
-	}
-
-	/* Items List Styles */
+	/* Items List */
 	.items-list {
 		display: flex;
 		flex-direction: column;
@@ -982,5 +979,46 @@
 		width: 100%;
 		height: auto;
 		display: block;
+	}
+
+	.kind-badge {
+		padding: 0.25rem 0.5rem;
+		border-radius: 4px;
+		font-size: 0.85rem;
+		font-weight: 600;
+	}
+
+	.kind-badge.youtube {
+		background: rgba(255, 0, 0, 0.2);
+		color: #ff6b6b;
+		border: 1px solid rgba(255, 0, 0, 0.3);
+	}
+
+	.kind-badge.reddit {
+		background: rgba(255, 69, 0, 0.2);
+		color: #ff8c42;
+		border: 1px solid rgba(255, 69, 0, 0.3);
+	}
+
+	.kind-badge.generic {
+		background: rgba(102, 126, 234, 0.2);
+		color: #8b9aff;
+		border: 1px solid rgba(102, 126, 234, 0.3);
+	}
+
+	/* Responsive */
+	@media (max-width: 768px) {
+		.app-container {
+			flex-direction: column;
+		}
+
+		.sidebar {
+			width: 100%;
+			max-height: 50vh;
+		}
+
+		.main-content {
+			padding: 1rem;
+		}
 	}
 </style>

@@ -471,24 +471,31 @@ fastify.get('/health', async (request, reply) => {
 fastify.post('/refresh', async (request, reply) => {
     const body = request.body as any;
 
-    // Validate input
-    if (!body || !Array.isArray(body.urls)) {
-        reply.code(400);
-        return {
-            ok: false,
-            error: 'Body must contain "urls" array'
-        };
+    let urls: string[];
+    const force = body?.force === true;
+
+    // If no URLs provided, refresh all feeds from database
+    if (!body || !body.urls || !Array.isArray(body.urls) || body.urls.length === 0) {
+        const allFeeds = db.prepare('SELECT url FROM feeds').all() as any[];
+        urls = allFeeds.map((f: any) => f.url);
+
+        if (urls.length === 0) {
+            return {
+                ok: true,
+                results: [],
+                message: 'No feeds to refresh'
+            };
+        }
+    } else {
+        urls = body.urls;
     }
 
-    const urls = body.urls;
-    const force = body.force === true;
-
     // Validate URL count
-    if (urls.length < 1 || urls.length > 50) {
+    if (urls.length > 50) {
         reply.code(400);
         return {
             ok: false,
-            error: 'Must provide 1-50 URLs'
+            error: 'Maximum 50 URLs per request'
         };
     }
 
@@ -513,6 +520,139 @@ fastify.post('/refresh', async (request, reply) => {
         ok: true,
         results
     };
+});
+
+// Get feeds endpoint
+fastify.get('/feeds', async (request, reply) => {
+    try {
+        const feedsData = db.prepare(`
+            SELECT 
+                f.url,
+                f.kind,
+                f.title,
+                f.site_url,
+                f.last_checked,
+                f.last_status,
+                f.last_error,
+                COUNT(CASE WHEN i.is_read = 0 THEN 1 END) as unreadCount
+            FROM feeds f
+            LEFT JOIN items i ON f.url = i.feed_url
+            GROUP BY f.url
+            ORDER BY f.title ASC
+        `).all();
+
+        return {
+            ok: true,
+            feeds: feedsData
+        };
+    } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500);
+        return {
+            ok: false,
+            error: 'Database error'
+        };
+    }
+});
+
+// Add feed endpoint
+fastify.post('/feeds', async (request, reply) => {
+    const body = request.body as any;
+
+    if (!body || typeof body.url !== 'string') {
+        reply.code(400);
+        return {
+            ok: false,
+            error: 'Body must contain "url" string'
+        };
+    }
+
+    const url = body.url.trim();
+    const refresh = body.refresh === true;
+
+    // Validate URL
+    if (!url.match(/^https?:\/\/.+/)) {
+        reply.code(400);
+        return {
+            ok: false,
+            error: 'Invalid URL format'
+        };
+    }
+
+    try {
+        // Detect feed kind
+        const kind = detectFeedKind(url);
+
+        // Insert feed if not exists
+        const stmt = db.prepare(`
+            INSERT OR IGNORE INTO feeds (url, kind, title, site_url, etag, last_modified, last_checked, last_status, last_error)
+            VALUES (?, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
+        `);
+        stmt.run(url, kind);
+
+        // Optionally refresh the feed
+        let refreshResult = null;
+        if (refresh) {
+            refreshResult = await fetchFeed(url, false);
+        }
+
+        return {
+            ok: true,
+            refreshResult
+        };
+    } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500);
+        return {
+            ok: false,
+            error: 'Database error'
+        };
+    }
+});
+
+// Delete feed endpoint
+fastify.delete('/feeds', async (request, reply) => {
+    const query = request.query as any;
+    const body = request.body as any;
+
+    const url = query.url || body?.url;
+
+    if (!url || typeof url !== 'string') {
+        reply.code(400);
+        return {
+            ok: false,
+            error: 'Must provide "url" parameter'
+        };
+    }
+
+    try {
+        // Delete items first (foreign key constraint)
+        const deleteItems = db.prepare('DELETE FROM items WHERE feed_url = ?');
+        deleteItems.run(url);
+
+        // Delete feed
+        const deleteFeed = db.prepare('DELETE FROM feeds WHERE url = ?');
+        const result = deleteFeed.run(url);
+
+        if (result.changes === 0) {
+            reply.code(404);
+            return {
+                ok: false,
+                error: 'Feed not found'
+            };
+        }
+
+        return {
+            ok: true
+        };
+    } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500);
+        return {
+            ok: false,
+            error: 'Database error'
+        };
+    }
 });
 
 // Get items endpoint
