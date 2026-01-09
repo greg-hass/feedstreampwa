@@ -7,19 +7,33 @@ pnpm-debug.log*
 lerna-debug.log*
 
 # Build outputs
+# These are generated during build and should never be committed
+# Docker builds these automatically, committing them causes merge conflicts
 dist/
 build/
 .output/
 .vercel/
 .netlify/
 
+# SvelteKit
+# .svelte-kit/ contains generated files that change on every build
+# web/build/ is the static output directory created by adapter-static
+# These are rebuilt by Docker on deployment
+web/.svelte-kit/
+web/build/
+web/node_modules/
+
 # Environment
+# Never commit secrets or local environment configuration
 .env
 .env.local
 .env.*.local
+web/.env
 
 # OS
+# macOS and Windows system files
 .DS_Store
+**/.DS_Store
 Thumbs.db
 ._*
 
@@ -31,6 +45,7 @@ Thumbs.db
 *~
 
 # SQLite
+# Database files are managed by Docker volumes
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
