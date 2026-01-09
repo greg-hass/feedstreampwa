@@ -1,6 +1,18 @@
 version: '3.8'
 
 services:
+  # Web builder: builds the SvelteKit frontend and outputs to a shared volume
+  # This service runs once to build the static site, then exits
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./web:/app
+      - web-build:/out
+    command: >
+      sh -c "npm ci && npm run build && rm -rf /out/* && cp -a build/* /out/"
+    restart: "no"
+
   api:
     build: ./api
     ports:
@@ -17,13 +29,17 @@ services:
     network_mode: host
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./web/build:/srv:ro
+      - web-build:/srv:ro
       - caddy-data:/data
       - caddy-config:/config
       - /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock:ro
+    depends_on:
+      - api
+      - web
     restart: unless-stopped
 
 volumes:
   feedstream-data:
   caddy-data:
   caddy-config:
+  web-build:
