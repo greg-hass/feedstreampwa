@@ -8,16 +8,7 @@ const DB_PATH = process.env.DB_PATH || '/data/feedstream.sqlite';
 
 // Initialize Fastify
 const fastify = Fastify({
-    logger: {
-        level: 'info',
-        transport: {
-            target: 'pino-pretty',
-            options: {
-                translateTime: 'HH:MM:ss Z',
-                ignore: 'pid,hostname'
-            }
-        }
-    }
+    logger: true
 });
 
 // Initialize SQLite database
