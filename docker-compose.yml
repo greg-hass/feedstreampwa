@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  api:
+    build: ./api
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    volumes:
+      - feedstream-data:/data
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    network_mode: host
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./web/build:/srv:ro
+      - caddy-data:/data
+      - caddy-config:/config
+      - /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock:ro
+    restart: unless-stopped
+
+volumes:
+  feedstream-data:
+  caddy-data:
+  caddy-config:
