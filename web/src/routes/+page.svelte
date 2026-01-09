@@ -1,8 +1,21 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+
+	// Feed refresh state
 	let feedUrls = '';
 	let loading = false;
 	let error: string | null = null;
 	let results: any[] = [];
+
+	// Items state
+	let items: any[] = [];
+	let itemsTotal = 0;
+	let itemsLoading = false;
+	let itemsError: string | null = null;
+	let sourceFilter = 'all';
+	let unreadOnly = false;
+
+	// Health check state
 	let healthData: any = null;
 	let healthLoading = false;
 	let healthError: string | null = null;
@@ -14,12 +27,73 @@
 		reddit: 'https://www.reddit.com/r/selfhosted/.rss'
 	};
 
+	onMount(() => {
+		loadItems();
+	});
+
 	function loadPreset(type: 'rss' | 'youtube' | 'reddit') {
 		feedUrls = presets[type];
 	}
 
 	function loadAllPresets() {
 		feedUrls = Object.values(presets).join('\n');
+	}
+
+	async function loadItems() {
+		itemsLoading = true;
+		itemsError = null;
+
+		try {
+			const params = new URLSearchParams({
+				limit: '100',
+				offset: '0'
+			});
+
+			if (sourceFilter !== 'all') {
+				params.set('source', sourceFilter);
+			}
+
+			if (unreadOnly) {
+				params.set('unreadOnly', 'true');
+			}
+
+			const response = await fetch(`/api/items?${params}`);
+			if (!response.ok) {
+				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+			}
+
+			const data = await response.json();
+			items = data.items || [];
+			itemsTotal = data.total || 0;
+		} catch (err) {
+			itemsError = err instanceof Error ? err.message : 'Unknown error occurred';
+		} finally {
+			itemsLoading = false;
+		}
+	}
+
+	async function toggleRead(item: any) {
+		const newReadState = !item.is_read;
+
+		try {
+			const response = await fetch(`/api/items/${item.id}/read`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ read: newReadState })
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+			}
+
+			// Update local state
+			item.is_read = newReadState ? 1 : 0;
+			items = [...items]; // Trigger reactivity
+		} catch (err) {
+			alert(err instanceof Error ? err.message : 'Failed to update read status');
+		}
 	}
 
 	async function refreshFeeds() {
@@ -53,6 +127,9 @@
 
 			const data = await response.json();
 			results = data.results || [];
+
+			// Reload items after successful refresh
+			await loadItems();
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Unknown error occurred';
 		} finally {
@@ -78,6 +155,17 @@
 		}
 	}
 
+	function formatDate(dateStr: string | null): string {
+		if (!dateStr) return 'Unknown';
+		try {
+			const date = new Date(dateStr);
+			return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+		} catch {
+			return dateStr;
+		}
+	}
+
+	// Reactive stats
 	$: totalNew = results.reduce((sum, r) => sum + (r.newItems || 0), 0);
 	$: totalParsed = results.reduce((sum, r) => sum + (r.totalItemsParsed || 0), 0);
 	$: successCount = results.filter(r => r.status === 200 || r.status === 304).length;
@@ -85,6 +173,12 @@
 	$: youtubeCount = results.filter(r => r.kind === 'youtube').length;
 	$: redditCount = results.filter(r => r.kind === 'reddit').length;
 	$: genericCount = results.filter(r => r.kind === 'generic').length;
+	$: unreadCount = items.filter(i => i.is_read === 0).length;
+
+	// Reload items when filters change
+	$: if (sourceFilter || unreadOnly !== undefined) {
+		loadItems();
+	}
 </script>
 
 <svelte:head>
@@ -96,8 +190,9 @@
 		<h1>FeedStream</h1>
 		<p class="subtitle">Private feed reader</p>
 
+		<!-- Feed Refresh Section -->
 		<div class="section">
-			<h2>Feed URLs</h2>
+			<h2>📥 Refresh Feeds</h2>
 			<p class="help-text">Enter feed URLs (one per line) or use presets:</p>
 			
 			<div class="preset-buttons">
@@ -118,7 +213,7 @@
 			<textarea
 				bind:value={feedUrls}
 				placeholder="https://hnrss.org/frontpage&#10;https://www.youtube.com/feeds/videos.xml?channel_id=...&#10;https://www.reddit.com/r/selfhosted/.rss"
-				rows="6"
+				rows="4"
 			/>
 
 			<div class="button-group">
@@ -217,18 +312,6 @@
 										<span class="value highlight">{result.newItems}</span>
 									</div>
 								{/if}
-								{#if result.totalItemsParsed !== undefined}
-									<div class="detail-row">
-										<span class="label">Parsed:</span>
-										<span class="value">{result.totalItemsParsed}</span>
-									</div>
-								{/if}
-								{#if result.totalItemsStored !== undefined}
-									<div class="detail-row">
-										<span class="label">Total stored:</span>
-										<span class="value">{result.totalItemsStored}</span>
-									</div>
-								{/if}
 								{#if result.error}
 									<div class="detail-row error-row">
 										<span class="label">Error:</span>
@@ -241,6 +324,95 @@
 				</div>
 			</div>
 		{/if}
+
+		<!-- Items List Section -->
+		<div class="section items-section">
+			<div class="section-header">
+				<h2>📚 Items ({itemsTotal})</h2>
+				<div class="filters">
+					<label class="filter-label">
+						<span>Source:</span>
+						<select bind:value={sourceFilter} class="filter-select">
+							<option value="all">All</option>
+							<option value="generic">📰 RSS</option>
+							<option value="youtube">▶️ YouTube</option>
+							<option value="reddit">🔗 Reddit</option>
+						</select>
+					</label>
+					<label class="filter-checkbox">
+						<input type="checkbox" bind:checked={unreadOnly} />
+						<span>Unread only ({unreadCount})</span>
+					</label>
+				</div>
+			</div>
+
+			{#if itemsLoading}
+				<div class="loading-box">Loading items...</div>
+			{:else if itemsError}
+				<div class="error-box">
+					<strong>Error:</strong> {itemsError}
+				</div>
+			{:else if items.length === 0}
+				<div class="empty-box">
+					No items found. Try refreshing some feeds first!
+				</div>
+			{:else}
+				<div class="items-list">
+					{#each items as item}
+						<div class="item-card" class:unread={item.is_read === 0}>
+							<div class="item-header">
+								<span class="item-source-badge {item.source}">
+									{#if item.source === 'youtube'}
+										▶️
+									{:else if item.source === 'reddit'}
+										🔗
+									{:else}
+										📰
+									{/if}
+								</span>
+								<h3 class="item-title">
+									{#if item.url}
+										<a href={item.url} target="_blank" rel="noopener noreferrer">
+											{item.title || 'Untitled'}
+										</a>
+									{:else}
+										{item.title || 'Untitled'}
+									{/if}
+								</h3>
+								<button 
+									on:click={() => toggleRead(item)} 
+									class="read-toggle"
+									class:read={item.is_read === 1}
+								>
+									{item.is_read === 1 ? '✓ Read' : '○ Unread'}
+								</button>
+							</div>
+							
+							{#if item.author || item.published}
+								<div class="item-meta">
+									{#if item.author}
+										<span class="meta-item">👤 {item.author}</span>
+									{/if}
+									{#if item.published}
+										<span class="meta-item">📅 {formatDate(item.published)}</span>
+									{/if}
+								</div>
+							{/if}
+
+							{#if item.summary}
+								<p class="item-summary">{item.summary}</p>
+							{/if}
+
+							{#if item.media_thumbnail}
+								<div class="item-thumbnail">
+									<img src={item.media_thumbnail} alt={item.title || 'Thumbnail'} />
+								</div>
+							{/if}
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</div>
 	</div>
 </main>
 
@@ -271,12 +443,29 @@
 	}
 
 	.section {
-		margin-bottom: 2rem;
+		margin-bottom: 3rem;
+		padding: 1.5rem;
+		background: rgba(255, 255, 255, 0.03);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 12px;
+	}
+
+	.items-section {
+		background: rgba(255, 255, 255, 0.05);
+	}
+
+	.section-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 1.5rem;
+		flex-wrap: wrap;
+		gap: 1rem;
 	}
 
 	h2 {
 		font-size: 1.5rem;
-		margin: 0 0 0.5rem 0;
+		margin: 0;
 		color: #667eea;
 	}
 
@@ -398,6 +587,58 @@
 	.secondary-btn:disabled {
 		opacity: 0.6;
 		cursor: not-allowed;
+	}
+
+	.filters {
+		display: flex;
+		gap: 1.5rem;
+		align-items: center;
+		flex-wrap: wrap;
+	}
+
+	.filter-label {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.9rem;
+		color: #a0a0a0;
+	}
+
+	.filter-select {
+		padding: 0.5rem 1rem;
+		background: rgba(255, 255, 255, 0.1);
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		border-radius: 6px;
+		color: #e4e4e4;
+		font-size: 0.9rem;
+		cursor: pointer;
+	}
+
+	.filter-select:focus {
+		outline: none;
+		border-color: #667eea;
+	}
+
+	.filter-checkbox {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.9rem;
+		color: #a0a0a0;
+		cursor: pointer;
+	}
+
+	.filter-checkbox input[type="checkbox"] {
+		width: 18px;
+		height: 18px;
+		cursor: pointer;
+	}
+
+	.loading-box, .empty-box {
+		padding: 2rem;
+		text-align: center;
+		color: #a0a0a0;
+		font-size: 1.1rem;
 	}
 
 	.error-box {
@@ -612,5 +853,134 @@
 
 	.detail-row.error-row .value {
 		color: #fca5a5;
+	}
+
+	/* Items List Styles */
+	.items-list {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.item-card {
+		padding: 1.5rem;
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 12px;
+		transition: transform 0.2s, box-shadow 0.2s;
+	}
+
+	.item-card:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+	}
+
+	.item-card.unread {
+		border-color: rgba(102, 126, 234, 0.4);
+		background: rgba(102, 126, 234, 0.05);
+	}
+
+	.item-header {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.75rem;
+		margin-bottom: 0.75rem;
+	}
+
+	.item-source-badge {
+		font-size: 1.2rem;
+		padding: 0.25rem 0.5rem;
+		border-radius: 4px;
+		flex-shrink: 0;
+	}
+
+	.item-source-badge.youtube {
+		background: rgba(255, 0, 0, 0.1);
+	}
+
+	.item-source-badge.reddit {
+		background: rgba(255, 69, 0, 0.1);
+	}
+
+	.item-source-badge.generic {
+		background: rgba(102, 126, 234, 0.1);
+	}
+
+	.item-title {
+		flex: 1;
+		margin: 0;
+		font-size: 1.1rem;
+		line-height: 1.4;
+	}
+
+	.item-card.unread .item-title {
+		font-weight: 700;
+	}
+
+	.item-title a {
+		color: #e4e4e4;
+		text-decoration: none;
+		transition: color 0.2s;
+	}
+
+	.item-title a:hover {
+		color: #667eea;
+	}
+
+	.read-toggle {
+		padding: 0.4rem 0.8rem;
+		font-size: 0.85rem;
+		font-weight: 600;
+		border: none;
+		border-radius: 6px;
+		cursor: pointer;
+		transition: all 0.2s;
+		background: rgba(255, 255, 255, 0.1);
+		color: #e4e4e4;
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		flex-shrink: 0;
+	}
+
+	.read-toggle:hover {
+		background: rgba(255, 255, 255, 0.15);
+		transform: scale(1.05);
+	}
+
+	.read-toggle.read {
+		background: rgba(34, 197, 94, 0.2);
+		border-color: rgba(34, 197, 94, 0.3);
+		color: #86efac;
+	}
+
+	.item-meta {
+		display: flex;
+		gap: 1.5rem;
+		margin-bottom: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	.meta-item {
+		font-size: 0.85rem;
+		color: #a0a0a0;
+	}
+
+	.item-summary {
+		margin: 0 0 0.75rem 0;
+		color: #c0c0c0;
+		line-height: 1.6;
+		font-size: 0.95rem;
+	}
+
+	.item-thumbnail {
+		margin-top: 0.75rem;
+		border-radius: 8px;
+		overflow: hidden;
+		max-width: 400px;
+	}
+
+	.item-thumbnail img {
+		width: 100%;
+		height: auto;
+		display: block;
 	}
 </style>

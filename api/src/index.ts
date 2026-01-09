@@ -53,7 +53,8 @@ db.exec(`
     media_duration_seconds INTEGER,
     external_id TEXT,
     raw_guid TEXT,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    is_read INTEGER NOT NULL DEFAULT 0
   );
 
   CREATE INDEX IF NOT EXISTS idx_items_feed_published 
@@ -61,6 +62,9 @@ db.exec(`
   
   CREATE INDEX IF NOT EXISTS idx_items_source_published 
     ON items(source, published);
+  
+  CREATE INDEX IF NOT EXISTS idx_items_is_read 
+    ON items(is_read);
 `);
 
 fastify.log.info(`Database initialized at ${DB_PATH}`);
@@ -497,6 +501,104 @@ fastify.post('/refresh', async (request, reply) => {
         ok: true,
         results
     };
+});
+
+// Get items endpoint
+fastify.get('/items', async (request, reply) => {
+    const query = request.query as any;
+
+    // Parse query parameters
+    const feed = query.feed || null;
+    const source = query.source || null;
+    const unreadOnly = query.unreadOnly === 'true';
+    const limit = Math.min(parseInt(query.limit || '50', 10), 200);
+    const offset = parseInt(query.offset || '0', 10);
+
+    // Build WHERE clause
+    const conditions: string[] = [];
+    const params: any[] = [];
+
+    if (feed) {
+        conditions.push('feed_url = ?');
+        params.push(feed);
+    }
+
+    if (source && ['generic', 'youtube', 'reddit'].includes(source)) {
+        conditions.push('source = ?');
+        params.push(source);
+    }
+
+    if (unreadOnly) {
+        conditions.push('is_read = 0');
+    }
+
+    const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+
+    // Get total count
+    const countQuery = `SELECT COUNT(*) as total FROM items ${whereClause}`;
+    const countResult = db.prepare(countQuery).get(...params) as any;
+    const total = countResult.total;
+
+    // Get items
+    const itemsQuery = `
+        SELECT 
+            id, feed_url, source, title, url, author, summary, content,
+            published, updated, media_thumbnail, media_duration_seconds,
+            external_id, raw_guid, created_at, is_read
+        FROM items
+        ${whereClause}
+        ORDER BY 
+            CASE WHEN published IS NOT NULL THEN published ELSE created_at END DESC
+        LIMIT ? OFFSET ?
+    `;
+
+    const items = db.prepare(itemsQuery).all(...params, limit, offset);
+
+    return {
+        ok: true,
+        total,
+        items
+    };
+});
+
+// Mark item as read/unread
+fastify.post('/items/:id/read', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = request.body as any;
+
+    if (typeof body.read !== 'boolean') {
+        reply.code(400);
+        return {
+            ok: false,
+            error: 'Body must contain "read" boolean'
+        };
+    }
+
+    const isRead = body.read ? 1 : 0;
+
+    try {
+        const stmt = db.prepare('UPDATE items SET is_read = ? WHERE id = ?');
+        const result = stmt.run(isRead, id);
+
+        if (result.changes === 0) {
+            reply.code(404);
+            return {
+                ok: false,
+                error: 'Item not found'
+            };
+        }
+
+        return {
+            ok: true
+        };
+    } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500);
+        return {
+            ok: false,
+            error: 'Database error'
+        };
+    }
 });
 
 // Start server
