@@ -57,3 +57,18 @@ docker-compose.override.yml
 # Logs
 logs/
 *.log
+
+# --- Web build output / SvelteKit ---
+web/node_modules/
+web/.svelte-kit/
+web/build/
+web/.vite/
+web/.DS_Store
+web/**/.DS_Store
+
+# --- API ---
+api/node_modules/
+api/dist/
+
+# --- macOS AppleDouble junk ---
+**/._*
