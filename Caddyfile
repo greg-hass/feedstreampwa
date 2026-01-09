@@ -1,4 +1,4 @@
-feedstream.swallow-cliff.ts.net {
+ubuntu.swallow-cliff.ts.net {
 	# API reverse proxy - strip /api prefix
 	handle /api/* {
 		uri strip_prefix /api
