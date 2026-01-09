@@ -490,7 +490,7 @@ fastify.post('/refresh', async (request, reply) => {
     // Fetch feeds with concurrency limit
     const limit = pLimit(MAX_CONCURRENCY);
     const results = await Promise.all(
-        urls.map(url => limit(() => fetchFeed(url, force)))
+        urls.map((url: string) => limit(() => fetchFeed(url, force)))
     );
 
     return {
