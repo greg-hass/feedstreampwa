@@ -19,6 +19,12 @@ const fastify = Fastify({
 const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 
+// Helper: Check if a column exists in a table
+function columnExists(tableName: string, columnName: string): boolean {
+    const result = db.prepare(`PRAGMA table_info(${tableName})`).all() as any[];
+    return result.some((col: any) => col.name === columnName);
+}
+
 // Create schema on startup
 db.exec(`
   CREATE TABLE IF NOT EXISTS meta (
@@ -53,8 +59,7 @@ db.exec(`
     media_duration_seconds INTEGER,
     external_id TEXT,
     raw_guid TEXT,
-    created_at TEXT NOT NULL,
-    is_read INTEGER NOT NULL DEFAULT 0
+    created_at TEXT NOT NULL
   );
 
   CREATE INDEX IF NOT EXISTS idx_items_feed_published 
@@ -62,10 +67,17 @@ db.exec(`
   
   CREATE INDEX IF NOT EXISTS idx_items_source_published 
     ON items(source, published);
-  
-  CREATE INDEX IF NOT EXISTS idx_items_is_read 
-    ON items(is_read);
 `);
+
+// Safe migration: Add is_read column if it doesn't exist
+if (!columnExists('items', 'is_read')) {
+    fastify.log.info('Adding is_read column to items table...');
+    db.exec(`ALTER TABLE items ADD COLUMN is_read INTEGER NOT NULL DEFAULT 0`);
+    fastify.log.info('is_read column added successfully');
+}
+
+// Create index on is_read (safe to run multiple times)
+db.exec(`CREATE INDEX IF NOT EXISTS idx_items_is_read ON items(is_read)`);
 
 fastify.log.info(`Database initialized at ${DB_PATH}`);
 
