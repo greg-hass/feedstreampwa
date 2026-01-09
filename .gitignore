@@ -72,3 +72,8 @@ api/dist/
 
 # --- macOS AppleDouble junk ---
 **/._*
+
+# build artefacts
+.svelte-kit/
+build/
+node_modules/
