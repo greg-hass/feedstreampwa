@@ -1,4 +1,9 @@
-ubuntu.swallow-cliff.ts.net {
+{
+	auto_https disable_redirects
+	https_port 443
+}
+
+https://ubuntu.swallow-cliff.ts.net:443 {
 	# API reverse proxy - strip /api prefix
 	handle /api/* {
 		uri strip_prefix /api
