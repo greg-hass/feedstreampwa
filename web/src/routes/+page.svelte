@@ -4662,7 +4662,7 @@
 		flex-shrink: 0;
 	}
 
-	/* Responsive */
+	/* Responsive - Mobile First iOS Design */
 	@media (max-width: 768px) {
 		.app {
 			flex-direction: column;
@@ -4675,23 +4675,128 @@
 
 		.main-content {
 			margin-top: 0;
-			padding-bottom: calc(
-				80px + env(safe-area-inset-bottom)
-			); /* Space for bottom tab bar */
+			padding-bottom: calc(70px + env(safe-area-inset-bottom));
 		}
 
+		/* Mobile Topbar - iOS Style */
 		.topbar {
 			position: sticky;
 			top: 0;
 			z-index: 100;
+			padding: max(env(safe-area-inset-top), 12px) 16px 12px;
+			background: rgba(18, 18, 20, 0.85);
+			backdrop-filter: blur(20px);
+			-webkit-backdrop-filter: blur(20px);
+			border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
 		}
 
 		.topbar-center {
-			margin: 0 8px;
+			margin: 0;
+			flex: 1;
 		}
 
 		.search-box {
-			padding: 0 12px;
+			height: 44px;
+			padding: 0 16px;
+			font-size: 17px;
+			border-radius: 12px;
+		}
+
+		.hamburger-btn,
+		.refresh-btn,
+		.settings-btn {
+			width: 44px;
+			height: 44px;
+			min-width: 44px;
+		}
+
+		/* Mobile Content Header */
+		.content-header {
+			padding: 0 var(--mobile-padding);
+			margin-bottom: 16px;
+		}
+
+		.content-header h1 {
+			font-size: 28px;
+			font-weight: 700;
+			letter-spacing: -0.03em;
+		}
+
+		/* Mobile Filter Chips */
+		.filter-chips {
+			gap: 8px;
+			padding: 0 var(--mobile-padding);
+		}
+
+		.chip {
+			height: 36px;
+			padding: 0 16px;
+			font-size: 15px;
+			font-weight: 600;
+			min-width: auto;
+		}
+
+		/* Mobile Articles Container */
+		.articles-container {
+			padding: 0 var(--mobile-padding) var(--mobile-padding);
+			gap: var(--mobile-gap);
+		}
+
+		/* Mobile Article Cards - iOS Native Feel */
+		.article-card {
+			padding: 20px;
+			border-radius: 16px;
+		}
+
+		.article-title {
+			font-size: 19px;
+			font-weight: 600;
+			line-height: 1.35;
+			letter-spacing: -0.02em;
+		}
+
+		.article-card.unread .article-title {
+			font-weight: 700;
+		}
+
+		.article-meta {
+			font-size: 14px;
+			margin-bottom: 10px;
+		}
+
+		.article-summary {
+			font-size: 15px;
+			line-height: 1.5;
+			margin: 0 0 12px 0;
+		}
+
+		/* Larger Touch Targets for Mobile */
+		.star-btn,
+		.read-dot {
+			width: 44px;
+			height: 44px;
+			min-width: 44px;
+		}
+
+		.star-btn svg,
+		.read-dot .dot {
+			transform: scale(1.1);
+		}
+
+		/* Mobile Drawer */
+		.mobile-drawer {
+			width: 85%;
+			max-width: 340px;
+		}
+
+		.drawer-header {
+			padding: max(env(safe-area-inset-top), 16px) 20px 16px;
+		}
+
+		/* Mobile Empty State */
+		.empty-state {
+			padding: 60px 20px;
+			font-size: 16px;
 		}
 	}
 

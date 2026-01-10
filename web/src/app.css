@@ -44,9 +44,14 @@
   --gap: 16px;
   --gap-lg: 24px;
 
-  /* Fonts */
-  --font-ui: 'Inter', system-ui, sans-serif;
-  --font-display: 'Outfit', sans-serif;
+  /* Mobile-optimized spacing */
+  --mobile-padding: 20px;
+  --mobile-gap: 12px;
+  --mobile-touch-target: 44px;
+
+  /* Fonts - iOS Native */
+  --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
 }
 
 * {
