@@ -1,57 +1,64 @@
 /* FeedStream - Glassy Premium Theme */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap');
 
 :root {
-  /* Background - Deep Dark */
-  --bg0: #030304;
-  --bg1: #0A0A0C;
+  /* Background - Deep Premium Dark */
+  --bg0: #050507;
+  --bg1: #0e0e11;
 
   /* Glass Panels - Crystal Clear */
-  --panel0: rgba(18, 18, 20, 0.65);
-  --panel1: rgba(18, 18, 20, 0.40);
-  --panel-lighter: rgba(255, 255, 255, 0.03);
+  --panel0: rgba(20, 20, 23, 0.75);
+  --panel1: rgba(30, 30, 35, 0.50);
+  --panel-lighter: rgba(255, 255, 255, 0.04);
+  --panel-glass: rgba(20, 20, 23, 0.60);
 
-  /* Strokes/Borders - Subtle */
+  /* Strokes/Borders - Subtle but crisp */
   --stroke: rgba(255, 255, 255, 0.08);
-  --stroke-strong: rgba(255, 255, 255, 0.12);
+  --stroke-strong: rgba(255, 255, 255, 0.15);
 
   /* Text */
-  --text: #FFFFFF;
-  --muted: rgba(255, 255, 255, 0.60);
-  --muted2: rgba(255, 255, 255, 0.40);
+  --text: #F2F2F2;
+  --muted: rgba(255, 255, 255, 0.65);
+  --muted2: rgba(255, 255, 255, 0.45);
 
-  /* Accent - Sage Green */
-  --accent: #46A777;
-  --accent-glow: rgba(70, 167, 119, 0.25);
+  /* Accent - Vibrant & Modern */
+  --accent: #10B981;
+  /* Emerald 500 */
+  --accent-hover: #34D399;
+  --accent-glow: rgba(16, 185, 129, 0.20);
 
   /* UI Elements */
-  --chip: rgba(255, 255, 255, 0.05);
-  --chip-hover: rgba(255, 255, 255, 0.10);
+  --chip: rgba(255, 255, 255, 0.06);
+  --chip-hover: rgba(255, 255, 255, 0.12);
   --chipActive: #FFFFFF;
 
-  /* Radius */
+  /* Radius - Modern & Soft */
   --radiusL: 24px;
   --radiusM: 16px;
   --radiusS: 12px;
+  --radiusXS: 8px;
 
   /* Shadows */
-  --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.6);
-  --shadow-md: 0 8px 24px -6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.7);
+  --shadow-md: 0 12px 24px -6px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
 
   /* Layout */
   --sidebar-width: 280px;
-  --topbar-height: 72px;
-  --page-padding: 24px;
-  --gap: 16px;
-  --gap-lg: 24px;
+  --topbar-height: 80px;
+  --page-padding: 32px;
+  --gap: 20px;
+  --gap-lg: 32px;
 
   /* Mobile-optimized spacing */
   --mobile-padding: 20px;
-  --mobile-gap: 12px;
-  --mobile-touch-target: 44px;
+  --mobile-gap: 16px;
+  --mobile-touch-target: 48px;
+  --mobile-tab-height: 64px;
 
-  /* Fonts - iOS Native */
-  --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
-  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  /* Fonts - Premium */
+  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 * {

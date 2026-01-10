@@ -3398,7 +3398,7 @@
 		border: 1px solid transparent;
 		border-radius: var(--radiusS);
 		color: var(--muted);
-		font-size: 14px;
+		font-size: 15px;
 		font-weight: 500;
 		cursor: pointer;
 		transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -3417,7 +3417,8 @@
 	.nav-item.active {
 		background: var(--accent-glow);
 		color: var(--accent);
-		border-color: var(--stroke-strong);
+		border-color: rgba(16, 185, 129, 0.4);
+		box-shadow: 0 0 16px rgba(16, 185, 129, 0.1);
 	}
 
 	.feed-item.active {
@@ -3599,7 +3600,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		margin-bottom: var(--gap);
+		margin-bottom: var(--gap-lg);
 	}
 
 	.content-header h1 {
@@ -3657,22 +3658,24 @@
 	}
 
 	.article-card {
-		padding: 24px;
+		padding: 32px;
 		transition:
-			transform 0.2s,
-			box-shadow 0.2s;
+			transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+			box-shadow 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+			background 0.2s;
 		display: flex;
 		flex-direction: column;
-		gap: 12px;
+		gap: 16px;
 		border: 1px solid var(--stroke);
-		border-left: 1px solid var(--stroke); /* Explicitly no green accent */
+		border-radius: var(--radiusL);
+		background: var(--panel0);
 	}
 
 	.article-card:hover {
-		transform: translateY(-2px);
-		background: rgba(255, 255, 255, 0.04); /* Totally slightly lighter */
+		transform: translateY(-4px);
+		background: var(--panel1);
 		border-color: var(--stroke-strong);
-		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+		box-shadow: var(--shadow-lg);
 	}
 
 	.article-header {
@@ -3695,6 +3698,7 @@
 	.article-card.unread .article-title {
 		font-weight: 700;
 		color: #fff;
+		text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
 	}
 
 	.article-title a {
@@ -3980,13 +3984,14 @@
 		left: 0;
 		right: 0;
 		display: flex;
-		background: rgba(18, 18, 20, 0.85);
-		backdrop-filter: blur(20px);
-		-webkit-backdrop-filter: blur(20px);
-		border-top: 0.5px solid rgba(255, 255, 255, 0.1);
-		padding: 4px 8px calc(4px + env(safe-area-inset-bottom));
+		background: rgba(10, 10, 12, 0.9);
+		backdrop-filter: blur(25px);
+		-webkit-backdrop-filter: blur(25px);
+		border-top: 1px solid var(--stroke);
+		padding: 0 16px calc(0px + env(safe-area-inset-bottom));
 		z-index: 1000;
-		height: calc(65px + env(safe-area-inset-bottom));
+		height: calc(var(--mobile-tab-height) + env(safe-area-inset-bottom));
+		box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
 	}
 
 	.mobile-tab {
