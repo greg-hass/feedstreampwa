@@ -4379,14 +4379,14 @@
 	}
 
 	.star-btn.starred {
-		color: var(--accent);
-		background: rgba(63, 184, 138, 0.1);
-		border-color: rgba(63, 184, 138, 0.2);
+		color: #ff9500;
+		background: rgba(255, 149, 0, 0.1);
+		border-color: rgba(255, 149, 0, 0.2);
 	}
 
 	.star-btn.starred:hover {
-		background: rgba(63, 184, 138, 0.2);
-		box-shadow: 0 0 12px rgba(63, 184, 138, 0.2);
+		background: rgba(255, 149, 0, 0.2);
+		box-shadow: 0 0 12px rgba(255, 149, 0, 0.2);
 	}
 
 	.read-dot {
