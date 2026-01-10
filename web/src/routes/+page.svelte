@@ -1683,7 +1683,7 @@
 				class:active={viewMode === "all"}
 				on:click={setViewAll}
 			>
-				<LayoutGrid size={20} />
+				<LayoutGrid size={24} />
 				<span>All</span>
 				{#if totalUnread > 0}
 					<span class="badge">{totalUnread}</span>
@@ -1695,7 +1695,7 @@
 				class:active={viewMode === "unread"}
 				on:click={setViewUnread}
 			>
-				<Circle size={20} />
+				<Circle size={24} />
 				<span>Unread</span>
 				{#if totalUnread > 0}
 					<span class="badge">{totalUnread}</span>
@@ -1707,7 +1707,7 @@
 				class:active={viewMode === "bookmarks"}
 				on:click={setViewBookmarks}
 			>
-				<Bookmark size={20} />
+				<Bookmark size={24} />
 				<span>Bookmarks</span>
 				{#if bookmarkedCount > 0}
 					<span class="badge">{bookmarkedCount}</span>
@@ -1720,7 +1720,7 @@
 					activeSmartFolder === "rss"}
 				on:click={() => setViewSmartFolder("rss")}
 			>
-				<Rss size={20} />
+				<Rss size={24} />
 				<span>RSS</span>
 				{#if rssUnread > 0}
 					<span class="badge">{rssUnread}</span>
@@ -1733,7 +1733,7 @@
 					activeSmartFolder === "youtube"}
 				on:click={() => setViewSmartFolder("youtube")}
 			>
-				<Youtube size={20} />
+				<Youtube size={24} />
 				<span>YouTube</span>
 				{#if youtubeUnread > 0}
 					<span class="badge">{youtubeUnread}</span>
@@ -1746,7 +1746,7 @@
 					activeSmartFolder === "reddit"}
 				on:click={() => setViewSmartFolder("reddit")}
 			>
-				<MessageCircle size={20} />
+				<MessageCircle size={24} />
 				<span>Reddit</span>
 				{#if redditUnread > 0}
 					<span class="badge">{redditUnread}</span>
@@ -1759,7 +1759,7 @@
 					activeSmartFolder === "podcast"}
 				on:click={() => setViewSmartFolder("podcast")}
 			>
-				<Mic size={20} />
+				<Mic size={24} />
 				<span>Podcasts</span>
 				{#if podcastUnread > 0}
 					<span class="badge">{podcastUnread}</span>
@@ -1795,7 +1795,7 @@
 								activeFolderId === folder.id}
 							on:click={() => setViewFolder(folder.id)}
 						>
-							<FolderOpen size={20} />
+							<FolderOpen size={24} />
 							<span class="folder-name">{folder.name}</span>
 							<div class="folder-meta">
 								{#if folderUnreadCounts[folder.id] > 0}
@@ -1868,77 +1868,11 @@
 						{:else}
 							<div class="feed-icon-fallback {feed.kind}">
 								{#if feed.kind === "youtube"}
-									<svg
-										width="14"
-										height="14"
-										viewBox="0 0 18 18"
-										fill="none"
-									>
-										<path
-											d="M17 6s0-2-2-2H3c-2 0-2 2-2 2v6s0 2 2 2h12c2 0 2-2 2-2V6z"
-											stroke="currentColor"
-											stroke-width="1.5"
-											fill="none"
-										/>
-										<path
-											d="M7 5l5 4-5 4V5z"
-											fill="currentColor"
-										/>
-									</svg>
+									<Youtube size={24} />
 								{:else if feed.kind === "reddit"}
-									<svg
-										width="14"
-										height="14"
-										viewBox="0 0 18 18"
-										fill="none"
-									>
-										<circle
-											cx="9"
-											cy="9"
-											r="7"
-											stroke="currentColor"
-											stroke-width="1.5"
-											fill="none"
-										/>
-										<circle
-											cx="6"
-											cy="8"
-											r="1"
-											fill="currentColor"
-										/>
-										<circle
-											cx="12"
-											cy="8"
-											r="1"
-											fill="currentColor"
-										/>
-										<path
-											d="M6 11c.5 1 1.5 1.5 3 1.5s2.5-.5 3-1.5"
-											stroke="currentColor"
-											stroke-width="1.5"
-											stroke-linecap="round"
-										/>
-									</svg>
+									<MessageCircle size={24} />
 								{:else}
-									<svg
-										width="14"
-										height="14"
-										viewBox="0 0 18 18"
-										fill="none"
-									>
-										<circle
-											cx="3"
-											cy="15"
-											r="2"
-											fill="currentColor"
-										/>
-										<path
-											d="M3 9a6 6 0 016 6M3 3a12 12 0 0112 12"
-											stroke="currentColor"
-											stroke-width="2"
-											fill="none"
-										/>
-									</svg>
+									<Rss size={24} />
 								{/if}
 							</div>
 						{/if}
@@ -2198,7 +2132,7 @@
 				<div class="drawer-header">
 					<div class="logo">
 						<div class="logo-icon">
-							<Rss size={20} />
+							<Rss size={24} />
 						</div>
 						<span class="logo-text">FeedStream</span>
 					</div>
@@ -2466,77 +2400,11 @@
 								{:else}
 									<div class="feed-icon-fallback {feed.kind}">
 										{#if feed.kind === "youtube"}
-											<svg
-												width="14"
-												height="14"
-												viewBox="0 0 18 18"
-												fill="none"
-											>
-												<path
-													d="M17 6s0-2-2-2H3c-2 0-2 2-2 2v6s0 2 2 2h12c2 0 2-2 2-2V6z"
-													stroke="currentColor"
-													stroke-width="1.5"
-													fill="none"
-												/>
-												<path
-													d="M7 5l5 4-5 4V5z"
-													fill="currentColor"
-												/>
-											</svg>
+											<Youtube size={24} />
 										{:else if feed.kind === "reddit"}
-											<svg
-												width="14"
-												height="14"
-												viewBox="0 0 18 18"
-												fill="none"
-											>
-												<circle
-													cx="9"
-													cy="9"
-													r="7"
-													stroke="currentColor"
-													stroke-width="1.5"
-													fill="none"
-												/>
-												<circle
-													cx="6"
-													cy="8"
-													r="1"
-													fill="currentColor"
-												/>
-												<circle
-													cx="12"
-													cy="8"
-													r="1"
-													fill="currentColor"
-												/>
-												<path
-													d="M6 11c.5 1 1.5 1.5 3 1.5s2.5-.5 3-1.5"
-													stroke="currentColor"
-													stroke-width="1.5"
-													stroke-linecap="round"
-												/>
-											</svg>
+											<MessageCircle size={24} />
 										{:else}
-											<svg
-												width="14"
-												height="14"
-												viewBox="0 0 18 18"
-												fill="none"
-											>
-												<circle
-													cx="3"
-													cy="15"
-													r="2"
-													fill="currentColor"
-												/>
-												<path
-													d="M3 9a6 6 0 016 6M3 3a12 12 0 0112 12"
-													stroke="currentColor"
-													stroke-width="2"
-													fill="none"
-												/>
-											</svg>
+											<Rss size={24} />
 										{/if}
 									</div>
 								{/if}
