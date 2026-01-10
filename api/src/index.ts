@@ -2041,7 +2041,12 @@ fastify.get('/reader', async (request, reply) => {
 
         const response = await fetch(targetUrl, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Referer': new URL(targetUrl).origin,
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
             },
             signal: controller.signal,
             redirect: 'follow'
@@ -2050,10 +2055,11 @@ fastify.get('/reader', async (request, reply) => {
         clearTimeout(timeout);
 
         if (!response.ok) {
+            fastify.log.warn(`Reader fetch failed for ${targetUrl}: ${response.status} ${response.statusText}`);
             reply.code(response.status);
             return {
                 ok: false,
-                error: `Failed to fetch: ${response.statusText}`
+                error: `Failed to fetch: ${response.statusText || response.status}`
             };
         }
 
@@ -2076,21 +2082,13 @@ fastify.get('/reader', async (request, reply) => {
             if (content) imageUrl = normalizeUrl(content, finalUrl);
         }
 
-        // Pre-strip junk before Readability
-        const junkSelectors = [
-            'header', 'footer', 'nav', 'aside', 'form', 'noscript',
-            '[class*="ad"]', '[class*="ads"]', '[class*="advert"]',
-            '[class*="sponsor"]', '[class*="promo"]', '[class*="cookie"]',
-            '[class*="consent"]', '[class*="subscribe"]', '[class*="newsletter"]',
-            '[class*="share"]', '[class*="social"]', '[class*="sidebar"]',
-            '[class*="comments"]', '[id*="ad"]', '[id*="ads"]',
-            '[id*="advert"]', '[id*="sponsor"]', '[id*="promo"]',
-            '[id*="cookie"]', '[id*="consent"]', '[id*="subscribe"]',
-            '[id*="newsletter"]', '[id*="share"]', '[id*="social"]',
-            '[id*="sidebar"]', '[id*="comments"]'
+        // Pre-strip only the most obvious common noise if absolutely necessary, 
+        // but let Readability do most of the work to avoid stripping real content.
+        const noiseSelectors = [
+            'noscript', 'form', 'iframe', 'script', 'style'
         ];
 
-        junkSelectors.forEach(selector => {
+        noiseSelectors.forEach(selector => {
             document.querySelectorAll(selector).forEach((el: Element) => el.remove());
         });
 
