@@ -1994,6 +1994,13 @@
 				<!-- Desktop Actions -->
 				<button
 					class="icon-btn desktop-only"
+					on:click={() => (showSettings = true)}
+					title="Settings"
+				>
+					<Settings size={20} />
+				</button>
+				<button
+					class="icon-btn desktop-only add-btn-desktop"
 					on:click={openAddFeedModal}
 					title="Add Feed"
 				>
@@ -3553,6 +3560,12 @@
 		gap: 12px;
 	}
 
+	@media (max-width: 768px) {
+		.desktop-only {
+			display: none !important;
+		}
+	}
+
 	.logo-small {
 		/* Hide logo small on desktop if sidebar is visible, handled by media query usually
            But here we keep it simple.
@@ -3655,8 +3668,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		margin-bottom: var(--gap); /* Reduced from gap-lg to standard gap */
-		padding-top: 16px; /* Add breathing room from header */
+		margin-bottom: 32px; /* Increased for breathing room */
+		padding-top: 24px; /* Increased breathing room */
 	}
 
 	.content-header h1 {
@@ -3670,6 +3683,7 @@
 	.filter-chips {
 		display: flex;
 		gap: 8px;
+		padding: 16px var(--page-padding);
 	}
 
 	.chip {
