@@ -1,0 +1,4776 @@
+
+> feedstream-web@0.0.1 check
+> svelte-kit sync && svelte-check --tsconfig ./tsconfig.json
+
+
+====================================
+Loading svelte-check in workspace: /Volumes/USB STORAGE/projects/feedstream-pwa/web
+Getting Svelte diagnostics...
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/lib/stores/items.ts:67:39
+Error: Argument of type 'number' is not assignable to parameter of type 'string'. 
+    try {
+        await itemsApi.toggleItemRead(item.id);
+    } catch (err) {
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/lib/stores/items.ts:88:39
+Error: Argument of type 'number' is not assignable to parameter of type 'string'. 
+    try {
+        await itemsApi.toggleItemStar(item.id);
+    } catch (err) {
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/lib/stores/items.ts:108:28
+Error: This comparison appears to be unintentional because the types 'number' and 'string' have no overlap. 
+    items.update(($items) =>
+        $items.map((i) => (i.id === itemId ? { ...i, progress } : i))
+    );
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/lib/stores/settings.ts:7:46
+Error: Object literal may only specify known properties, and 'sync_interval' does not exist in type 'Settings'. 
+// State
+export const settings = writable<Settings>({ sync_interval: 'off' });
+export const settingsLoading = writable(false);
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/lib/stores/settings.ts:28:44
+Error: Object literal may only specify known properties, and 'sync_interval' does not exist in type 'Partial<Settings>'. 
+    try {
+        await settingsApi.updateSettings({ sync_interval: interval });
+        settings.update((s) => ({ ...s, sync_interval: interval }));
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2056:6
+Warn: A11y: Non-interactive element <article> cannot have interactive role 'button' (svelte)
+				{#each items as item}
+					<article
+						class="article-card"
+						class:unread={Boolean(!item.is_read)}
+						on:click={(e) => handleArticleClick(e, item)}
+						on:mouseenter={() => handleArticleMouseEnter(item)}
+						role="button"
+						tabindex="0"
+					>
+						<div class="card-content-wrapper">
+							<!-- Top Metadata Row -->
+							<div class="article-meta-top">
+								<div class="feed-info">
+									{#if item.feed_icon_url}
+										<img
+											src={item.feed_icon_url}
+											alt=""
+											class="feed-favicon"
+											on:error={(e) => {
+												const target = e.target;
+												if (
+													target instanceof
+													HTMLImageElement
+												)
+													target.style.display =
+														"none";
+											}}
+										/>
+									{/if}
+									<span class="feed-title-meta"
+										>{item.feed_title || "Feed"}</span
+									>
+									{#if item.published}
+										<span class="meta-sep">•</span>
+										<span class="publish-time"
+											>{formatDate(item.published)}</span
+										>
+									{/if}
+								</div>
+
+								<div class="article-actions-floating">
+									<button
+										class="action-icon-btn"
+										class:active={item.is_starred === 1}
+										on:click|stopPropagation={() =>
+											toggleStar(item)}
+										title={item.is_starred === 1
+											? "Remove bookmark"
+											: "Bookmark"}
+									>
+										<Bookmark
+											size={18}
+											fill={item.is_starred === 1
+												? "currentColor"
+												: "none"}
+										/>
+									</button>
+									<button
+										class="action-icon-btn"
+										class:read={item.is_read === 1}
+										on:click|stopPropagation={() =>
+											toggleRead(item)}
+										title={item.is_read === 1
+											? "Mark as unread"
+											: "Mark as read"}
+									>
+										<div class="read-indicator-dot"></div>
+									</button>
+								</div>
+							</div>
+
+							<!-- Title Row -->
+							<h3 class="article-title-premium">
+								{item.title || "Untitled"}
+							</h3>
+
+							<!-- Content Body -->
+							<div class="article-body-layout">
+								<div class="article-text-col">
+									{#if item.summary}
+										<p class="article-summary-premium">
+											{item.summary}
+										</p>
+									{/if}
+								</div>
+
+								{#if item.media_thumbnail}
+									<div class="article-thumbnail-premium">
+										<img
+											src={item.media_thumbnail}
+											alt={item.title || "Thumbnail"}
+											loading="lazy"
+										/>
+										{#if item.source === "youtube"}
+											<div class="play-overlay-small">
+												<Play
+													size={20}
+													fill="currentColor"
+												/>
+											</div>
+										{/if}
+									</div>
+								{/if}
+							</div>
+
+							{#if activeInlineVideoId === item.id && item.source === "youtube"}
+								<div class="inline-video-container">
+									<div id="yt-player-inline-{item.id}"></div>
+								</div>
+							{/if}
+						</div>
+					</article>
+				{/each}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2056:6
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+				{#each items as item}
+					<article
+						class="article-card"
+						class:unread={Boolean(!item.is_read)}
+						on:click={(e) => handleArticleClick(e, item)}
+						on:mouseenter={() => handleArticleMouseEnter(item)}
+						role="button"
+						tabindex="0"
+					>
+						<div class="card-content-wrapper">
+							<!-- Top Metadata Row -->
+							<div class="article-meta-top">
+								<div class="feed-info">
+									{#if item.feed_icon_url}
+										<img
+											src={item.feed_icon_url}
+											alt=""
+											class="feed-favicon"
+											on:error={(e) => {
+												const target = e.target;
+												if (
+													target instanceof
+													HTMLImageElement
+												)
+													target.style.display =
+														"none";
+											}}
+										/>
+									{/if}
+									<span class="feed-title-meta"
+										>{item.feed_title || "Feed"}</span
+									>
+									{#if item.published}
+										<span class="meta-sep">•</span>
+										<span class="publish-time"
+											>{formatDate(item.published)}</span
+										>
+									{/if}
+								</div>
+
+								<div class="article-actions-floating">
+									<button
+										class="action-icon-btn"
+										class:active={item.is_starred === 1}
+										on:click|stopPropagation={() =>
+											toggleStar(item)}
+										title={item.is_starred === 1
+											? "Remove bookmark"
+											: "Bookmark"}
+									>
+										<Bookmark
+											size={18}
+											fill={item.is_starred === 1
+												? "currentColor"
+												: "none"}
+										/>
+									</button>
+									<button
+										class="action-icon-btn"
+										class:read={item.is_read === 1}
+										on:click|stopPropagation={() =>
+											toggleRead(item)}
+										title={item.is_read === 1
+											? "Mark as unread"
+											: "Mark as read"}
+									>
+										<div class="read-indicator-dot"></div>
+									</button>
+								</div>
+							</div>
+
+							<!-- Title Row -->
+							<h3 class="article-title-premium">
+								{item.title || "Untitled"}
+							</h3>
+
+							<!-- Content Body -->
+							<div class="article-body-layout">
+								<div class="article-text-col">
+									{#if item.summary}
+										<p class="article-summary-premium">
+											{item.summary}
+										</p>
+									{/if}
+								</div>
+
+								{#if item.media_thumbnail}
+									<div class="article-thumbnail-premium">
+										<img
+											src={item.media_thumbnail}
+											alt={item.title || "Thumbnail"}
+											loading="lazy"
+										/>
+										{#if item.source === "youtube"}
+											<div class="play-overlay-small">
+												<Play
+													size={20}
+													fill="currentColor"
+												/>
+											</div>
+										{/if}
+									</div>
+								{/if}
+							</div>
+
+							{#if activeInlineVideoId === item.id && item.source === "youtube"}
+								<div class="inline-video-container">
+									<div id="yt-player-inline-{item.id}"></div>
+								</div>
+							{/if}
+						</div>
+					</article>
+				{/each}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2178:4
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+		>
+			<aside class="mobile-drawer sidebar" on:click|stopPropagation>
+				<!-- Drawer Header -->
+				<div class="drawer-header">
+					<div class="logo">
+						<div class="logo-icon">
+							<Rss size={24} />
+						</div>
+						<span class="logo-text">FeedStream</span>
+					</div>
+					<button
+						class="close-drawer-btn"
+						on:click={() => (mobileMenuOpen = false)}
+						title="Close"
+					>
+						<X size={24} />
+					</button>
+				</div>
+
+				<!-- Drawer Navigation (reuse sidebar content) -->
+				<nav class="sidebar-nav">
+					<!-- Smart Folders Section -->
+					<div class="nav-section-label">SMART FOLDERS</div>
+
+					<button
+						class="nav-item smart-folder"
+						class:active={viewMode === "smart" &&
+							activeSmartFolder === "rss"}
+						on:click={() => {
+							setViewSmartFolder("rss");
+							mobileMenuOpen = false;
+						}}
+					>
+						<Rss size={24} />
+						<span>RSS</span>
+						{#if rssUnread > 0}
+							<span class="badge">{rssUnread}</span>
+						{/if}
+					</button>
+
+					<button
+						class="nav-item smart-folder"
+						class:active={viewMode === "smart" &&
+							activeSmartFolder === "youtube"}
+						on:click={() => {
+							setViewSmartFolder("youtube");
+							mobileMenuOpen = false;
+						}}
+					>
+						<Youtube size={24} />
+						<span>YouTube</span>
+						{#if youtubeUnread > 0}
+							<span class="badge">{youtubeUnread}</span>
+						{/if}
+					</button>
+
+					<button
+						class="nav-item smart-folder"
+						class:active={viewMode === "smart" &&
+							activeSmartFolder === "reddit"}
+						on:click={() => {
+							setViewSmartFolder("reddit");
+							mobileMenuOpen = false;
+						}}
+					>
+						<MessageCircle size={24} />
+						<span>Reddit</span>
+						{#if redditUnread > 0}
+							<span class="badge">{redditUnread}</span>
+						{/if}
+					</button>
+
+					<button
+						class="nav-item smart-folder"
+						class:active={viewMode === "smart" &&
+							activeSmartFolder === "podcast"}
+						on:click={() => {
+							setViewSmartFolder("podcast");
+							mobileMenuOpen = false;
+						}}
+					>
+						<Mic size={24} />
+						<span>Podcasts</span>
+						{#if podcastUnread > 0}
+							<span class="badge">{podcastUnread}</span>
+						{/if}
+					</button>
+
+					<!-- Custom Folders Section -->
+					<div class="nav-section-header">
+						<div class="nav-section-label">FOLDERS</div>
+						<button
+							class="add-folder-btn"
+							on:click={() => {
+								showCreateFolderModal = true;
+								folderModalName = "";
+								folderModalError = null;
+								mobileMenuOpen = false;
+							}}
+							title="New folder"
+						>
+							<Plus size={14} />
+						</button>
+					</div>
+
+					{#if folders.length > 0}
+						{#each folders as folder}
+							<button
+								class="nav-item folder-item"
+								class:active={viewMode === "folder" &&
+									activeFolderId === folder.id}
+								on:click={() => {
+									setViewFolder(folder.id);
+									mobileMenuOpen = false;
+								}}
+							>
+								<FolderOpen size={24} />
+								<span class="folder-name">{folder.name}</span>
+								{#if folderUnreadCounts[folder.id] > 0}
+									<span class="badge"
+										>{folderUnreadCounts[folder.id]}</span
+									>
+								{/if}
+							</button>
+						{/each}
+					{/if}
+
+					<!-- Feeds Section in Mobile Drawer -->
+					<div class="nav-section-label" style="margin-top: 20px;">
+						FEEDS
+					</div>
+					{#each feeds as feed}
+						<button
+							class="feed-item"
+							class:active={viewMode === "feed" &&
+								selectedFeedUrl === feed.url}
+							on:click={() => {
+								setViewFeed(feed.url);
+								mobileMenuOpen = false;
+							}}
+						>
+							<div class="feed-item-content">
+								{#if feed.icon_url}
+									<img
+										src={feed.icon_url}
+										alt=""
+										class="feed-icon"
+										on:error={(e) => {
+											const target = e.target;
+											if (
+												target instanceof
+												HTMLImageElement
+											)
+												target.style.display = "none";
+										}}
+									/>
+								{:else}
+									<div class="feed-icon-fallback {feed.kind}">
+										{#if feed.kind === "youtube"}
+											<Youtube size={24} />
+										{:else if feed.kind === "reddit"}
+											<MessageCircle size={24} />
+										{:else}
+											<Rss size={24} />
+										{/if}
+									</div>
+								{/if}
+								<span class="feed-title"
+									>{feed.title || feed.url}</span
+								>
+								{#if (feed.unreadCount || 0) > 0}
+									<span class="badge">{feed.unreadCount}</span
+									>
+								{/if}
+							</div>
+						</button>
+					{/each}
+
+					<!-- Settings Button -->
+					<button
+						class="nav-item"
+						on:click={() => {
+							showSettings = true;
+							mobileMenuOpen = false;
+						}}
+						style="margin-top: auto;"
+					>
+						<Settings size={24} />
+						<span>Settings</span>
+					</button>
+				</nav>
+			</aside>
+		</div>
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2178:4
+Warn: A11y: Non-interactive element <aside> should not be assigned mouse or keyboard event listeners. (svelte)
+		>
+			<aside class="mobile-drawer sidebar" on:click|stopPropagation>
+				<!-- Drawer Header -->
+				<div class="drawer-header">
+					<div class="logo">
+						<div class="logo-icon">
+							<Rss size={24} />
+						</div>
+						<span class="logo-text">FeedStream</span>
+					</div>
+					<button
+						class="close-drawer-btn"
+						on:click={() => (mobileMenuOpen = false)}
+						title="Close"
+					>
+						<X size={24} />
+					</button>
+				</div>
+
+				<!-- Drawer Navigation (reuse sidebar content) -->
+				<nav class="sidebar-nav">
+					<!-- Smart Folders Section -->
+					<div class="nav-section-label">SMART FOLDERS</div>
+
+					<button
+						class="nav-item smart-folder"
+						class:active={viewMode === "smart" &&
+							activeSmartFolder === "rss"}
+						on:click={() => {
+							setViewSmartFolder("rss");
+							mobileMenuOpen = false;
+						}}
+					>
+						<Rss size={24} />
+						<span>RSS</span>
+						{#if rssUnread > 0}
+							<span class="badge">{rssUnread}</span>
+						{/if}
+					</button>
+
+					<button
+						class="nav-item smart-folder"
+						class:active={viewMode === "smart" &&
+							activeSmartFolder === "youtube"}
+						on:click={() => {
+							setViewSmartFolder("youtube");
+							mobileMenuOpen = false;
+						}}
+					>
+						<Youtube size={24} />
+						<span>YouTube</span>
+						{#if youtubeUnread > 0}
+							<span class="badge">{youtubeUnread}</span>
+						{/if}
+					</button>
+
+					<button
+						class="nav-item smart-folder"
+						class:active={viewMode === "smart" &&
+							activeSmartFolder === "reddit"}
+						on:click={() => {
+							setViewSmartFolder("reddit");
+							mobileMenuOpen = false;
+						}}
+					>
+						<MessageCircle size={24} />
+						<span>Reddit</span>
+						{#if redditUnread > 0}
+							<span class="badge">{redditUnread}</span>
+						{/if}
+					</button>
+
+					<button
+						class="nav-item smart-folder"
+						class:active={viewMode === "smart" &&
+							activeSmartFolder === "podcast"}
+						on:click={() => {
+							setViewSmartFolder("podcast");
+							mobileMenuOpen = false;
+						}}
+					>
+						<Mic size={24} />
+						<span>Podcasts</span>
+						{#if podcastUnread > 0}
+							<span class="badge">{podcastUnread}</span>
+						{/if}
+					</button>
+
+					<!-- Custom Folders Section -->
+					<div class="nav-section-header">
+						<div class="nav-section-label">FOLDERS</div>
+						<button
+							class="add-folder-btn"
+							on:click={() => {
+								showCreateFolderModal = true;
+								folderModalName = "";
+								folderModalError = null;
+								mobileMenuOpen = false;
+							}}
+							title="New folder"
+						>
+							<Plus size={14} />
+						</button>
+					</div>
+
+					{#if folders.length > 0}
+						{#each folders as folder}
+							<button
+								class="nav-item folder-item"
+								class:active={viewMode === "folder" &&
+									activeFolderId === folder.id}
+								on:click={() => {
+									setViewFolder(folder.id);
+									mobileMenuOpen = false;
+								}}
+							>
+								<FolderOpen size={24} />
+								<span class="folder-name">{folder.name}</span>
+								{#if folderUnreadCounts[folder.id] > 0}
+									<span class="badge"
+										>{folderUnreadCounts[folder.id]}</span
+									>
+								{/if}
+							</button>
+						{/each}
+					{/if}
+
+					<!-- Feeds Section in Mobile Drawer -->
+					<div class="nav-section-label" style="margin-top: 20px;">
+						FEEDS
+					</div>
+					{#each feeds as feed}
+						<button
+							class="feed-item"
+							class:active={viewMode === "feed" &&
+								selectedFeedUrl === feed.url}
+							on:click={() => {
+								setViewFeed(feed.url);
+								mobileMenuOpen = false;
+							}}
+						>
+							<div class="feed-item-content">
+								{#if feed.icon_url}
+									<img
+										src={feed.icon_url}
+										alt=""
+										class="feed-icon"
+										on:error={(e) => {
+											const target = e.target;
+											if (
+												target instanceof
+												HTMLImageElement
+											)
+												target.style.display = "none";
+										}}
+									/>
+								{:else}
+									<div class="feed-icon-fallback {feed.kind}">
+										{#if feed.kind === "youtube"}
+											<Youtube size={24} />
+										{:else if feed.kind === "reddit"}
+											<MessageCircle size={24} />
+										{:else}
+											<Rss size={24} />
+										{/if}
+									</div>
+								{/if}
+								<span class="feed-title"
+									>{feed.title || feed.url}</span
+								>
+								{#if (feed.unreadCount || 0) > 0}
+									<span class="badge">{feed.unreadCount}</span
+									>
+								{/if}
+							</div>
+						</button>
+					{/each}
+
+					<!-- Settings Button -->
+					<button
+						class="nav-item"
+						on:click={() => {
+							showSettings = true;
+							mobileMenuOpen = false;
+						}}
+						style="margin-top: auto;"
+					>
+						<Settings size={24} />
+						<span>Settings</span>
+					</button>
+				</nav>
+			</aside>
+		</div>
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2174:3
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+	{#if isMobile && mobileMenuOpen}
+		<div
+			class="mobile-drawer-overlay"
+			on:click={() => (mobileMenuOpen = false)}
+		>
+			<aside class="mobile-drawer sidebar" on:click|stopPropagation>
+				<!-- Drawer Header -->
+				<div class="drawer-header">
+					<div class="logo">
+						<div class="logo-icon">
+							<Rss size={24} />
+						</div>
+						<span class="logo-text">FeedStream</span>
+					</div>
+					<button
+						class="close-drawer-btn"
+						on:click={() => (mobileMenuOpen = false)}
+						title="Close"
+					>
+						<X size={24} />
+					</button>
+				</div>
+
+				<!-- Drawer Navigation (reuse sidebar content) -->
+				<nav class="sidebar-nav">
+					<!-- Smart Folders Section -->
+					<div class="nav-section-label">SMART FOLDERS</div>
+
+					<button
+						class="nav-item smart-folder"
+						class:active={viewMode === "smart" &&
+							activeSmartFolder === "rss"}
+						on:click={() => {
+							setViewSmartFolder("rss");
+							mobileMenuOpen = false;
+						}}
+					>
+						<Rss size={24} />
+						<span>RSS</span>
+						{#if rssUnread > 0}
+							<span class="badge">{rssUnread}</span>
+						{/if}
+					</button>
+
+					<button
+						class="nav-item smart-folder"
+						class:active={viewMode === "smart" &&
+							activeSmartFolder === "youtube"}
+						on:click={() => {
+							setViewSmartFolder("youtube");
+							mobileMenuOpen = false;
+						}}
+					>
+						<Youtube size={24} />
+						<span>YouTube</span>
+						{#if youtubeUnread > 0}
+							<span class="badge">{youtubeUnread}</span>
+						{/if}
+					</button>
+
+					<button
+						class="nav-item smart-folder"
+						class:active={viewMode === "smart" &&
+							activeSmartFolder === "reddit"}
+						on:click={() => {
+							setViewSmartFolder("reddit");
+							mobileMenuOpen = false;
+						}}
+					>
+						<MessageCircle size={24} />
+						<span>Reddit</span>
+						{#if redditUnread > 0}
+							<span class="badge">{redditUnread}</span>
+						{/if}
+					</button>
+
+					<button
+						class="nav-item smart-folder"
+						class:active={viewMode === "smart" &&
+							activeSmartFolder === "podcast"}
+						on:click={() => {
+							setViewSmartFolder("podcast");
+							mobileMenuOpen = false;
+						}}
+					>
+						<Mic size={24} />
+						<span>Podcasts</span>
+						{#if podcastUnread > 0}
+							<span class="badge">{podcastUnread}</span>
+						{/if}
+					</button>
+
+					<!-- Custom Folders Section -->
+					<div class="nav-section-header">
+						<div class="nav-section-label">FOLDERS</div>
+						<button
+							class="add-folder-btn"
+							on:click={() => {
+								showCreateFolderModal = true;
+								folderModalName = "";
+								folderModalError = null;
+								mobileMenuOpen = false;
+							}}
+							title="New folder"
+						>
+							<Plus size={14} />
+						</button>
+					</div>
+
+					{#if folders.length > 0}
+						{#each folders as folder}
+							<button
+								class="nav-item folder-item"
+								class:active={viewMode === "folder" &&
+									activeFolderId === folder.id}
+								on:click={() => {
+									setViewFolder(folder.id);
+									mobileMenuOpen = false;
+								}}
+							>
+								<FolderOpen size={24} />
+								<span class="folder-name">{folder.name}</span>
+								{#if folderUnreadCounts[folder.id] > 0}
+									<span class="badge"
+										>{folderUnreadCounts[folder.id]}</span
+									>
+								{/if}
+							</button>
+						{/each}
+					{/if}
+
+					<!-- Feeds Section in Mobile Drawer -->
+					<div class="nav-section-label" style="margin-top: 20px;">
+						FEEDS
+					</div>
+					{#each feeds as feed}
+						<button
+							class="feed-item"
+							class:active={viewMode === "feed" &&
+								selectedFeedUrl === feed.url}
+							on:click={() => {
+								setViewFeed(feed.url);
+								mobileMenuOpen = false;
+							}}
+						>
+							<div class="feed-item-content">
+								{#if feed.icon_url}
+									<img
+										src={feed.icon_url}
+										alt=""
+										class="feed-icon"
+										on:error={(e) => {
+											const target = e.target;
+											if (
+												target instanceof
+												HTMLImageElement
+											)
+												target.style.display = "none";
+										}}
+									/>
+								{:else}
+									<div class="feed-icon-fallback {feed.kind}">
+										{#if feed.kind === "youtube"}
+											<Youtube size={24} />
+										{:else if feed.kind === "reddit"}
+											<MessageCircle size={24} />
+										{:else}
+											<Rss size={24} />
+										{/if}
+									</div>
+								{/if}
+								<span class="feed-title"
+									>{feed.title || feed.url}</span
+								>
+								{#if (feed.unreadCount || 0) > 0}
+									<span class="badge">{feed.unreadCount}</span
+									>
+								{/if}
+							</div>
+						</button>
+					{/each}
+
+					<!-- Settings Button -->
+					<button
+						class="nav-item"
+						on:click={() => {
+							showSettings = true;
+							mobileMenuOpen = false;
+						}}
+						style="margin-top: auto;"
+					>
+						<Settings size={24} />
+						<span>Settings</span>
+					</button>
+				</nav>
+			</aside>
+		</div>
+	{/if}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2174:3
+Warn: A11y: <div> with click handler must have an ARIA role (svelte)
+	{#if isMobile && mobileMenuOpen}
+		<div
+			class="mobile-drawer-overlay"
+			on:click={() => (mobileMenuOpen = false)}
+		>
+			<aside class="mobile-drawer sidebar" on:click|stopPropagation>
+				<!-- Drawer Header -->
+				<div class="drawer-header">
+					<div class="logo">
+						<div class="logo-icon">
+							<Rss size={24} />
+						</div>
+						<span class="logo-text">FeedStream</span>
+					</div>
+					<button
+						class="close-drawer-btn"
+						on:click={() => (mobileMenuOpen = false)}
+						title="Close"
+					>
+						<X size={24} />
+					</button>
+				</div>
+
+				<!-- Drawer Navigation (reuse sidebar content) -->
+				<nav class="sidebar-nav">
+					<!-- Smart Folders Section -->
+					<div class="nav-section-label">SMART FOLDERS</div>
+
+					<button
+						class="nav-item smart-folder"
+						class:active={viewMode === "smart" &&
+							activeSmartFolder === "rss"}
+						on:click={() => {
+							setViewSmartFolder("rss");
+							mobileMenuOpen = false;
+						}}
+					>
+						<Rss size={24} />
+						<span>RSS</span>
+						{#if rssUnread > 0}
+							<span class="badge">{rssUnread}</span>
+						{/if}
+					</button>
+
+					<button
+						class="nav-item smart-folder"
+						class:active={viewMode === "smart" &&
+							activeSmartFolder === "youtube"}
+						on:click={() => {
+							setViewSmartFolder("youtube");
+							mobileMenuOpen = false;
+						}}
+					>
+						<Youtube size={24} />
+						<span>YouTube</span>
+						{#if youtubeUnread > 0}
+							<span class="badge">{youtubeUnread}</span>
+						{/if}
+					</button>
+
+					<button
+						class="nav-item smart-folder"
+						class:active={viewMode === "smart" &&
+							activeSmartFolder === "reddit"}
+						on:click={() => {
+							setViewSmartFolder("reddit");
+							mobileMenuOpen = false;
+						}}
+					>
+						<MessageCircle size={24} />
+						<span>Reddit</span>
+						{#if redditUnread > 0}
+							<span class="badge">{redditUnread}</span>
+						{/if}
+					</button>
+
+					<button
+						class="nav-item smart-folder"
+						class:active={viewMode === "smart" &&
+							activeSmartFolder === "podcast"}
+						on:click={() => {
+							setViewSmartFolder("podcast");
+							mobileMenuOpen = false;
+						}}
+					>
+						<Mic size={24} />
+						<span>Podcasts</span>
+						{#if podcastUnread > 0}
+							<span class="badge">{podcastUnread}</span>
+						{/if}
+					</button>
+
+					<!-- Custom Folders Section -->
+					<div class="nav-section-header">
+						<div class="nav-section-label">FOLDERS</div>
+						<button
+							class="add-folder-btn"
+							on:click={() => {
+								showCreateFolderModal = true;
+								folderModalName = "";
+								folderModalError = null;
+								mobileMenuOpen = false;
+							}}
+							title="New folder"
+						>
+							<Plus size={14} />
+						</button>
+					</div>
+
+					{#if folders.length > 0}
+						{#each folders as folder}
+							<button
+								class="nav-item folder-item"
+								class:active={viewMode === "folder" &&
+									activeFolderId === folder.id}
+								on:click={() => {
+									setViewFolder(folder.id);
+									mobileMenuOpen = false;
+								}}
+							>
+								<FolderOpen size={24} />
+								<span class="folder-name">{folder.name}</span>
+								{#if folderUnreadCounts[folder.id] > 0}
+									<span class="badge"
+										>{folderUnreadCounts[folder.id]}</span
+									>
+								{/if}
+							</button>
+						{/each}
+					{/if}
+
+					<!-- Feeds Section in Mobile Drawer -->
+					<div class="nav-section-label" style="margin-top: 20px;">
+						FEEDS
+					</div>
+					{#each feeds as feed}
+						<button
+							class="feed-item"
+							class:active={viewMode === "feed" &&
+								selectedFeedUrl === feed.url}
+							on:click={() => {
+								setViewFeed(feed.url);
+								mobileMenuOpen = false;
+							}}
+						>
+							<div class="feed-item-content">
+								{#if feed.icon_url}
+									<img
+										src={feed.icon_url}
+										alt=""
+										class="feed-icon"
+										on:error={(e) => {
+											const target = e.target;
+											if (
+												target instanceof
+												HTMLImageElement
+											)
+												target.style.display = "none";
+										}}
+									/>
+								{:else}
+									<div class="feed-icon-fallback {feed.kind}">
+										{#if feed.kind === "youtube"}
+											<Youtube size={24} />
+										{:else if feed.kind === "reddit"}
+											<MessageCircle size={24} />
+										{:else}
+											<Rss size={24} />
+										{/if}
+									</div>
+								{/if}
+								<span class="feed-title"
+									>{feed.title || feed.url}</span
+								>
+								{#if (feed.unreadCount || 0) > 0}
+									<span class="badge">{feed.unreadCount}</span
+									>
+								{/if}
+							</div>
+						</button>
+					{/each}
+
+					<!-- Settings Button -->
+					<button
+						class="nav-item"
+						on:click={() => {
+							showSettings = true;
+							mobileMenuOpen = false;
+						}}
+						style="margin-top: auto;"
+					>
+						<Settings size={24} />
+						<span>Settings</span>
+					</button>
+				</nav>
+			</aside>
+		</div>
+	{/if}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2441:4
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+		<div class="modal-overlay" on:click={() => (showSettings = false)}>
+			<div class="modal settings-modal" on:click|stopPropagation>
+				<div class="modal-header">
+					<h2>Settings</h2>
+					<button
+						class="close-btn"
+						on:click={() => (showSettings = false)}
+						><X size={20} /></button
+					>
+				</div>
+
+				<div class="modal-body">
+					<div class="settings-section">
+						<h3>Automatic Sync</h3>
+						<div class="settings-field">
+							<label for="sync-interval">Sync Interval</label>
+							<select
+								id="sync-interval"
+								class="settings-select"
+								value={syncInterval}
+								on:change={handleSyncIntervalChange}
+							>
+								<option value="off">Off</option>
+								<option value="15m">Every 15 minutes</option>
+								<option value="30m">Every 30 minutes</option>
+								<option value="1h">Every hour</option>
+								<option value="4h">Every 4 hours</option>
+								<option value="8h">Every 8 hours</option>
+								<option value="12h">Every 12 hours</option>
+								<option value="24h">Every 24 hours</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="settings-section">
+						<h3>OPML</h3>
+						<div class="settings-actions">
+							<button class="settings-btn" on:click={exportOpml}>
+								<Download size={16} />
+								Export OPML
+							</button>
+
+							<label class="settings-btn">
+								<Upload size={16} />
+								{importingOpml ? "Importing..." : "Import OPML"}
+								<input
+									type="file"
+									accept=".opml,.xml"
+									on:change={importOpml}
+									disabled={importingOpml}
+									style="display: none;"
+								/>
+							</label>
+						</div>
+
+						{#if importResults}
+							<div class="import-results">
+								<div class="results-summary">
+									<span class="result-item success"
+										>✓ Added: {importResults.added}</span
+									>
+									<span class="result-item"
+										>⊘ Skipped: {importResults.skipped}</span
+									>
+									{#if importResults.failed.length > 0}
+										<span class="result-item error"
+											>✗ Failed: {importResults.failed
+												.length}</span
+										>
+									{/if}
+								</div>
+
+								{#if importResults.failed.length > 0}
+									<div class="failed-feeds">
+										<h4>Failed Feeds:</h4>
+										{#each importResults.failed as fail}
+											<div class="failed-item">
+												<div class="failed-url">
+													{fail.url}
+												</div>
+												<div class="failed-error">
+													{fail.error}
+												</div>
+											</div>
+										{/each}
+									</div>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2441:4
+Warn: A11y: <div> with click handler must have an ARIA role (svelte)
+		<div class="modal-overlay" on:click={() => (showSettings = false)}>
+			<div class="modal settings-modal" on:click|stopPropagation>
+				<div class="modal-header">
+					<h2>Settings</h2>
+					<button
+						class="close-btn"
+						on:click={() => (showSettings = false)}
+						><X size={20} /></button
+					>
+				</div>
+
+				<div class="modal-body">
+					<div class="settings-section">
+						<h3>Automatic Sync</h3>
+						<div class="settings-field">
+							<label for="sync-interval">Sync Interval</label>
+							<select
+								id="sync-interval"
+								class="settings-select"
+								value={syncInterval}
+								on:change={handleSyncIntervalChange}
+							>
+								<option value="off">Off</option>
+								<option value="15m">Every 15 minutes</option>
+								<option value="30m">Every 30 minutes</option>
+								<option value="1h">Every hour</option>
+								<option value="4h">Every 4 hours</option>
+								<option value="8h">Every 8 hours</option>
+								<option value="12h">Every 12 hours</option>
+								<option value="24h">Every 24 hours</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="settings-section">
+						<h3>OPML</h3>
+						<div class="settings-actions">
+							<button class="settings-btn" on:click={exportOpml}>
+								<Download size={16} />
+								Export OPML
+							</button>
+
+							<label class="settings-btn">
+								<Upload size={16} />
+								{importingOpml ? "Importing..." : "Import OPML"}
+								<input
+									type="file"
+									accept=".opml,.xml"
+									on:change={importOpml}
+									disabled={importingOpml}
+									style="display: none;"
+								/>
+							</label>
+						</div>
+
+						{#if importResults}
+							<div class="import-results">
+								<div class="results-summary">
+									<span class="result-item success"
+										>✓ Added: {importResults.added}</span
+									>
+									<span class="result-item"
+										>⊘ Skipped: {importResults.skipped}</span
+									>
+									{#if importResults.failed.length > 0}
+										<span class="result-item error"
+											>✗ Failed: {importResults.failed
+												.length}</span
+										>
+									{/if}
+								</div>
+
+								{#if importResults.failed.length > 0}
+									<div class="failed-feeds">
+										<h4>Failed Feeds:</h4>
+										{#each importResults.failed as fail}
+											<div class="failed-item">
+												<div class="failed-url">
+													{fail.url}
+												</div>
+												<div class="failed-error">
+													{fail.error}
+												</div>
+											</div>
+										{/each}
+									</div>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2440:3
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+	{#if showSettings}
+		<div class="modal-overlay" on:click={() => (showSettings = false)}>
+			<div class="modal settings-modal" on:click|stopPropagation>
+				<div class="modal-header">
+					<h2>Settings</h2>
+					<button
+						class="close-btn"
+						on:click={() => (showSettings = false)}
+						><X size={20} /></button
+					>
+				</div>
+
+				<div class="modal-body">
+					<div class="settings-section">
+						<h3>Automatic Sync</h3>
+						<div class="settings-field">
+							<label for="sync-interval">Sync Interval</label>
+							<select
+								id="sync-interval"
+								class="settings-select"
+								value={syncInterval}
+								on:change={handleSyncIntervalChange}
+							>
+								<option value="off">Off</option>
+								<option value="15m">Every 15 minutes</option>
+								<option value="30m">Every 30 minutes</option>
+								<option value="1h">Every hour</option>
+								<option value="4h">Every 4 hours</option>
+								<option value="8h">Every 8 hours</option>
+								<option value="12h">Every 12 hours</option>
+								<option value="24h">Every 24 hours</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="settings-section">
+						<h3>OPML</h3>
+						<div class="settings-actions">
+							<button class="settings-btn" on:click={exportOpml}>
+								<Download size={16} />
+								Export OPML
+							</button>
+
+							<label class="settings-btn">
+								<Upload size={16} />
+								{importingOpml ? "Importing..." : "Import OPML"}
+								<input
+									type="file"
+									accept=".opml,.xml"
+									on:change={importOpml}
+									disabled={importingOpml}
+									style="display: none;"
+								/>
+							</label>
+						</div>
+
+						{#if importResults}
+							<div class="import-results">
+								<div class="results-summary">
+									<span class="result-item success"
+										>✓ Added: {importResults.added}</span
+									>
+									<span class="result-item"
+										>⊘ Skipped: {importResults.skipped}</span
+									>
+									{#if importResults.failed.length > 0}
+										<span class="result-item error"
+											>✗ Failed: {importResults.failed
+												.length}</span
+										>
+									{/if}
+								</div>
+
+								{#if importResults.failed.length > 0}
+									<div class="failed-feeds">
+										<h4>Failed Feeds:</h4>
+										{#each importResults.failed as fail}
+											<div class="failed-item">
+												<div class="failed-url">
+													{fail.url}
+												</div>
+												<div class="failed-error">
+													{fail.error}
+												</div>
+											</div>
+										{/each}
+									</div>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2440:3
+Warn: A11y: <div> with click handler must have an ARIA role (svelte)
+	{#if showSettings}
+		<div class="modal-overlay" on:click={() => (showSettings = false)}>
+			<div class="modal settings-modal" on:click|stopPropagation>
+				<div class="modal-header">
+					<h2>Settings</h2>
+					<button
+						class="close-btn"
+						on:click={() => (showSettings = false)}
+						><X size={20} /></button
+					>
+				</div>
+
+				<div class="modal-body">
+					<div class="settings-section">
+						<h3>Automatic Sync</h3>
+						<div class="settings-field">
+							<label for="sync-interval">Sync Interval</label>
+							<select
+								id="sync-interval"
+								class="settings-select"
+								value={syncInterval}
+								on:change={handleSyncIntervalChange}
+							>
+								<option value="off">Off</option>
+								<option value="15m">Every 15 minutes</option>
+								<option value="30m">Every 30 minutes</option>
+								<option value="1h">Every hour</option>
+								<option value="4h">Every 4 hours</option>
+								<option value="8h">Every 8 hours</option>
+								<option value="12h">Every 12 hours</option>
+								<option value="24h">Every 24 hours</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="settings-section">
+						<h3>OPML</h3>
+						<div class="settings-actions">
+							<button class="settings-btn" on:click={exportOpml}>
+								<Download size={16} />
+								Export OPML
+							</button>
+
+							<label class="settings-btn">
+								<Upload size={16} />
+								{importingOpml ? "Importing..." : "Import OPML"}
+								<input
+									type="file"
+									accept=".opml,.xml"
+									on:change={importOpml}
+									disabled={importingOpml}
+									style="display: none;"
+								/>
+							</label>
+						</div>
+
+						{#if importResults}
+							<div class="import-results">
+								<div class="results-summary">
+									<span class="result-item success"
+										>✓ Added: {importResults.added}</span
+									>
+									<span class="result-item"
+										>⊘ Skipped: {importResults.skipped}</span
+									>
+									{#if importResults.failed.length > 0}
+										<span class="result-item error"
+											>✗ Failed: {importResults.failed
+												.length}</span
+										>
+									{/if}
+								</div>
+
+								{#if importResults.failed.length > 0}
+									<div class="failed-feeds">
+										<h4>Failed Feeds:</h4>
+										{#each importResults.failed as fail}
+											<div class="failed-item">
+												<div class="failed-url">
+													{fail.url}
+												</div>
+												<div class="failed-error">
+													{fail.error}
+												</div>
+											</div>
+										{/each}
+									</div>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2538:4
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+		<div class="reader-overlay" on:click={closeReader}>
+			<div class="reader-container" on:click|stopPropagation>
+				<div class="reader-header">
+					<button
+						class="reader-close"
+						on:click={closeReader}
+						title="Close (ESC)"
+					>
+						<svg
+							width="20"
+							height="20"
+							viewBox="0 0 20 20"
+							fill="none"
+						>
+							<path
+								d="M5 5l10 10M15 5l-10 10"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+							/>
+						</svg>
+					</button>
+					{#if currentItemUrl}
+						<a
+							href={currentItemUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="reader-source"
+						>
+							Open Original ↗
+						</a>
+					{/if}
+				</div>
+
+				{#if readerLoading}
+					<div class="reader-loading">
+						<div class="reader-spinner"></div>
+						<span>Loading article...</span>
+					</div>
+				{:else if readerError}
+					<div class="reader-error">
+						<p>{readerError}</p>
+						{#if currentItemUrl}
+							<a
+								href={currentItemUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="reader-fallback-btn"
+							>
+								Open Original Article
+							</a>
+						{/if}
+					</div>
+				{:else if readerData}
+					<article class="reader-content">
+						{#if currentItemUrl && (currentItemUrl.includes("youtube.com/watch") || currentItemUrl.includes("youtu.be/"))}
+							<div
+								class="video-wrapper"
+								style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 12px; margin-bottom: 24px; background: #000;"
+							>
+								<div
+									id="yt-player-container"
+									style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+								></div>
+							</div>
+						{:else if readerData.imageUrl}
+							<img
+								src={readerData.imageUrl}
+								alt=""
+								class="reader-hero"
+							/>
+						{/if}
+						<h1 class="reader-title">
+							{readerData.title || "Untitled"}
+						</h1>
+						{#if readerData.byline || readerData.siteName}
+							<div class="reader-meta">
+								{#if readerData.byline}<span
+										>{readerData.byline}</span
+									>{/if}
+								{#if readerData.byline && readerData.siteName}<span
+										class="meta-sep">•</span
+									>{/if}
+								{#if readerData.siteName}<span
+										>{readerData.siteName}</span
+									>{/if}
+							</div>
+						{/if}
+						<div class="reader-body" id="reader-body-content">
+							{#if !(currentItemUrl && (currentItemUrl.includes("youtube.com/watch") || currentItemUrl.includes("youtu.be/")))}
+								{@html readerData.contentHtml}
+							{/if}
+						</div>
+					</article>
+				{/if}
+			</div>
+		</div>
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2538:4
+Warn: A11y: <div> with click handler must have an ARIA role (svelte)
+		<div class="reader-overlay" on:click={closeReader}>
+			<div class="reader-container" on:click|stopPropagation>
+				<div class="reader-header">
+					<button
+						class="reader-close"
+						on:click={closeReader}
+						title="Close (ESC)"
+					>
+						<svg
+							width="20"
+							height="20"
+							viewBox="0 0 20 20"
+							fill="none"
+						>
+							<path
+								d="M5 5l10 10M15 5l-10 10"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+							/>
+						</svg>
+					</button>
+					{#if currentItemUrl}
+						<a
+							href={currentItemUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="reader-source"
+						>
+							Open Original ↗
+						</a>
+					{/if}
+				</div>
+
+				{#if readerLoading}
+					<div class="reader-loading">
+						<div class="reader-spinner"></div>
+						<span>Loading article...</span>
+					</div>
+				{:else if readerError}
+					<div class="reader-error">
+						<p>{readerError}</p>
+						{#if currentItemUrl}
+							<a
+								href={currentItemUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="reader-fallback-btn"
+							>
+								Open Original Article
+							</a>
+						{/if}
+					</div>
+				{:else if readerData}
+					<article class="reader-content">
+						{#if currentItemUrl && (currentItemUrl.includes("youtube.com/watch") || currentItemUrl.includes("youtu.be/"))}
+							<div
+								class="video-wrapper"
+								style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 12px; margin-bottom: 24px; background: #000;"
+							>
+								<div
+									id="yt-player-container"
+									style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+								></div>
+							</div>
+						{:else if readerData.imageUrl}
+							<img
+								src={readerData.imageUrl}
+								alt=""
+								class="reader-hero"
+							/>
+						{/if}
+						<h1 class="reader-title">
+							{readerData.title || "Untitled"}
+						</h1>
+						{#if readerData.byline || readerData.siteName}
+							<div class="reader-meta">
+								{#if readerData.byline}<span
+										>{readerData.byline}</span
+									>{/if}
+								{#if readerData.byline && readerData.siteName}<span
+										class="meta-sep">•</span
+									>{/if}
+								{#if readerData.siteName}<span
+										>{readerData.siteName}</span
+									>{/if}
+							</div>
+						{/if}
+						<div class="reader-body" id="reader-body-content">
+							{#if !(currentItemUrl && (currentItemUrl.includes("youtube.com/watch") || currentItemUrl.includes("youtu.be/")))}
+								{@html readerData.contentHtml}
+							{/if}
+						</div>
+					</article>
+				{/if}
+			</div>
+		</div>
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2537:3
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+	{#if showReader}
+		<div class="reader-overlay" on:click={closeReader}>
+			<div class="reader-container" on:click|stopPropagation>
+				<div class="reader-header">
+					<button
+						class="reader-close"
+						on:click={closeReader}
+						title="Close (ESC)"
+					>
+						<svg
+							width="20"
+							height="20"
+							viewBox="0 0 20 20"
+							fill="none"
+						>
+							<path
+								d="M5 5l10 10M15 5l-10 10"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+							/>
+						</svg>
+					</button>
+					{#if currentItemUrl}
+						<a
+							href={currentItemUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="reader-source"
+						>
+							Open Original ↗
+						</a>
+					{/if}
+				</div>
+
+				{#if readerLoading}
+					<div class="reader-loading">
+						<div class="reader-spinner"></div>
+						<span>Loading article...</span>
+					</div>
+				{:else if readerError}
+					<div class="reader-error">
+						<p>{readerError}</p>
+						{#if currentItemUrl}
+							<a
+								href={currentItemUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="reader-fallback-btn"
+							>
+								Open Original Article
+							</a>
+						{/if}
+					</div>
+				{:else if readerData}
+					<article class="reader-content">
+						{#if currentItemUrl && (currentItemUrl.includes("youtube.com/watch") || currentItemUrl.includes("youtu.be/"))}
+							<div
+								class="video-wrapper"
+								style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 12px; margin-bottom: 24px; background: #000;"
+							>
+								<div
+									id="yt-player-container"
+									style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+								></div>
+							</div>
+						{:else if readerData.imageUrl}
+							<img
+								src={readerData.imageUrl}
+								alt=""
+								class="reader-hero"
+							/>
+						{/if}
+						<h1 class="reader-title">
+							{readerData.title || "Untitled"}
+						</h1>
+						{#if readerData.byline || readerData.siteName}
+							<div class="reader-meta">
+								{#if readerData.byline}<span
+										>{readerData.byline}</span
+									>{/if}
+								{#if readerData.byline && readerData.siteName}<span
+										class="meta-sep">•</span
+									>{/if}
+								{#if readerData.siteName}<span
+										>{readerData.siteName}</span
+									>{/if}
+							</div>
+						{/if}
+						<div class="reader-body" id="reader-body-content">
+							{#if !(currentItemUrl && (currentItemUrl.includes("youtube.com/watch") || currentItemUrl.includes("youtu.be/")))}
+								{@html readerData.contentHtml}
+							{/if}
+						</div>
+					</article>
+				{/if}
+			</div>
+		</div>
+	{/if}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2537:3
+Warn: A11y: <div> with click handler must have an ARIA role (svelte)
+	{#if showReader}
+		<div class="reader-overlay" on:click={closeReader}>
+			<div class="reader-container" on:click|stopPropagation>
+				<div class="reader-header">
+					<button
+						class="reader-close"
+						on:click={closeReader}
+						title="Close (ESC)"
+					>
+						<svg
+							width="20"
+							height="20"
+							viewBox="0 0 20 20"
+							fill="none"
+						>
+							<path
+								d="M5 5l10 10M15 5l-10 10"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+							/>
+						</svg>
+					</button>
+					{#if currentItemUrl}
+						<a
+							href={currentItemUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="reader-source"
+						>
+							Open Original ↗
+						</a>
+					{/if}
+				</div>
+
+				{#if readerLoading}
+					<div class="reader-loading">
+						<div class="reader-spinner"></div>
+						<span>Loading article...</span>
+					</div>
+				{:else if readerError}
+					<div class="reader-error">
+						<p>{readerError}</p>
+						{#if currentItemUrl}
+							<a
+								href={currentItemUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="reader-fallback-btn"
+							>
+								Open Original Article
+							</a>
+						{/if}
+					</div>
+				{:else if readerData}
+					<article class="reader-content">
+						{#if currentItemUrl && (currentItemUrl.includes("youtube.com/watch") || currentItemUrl.includes("youtu.be/"))}
+							<div
+								class="video-wrapper"
+								style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 12px; margin-bottom: 24px; background: #000;"
+							>
+								<div
+									id="yt-player-container"
+									style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+								></div>
+							</div>
+						{:else if readerData.imageUrl}
+							<img
+								src={readerData.imageUrl}
+								alt=""
+								class="reader-hero"
+							/>
+						{/if}
+						<h1 class="reader-title">
+							{readerData.title || "Untitled"}
+						</h1>
+						{#if readerData.byline || readerData.siteName}
+							<div class="reader-meta">
+								{#if readerData.byline}<span
+										>{readerData.byline}</span
+									>{/if}
+								{#if readerData.byline && readerData.siteName}<span
+										class="meta-sep">•</span
+									>{/if}
+								{#if readerData.siteName}<span
+										>{readerData.siteName}</span
+									>{/if}
+							</div>
+						{/if}
+						<div class="reader-body" id="reader-body-content">
+							{#if !(currentItemUrl && (currentItemUrl.includes("youtube.com/watch") || currentItemUrl.includes("youtu.be/")))}
+								{@html readerData.contentHtml}
+							{/if}
+						</div>
+					</article>
+				{/if}
+			</div>
+		</div>
+	{/if}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2732:9
+Warn: A11y: A form label must be associated with a control. (svelte)
+							<div class="input-group">
+								<label class="input-label"
+									>Search for feeds</label
+								>
+								<input
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2901:8
+Warn: A11y: A form label must be associated with a control. (svelte)
+						<div class="input-group">
+							<label class="input-label"
+								>Paste URLs (one per line)</label
+							>
+							<textarea
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2639:4
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+		<div class="modal-overlay" on:click={closeAddFeedModal}>
+			<div class="add-feed-modal glass-panel" on:click|stopPropagation>
+				<div class="modal-header">
+					<h2>Add Feed</h2>
+					<button class="close-btn" on:click={closeAddFeedModal}
+						><X size={20} /></button
+					>
+				</div>
+
+				<div class="modal-tabs">
+					<button
+						class="tab-btn"
+						class:active={addFeedTab === "url"}
+						on:click={() => (addFeedTab = "url")}
+					>
+						<Link size={16} />
+						URL
+					</button>
+					<button
+						class="tab-btn"
+						class:active={addFeedTab === "search"}
+						on:click={() => (addFeedTab = "search")}
+					>
+						<Search size={16} />
+						Search
+					</button>
+					<button
+						class="tab-btn"
+						class:active={addFeedTab === "bulk"}
+						on:click={() => (addFeedTab = "bulk")}
+					>
+						<List size={16} />
+						Bulk
+					</button>
+				</div>
+
+				<div class="modal-body">
+					{#if addFeedTab === "url"}
+						<div class="input-group">
+							<div class="input-with-icon">
+								<Link size={18} />
+								<input
+									type="text"
+									bind:value={addFeedUrl}
+									placeholder="Paste feed URL, YouTube channel, or Reddit subreddit…"
+									class="feed-input"
+									on:keydown={(e) =>
+										e.key === "Enter" && submitAddFeed()}
+								/>
+							</div>
+						</div>
+
+						{#if folders.length > 0}
+							<div class="folder-selection-section">
+								<div class="section-label">
+									Also add to folder(s)
+								</div>
+								<div class="folder-checkboxes">
+									{#each folders as folder}
+										<label class="folder-checkbox-label">
+											<input
+												type="checkbox"
+												value={folder.id}
+												checked={selectedFolderIdsForNewFeed.includes(
+													folder.id,
+												)}
+												on:change={(e) => {
+													if (
+														e.currentTarget.checked
+													) {
+														selectedFolderIdsForNewFeed =
+															[
+																...selectedFolderIdsForNewFeed,
+																folder.id,
+															];
+													} else {
+														selectedFolderIdsForNewFeed =
+															selectedFolderIdsForNewFeed.filter(
+																(id) =>
+																	id !==
+																	folder.id,
+															);
+													}
+												}}
+											/>
+											<span>{folder.name}</span>
+										</label>
+									{/each}
+								</div>
+							</div>
+						{/if}
+					{:else if addFeedTab === "search"}
+						<div class="feed-search-container">
+							<div class="input-group">
+								<label class="input-label"
+									>Search for feeds</label
+								>
+								<input
+									type="text"
+									bind:value={feedSearchQuery}
+									on:input={searchFeedsDebounced}
+									placeholder="e.g., omgubuntu, mkbhd, technology"
+									class="feed-input"
+								/>
+							</div>
+
+							<div class="search-type-filters">
+								<button
+									class="type-filter-btn"
+									class:active={feedSearchType === "all"}
+									on:click={() => {
+										feedSearchType = "all";
+										searchFeedsNow();
+									}}
+								>
+									All
+								</button>
+								<button
+									class="type-filter-btn"
+									class:active={feedSearchType === "rss"}
+									on:click={() => {
+										feedSearchType = "rss";
+										searchFeedsNow();
+									}}
+								>
+									RSS
+								</button>
+								<button
+									class="type-filter-btn"
+									class:active={feedSearchType === "youtube"}
+									on:click={() => {
+										feedSearchType = "youtube";
+										searchFeedsNow();
+									}}
+								>
+									YouTube
+								</button>
+								<button
+									class="type-filter-btn"
+									class:active={feedSearchType === "reddit"}
+									on:click={() => {
+										feedSearchType = "reddit";
+										searchFeedsNow();
+									}}
+								>
+									Reddit
+								</button>
+							</div>
+
+							{#if feedSearchLoading}
+								<div class="search-loading">Searching...</div>
+							{:else if feedSearchError}
+								<div class="search-error">
+									{feedSearchError}
+								</div>
+							{:else if feedSearchResults.length > 0}
+								<div class="search-results">
+									{#each feedSearchResults as result}
+										<div class="search-result-item">
+											<div class="result-info">
+												<div class="result-header">
+													<span class="result-title"
+														>{result.title}</span
+													>
+													<span
+														class="result-type-badge {result.type}"
+														>{result.type.toUpperCase()}</span
+													>
+												</div>
+												<p class="result-description">
+													{result.description}
+												</p>
+												<span class="result-url"
+													>{result.url}</span
+												>
+											</div>
+											<button
+												class="add-result-btn"
+												on:click={() =>
+													addFeedFromSearch(result)}
+												disabled={addFeedLoading}
+											>
+												<Plus size={16} />
+												Add
+											</button>
+										</div>
+									{/each}
+								</div>
+							{:else if feedSearchQuery.trim()}
+								<div class="search-empty">
+									<svg
+										width="48"
+										height="48"
+										viewBox="0 0 48 48"
+										fill="none"
+									>
+										<circle
+											cx="20"
+											cy="20"
+											r="12"
+											stroke="currentColor"
+											stroke-width="2"
+											fill="none"
+										/>
+										<path
+											d="M29 29l10 10"
+											stroke="currentColor"
+											stroke-width="2"
+											stroke-linecap="round"
+										/>
+									</svg>
+									<p>No feeds found</p>
+									<span class="placeholder-hint"
+										>Try a different search term</span
+									>
+								</div>
+							{/if}
+
+							{#if folders.length > 0}
+								<div class="folder-selection-section">
+									<div class="section-label">
+										Also add to folder(s)
+									</div>
+									<div class="folder-checkboxes">
+										{#each folders as folder}
+											<label
+												class="folder-checkbox-label"
+											>
+												<input
+													type="checkbox"
+													value={folder.id}
+													checked={selectedFolderIdsForNewFeed.includes(
+														folder.id,
+													)}
+													on:change={(e) => {
+														if (
+															e.currentTarget
+																.checked
+														) {
+															selectedFolderIdsForNewFeed =
+																[
+																	...selectedFolderIdsForNewFeed,
+																	folder.id,
+																];
+														} else {
+															selectedFolderIdsForNewFeed =
+																selectedFolderIdsForNewFeed.filter(
+																	(id) =>
+																		id !==
+																		folder.id,
+																);
+														}
+													}}
+												/>
+												<span>{folder.name}</span>
+											</label>
+										{/each}
+									</div>
+								</div>
+							{/if}
+						</div>
+					{:else if addFeedTab === "bulk"}
+						<div class="input-group">
+							<label class="input-label"
+								>Paste URLs (one per line)</label
+							>
+							<textarea
+								bind:value={addFeedBulkUrls}
+								placeholder="https://example.com/feed&#10;https://youtube.com/@channel&#10;https://reddit.com/r/subreddit"
+								class="bulk-textarea"
+								rows="8"
+							></textarea>
+						</div>
+
+						{#if folders.length > 0}
+							<div class="folder-selection-section">
+								<div class="section-label">
+									Also add to folder(s)
+								</div>
+								<div class="folder-checkboxes">
+									{#each folders as folder}
+										<label class="folder-checkbox-label">
+											<input
+												type="checkbox"
+												value={folder.id}
+												checked={selectedFolderIdsForNewFeed.includes(
+													folder.id,
+												)}
+												on:change={(e) => {
+													if (
+														e.currentTarget.checked
+													) {
+														selectedFolderIdsForNewFeed =
+															[
+																...selectedFolderIdsForNewFeed,
+																folder.id,
+															];
+													} else {
+														selectedFolderIdsForNewFeed =
+															selectedFolderIdsForNewFeed.filter(
+																(id) =>
+																	id !==
+																	folder.id,
+															);
+													}
+												}}
+											/>
+											<span>{folder.name}</span>
+										</label>
+									{/each}
+								</div>
+							</div>
+						{/if}
+					{/if}
+
+					{#if addFeedError}
+						<div class="feed-error">{addFeedError}</div>
+					{/if}
+				</div>
+
+				<div class="modal-footer">
+					<button
+						class="primary-btn"
+						disabled={addFeedLoading ||
+							(addFeedTab === "url" &&
+								!validateFeedUrl(addFeedUrl)) ||
+							(addFeedTab === "bulk" &&
+								!addFeedBulkUrls.trim()) ||
+							addFeedTab === "search"}
+						on:click={submitAddFeed}
+					>
+						{addFeedLoading ? "Adding..." : "Add Feed"}
+					</button>
+				</div>
+			</div>
+		</div>
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2639:4
+Warn: A11y: <div> with click handler must have an ARIA role (svelte)
+		<div class="modal-overlay" on:click={closeAddFeedModal}>
+			<div class="add-feed-modal glass-panel" on:click|stopPropagation>
+				<div class="modal-header">
+					<h2>Add Feed</h2>
+					<button class="close-btn" on:click={closeAddFeedModal}
+						><X size={20} /></button
+					>
+				</div>
+
+				<div class="modal-tabs">
+					<button
+						class="tab-btn"
+						class:active={addFeedTab === "url"}
+						on:click={() => (addFeedTab = "url")}
+					>
+						<Link size={16} />
+						URL
+					</button>
+					<button
+						class="tab-btn"
+						class:active={addFeedTab === "search"}
+						on:click={() => (addFeedTab = "search")}
+					>
+						<Search size={16} />
+						Search
+					</button>
+					<button
+						class="tab-btn"
+						class:active={addFeedTab === "bulk"}
+						on:click={() => (addFeedTab = "bulk")}
+					>
+						<List size={16} />
+						Bulk
+					</button>
+				</div>
+
+				<div class="modal-body">
+					{#if addFeedTab === "url"}
+						<div class="input-group">
+							<div class="input-with-icon">
+								<Link size={18} />
+								<input
+									type="text"
+									bind:value={addFeedUrl}
+									placeholder="Paste feed URL, YouTube channel, or Reddit subreddit…"
+									class="feed-input"
+									on:keydown={(e) =>
+										e.key === "Enter" && submitAddFeed()}
+								/>
+							</div>
+						</div>
+
+						{#if folders.length > 0}
+							<div class="folder-selection-section">
+								<div class="section-label">
+									Also add to folder(s)
+								</div>
+								<div class="folder-checkboxes">
+									{#each folders as folder}
+										<label class="folder-checkbox-label">
+											<input
+												type="checkbox"
+												value={folder.id}
+												checked={selectedFolderIdsForNewFeed.includes(
+													folder.id,
+												)}
+												on:change={(e) => {
+													if (
+														e.currentTarget.checked
+													) {
+														selectedFolderIdsForNewFeed =
+															[
+																...selectedFolderIdsForNewFeed,
+																folder.id,
+															];
+													} else {
+														selectedFolderIdsForNewFeed =
+															selectedFolderIdsForNewFeed.filter(
+																(id) =>
+																	id !==
+																	folder.id,
+															);
+													}
+												}}
+											/>
+											<span>{folder.name}</span>
+										</label>
+									{/each}
+								</div>
+							</div>
+						{/if}
+					{:else if addFeedTab === "search"}
+						<div class="feed-search-container">
+							<div class="input-group">
+								<label class="input-label"
+									>Search for feeds</label
+								>
+								<input
+									type="text"
+									bind:value={feedSearchQuery}
+									on:input={searchFeedsDebounced}
+									placeholder="e.g., omgubuntu, mkbhd, technology"
+									class="feed-input"
+								/>
+							</div>
+
+							<div class="search-type-filters">
+								<button
+									class="type-filter-btn"
+									class:active={feedSearchType === "all"}
+									on:click={() => {
+										feedSearchType = "all";
+										searchFeedsNow();
+									}}
+								>
+									All
+								</button>
+								<button
+									class="type-filter-btn"
+									class:active={feedSearchType === "rss"}
+									on:click={() => {
+										feedSearchType = "rss";
+										searchFeedsNow();
+									}}
+								>
+									RSS
+								</button>
+								<button
+									class="type-filter-btn"
+									class:active={feedSearchType === "youtube"}
+									on:click={() => {
+										feedSearchType = "youtube";
+										searchFeedsNow();
+									}}
+								>
+									YouTube
+								</button>
+								<button
+									class="type-filter-btn"
+									class:active={feedSearchType === "reddit"}
+									on:click={() => {
+										feedSearchType = "reddit";
+										searchFeedsNow();
+									}}
+								>
+									Reddit
+								</button>
+							</div>
+
+							{#if feedSearchLoading}
+								<div class="search-loading">Searching...</div>
+							{:else if feedSearchError}
+								<div class="search-error">
+									{feedSearchError}
+								</div>
+							{:else if feedSearchResults.length > 0}
+								<div class="search-results">
+									{#each feedSearchResults as result}
+										<div class="search-result-item">
+											<div class="result-info">
+												<div class="result-header">
+													<span class="result-title"
+														>{result.title}</span
+													>
+													<span
+														class="result-type-badge {result.type}"
+														>{result.type.toUpperCase()}</span
+													>
+												</div>
+												<p class="result-description">
+													{result.description}
+												</p>
+												<span class="result-url"
+													>{result.url}</span
+												>
+											</div>
+											<button
+												class="add-result-btn"
+												on:click={() =>
+													addFeedFromSearch(result)}
+												disabled={addFeedLoading}
+											>
+												<Plus size={16} />
+												Add
+											</button>
+										</div>
+									{/each}
+								</div>
+							{:else if feedSearchQuery.trim()}
+								<div class="search-empty">
+									<svg
+										width="48"
+										height="48"
+										viewBox="0 0 48 48"
+										fill="none"
+									>
+										<circle
+											cx="20"
+											cy="20"
+											r="12"
+											stroke="currentColor"
+											stroke-width="2"
+											fill="none"
+										/>
+										<path
+											d="M29 29l10 10"
+											stroke="currentColor"
+											stroke-width="2"
+											stroke-linecap="round"
+										/>
+									</svg>
+									<p>No feeds found</p>
+									<span class="placeholder-hint"
+										>Try a different search term</span
+									>
+								</div>
+							{/if}
+
+							{#if folders.length > 0}
+								<div class="folder-selection-section">
+									<div class="section-label">
+										Also add to folder(s)
+									</div>
+									<div class="folder-checkboxes">
+										{#each folders as folder}
+											<label
+												class="folder-checkbox-label"
+											>
+												<input
+													type="checkbox"
+													value={folder.id}
+													checked={selectedFolderIdsForNewFeed.includes(
+														folder.id,
+													)}
+													on:change={(e) => {
+														if (
+															e.currentTarget
+																.checked
+														) {
+															selectedFolderIdsForNewFeed =
+																[
+																	...selectedFolderIdsForNewFeed,
+																	folder.id,
+																];
+														} else {
+															selectedFolderIdsForNewFeed =
+																selectedFolderIdsForNewFeed.filter(
+																	(id) =>
+																		id !==
+																		folder.id,
+																);
+														}
+													}}
+												/>
+												<span>{folder.name}</span>
+											</label>
+										{/each}
+									</div>
+								</div>
+							{/if}
+						</div>
+					{:else if addFeedTab === "bulk"}
+						<div class="input-group">
+							<label class="input-label"
+								>Paste URLs (one per line)</label
+							>
+							<textarea
+								bind:value={addFeedBulkUrls}
+								placeholder="https://example.com/feed&#10;https://youtube.com/@channel&#10;https://reddit.com/r/subreddit"
+								class="bulk-textarea"
+								rows="8"
+							></textarea>
+						</div>
+
+						{#if folders.length > 0}
+							<div class="folder-selection-section">
+								<div class="section-label">
+									Also add to folder(s)
+								</div>
+								<div class="folder-checkboxes">
+									{#each folders as folder}
+										<label class="folder-checkbox-label">
+											<input
+												type="checkbox"
+												value={folder.id}
+												checked={selectedFolderIdsForNewFeed.includes(
+													folder.id,
+												)}
+												on:change={(e) => {
+													if (
+														e.currentTarget.checked
+													) {
+														selectedFolderIdsForNewFeed =
+															[
+																...selectedFolderIdsForNewFeed,
+																folder.id,
+															];
+													} else {
+														selectedFolderIdsForNewFeed =
+															selectedFolderIdsForNewFeed.filter(
+																(id) =>
+																	id !==
+																	folder.id,
+															);
+													}
+												}}
+											/>
+											<span>{folder.name}</span>
+										</label>
+									{/each}
+								</div>
+							</div>
+						{/if}
+					{/if}
+
+					{#if addFeedError}
+						<div class="feed-error">{addFeedError}</div>
+					{/if}
+				</div>
+
+				<div class="modal-footer">
+					<button
+						class="primary-btn"
+						disabled={addFeedLoading ||
+							(addFeedTab === "url" &&
+								!validateFeedUrl(addFeedUrl)) ||
+							(addFeedTab === "bulk" &&
+								!addFeedBulkUrls.trim()) ||
+							addFeedTab === "search"}
+						on:click={submitAddFeed}
+					>
+						{addFeedLoading ? "Adding..." : "Add Feed"}
+					</button>
+				</div>
+			</div>
+		</div>
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2638:3
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+	{#if showAddFeedModal}
+		<div class="modal-overlay" on:click={closeAddFeedModal}>
+			<div class="add-feed-modal glass-panel" on:click|stopPropagation>
+				<div class="modal-header">
+					<h2>Add Feed</h2>
+					<button class="close-btn" on:click={closeAddFeedModal}
+						><X size={20} /></button
+					>
+				</div>
+
+				<div class="modal-tabs">
+					<button
+						class="tab-btn"
+						class:active={addFeedTab === "url"}
+						on:click={() => (addFeedTab = "url")}
+					>
+						<Link size={16} />
+						URL
+					</button>
+					<button
+						class="tab-btn"
+						class:active={addFeedTab === "search"}
+						on:click={() => (addFeedTab = "search")}
+					>
+						<Search size={16} />
+						Search
+					</button>
+					<button
+						class="tab-btn"
+						class:active={addFeedTab === "bulk"}
+						on:click={() => (addFeedTab = "bulk")}
+					>
+						<List size={16} />
+						Bulk
+					</button>
+				</div>
+
+				<div class="modal-body">
+					{#if addFeedTab === "url"}
+						<div class="input-group">
+							<div class="input-with-icon">
+								<Link size={18} />
+								<input
+									type="text"
+									bind:value={addFeedUrl}
+									placeholder="Paste feed URL, YouTube channel, or Reddit subreddit…"
+									class="feed-input"
+									on:keydown={(e) =>
+										e.key === "Enter" && submitAddFeed()}
+								/>
+							</div>
+						</div>
+
+						{#if folders.length > 0}
+							<div class="folder-selection-section">
+								<div class="section-label">
+									Also add to folder(s)
+								</div>
+								<div class="folder-checkboxes">
+									{#each folders as folder}
+										<label class="folder-checkbox-label">
+											<input
+												type="checkbox"
+												value={folder.id}
+												checked={selectedFolderIdsForNewFeed.includes(
+													folder.id,
+												)}
+												on:change={(e) => {
+													if (
+														e.currentTarget.checked
+													) {
+														selectedFolderIdsForNewFeed =
+															[
+																...selectedFolderIdsForNewFeed,
+																folder.id,
+															];
+													} else {
+														selectedFolderIdsForNewFeed =
+															selectedFolderIdsForNewFeed.filter(
+																(id) =>
+																	id !==
+																	folder.id,
+															);
+													}
+												}}
+											/>
+											<span>{folder.name}</span>
+										</label>
+									{/each}
+								</div>
+							</div>
+						{/if}
+					{:else if addFeedTab === "search"}
+						<div class="feed-search-container">
+							<div class="input-group">
+								<label class="input-label"
+									>Search for feeds</label
+								>
+								<input
+									type="text"
+									bind:value={feedSearchQuery}
+									on:input={searchFeedsDebounced}
+									placeholder="e.g., omgubuntu, mkbhd, technology"
+									class="feed-input"
+								/>
+							</div>
+
+							<div class="search-type-filters">
+								<button
+									class="type-filter-btn"
+									class:active={feedSearchType === "all"}
+									on:click={() => {
+										feedSearchType = "all";
+										searchFeedsNow();
+									}}
+								>
+									All
+								</button>
+								<button
+									class="type-filter-btn"
+									class:active={feedSearchType === "rss"}
+									on:click={() => {
+										feedSearchType = "rss";
+										searchFeedsNow();
+									}}
+								>
+									RSS
+								</button>
+								<button
+									class="type-filter-btn"
+									class:active={feedSearchType === "youtube"}
+									on:click={() => {
+										feedSearchType = "youtube";
+										searchFeedsNow();
+									}}
+								>
+									YouTube
+								</button>
+								<button
+									class="type-filter-btn"
+									class:active={feedSearchType === "reddit"}
+									on:click={() => {
+										feedSearchType = "reddit";
+										searchFeedsNow();
+									}}
+								>
+									Reddit
+								</button>
+							</div>
+
+							{#if feedSearchLoading}
+								<div class="search-loading">Searching...</div>
+							{:else if feedSearchError}
+								<div class="search-error">
+									{feedSearchError}
+								</div>
+							{:else if feedSearchResults.length > 0}
+								<div class="search-results">
+									{#each feedSearchResults as result}
+										<div class="search-result-item">
+											<div class="result-info">
+												<div class="result-header">
+													<span class="result-title"
+														>{result.title}</span
+													>
+													<span
+														class="result-type-badge {result.type}"
+														>{result.type.toUpperCase()}</span
+													>
+												</div>
+												<p class="result-description">
+													{result.description}
+												</p>
+												<span class="result-url"
+													>{result.url}</span
+												>
+											</div>
+											<button
+												class="add-result-btn"
+												on:click={() =>
+													addFeedFromSearch(result)}
+												disabled={addFeedLoading}
+											>
+												<Plus size={16} />
+												Add
+											</button>
+										</div>
+									{/each}
+								</div>
+							{:else if feedSearchQuery.trim()}
+								<div class="search-empty">
+									<svg
+										width="48"
+										height="48"
+										viewBox="0 0 48 48"
+										fill="none"
+									>
+										<circle
+											cx="20"
+											cy="20"
+											r="12"
+											stroke="currentColor"
+											stroke-width="2"
+											fill="none"
+										/>
+										<path
+											d="M29 29l10 10"
+											stroke="currentColor"
+											stroke-width="2"
+											stroke-linecap="round"
+										/>
+									</svg>
+									<p>No feeds found</p>
+									<span class="placeholder-hint"
+										>Try a different search term</span
+									>
+								</div>
+							{/if}
+
+							{#if folders.length > 0}
+								<div class="folder-selection-section">
+									<div class="section-label">
+										Also add to folder(s)
+									</div>
+									<div class="folder-checkboxes">
+										{#each folders as folder}
+											<label
+												class="folder-checkbox-label"
+											>
+												<input
+													type="checkbox"
+													value={folder.id}
+													checked={selectedFolderIdsForNewFeed.includes(
+														folder.id,
+													)}
+													on:change={(e) => {
+														if (
+															e.currentTarget
+																.checked
+														) {
+															selectedFolderIdsForNewFeed =
+																[
+																	...selectedFolderIdsForNewFeed,
+																	folder.id,
+																];
+														} else {
+															selectedFolderIdsForNewFeed =
+																selectedFolderIdsForNewFeed.filter(
+																	(id) =>
+																		id !==
+																		folder.id,
+																);
+														}
+													}}
+												/>
+												<span>{folder.name}</span>
+											</label>
+										{/each}
+									</div>
+								</div>
+							{/if}
+						</div>
+					{:else if addFeedTab === "bulk"}
+						<div class="input-group">
+							<label class="input-label"
+								>Paste URLs (one per line)</label
+							>
+							<textarea
+								bind:value={addFeedBulkUrls}
+								placeholder="https://example.com/feed&#10;https://youtube.com/@channel&#10;https://reddit.com/r/subreddit"
+								class="bulk-textarea"
+								rows="8"
+							></textarea>
+						</div>
+
+						{#if folders.length > 0}
+							<div class="folder-selection-section">
+								<div class="section-label">
+									Also add to folder(s)
+								</div>
+								<div class="folder-checkboxes">
+									{#each folders as folder}
+										<label class="folder-checkbox-label">
+											<input
+												type="checkbox"
+												value={folder.id}
+												checked={selectedFolderIdsForNewFeed.includes(
+													folder.id,
+												)}
+												on:change={(e) => {
+													if (
+														e.currentTarget.checked
+													) {
+														selectedFolderIdsForNewFeed =
+															[
+																...selectedFolderIdsForNewFeed,
+																folder.id,
+															];
+													} else {
+														selectedFolderIdsForNewFeed =
+															selectedFolderIdsForNewFeed.filter(
+																(id) =>
+																	id !==
+																	folder.id,
+															);
+													}
+												}}
+											/>
+											<span>{folder.name}</span>
+										</label>
+									{/each}
+								</div>
+							</div>
+						{/if}
+					{/if}
+
+					{#if addFeedError}
+						<div class="feed-error">{addFeedError}</div>
+					{/if}
+				</div>
+
+				<div class="modal-footer">
+					<button
+						class="primary-btn"
+						disabled={addFeedLoading ||
+							(addFeedTab === "url" &&
+								!validateFeedUrl(addFeedUrl)) ||
+							(addFeedTab === "bulk" &&
+								!addFeedBulkUrls.trim()) ||
+							addFeedTab === "search"}
+						on:click={submitAddFeed}
+					>
+						{addFeedLoading ? "Adding..." : "Add Feed"}
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2638:3
+Warn: A11y: <div> with click handler must have an ARIA role (svelte)
+	{#if showAddFeedModal}
+		<div class="modal-overlay" on:click={closeAddFeedModal}>
+			<div class="add-feed-modal glass-panel" on:click|stopPropagation>
+				<div class="modal-header">
+					<h2>Add Feed</h2>
+					<button class="close-btn" on:click={closeAddFeedModal}
+						><X size={20} /></button
+					>
+				</div>
+
+				<div class="modal-tabs">
+					<button
+						class="tab-btn"
+						class:active={addFeedTab === "url"}
+						on:click={() => (addFeedTab = "url")}
+					>
+						<Link size={16} />
+						URL
+					</button>
+					<button
+						class="tab-btn"
+						class:active={addFeedTab === "search"}
+						on:click={() => (addFeedTab = "search")}
+					>
+						<Search size={16} />
+						Search
+					</button>
+					<button
+						class="tab-btn"
+						class:active={addFeedTab === "bulk"}
+						on:click={() => (addFeedTab = "bulk")}
+					>
+						<List size={16} />
+						Bulk
+					</button>
+				</div>
+
+				<div class="modal-body">
+					{#if addFeedTab === "url"}
+						<div class="input-group">
+							<div class="input-with-icon">
+								<Link size={18} />
+								<input
+									type="text"
+									bind:value={addFeedUrl}
+									placeholder="Paste feed URL, YouTube channel, or Reddit subreddit…"
+									class="feed-input"
+									on:keydown={(e) =>
+										e.key === "Enter" && submitAddFeed()}
+								/>
+							</div>
+						</div>
+
+						{#if folders.length > 0}
+							<div class="folder-selection-section">
+								<div class="section-label">
+									Also add to folder(s)
+								</div>
+								<div class="folder-checkboxes">
+									{#each folders as folder}
+										<label class="folder-checkbox-label">
+											<input
+												type="checkbox"
+												value={folder.id}
+												checked={selectedFolderIdsForNewFeed.includes(
+													folder.id,
+												)}
+												on:change={(e) => {
+													if (
+														e.currentTarget.checked
+													) {
+														selectedFolderIdsForNewFeed =
+															[
+																...selectedFolderIdsForNewFeed,
+																folder.id,
+															];
+													} else {
+														selectedFolderIdsForNewFeed =
+															selectedFolderIdsForNewFeed.filter(
+																(id) =>
+																	id !==
+																	folder.id,
+															);
+													}
+												}}
+											/>
+											<span>{folder.name}</span>
+										</label>
+									{/each}
+								</div>
+							</div>
+						{/if}
+					{:else if addFeedTab === "search"}
+						<div class="feed-search-container">
+							<div class="input-group">
+								<label class="input-label"
+									>Search for feeds</label
+								>
+								<input
+									type="text"
+									bind:value={feedSearchQuery}
+									on:input={searchFeedsDebounced}
+									placeholder="e.g., omgubuntu, mkbhd, technology"
+									class="feed-input"
+								/>
+							</div>
+
+							<div class="search-type-filters">
+								<button
+									class="type-filter-btn"
+									class:active={feedSearchType === "all"}
+									on:click={() => {
+										feedSearchType = "all";
+										searchFeedsNow();
+									}}
+								>
+									All
+								</button>
+								<button
+									class="type-filter-btn"
+									class:active={feedSearchType === "rss"}
+									on:click={() => {
+										feedSearchType = "rss";
+										searchFeedsNow();
+									}}
+								>
+									RSS
+								</button>
+								<button
+									class="type-filter-btn"
+									class:active={feedSearchType === "youtube"}
+									on:click={() => {
+										feedSearchType = "youtube";
+										searchFeedsNow();
+									}}
+								>
+									YouTube
+								</button>
+								<button
+									class="type-filter-btn"
+									class:active={feedSearchType === "reddit"}
+									on:click={() => {
+										feedSearchType = "reddit";
+										searchFeedsNow();
+									}}
+								>
+									Reddit
+								</button>
+							</div>
+
+							{#if feedSearchLoading}
+								<div class="search-loading">Searching...</div>
+							{:else if feedSearchError}
+								<div class="search-error">
+									{feedSearchError}
+								</div>
+							{:else if feedSearchResults.length > 0}
+								<div class="search-results">
+									{#each feedSearchResults as result}
+										<div class="search-result-item">
+											<div class="result-info">
+												<div class="result-header">
+													<span class="result-title"
+														>{result.title}</span
+													>
+													<span
+														class="result-type-badge {result.type}"
+														>{result.type.toUpperCase()}</span
+													>
+												</div>
+												<p class="result-description">
+													{result.description}
+												</p>
+												<span class="result-url"
+													>{result.url}</span
+												>
+											</div>
+											<button
+												class="add-result-btn"
+												on:click={() =>
+													addFeedFromSearch(result)}
+												disabled={addFeedLoading}
+											>
+												<Plus size={16} />
+												Add
+											</button>
+										</div>
+									{/each}
+								</div>
+							{:else if feedSearchQuery.trim()}
+								<div class="search-empty">
+									<svg
+										width="48"
+										height="48"
+										viewBox="0 0 48 48"
+										fill="none"
+									>
+										<circle
+											cx="20"
+											cy="20"
+											r="12"
+											stroke="currentColor"
+											stroke-width="2"
+											fill="none"
+										/>
+										<path
+											d="M29 29l10 10"
+											stroke="currentColor"
+											stroke-width="2"
+											stroke-linecap="round"
+										/>
+									</svg>
+									<p>No feeds found</p>
+									<span class="placeholder-hint"
+										>Try a different search term</span
+									>
+								</div>
+							{/if}
+
+							{#if folders.length > 0}
+								<div class="folder-selection-section">
+									<div class="section-label">
+										Also add to folder(s)
+									</div>
+									<div class="folder-checkboxes">
+										{#each folders as folder}
+											<label
+												class="folder-checkbox-label"
+											>
+												<input
+													type="checkbox"
+													value={folder.id}
+													checked={selectedFolderIdsForNewFeed.includes(
+														folder.id,
+													)}
+													on:change={(e) => {
+														if (
+															e.currentTarget
+																.checked
+														) {
+															selectedFolderIdsForNewFeed =
+																[
+																	...selectedFolderIdsForNewFeed,
+																	folder.id,
+																];
+														} else {
+															selectedFolderIdsForNewFeed =
+																selectedFolderIdsForNewFeed.filter(
+																	(id) =>
+																		id !==
+																		folder.id,
+																);
+														}
+													}}
+												/>
+												<span>{folder.name}</span>
+											</label>
+										{/each}
+									</div>
+								</div>
+							{/if}
+						</div>
+					{:else if addFeedTab === "bulk"}
+						<div class="input-group">
+							<label class="input-label"
+								>Paste URLs (one per line)</label
+							>
+							<textarea
+								bind:value={addFeedBulkUrls}
+								placeholder="https://example.com/feed&#10;https://youtube.com/@channel&#10;https://reddit.com/r/subreddit"
+								class="bulk-textarea"
+								rows="8"
+							></textarea>
+						</div>
+
+						{#if folders.length > 0}
+							<div class="folder-selection-section">
+								<div class="section-label">
+									Also add to folder(s)
+								</div>
+								<div class="folder-checkboxes">
+									{#each folders as folder}
+										<label class="folder-checkbox-label">
+											<input
+												type="checkbox"
+												value={folder.id}
+												checked={selectedFolderIdsForNewFeed.includes(
+													folder.id,
+												)}
+												on:change={(e) => {
+													if (
+														e.currentTarget.checked
+													) {
+														selectedFolderIdsForNewFeed =
+															[
+																...selectedFolderIdsForNewFeed,
+																folder.id,
+															];
+													} else {
+														selectedFolderIdsForNewFeed =
+															selectedFolderIdsForNewFeed.filter(
+																(id) =>
+																	id !==
+																	folder.id,
+															);
+													}
+												}}
+											/>
+											<span>{folder.name}</span>
+										</label>
+									{/each}
+								</div>
+							</div>
+						{/if}
+					{/if}
+
+					{#if addFeedError}
+						<div class="feed-error">{addFeedError}</div>
+					{/if}
+				</div>
+
+				<div class="modal-footer">
+					<button
+						class="primary-btn"
+						disabled={addFeedLoading ||
+							(addFeedTab === "url" &&
+								!validateFeedUrl(addFeedUrl)) ||
+							(addFeedTab === "bulk" &&
+								!addFeedBulkUrls.trim()) ||
+							addFeedTab === "search"}
+						on:click={submitAddFeed}
+					>
+						{addFeedLoading ? "Adding..." : "Add Feed"}
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2986:4
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+		>
+			<div class="folder-modal glass-panel" on:click|stopPropagation>
+				<div class="modal-header">
+					<h2>Create Folder</h2>
+					<button
+						class="close-btn"
+						on:click={() => {
+							showCreateFolderModal = false;
+							folderModalName = "";
+							folderModalError = null;
+						}}>×</button
+					>
+				</div>
+				<div class="modal-body">
+					<input
+						type="text"
+						bind:value={folderModalName}
+						placeholder="Folder name"
+						class="folder-input"
+						maxlength="60"
+						on:keydown={(e) => e.key === "Enter" && createFolder()}
+					/>
+					{#if folderModalError}
+						<div class="folder-error">{folderModalError}</div>
+					{/if}
+				</div>
+				<div class="modal-footer">
+					<button
+						class="secondary-btn"
+						on:click={() => {
+							showCreateFolderModal = false;
+							folderModalName = "";
+							folderModalError = null;
+						}}>Cancel</button
+					>
+					<button
+						class="primary-btn"
+						disabled={folderModalLoading || !folderModalName.trim()}
+						on:click={createFolder}
+					>
+						{folderModalLoading ? "Creating..." : "Create"}
+					</button>
+				</div>
+			</div>
+		</div>
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2986:4
+Warn: A11y: <div> with click handler must have an ARIA role (svelte)
+		>
+			<div class="folder-modal glass-panel" on:click|stopPropagation>
+				<div class="modal-header">
+					<h2>Create Folder</h2>
+					<button
+						class="close-btn"
+						on:click={() => {
+							showCreateFolderModal = false;
+							folderModalName = "";
+							folderModalError = null;
+						}}>×</button
+					>
+				</div>
+				<div class="modal-body">
+					<input
+						type="text"
+						bind:value={folderModalName}
+						placeholder="Folder name"
+						class="folder-input"
+						maxlength="60"
+						on:keydown={(e) => e.key === "Enter" && createFolder()}
+					/>
+					{#if folderModalError}
+						<div class="folder-error">{folderModalError}</div>
+					{/if}
+				</div>
+				<div class="modal-footer">
+					<button
+						class="secondary-btn"
+						on:click={() => {
+							showCreateFolderModal = false;
+							folderModalName = "";
+							folderModalError = null;
+						}}>Cancel</button
+					>
+					<button
+						class="primary-btn"
+						disabled={folderModalLoading || !folderModalName.trim()}
+						on:click={createFolder}
+					>
+						{folderModalLoading ? "Creating..." : "Create"}
+					</button>
+				</div>
+			</div>
+		</div>
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2978:3
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+	{#if showCreateFolderModal}
+		<div
+			class="modal-overlay"
+			on:click={() => {
+				showCreateFolderModal = false;
+				folderModalName = "";
+				folderModalError = null;
+			}}
+		>
+			<div class="folder-modal glass-panel" on:click|stopPropagation>
+				<div class="modal-header">
+					<h2>Create Folder</h2>
+					<button
+						class="close-btn"
+						on:click={() => {
+							showCreateFolderModal = false;
+							folderModalName = "";
+							folderModalError = null;
+						}}>×</button
+					>
+				</div>
+				<div class="modal-body">
+					<input
+						type="text"
+						bind:value={folderModalName}
+						placeholder="Folder name"
+						class="folder-input"
+						maxlength="60"
+						on:keydown={(e) => e.key === "Enter" && createFolder()}
+					/>
+					{#if folderModalError}
+						<div class="folder-error">{folderModalError}</div>
+					{/if}
+				</div>
+				<div class="modal-footer">
+					<button
+						class="secondary-btn"
+						on:click={() => {
+							showCreateFolderModal = false;
+							folderModalName = "";
+							folderModalError = null;
+						}}>Cancel</button
+					>
+					<button
+						class="primary-btn"
+						disabled={folderModalLoading || !folderModalName.trim()}
+						on:click={createFolder}
+					>
+						{folderModalLoading ? "Creating..." : "Create"}
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:2978:3
+Warn: A11y: <div> with click handler must have an ARIA role (svelte)
+	{#if showCreateFolderModal}
+		<div
+			class="modal-overlay"
+			on:click={() => {
+				showCreateFolderModal = false;
+				folderModalName = "";
+				folderModalError = null;
+			}}
+		>
+			<div class="folder-modal glass-panel" on:click|stopPropagation>
+				<div class="modal-header">
+					<h2>Create Folder</h2>
+					<button
+						class="close-btn"
+						on:click={() => {
+							showCreateFolderModal = false;
+							folderModalName = "";
+							folderModalError = null;
+						}}>×</button
+					>
+				</div>
+				<div class="modal-body">
+					<input
+						type="text"
+						bind:value={folderModalName}
+						placeholder="Folder name"
+						class="folder-input"
+						maxlength="60"
+						on:keydown={(e) => e.key === "Enter" && createFolder()}
+					/>
+					{#if folderModalError}
+						<div class="folder-error">{folderModalError}</div>
+					{/if}
+				</div>
+				<div class="modal-footer">
+					<button
+						class="secondary-btn"
+						on:click={() => {
+							showCreateFolderModal = false;
+							folderModalName = "";
+							folderModalError = null;
+						}}>Cancel</button
+					>
+					<button
+						class="primary-btn"
+						disabled={folderModalLoading || !folderModalName.trim()}
+						on:click={createFolder}
+					>
+						{folderModalLoading ? "Creating..." : "Create"}
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3044:4
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+		>
+			<div
+				class="modal folder-modal glass-panel"
+				on:click|stopPropagation
+			>
+				<div class="modal-header">
+					<h2>
+						Rename {contextMenuType === "feed" ? "Feed" : "Folder"}
+					</h2>
+					<button
+						class="close-btn"
+						on:click={() => {
+							showRenameFolderModal = false;
+							folderModalName = "";
+							folderModalError = null;
+							contextMenuType = null;
+							contextMenuTarget = null;
+						}}>×</button
+					>
+				</div>
+				<div class="modal-body">
+					<input
+						type="text"
+						bind:value={folderModalName}
+						placeholder="Enter new name..."
+						class="folder-input"
+						maxlength="100"
+						on:keydown={(e) =>
+							e.key === "Enter" &&
+							(contextMenuType === "feed"
+								? renameFeed()
+								: renameFolder())}
+					/>
+					{#if folderModalError}
+						<div class="folder-error">{folderModalError}</div>
+					{/if}
+				</div>
+				<div class="modal-footer">
+					<button
+						class="secondary-btn"
+						on:click={() => {
+							showRenameFolderModal = false;
+							folderModalName = "";
+							folderModalError = null;
+						}}>Cancel</button
+					>
+					<button
+						class="primary-btn"
+						disabled={folderModalLoading || !folderModalName.trim()}
+						on:click={contextMenuType === "feed"
+							? renameFeed
+							: renameFolder}
+					>
+						{folderModalLoading ? "Renaming..." : "Rename"}
+					</button>
+				</div>
+			</div>
+		</div>
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3044:4
+Warn: A11y: <div> with click handler must have an ARIA role (svelte)
+		>
+			<div
+				class="modal folder-modal glass-panel"
+				on:click|stopPropagation
+			>
+				<div class="modal-header">
+					<h2>
+						Rename {contextMenuType === "feed" ? "Feed" : "Folder"}
+					</h2>
+					<button
+						class="close-btn"
+						on:click={() => {
+							showRenameFolderModal = false;
+							folderModalName = "";
+							folderModalError = null;
+							contextMenuType = null;
+							contextMenuTarget = null;
+						}}>×</button
+					>
+				</div>
+				<div class="modal-body">
+					<input
+						type="text"
+						bind:value={folderModalName}
+						placeholder="Enter new name..."
+						class="folder-input"
+						maxlength="100"
+						on:keydown={(e) =>
+							e.key === "Enter" &&
+							(contextMenuType === "feed"
+								? renameFeed()
+								: renameFolder())}
+					/>
+					{#if folderModalError}
+						<div class="folder-error">{folderModalError}</div>
+					{/if}
+				</div>
+				<div class="modal-footer">
+					<button
+						class="secondary-btn"
+						on:click={() => {
+							showRenameFolderModal = false;
+							folderModalName = "";
+							folderModalError = null;
+						}}>Cancel</button
+					>
+					<button
+						class="primary-btn"
+						disabled={folderModalLoading || !folderModalName.trim()}
+						on:click={contextMenuType === "feed"
+							? renameFeed
+							: renameFolder}
+					>
+						{folderModalLoading ? "Renaming..." : "Rename"}
+					</button>
+				</div>
+			</div>
+		</div>
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3034:3
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+	{#if showRenameFolderModal}
+		<div
+			class="modal-overlay"
+			on:click={() => {
+				showRenameFolderModal = false;
+				folderModalName = "";
+				folderModalError = null;
+				contextMenuType = null;
+				contextMenuTarget = null;
+			}}
+		>
+			<div
+				class="modal folder-modal glass-panel"
+				on:click|stopPropagation
+			>
+				<div class="modal-header">
+					<h2>
+						Rename {contextMenuType === "feed" ? "Feed" : "Folder"}
+					</h2>
+					<button
+						class="close-btn"
+						on:click={() => {
+							showRenameFolderModal = false;
+							folderModalName = "";
+							folderModalError = null;
+							contextMenuType = null;
+							contextMenuTarget = null;
+						}}>×</button
+					>
+				</div>
+				<div class="modal-body">
+					<input
+						type="text"
+						bind:value={folderModalName}
+						placeholder="Enter new name..."
+						class="folder-input"
+						maxlength="100"
+						on:keydown={(e) =>
+							e.key === "Enter" &&
+							(contextMenuType === "feed"
+								? renameFeed()
+								: renameFolder())}
+					/>
+					{#if folderModalError}
+						<div class="folder-error">{folderModalError}</div>
+					{/if}
+				</div>
+				<div class="modal-footer">
+					<button
+						class="secondary-btn"
+						on:click={() => {
+							showRenameFolderModal = false;
+							folderModalName = "";
+							folderModalError = null;
+						}}>Cancel</button
+					>
+					<button
+						class="primary-btn"
+						disabled={folderModalLoading || !folderModalName.trim()}
+						on:click={contextMenuType === "feed"
+							? renameFeed
+							: renameFolder}
+					>
+						{folderModalLoading ? "Renaming..." : "Rename"}
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3034:3
+Warn: A11y: <div> with click handler must have an ARIA role (svelte)
+	{#if showRenameFolderModal}
+		<div
+			class="modal-overlay"
+			on:click={() => {
+				showRenameFolderModal = false;
+				folderModalName = "";
+				folderModalError = null;
+				contextMenuType = null;
+				contextMenuTarget = null;
+			}}
+		>
+			<div
+				class="modal folder-modal glass-panel"
+				on:click|stopPropagation
+			>
+				<div class="modal-header">
+					<h2>
+						Rename {contextMenuType === "feed" ? "Feed" : "Folder"}
+					</h2>
+					<button
+						class="close-btn"
+						on:click={() => {
+							showRenameFolderModal = false;
+							folderModalName = "";
+							folderModalError = null;
+							contextMenuType = null;
+							contextMenuTarget = null;
+						}}>×</button
+					>
+				</div>
+				<div class="modal-body">
+					<input
+						type="text"
+						bind:value={folderModalName}
+						placeholder="Enter new name..."
+						class="folder-input"
+						maxlength="100"
+						on:keydown={(e) =>
+							e.key === "Enter" &&
+							(contextMenuType === "feed"
+								? renameFeed()
+								: renameFolder())}
+					/>
+					{#if folderModalError}
+						<div class="folder-error">{folderModalError}</div>
+					{/if}
+				</div>
+				<div class="modal-footer">
+					<button
+						class="secondary-btn"
+						on:click={() => {
+							showRenameFolderModal = false;
+							folderModalName = "";
+							folderModalError = null;
+						}}>Cancel</button
+					>
+					<button
+						class="primary-btn"
+						disabled={folderModalLoading || !folderModalName.trim()}
+						on:click={contextMenuType === "feed"
+							? renameFeed
+							: renameFolder}
+					>
+						{folderModalLoading ? "Renaming..." : "Rename"}
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3114:4
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+		>
+			<div
+				class="modal folder-modal glass-panel"
+				on:click|stopPropagation
+			>
+				<div class="modal-header">
+					<h2>
+						Delete {contextMenuType === "feed" ? "Feed" : "Folder"}
+					</h2>
+					<button
+						class="close-btn"
+						on:click={() => {
+							showDeleteFolderConfirm = false;
+							selectedFolderForAction = null;
+							contextMenuType = null;
+							contextMenuTarget = null;
+						}}>×</button
+					>
+				</div>
+				<div class="modal-body">
+					<p>
+						Are you sure you want to delete <strong
+							>{contextMenuType === "feed"
+								? contextMenuTarget?.title ||
+									contextMenuTarget?.url
+								: selectedFolderForAction?.name}</strong
+						>?
+					</p>
+					{#if contextMenuType !== "feed"}
+						<p class="warning-text">
+							This will remove all feed associations but won't
+							delete the feeds themselves.
+						</p>
+					{:else}
+						<p class="warning-text">
+							This will remove the feed and all its articles from
+							your library.
+						</p>
+					{/if}
+				</div>
+				<div class="modal-footer">
+					<button
+						class="secondary-btn"
+						on:click={() => {
+							showDeleteFolderConfirm = false;
+							selectedFolderForAction = null;
+						}}>Cancel</button
+					>
+					<button
+						class="danger-btn"
+						on:click={contextMenuType === "feed"
+							? deleteFeedConfirm
+							: deleteFolder}>Delete</button
+					>
+				</div>
+			</div>
+		</div>
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3114:4
+Warn: A11y: <div> with click handler must have an ARIA role (svelte)
+		>
+			<div
+				class="modal folder-modal glass-panel"
+				on:click|stopPropagation
+			>
+				<div class="modal-header">
+					<h2>
+						Delete {contextMenuType === "feed" ? "Feed" : "Folder"}
+					</h2>
+					<button
+						class="close-btn"
+						on:click={() => {
+							showDeleteFolderConfirm = false;
+							selectedFolderForAction = null;
+							contextMenuType = null;
+							contextMenuTarget = null;
+						}}>×</button
+					>
+				</div>
+				<div class="modal-body">
+					<p>
+						Are you sure you want to delete <strong
+							>{contextMenuType === "feed"
+								? contextMenuTarget?.title ||
+									contextMenuTarget?.url
+								: selectedFolderForAction?.name}</strong
+						>?
+					</p>
+					{#if contextMenuType !== "feed"}
+						<p class="warning-text">
+							This will remove all feed associations but won't
+							delete the feeds themselves.
+						</p>
+					{:else}
+						<p class="warning-text">
+							This will remove the feed and all its articles from
+							your library.
+						</p>
+					{/if}
+				</div>
+				<div class="modal-footer">
+					<button
+						class="secondary-btn"
+						on:click={() => {
+							showDeleteFolderConfirm = false;
+							selectedFolderForAction = null;
+						}}>Cancel</button
+					>
+					<button
+						class="danger-btn"
+						on:click={contextMenuType === "feed"
+							? deleteFeedConfirm
+							: deleteFolder}>Delete</button
+					>
+				</div>
+			</div>
+		</div>
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3105:3
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+	{#if showDeleteFolderConfirm}
+		<div
+			class="modal-overlay"
+			on:click={() => {
+				showDeleteFolderConfirm = false;
+				selectedFolderForAction = null;
+				contextMenuType = null;
+				contextMenuTarget = null;
+			}}
+		>
+			<div
+				class="modal folder-modal glass-panel"
+				on:click|stopPropagation
+			>
+				<div class="modal-header">
+					<h2>
+						Delete {contextMenuType === "feed" ? "Feed" : "Folder"}
+					</h2>
+					<button
+						class="close-btn"
+						on:click={() => {
+							showDeleteFolderConfirm = false;
+							selectedFolderForAction = null;
+							contextMenuType = null;
+							contextMenuTarget = null;
+						}}>×</button
+					>
+				</div>
+				<div class="modal-body">
+					<p>
+						Are you sure you want to delete <strong
+							>{contextMenuType === "feed"
+								? contextMenuTarget?.title ||
+									contextMenuTarget?.url
+								: selectedFolderForAction?.name}</strong
+						>?
+					</p>
+					{#if contextMenuType !== "feed"}
+						<p class="warning-text">
+							This will remove all feed associations but won't
+							delete the feeds themselves.
+						</p>
+					{:else}
+						<p class="warning-text">
+							This will remove the feed and all its articles from
+							your library.
+						</p>
+					{/if}
+				</div>
+				<div class="modal-footer">
+					<button
+						class="secondary-btn"
+						on:click={() => {
+							showDeleteFolderConfirm = false;
+							selectedFolderForAction = null;
+						}}>Cancel</button
+					>
+					<button
+						class="danger-btn"
+						on:click={contextMenuType === "feed"
+							? deleteFeedConfirm
+							: deleteFolder}>Delete</button
+					>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3105:3
+Warn: A11y: <div> with click handler must have an ARIA role (svelte)
+	{#if showDeleteFolderConfirm}
+		<div
+			class="modal-overlay"
+			on:click={() => {
+				showDeleteFolderConfirm = false;
+				selectedFolderForAction = null;
+				contextMenuType = null;
+				contextMenuTarget = null;
+			}}
+		>
+			<div
+				class="modal folder-modal glass-panel"
+				on:click|stopPropagation
+			>
+				<div class="modal-header">
+					<h2>
+						Delete {contextMenuType === "feed" ? "Feed" : "Folder"}
+					</h2>
+					<button
+						class="close-btn"
+						on:click={() => {
+							showDeleteFolderConfirm = false;
+							selectedFolderForAction = null;
+							contextMenuType = null;
+							contextMenuTarget = null;
+						}}>×</button
+					>
+				</div>
+				<div class="modal-body">
+					<p>
+						Are you sure you want to delete <strong
+							>{contextMenuType === "feed"
+								? contextMenuTarget?.title ||
+									contextMenuTarget?.url
+								: selectedFolderForAction?.name}</strong
+						>?
+					</p>
+					{#if contextMenuType !== "feed"}
+						<p class="warning-text">
+							This will remove all feed associations but won't
+							delete the feeds themselves.
+						</p>
+					{:else}
+						<p class="warning-text">
+							This will remove the feed and all its articles from
+							your library.
+						</p>
+					{/if}
+				</div>
+				<div class="modal-footer">
+					<button
+						class="secondary-btn"
+						on:click={() => {
+							showDeleteFolderConfirm = false;
+							selectedFolderForAction = null;
+						}}>Cancel</button
+					>
+					<button
+						class="danger-btn"
+						on:click={contextMenuType === "feed"
+							? deleteFeedConfirm
+							: deleteFolder}>Delete</button
+					>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3175:4
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+		<div class="popover-overlay" on:click={closeFeedFolderPopover}>
+			<div
+				class="feed-folder-popover glass-panel"
+				style="left: {feedFolderPopoverPosition.x}px; top: {feedFolderPopoverPosition.y}px;"
+				on:click|stopPropagation
+			>
+				<div class="popover-header">
+					<span>Add to folder</span>
+					<button
+						class="close-btn-small"
+						on:click={closeFeedFolderPopover}>×</button
+					>
+				</div>
+				<div class="popover-body">
+					{#if folders.length === 0}
+						<div class="popover-empty">No folders yet</div>
+					{:else}
+						{#each folders as folder}
+							<label class="folder-checkbox-item">
+								<input
+									type="checkbox"
+									checked={feedFolderPopoverFeed.folders &&
+										feedFolderPopoverFeed.folders.includes(
+											folder.id,
+										)}
+									on:change={() =>
+										toggleFeedInFolder(
+											folder.id,
+											feedFolderPopoverFeed.url,
+											feedFolderPopoverFeed.folders &&
+												feedFolderPopoverFeed.folders.includes(
+													folder.id,
+												),
+										)}
+								/>
+								<span>{folder.name}</span>
+							</label>
+						{/each}
+					{/if}
+
+					{#if !showCreateFolderInPopover}
+						<button
+							class="create-folder-in-popover-btn"
+							on:click={() => (showCreateFolderInPopover = true)}
+						>
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 14 14"
+								fill="none"
+							>
+								<path
+									d="M7 3v8M3 7h8"
+									stroke="currentColor"
+									stroke-width="1.5"
+									stroke-linecap="round"
+								/>
+							</svg>
+							Create new folder
+						</button>
+					{:else}
+						<div class="create-folder-inline">
+							<input
+								type="text"
+								bind:value={newFolderNameInPopover}
+								placeholder="Folder name"
+								class="inline-folder-input"
+								maxlength="60"
+								on:keydown={(e) =>
+									e.key === "Enter" &&
+									createFolderInPopover()}
+							/>
+							<button
+								class="inline-create-btn"
+								on:click={createFolderInPopover}
+								disabled={!newFolderNameInPopover.trim()}
+								>Add</button
+							>
+						</div>
+					{/if}
+				</div>
+			</div>
+		</div>
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3175:4
+Warn: A11y: <div> with click handler must have an ARIA role (svelte)
+		<div class="popover-overlay" on:click={closeFeedFolderPopover}>
+			<div
+				class="feed-folder-popover glass-panel"
+				style="left: {feedFolderPopoverPosition.x}px; top: {feedFolderPopoverPosition.y}px;"
+				on:click|stopPropagation
+			>
+				<div class="popover-header">
+					<span>Add to folder</span>
+					<button
+						class="close-btn-small"
+						on:click={closeFeedFolderPopover}>×</button
+					>
+				</div>
+				<div class="popover-body">
+					{#if folders.length === 0}
+						<div class="popover-empty">No folders yet</div>
+					{:else}
+						{#each folders as folder}
+							<label class="folder-checkbox-item">
+								<input
+									type="checkbox"
+									checked={feedFolderPopoverFeed.folders &&
+										feedFolderPopoverFeed.folders.includes(
+											folder.id,
+										)}
+									on:change={() =>
+										toggleFeedInFolder(
+											folder.id,
+											feedFolderPopoverFeed.url,
+											feedFolderPopoverFeed.folders &&
+												feedFolderPopoverFeed.folders.includes(
+													folder.id,
+												),
+										)}
+								/>
+								<span>{folder.name}</span>
+							</label>
+						{/each}
+					{/if}
+
+					{#if !showCreateFolderInPopover}
+						<button
+							class="create-folder-in-popover-btn"
+							on:click={() => (showCreateFolderInPopover = true)}
+						>
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 14 14"
+								fill="none"
+							>
+								<path
+									d="M7 3v8M3 7h8"
+									stroke="currentColor"
+									stroke-width="1.5"
+									stroke-linecap="round"
+								/>
+							</svg>
+							Create new folder
+						</button>
+					{:else}
+						<div class="create-folder-inline">
+							<input
+								type="text"
+								bind:value={newFolderNameInPopover}
+								placeholder="Folder name"
+								class="inline-folder-input"
+								maxlength="60"
+								on:keydown={(e) =>
+									e.key === "Enter" &&
+									createFolderInPopover()}
+							/>
+							<button
+								class="inline-create-btn"
+								on:click={createFolderInPopover}
+								disabled={!newFolderNameInPopover.trim()}
+								>Add</button
+							>
+						</div>
+					{/if}
+				</div>
+			</div>
+		</div>
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3174:3
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+	{#if showFeedFolderPopover && feedFolderPopoverFeed}
+		<div class="popover-overlay" on:click={closeFeedFolderPopover}>
+			<div
+				class="feed-folder-popover glass-panel"
+				style="left: {feedFolderPopoverPosition.x}px; top: {feedFolderPopoverPosition.y}px;"
+				on:click|stopPropagation
+			>
+				<div class="popover-header">
+					<span>Add to folder</span>
+					<button
+						class="close-btn-small"
+						on:click={closeFeedFolderPopover}>×</button
+					>
+				</div>
+				<div class="popover-body">
+					{#if folders.length === 0}
+						<div class="popover-empty">No folders yet</div>
+					{:else}
+						{#each folders as folder}
+							<label class="folder-checkbox-item">
+								<input
+									type="checkbox"
+									checked={feedFolderPopoverFeed.folders &&
+										feedFolderPopoverFeed.folders.includes(
+											folder.id,
+										)}
+									on:change={() =>
+										toggleFeedInFolder(
+											folder.id,
+											feedFolderPopoverFeed.url,
+											feedFolderPopoverFeed.folders &&
+												feedFolderPopoverFeed.folders.includes(
+													folder.id,
+												),
+										)}
+								/>
+								<span>{folder.name}</span>
+							</label>
+						{/each}
+					{/if}
+
+					{#if !showCreateFolderInPopover}
+						<button
+							class="create-folder-in-popover-btn"
+							on:click={() => (showCreateFolderInPopover = true)}
+						>
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 14 14"
+								fill="none"
+							>
+								<path
+									d="M7 3v8M3 7h8"
+									stroke="currentColor"
+									stroke-width="1.5"
+									stroke-linecap="round"
+								/>
+							</svg>
+							Create new folder
+						</button>
+					{:else}
+						<div class="create-folder-inline">
+							<input
+								type="text"
+								bind:value={newFolderNameInPopover}
+								placeholder="Folder name"
+								class="inline-folder-input"
+								maxlength="60"
+								on:keydown={(e) =>
+									e.key === "Enter" &&
+									createFolderInPopover()}
+							/>
+							<button
+								class="inline-create-btn"
+								on:click={createFolderInPopover}
+								disabled={!newFolderNameInPopover.trim()}
+								>Add</button
+							>
+						</div>
+					{/if}
+				</div>
+			</div>
+		</div>
+	{/if}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3174:3
+Warn: A11y: <div> with click handler must have an ARIA role (svelte)
+	{#if showFeedFolderPopover && feedFolderPopoverFeed}
+		<div class="popover-overlay" on:click={closeFeedFolderPopover}>
+			<div
+				class="feed-folder-popover glass-panel"
+				style="left: {feedFolderPopoverPosition.x}px; top: {feedFolderPopoverPosition.y}px;"
+				on:click|stopPropagation
+			>
+				<div class="popover-header">
+					<span>Add to folder</span>
+					<button
+						class="close-btn-small"
+						on:click={closeFeedFolderPopover}>×</button
+					>
+				</div>
+				<div class="popover-body">
+					{#if folders.length === 0}
+						<div class="popover-empty">No folders yet</div>
+					{:else}
+						{#each folders as folder}
+							<label class="folder-checkbox-item">
+								<input
+									type="checkbox"
+									checked={feedFolderPopoverFeed.folders &&
+										feedFolderPopoverFeed.folders.includes(
+											folder.id,
+										)}
+									on:change={() =>
+										toggleFeedInFolder(
+											folder.id,
+											feedFolderPopoverFeed.url,
+											feedFolderPopoverFeed.folders &&
+												feedFolderPopoverFeed.folders.includes(
+													folder.id,
+												),
+										)}
+								/>
+								<span>{folder.name}</span>
+							</label>
+						{/each}
+					{/if}
+
+					{#if !showCreateFolderInPopover}
+						<button
+							class="create-folder-in-popover-btn"
+							on:click={() => (showCreateFolderInPopover = true)}
+						>
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 14 14"
+								fill="none"
+							>
+								<path
+									d="M7 3v8M3 7h8"
+									stroke="currentColor"
+									stroke-width="1.5"
+									stroke-linecap="round"
+								/>
+							</svg>
+							Create new folder
+						</button>
+					{:else}
+						<div class="create-folder-inline">
+							<input
+								type="text"
+								bind:value={newFolderNameInPopover}
+								placeholder="Folder name"
+								class="inline-folder-input"
+								maxlength="60"
+								on:keydown={(e) =>
+									e.key === "Enter" &&
+									createFolderInPopover()}
+							/>
+							<button
+								class="inline-create-btn"
+								on:click={createFolderInPopover}
+								disabled={!newFolderNameInPopover.trim()}
+								>Add</button
+							>
+						</div>
+					{/if}
+				</div>
+			</div>
+		</div>
+	{/if}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3298:3
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+	{#if showContextMenu}
+		<div
+			class="context-menu glass-panel"
+			style="left: {contextMenuPosition.x}px; top: {contextMenuPosition.y}px;"
+			on:click|stopPropagation
+		>
+			<button
+				class="menu-item"
+				on:click={() => {
+					if (contextMenuType === "folder") {
+						selectedFolderForAction = contextMenuTarget;
+						folderModalName = contextMenuTarget.name;
+						folderModalError = null;
+						showRenameFolderModal = true;
+					} else {
+						folderModalName = contextMenuTarget.title || "";
+						folderModalError = null;
+						showRenameFolderModal = true;
+					}
+					closeContextMenu();
+				}}
+			>
+				<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+					<path
+						d="M10 1l3 3-7 7H3v-3l7-7z"
+						stroke="currentColor"
+						stroke-width="1.5"
+						fill="none"
+					/>
+				</svg>
+				Rename
+			</button>
+
+			{#if contextMenuType === "feed"}
+				<button
+					class="menu-item"
+					on:click={(e) => {
+						openFeedFolderPopover(contextMenuTarget, e);
+						closeContextMenu();
+					}}
+				>
+					<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+						<path
+							d="M2 4h5l1 2h8v10H2V4z"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linejoin="round"
+							fill="none"
+						/>
+					</svg>
+					Move to Folder
+				</button>
+			{/if}
+
+			<button
+				class="menu-item danger"
+				on:click={() => {
+					if (contextMenuType === "folder") {
+						selectedFolderForAction = contextMenuTarget;
+						showDeleteFolderConfirm = true;
+					} else {
+						showDeleteFolderConfirm = true;
+					}
+					closeContextMenu();
+				}}
+			>
+				<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+					<path
+						d="M2 4h10M5 4V2h4v2M4 4v8h6V4"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+					/>
+				</svg>
+				Delete
+			</button>
+		</div>
+	{/if}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3298:3
+Warn: A11y: <div> with click handler must have an ARIA role (svelte)
+	{#if showContextMenu}
+		<div
+			class="context-menu glass-panel"
+			style="left: {contextMenuPosition.x}px; top: {contextMenuPosition.y}px;"
+			on:click|stopPropagation
+		>
+			<button
+				class="menu-item"
+				on:click={() => {
+					if (contextMenuType === "folder") {
+						selectedFolderForAction = contextMenuTarget;
+						folderModalName = contextMenuTarget.name;
+						folderModalError = null;
+						showRenameFolderModal = true;
+					} else {
+						folderModalName = contextMenuTarget.title || "";
+						folderModalError = null;
+						showRenameFolderModal = true;
+					}
+					closeContextMenu();
+				}}
+			>
+				<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+					<path
+						d="M10 1l3 3-7 7H3v-3l7-7z"
+						stroke="currentColor"
+						stroke-width="1.5"
+						fill="none"
+					/>
+				</svg>
+				Rename
+			</button>
+
+			{#if contextMenuType === "feed"}
+				<button
+					class="menu-item"
+					on:click={(e) => {
+						openFeedFolderPopover(contextMenuTarget, e);
+						closeContextMenu();
+					}}
+				>
+					<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+						<path
+							d="M2 4h5l1 2h8v10H2V4z"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linejoin="round"
+							fill="none"
+						/>
+					</svg>
+					Move to Folder
+				</button>
+			{/if}
+
+			<button
+				class="menu-item danger"
+				on:click={() => {
+					if (contextMenuType === "folder") {
+						selectedFolderForAction = contextMenuTarget;
+						showDeleteFolderConfirm = true;
+					} else {
+						showDeleteFolderConfirm = true;
+					}
+					closeContextMenu();
+				}}
+			>
+				<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+					<path
+						d="M2 4h10M5 4V2h4v2M4 4v8h6V4"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+					/>
+				</svg>
+				Delete
+			</button>
+		</div>
+	{/if}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3478:2
+Warn: Unused CSS selector ".nav-item svg" (svelte)
+
+	.nav-item svg,
+	.feed-item .feed-icon {
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3484:2
+Warn: Unused CSS selector ".nav-item.active svg" (svelte)
+
+	.nav-item.active svg {
+		opacity: 1;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3660:2
+Warn: Unused CSS selector ".content-header h1" (svelte)
+
+	.content-header h1 {
+		font-size: 24px;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3930:2
+Warn: Unused CSS selector ".article-card:hover .play-overlay" (svelte)
+
+	.article-card:hover .play-overlay {
+		background: rgba(220, 38, 38, 1);
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3935:2
+Warn: Unused CSS selector ".article-thumbnail img" (svelte)
+
+	.article-thumbnail img {
+		width: 100%;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4094:2
+Warn: Unused CSS selector ".mobile-tab svg" (svelte)
+
+	.mobile-tab svg {
+		width: 24px;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4161:3
+Warn: Unused CSS selector ".content-header h1" (svelte)
+
+		.content-header h1 {
+			font-size: 28px;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4212:3
+Warn: Unused CSS selector ".article-card.unread .article-title" (svelte)
+
+		.article-card.unread .article-title {
+			font-weight: 700;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4235:3
+Warn: Unused CSS selector ".star-btn svg" (svelte)
+
+		.star-btn svg,
+		.read-dot .dot {
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4236:3
+Warn: Unused CSS selector ".read-dot .dot" (svelte)
+		.star-btn svg,
+		.read-dot .dot {
+			transform: scale(1.1);
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4262:3
+Warn: Unused CSS selector ".article-meta span:nth-child(3)" (svelte)
+		/* Hide author on mobile */
+		.article-meta span:nth-child(3),
+		.article-meta span:nth-child(4) {
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4263:3
+Warn: Unused CSS selector ".article-meta span:nth-child(4)" (svelte)
+		.article-meta span:nth-child(3),
+		.article-meta span:nth-child(4) {
+			display: none;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4774:2
+Warn: Unused CSS selector ".reader-body p" (svelte)
+
+	.reader-body p {
+		margin: 0 0 1.5em 0;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4778:2
+Warn: Unused CSS selector ".reader-body a" (svelte)
+
+	.reader-body a {
+		color: var(--accent);
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4784:2
+Warn: Unused CSS selector ".reader-body a:hover" (svelte)
+
+	.reader-body a:hover {
+		text-decoration: none;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4788:2
+Warn: Unused CSS selector ".reader-body blockquote" (svelte)
+
+	.reader-body blockquote {
+		margin: 1.5em 0;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4796:2
+Warn: Unused CSS selector ".reader-body pre" (svelte)
+
+	.reader-body pre,
+	.reader-body code {
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4797:2
+Warn: Unused CSS selector ".reader-body code" (svelte)
+	.reader-body pre,
+	.reader-body code {
+		background: var(--panel0);
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4804:2
+Warn: Unused CSS selector ".reader-body pre" (svelte)
+
+	.reader-body pre {
+		padding: 16px;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4810:2
+Warn: Unused CSS selector ".reader-body code" (svelte)
+
+	.reader-body code {
+		padding: 2px 6px;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4814:2
+Warn: Unused CSS selector ".reader-body ul" (svelte)
+
+	.reader-body ul,
+	.reader-body ol {
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4815:2
+Warn: Unused CSS selector ".reader-body ol" (svelte)
+	.reader-body ul,
+	.reader-body ol {
+		margin: 1.5em 0;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4820:2
+Warn: Unused CSS selector ".reader-body li" (svelte)
+
+	.reader-body li {
+		margin-bottom: 0.5em;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4824:2
+Warn: Unused CSS selector ".reader-body h2" (svelte)
+
+	.reader-body h2,
+	.reader-body h3 {
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4825:2
+Warn: Unused CSS selector ".reader-body h3" (svelte)
+	.reader-body h2,
+	.reader-body h3 {
+		font-family: var(--font-display);
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4831:2
+Warn: Unused CSS selector ".reader-body h2" (svelte)
+
+	.reader-body h2 {
+		font-size: 24px;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4835:2
+Warn: Unused CSS selector ".reader-body h3" (svelte)
+
+	.reader-body h3 {
+		font-size: 20px;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4839:2
+Warn: Unused CSS selector ".reader-body hr" (svelte)
+
+	.reader-body hr {
+		border: none;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4892:2
+Warn: Unused CSS selector ".tab-btn svg" (svelte)
+
+	.tab-btn svg {
+		opacity: 0.7;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4896:2
+Warn: Unused CSS selector ".tab-btn.active svg" (svelte)
+
+	.tab-btn.active svg {
+		opacity: 1;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4966:2
+Warn: Unused CSS selector ".folder-row svg" (svelte)
+
+	.folder-row svg {
+		color: var(--muted);
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:4996:2
+Warn: Unused CSS selector ".search-placeholder svg" (svelte)
+
+	.search-placeholder svg {
+		margin-bottom: 16px;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:5001:2
+Warn: Unused CSS selector ".search-placeholder p" (svelte)
+
+	.search-placeholder p {
+		font-size: 16px;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:5190:2
+Warn: Unused CSS selector ".add-result-btn svg" (svelte)
+
+	.add-result-btn svg {
+		flex-shrink: 0;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3664:3
+Warn: Also define the standard property 'background-clip' for compatibility (css)
+		background: linear-gradient(to right, #fff, #bbb);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/routes/+page.svelte:3865:3
+Warn: Also define the standard property 'line-clamp' for compatibility (css)
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		-webkit-box-orient: vertical;
+
+
+====================================
+svelte-check found 5 errors and 74 warnings in 3 files

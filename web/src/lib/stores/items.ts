@@ -1,7 +1,7 @@
 // Items/Articles store - manages article state and operations
-import { writable, derived } from 'svelte/store';
-import type { Article, TimeFilter } from '$lib/types';
-import * as itemsApi from '$lib/api/items';
+import { writable, derived, get } from 'svelte/store';
+import type { Article, TimeFilter } from '../types';
+import * as itemsApi from '../api/items';
 
 // State
 export const items = writable<Article[]>([]);
@@ -32,7 +32,7 @@ export async function loadItems(params: {
     itemsError.set(null);
 
     try {
-        const query = searchQuery.subscribe((q) => q)();
+        const query = get(searchQuery);
 
         // If searching, use search endpoint
         if (query.trim()) {
@@ -102,7 +102,7 @@ export async function markAllRead(feedUrl?: string): Promise<void> {
     await loadItems();
 }
 
-export async function updateProgress(itemId: string, progress: number): Promise<void> {
+export async function updateProgress(itemId: string | number, progress: number): Promise<void> {
     // Optimistic update
     items.update(($items) =>
         $items.map((i) => (i.id === itemId ? { ...i, progress } : i))

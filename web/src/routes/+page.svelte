@@ -1,4 +1,6 @@
 <script lang="ts">
+  import FeedGrid from "$lib/components/FeedGrid.svelte";
+  import { isAddFeedModalOpen, isSettingsModalOpen } from "$lib/stores/ui";
   import { onMount } from "svelte";
   import {
     LayoutGrid,
@@ -214,6 +216,7 @@
   }
 
   onMount(() => {
+    isSettingsModalOpen.subscribe(v => showSettings = v); isAddFeedModalOpen.subscribe(v => showAddFeedModal = v);
     (async () => {
       await Promise.all([
         loadFeeds(),
@@ -1617,7 +1620,7 @@
 
 <div class="app">
   <!-- Sidebar -->
-  <aside class="sidebar glass-panel">
+  <aside class="sidebar glass-panel" style="display:none">
     <div class="sidebar-header">
       <div class="logo">
         <div class="logo-icon">
@@ -1935,7 +1938,7 @@
       >
     </div>
     <!-- Articles List -->
-    <div class="articles-container">
+    <FeedGrid items={items} on:open={(e) => handleArticleClick({target: {}}, e.detail.item)} on:toggleStar={(e) => toggleStar(e.detail.item)} on:toggleRead={(e) => toggleRead(e.detail.item)} /> <div class="articles-container" style="display:none">
       {#if itemsLoading}
         <div class="empty-state">Loading articles...</div>
       {:else if itemsError}
@@ -2054,7 +2057,7 @@
   <!-- Mobile Drawer Overlay -->
   {#if isMobile && mobileMenuOpen}
     <div
-      class="mobile-drawer-overlay"
+      class="mobile-drawer-overlay" style="display:none"
       on:click={() => (mobileMenuOpen = false)}
     >
       <aside class="mobile-drawer sidebar" on:click|stopPropagation>
@@ -2241,7 +2244,7 @@
 
   <!-- Mobile Bottom Tab Bar -->
   {#if isMobile}
-    <div class="mobile-tab-bar">
+    <div class="mobile-tab-bar" style="display:none">
       <button
         class="mobile-tab"
         class:active={mobileActiveTab === "all"}

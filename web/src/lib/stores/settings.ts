@@ -1,10 +1,10 @@
 // Settings store - manages app settings
 import { writable } from 'svelte/store';
-import type { Settings } from '$lib/types';
-import * as settingsApi from '$lib/api/settings';
+import type { Settings } from '../types';
+import * as settingsApi from '../api/settings';
 
 // State
-export const settings = writable<Settings>({ sync_interval: 'off' });
+export const settings = writable<Settings>({ theme: 'system', sync_interval: 'off' });
 export const settingsLoading = writable(false);
 export const settingsError = writable<string | null>(null);
 

@@ -1,5 +1,5 @@
 // API utilities for articles/items
-import type { Article } from '$lib/types';
+import type { Article } from '../types';
 
 const API_BASE = '/api';
 
@@ -63,7 +63,7 @@ export async function searchItems(query: string, limit = 100): Promise<{
     };
 }
 
-export async function toggleItemRead(itemId: string): Promise<void> {
+export async function toggleItemRead(itemId: string | number): Promise<void> {
     const response = await fetch(`${API_BASE}/items/${itemId}/read`, {
         method: 'POST',
     });
@@ -76,7 +76,7 @@ export async function toggleItemRead(itemId: string): Promise<void> {
     }
 }
 
-export async function toggleItemStar(itemId: string): Promise<void> {
+export async function toggleItemStar(itemId: string | number): Promise<void> {
     const response = await fetch(`${API_BASE}/items/${itemId}/star`, {
         method: 'POST',
     });
@@ -117,7 +117,7 @@ export async function fetchReaderContent(url: string): Promise<any> {
 }
 
 export async function updateVideoProgress(
-    itemId: string,
+    itemId: string | number,
     progress: number
 ): Promise<void> {
     const response = await fetch(`${API_BASE}/items/${itemId}/progress`, {

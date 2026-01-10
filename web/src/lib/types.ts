@@ -5,7 +5,7 @@ export interface Feed {
     description: string | null;
     icon_url: string | null;
     folder: string;
-    type: 'rss' | 'youtube' | 'reddit';
+    type: 'rss' | 'youtube' | 'reddit' | 'podcast';
     error_count: number;
     last_error: string | null;
     unreachable: boolean;
@@ -50,12 +50,35 @@ export interface SearchResult {
     title: string;
     url: string;
     description: string;
-    type: 'rss' | 'youtube' | 'reddit';
+    type: 'rss' | 'youtube' | 'reddit' | 'podcast';
     thumbnail?: string;
 }
+
+export type FeedSearchResult = SearchResult;
+export type Article = Item;
+
+export interface Settings {
+    theme: 'light' | 'dark' | 'system';
+    sync_interval: string;
+}
+
+export type TimeFilter = 'all' | '24h' | '7d' | '30d';
+
+export type ViewMode = 'all' | 'unread' | 'bookmarks' | 'smart' | 'folder' | 'feed';
+export type SmartFolder = 'rss' | 'youtube' | 'reddit' | 'podcast';
 
 export interface ImportResult {
     added: number;
     skipped: number;
     failed: { url: string; error: string }[];
+}
+
+export interface ReaderData {
+    title: string;
+    byline?: string;
+    content: string;
+    textContent?: string;
+    length?: number;
+    excerpt?: string;
+    siteName?: string;
 }
