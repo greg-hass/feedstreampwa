@@ -651,57 +651,69 @@
 		width: var(--sidebar-width);
 		display: flex;
 		flex-direction: column;
-		padding: var(--page-padding);
-		gap: var(--gap-lg);
+		padding: var(--gap-lg);
+		gap: var(--gap);
 		overflow-y: auto;
+		background: var(--panel0);
+		border-right: 1px solid var(--stroke);
 	}
+    
+    /* Remove individual panels if sidebar is whole panel, or keep panels inside? 
+       Design decision: The sidebar ITSELF is a glass panel in app structure. 
+       Let's refine .sidebar-header and nav items.
+    */
 
 	.sidebar-header {
 		padding-bottom: var(--gap);
-		border-bottom: 1px solid var(--stroke2);
+		border-bottom: 1px solid var(--stroke);
+        margin-bottom: var(--gap);
 	}
 
 	.logo {
 		display: flex;
 		align-items: center;
-		gap: 12px;
+		gap: 14px;
 	}
 
 	.logo-icon {
-		width: 36px;
-		height: 36px;
-		background: var(--accent);
+		width: 40px;
+		height: 40px;
+		background: linear-gradient(135deg, var(--accent), #15bd78);
 		border-radius: var(--radiusS);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		color: var(--bg0);
+        box-shadow: 0 4px 12px rgba(34, 229, 152, 0.3);
 	}
 
 	.logo-text {
-		font-size: 18px;
-		font-weight: 600;
+		font-family: var(--font-display);
+		font-size: 20px;
+		font-weight: 700;
 		color: var(--text);
+        letter-spacing: -0.02em;
 	}
 
 	.sidebar-nav {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
+		gap: 6px;
 	}
 
 	.nav-item, .feed-item {
 		display: flex;
 		align-items: center;
 		gap: 12px;
-		padding: 10px 14px;
+		padding: 12px 16px;
 		background: transparent;
-		border: none;
+		border: 1px solid transparent;
 		border-radius: var(--radiusS);
 		color: var(--muted);
 		font-size: 14px;
+        font-weight: 500;
 		cursor: pointer;
-		transition: all 0.2s;
+		transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 		text-align: left;
 		width: 100%;
 	}
@@ -709,72 +721,63 @@
 	.nav-item:hover, .feed-item:hover {
 		background: var(--chip);
 		color: var(--text);
+        border-color: var(--stroke);
+        transform: translateX(2px);
 	}
 
 	.nav-item.active {
-		background: rgba(24, 227, 138, 0.12);
+		background: var(--accent-glow);
 		color: var(--accent);
+        border-color: rgba(34, 229, 153, 0.1);
 	}
+    
+    .feed-item.active {
+         background: var(--chip-hover);
+         color: var(--text);
+         border-color: var(--stroke);
+    }
 
 	.nav-item svg, .feed-item .feed-icon {
 		flex-shrink: 0;
+        opacity: 0.8;
 	}
+    
+    .nav-item.active svg {
+        opacity: 1;
+    }
 
 	.nav-item span:first-of-type, .feed-name {
 		flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
 	}
 
 	.badge {
 		background: var(--accent);
 		color: var(--bg0);
 		padding: 2px 8px;
-		border-radius: 10px;
+		border-radius: 99px;
 		font-size: 11px;
 		font-weight: 700;
+        min-width: 20px;
+        text-align: center;
 	}
 
 	.sidebar-section {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
+		gap: 6px;
+        margin-top: var(--gap);
 	}
 
 	.section-header {
 		font-size: 11px;
-		font-weight: 600;
-		letter-spacing: 0.08em;
+		font-weight: 700;
+		letter-spacing: 0.12em;
 		color: var(--muted2);
-		padding: 8px 14px;
+		padding: 8px 16px;
 		text-transform: uppercase;
-	}
-
-	.feed-item {
-		position: relative;
-	}
-
-	.feed-item.active {
-		background: rgba(24, 227, 138, 0.12);
-		color: var(--accent);
-	}
-
-	.delete-btn {
-		opacity: 0;
-		width: 20px;
-		height: 20px;
-		background: rgba(255, 82, 82, 0.2);
-		border: none;
-		border-radius: 4px;
-		color: #ff5252;
-		font-size: 16px;
-		cursor: pointer;
-		transition: opacity 0.2s;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.feed-item:hover .delete-btn {
-		opacity: 1;
 	}
 
 	/* Main Content */
@@ -783,6 +786,7 @@
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
+        position: relative;
 	}
 
 	/* Top Bar */
@@ -792,34 +796,34 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 0 var(--page-padding);
-		margin: var(--page-padding);
-		margin-bottom: 0;
+        margin-bottom: 0;
+        z-index: 10;
+        /* Remove glass-panel class style overrides as it might be double applied */
+        background: transparent; 
+        border: none;
+        backdrop-filter: none;
+        box-shadow: none;
 	}
+    
+    /* Topbar needs to be clean, search bar is the focus */
 
 	.topbar-left, .topbar-right {
 		display: flex;
 		align-items: center;
 		gap: 12px;
 	}
-
-	.logo-small {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		font-size: 14px;
-		font-weight: 600;
-		color: var(--text);
-	}
-
-	.logo-small .logo-icon {
-		width: 28px;
-		height: 28px;
-	}
+    
+    .logo-small {
+        /* Hide logo small on desktop if sidebar is visible, handled by media query usually
+           But here we keep it simple.
+        */
+        display: none; 
+    }
 
 	.topbar-center {
 		flex: 1;
-		max-width: 600px;
-		margin: 0 var(--page-padding);
+		max-width: 640px;
+		margin: 0 var(--gap-lg);
 	}
 
 	.search-box {
@@ -827,12 +831,20 @@
 		align-items: center;
 		gap: 12px;
 		padding: 0 20px;
-		height: 46px;
+		height: 48px;
 		background: var(--panel1);
-		border: 1px solid var(--stroke2);
+		border: 1px solid var(--stroke);
 		border-radius: 999px;
 		color: var(--muted);
+        transition: all 0.2s ease;
 	}
+    
+    .search-box:focus-within {
+        background: var(--panel0);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px rgba(34, 229, 153, 0.1);
+        color: var(--text);
+    }
 
 	.search-box input {
 		flex: 1;
@@ -840,38 +852,19 @@
 		border: none;
 		outline: none;
 		color: var(--text);
-		font-size: 14px;
+		font-size: 15px;
+        font-weight: 500;
 	}
 
 	.search-box input::placeholder {
 		color: var(--muted2);
 	}
 
-	.search-clear {
-		width: 24px;
-		height: 24px;
-		background: transparent;
-		border: none;
-		color: var(--muted);
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		border-radius: 4px;
-		transition: all 0.2s;
-		flex-shrink: 0;
-	}
-
-	.search-clear:hover {
-		background: var(--chip);
-		color: var(--text);
-	}
-
 	.icon-btn {
-		width: 40px;
-		height: 40px;
-		background: transparent;
-		border: 1px solid var(--stroke2);
+		width: 42px;
+		height: 42px;
+		background: var(--panel1);
+		border: 1px solid var(--stroke);
 		border-radius: 50%;
 		color: var(--muted);
 		cursor: pointer;
@@ -882,14 +875,15 @@
 	}
 
 	.icon-btn:hover {
-		background: var(--chip);
+		background: var(--chip-hover);
 		color: var(--text);
-		border-color: var(--stroke);
+		border-color: var(--stroke-strong);
+        transform: translateY(-1px);
 	}
 
 	.add-btn {
-		width: 44px;
-		height: 44px;
+		width: 42px;
+		height: 42px;
 		background: var(--accent);
 		border: none;
 		border-radius: 50%;
@@ -899,24 +893,40 @@
 		align-items: center;
 		justify-content: center;
 		transition: all 0.2s;
-		box-shadow: var(--shadow2);
+		box-shadow: 0 4px 12px rgba(34, 229, 152, 0.4);
 	}
 
 	.add-btn:hover {
-		transform: scale(1.05);
+		transform: scale(1.05) rotate(90deg);
+        background: #15bd78;
 	}
 
 	/* Filter Chips */
-	.filters-row {
+    .content-header {
+        padding: 0 var(--page-padding);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--gap);
+    }
+    
+    .content-header h1 {
+        font-size: 24px;
+        margin: 0;
+        background: linear-gradient(to right, #fff, #bbb);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+	.filter-chips {
 		display: flex;
 		gap: 8px;
-		padding: var(--gap-lg) var(--page-padding);
 	}
 
 	.chip {
-		padding: 8px 18px;
+		padding: 8px 16px;
 		background: var(--chip);
-		border: 1px solid var(--stroke2);
+		border: 1px solid var(--stroke);
 		border-radius: 999px;
 		color: var(--muted);
 		font-size: 13px;
@@ -926,17 +936,19 @@
 	}
 
 	.chip:hover {
-		background: var(--panel1);
+		background: var(--chip-hover);
 		color: var(--text);
+        border-color: var(--stroke-strong);
 	}
 
 	.chip.active {
-		background: var(--chipActive);
+		background: var(--text);
 		color: var(--bg0);
-		border-color: transparent;
+		border-color: var(--text);
+        font-weight: 600;
 	}
-
-	/* Articles */
+    
+    /* Articles Container */
 	.articles-container {
 		flex: 1;
 		overflow-y: auto;
@@ -944,87 +956,103 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--gap);
+        /* Add mask to fade bottom scroll */
+        mask-image: linear-gradient(to bottom, black calc(100% - 40px), transparent 100%); 
 	}
 
 	.article-card {
-		padding: 18px 20px;
-		transition: transform 0.15s;
+		padding: 24px;
+		transition: transform 0.2s, box-shadow 0.2s;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        border: 1px solid var(--stroke); /* Ensure border exists */
 	}
 
 	.article-card:hover {
-		transform: translateY(-1px);
+		transform: translateY(-2px);
+        background: rgba(255, 255, 255, 0.04); /* Totally slightly lighter */
+        border-color: var(--stroke-strong);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
 	}
 
 	.article-card.unread {
 		border-left: 3px solid var(--accent);
+        background: rgba(34, 229, 153, 0.02); /* Very subtle tint */
 	}
 
 	.article-header {
 		display: flex;
 		align-items: flex-start;
-		gap: 12px;
-		margin-bottom: 8px;
+		gap: 16px;
+		margin-bottom: 4px;
 	}
 
 	.article-title {
 		flex: 1;
-		font-size: 15px;
+		font-size: 18px;
 		font-weight: 600;
-		line-height: 1.5;
+		line-height: 1.4;
 		margin: 0;
+        font-family: var(--font-display);
+        letter-spacing: -0.01em;
 	}
 
 	.article-card.unread .article-title {
 		font-weight: 700;
+        color: #fff;
 	}
-
-	.article-title a {
-		color: var(--text);
-		text-decoration: none;
-		transition: color 0.2s;
-	}
-
-	.article-title a:hover {
-		color: var(--accent);
-	}
+    
+    .article-title a {
+        color: inherit;
+        text-decoration: none;
+    }
+    
+    .article-title a:hover {
+        color: var(--accent);
+    }
 
 	.article-actions {
 		display: flex;
 		align-items: center;
-		gap: 8px;
+		gap: 4px;
 		flex-shrink: 0;
 	}
 
 	.star-btn {
-		width: 28px;
-		height: 28px;
+		width: 32px;
+		height: 32px;
 		background: transparent;
-		border: none;
+		border: 1px solid transparent;
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		color: var(--muted);
 		transition: all 0.2s;
-		border-radius: 4px;
+		border-radius: 50%;
 	}
 
 	.star-btn:hover {
 		background: var(--chip);
 		color: var(--accent);
+        border-color: var(--stroke);
 	}
 
 	.star-btn.starred {
 		color: var(--accent);
+        background: rgba(34, 229, 153, 0.1);
+        border-color: rgba(34, 229, 153, 0.2);
 	}
 
 	.star-btn.starred:hover {
-		background: rgba(24, 227, 138, 0.1);
+		background: rgba(34, 229, 153, 0.2);
+        box-shadow: 0 0 12px rgba(34, 229, 153, 0.2);
 	}
 
 	.read-dot {
-		width: 24px;
-		height: 24px;
+		width: 32px;
+		height: 32px;
 		background: transparent;
 		border: none;
 		cursor: pointer;
@@ -1032,7 +1060,13 @@
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
+        border-radius: 50%;
+        transition: all 0.2s;
 	}
+    
+    .read-dot:hover {
+        background: var(--chip);
+    }
 
 	.read-dot .dot {
 		width: 8px;
@@ -1040,52 +1074,66 @@
 		background: var(--accent);
 		border-radius: 50%;
 		transition: all 0.2s;
+        box-shadow: 0 0 8px var(--accent);
 	}
 
 	.read-dot.read .dot {
 		width: 6px;
 		height: 6px;
-		background: var(--stroke2);
-		opacity: 0.5;
+		background: var(--stroke-strong);
+		opacity: 0.3;
+        box-shadow: none;
 	}
 
 	.article-meta {
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		font-size: 12px;
+		font-size: 13px;
 		color: var(--muted2);
-		margin-bottom: 10px;
+		margin-bottom: 12px;
+        font-family: var(--font-ui);
 	}
 
 	.meta-sep {
-		color: var(--stroke2);
+		color: var(--stroke);
+        font-size: 10px;
 	}
 
 	.article-summary {
-		font-size: 13px;
+		font-size: 14px;
 		line-height: 1.6;
 		color: var(--muted);
-		margin: 0 0 12px 0;
+		margin: 0 0 16px 0;
+        font-weight: 400;
 	}
 
 	.article-thumbnail {
 		border-radius: var(--radiusS);
 		overflow: hidden;
-		max-width: 400px;
+		max-width: 100%;
+        margin-top: 4px;
+        border: 1px solid var(--stroke);
 	}
 
 	.article-thumbnail img {
 		width: 100%;
-		height: auto;
+        height: auto;
+        max-height: 400px;
+        object-fit: cover;
 		display: block;
 	}
 
 	.empty-state {
-		padding: 60px 20px;
+		padding: 80px 20px;
 		text-align: center;
 		color: var(--muted2);
-		font-size: 14px;
+		font-size: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 16px;
 	}
 
 	.empty-state.error {
@@ -1099,19 +1147,32 @@
 		}
 
 		.sidebar {
+            /* Mobile Drawer Style? Or simple fixed top? */
+            /* Let's make it a bottom drawer or just keep it simple for now */
 			position: fixed;
 			top: 0;
 			left: 0;
 			width: 100%;
 			height: auto;
-			max-height: 50vh;
+			max-height: 40vh; /* make it smaller */
 			overflow-y: auto;
 			z-index: 100;
+            border-right: none;
+            border-bottom: 1px solid var(--stroke);
+            box-shadow: var(--shadow-lg);
 		}
 
 		.main-content {
-			margin-top: 50vh;
+			margin-top: 40vh; /* push content down */
 		}
+        
+        .topbar-center {
+            margin: 0 8px;
+        }
+        
+        .search-box {
+            padding: 0 12px;
+        }
 	}
 
 	/* Modal Styles */
@@ -1121,124 +1182,143 @@
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background: rgba(0, 0, 0, 0.7);
-		backdrop-filter: blur(4px);
+		background: rgba(0, 0, 0, 0.85);
+		backdrop-filter: blur(8px);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		z-index: 1000;
+        animation: fadeIn 0.2s ease;
 	}
 
 	.modal {
 		width: 90%;
-		max-width: 500px;
-		max-height: 80vh;
+		max-width: 520px;
+		max-height: 85vh;
 		overflow-y: auto;
 		padding: 0;
+        background: var(--bg0);
+        border: 1px solid var(--stroke);
+        border-radius: var(--radiusL);
+        box-shadow: 0 40px 80px rgba(0,0,0,0.8);
+        animation: scaleIn 0.2s ease-out;
 	}
 
 	.modal-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 20px 24px;
-		border-bottom: 1px solid var(--stroke2);
+		padding: 24px;
+		border-bottom: 1px solid var(--stroke);
 	}
 
 	.modal-header h2 {
 		margin: 0;
-		font-size: 18px;
-		font-weight: 600;
+		font-size: 20px;
+		font-weight: 700;
 		color: var(--text);
+        font-family: var(--font-display);
+        letter-spacing: -0.01em;
 	}
 
 	.close-btn {
-		width: 32px;
-		height: 32px;
+		width: 36px;
+		height: 36px;
 		background: transparent;
-		border: none;
+		border: 1px solid var(--stroke);
 		color: var(--muted);
-		font-size: 28px;
+		font-size: 24px;
 		line-height: 1;
 		cursor: pointer;
 		transition: all 0.2s;
-		border-radius: 4px;
+		border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
 	}
 
 	.close-btn:hover {
-		background: var(--chip);
+		background: var(--chip-hover);
 		color: var(--text);
+        border-color: var(--stroke-strong);
+        transform: rotate(90deg);
 	}
 
 	.modal-body {
-		padding: 24px;
+		padding: 32px 24px;
 	}
 
 	.settings-section {
-		margin-bottom: 24px;
+		margin-bottom: 32px;
 	}
 
 	.settings-section h3 {
 		margin: 0 0 16px 0;
-		font-size: 14px;
-		font-weight: 600;
+		font-size: 13px;
+		font-weight: 700;
 		color: var(--muted);
 		text-transform: uppercase;
-		letter-spacing: 0.5px;
+		letter-spacing: 0.08em;
 	}
 
 	.settings-actions {
 		display: flex;
-		gap: 12px;
+		gap: 16px;
 		flex-wrap: wrap;
 	}
 
 	.settings-btn {
 		flex: 1;
 		min-width: 140px;
-		padding: 12px 16px;
-		background: var(--panel);
-		border: 1px solid var(--stroke2);
-		border-radius: 8px;
+		padding: 14px 20px;
+		background: var(--panel1);
+		border: 1px solid var(--stroke);
+		border-radius: 12px;
 		color: var(--text);
 		font-size: 14px;
-		font-weight: 500;
+		font-weight: 600;
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 8px;
+		gap: 10px;
 		transition: all 0.2s;
 	}
 
 	.settings-btn:hover {
 		background: var(--chip);
-		border-color: var(--stroke);
+		border-color: var(--accent);
 		color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 	}
 
 	.settings-btn:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
+        transform: none;
 	}
 
 	.import-results {
-		margin-top: 16px;
-		padding: 16px;
-		background: var(--bg0);
-		border: 1px solid var(--stroke2);
-		border-radius: 8px;
+		margin-top: 24px;
+		padding: 20px;
+		background: rgba(255, 255, 255, 0.03);
+		border: 1px solid var(--stroke);
+		border-radius: var(--radiusM);
 	}
 
 	.results-summary {
 		display: flex;
-		gap: 16px;
+		gap: 20px;
 		flex-wrap: wrap;
-		margin-bottom: 12px;
+		margin-bottom: 16px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--stroke);
 	}
 
 	.result-item {
-		font-size: 13px;
+		font-size: 14px;
+        font-weight: 500;
 		color: var(--muted);
 	}
 
@@ -1251,35 +1331,46 @@
 	}
 
 	.failed-feeds {
-		margin-top: 12px;
-		padding-top: 12px;
-		border-top: 1px solid var(--stroke2);
+		margin-top: 16px;
 	}
 
 	.failed-feeds h4 {
-		margin: 0 0 8px 0;
+		margin: 0 0 12px 0;
 		font-size: 12px;
-		font-weight: 600;
+		font-weight: 700;
 		color: var(--muted);
 		text-transform: uppercase;
+        letter-spacing: 0.05em;
 	}
 
 	.failed-item {
-		padding: 8px;
+		padding: 12px;
 		margin-bottom: 8px;
-		background: var(--panel);
-		border-radius: 4px;
+		background: rgba(0,0,0,0.3);
+		border-radius: 8px;
+        border: 1px solid var(--stroke);
 	}
 
 	.failed-url {
-		font-size: 12px;
+		font-size: 13px;
 		color: var(--text);
 		word-break: break-all;
-		margin-bottom: 4px;
+		margin-bottom: 6px;
+        font-family: monospace;
 	}
 
 	.failed-error {
-		font-size: 11px;
+		font-size: 12px;
 		color: #ff6b6b;
 	}
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    @keyframes scaleIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
 </style>

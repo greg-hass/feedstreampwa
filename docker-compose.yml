@@ -1,20 +1,8 @@
 version: '3.8'
 
 services:
-  # Web builder: builds the SvelteKit frontend and outputs to a shared volume
-  # This service builds once and exits. Caddy serves the output.
-  # To rebuild frontend: docker compose run --rm web
-  web:
-    build:
-      context: ./web
-      dockerfile: Dockerfile
-    volumes:
-      # Mount named volume to /out where build artifacts are copied
-      - web-build:/out
-    restart: "no"
-
   api:
-    build: ./api
+    image: ghcr.io/<owner>/feedstream-api:latest
     ports:
       - "127.0.0.1:3060:3060"
     environment:
@@ -24,23 +12,20 @@ services:
       - feedstream-data:/data
     restart: unless-stopped
 
-  caddy:
-    image: caddy:2
+  web:
+    image: ghcr.io/<owner>/feedstream-web:latest
     network_mode: host
+    environment:
+      - DOMAIN_NAME=https://ubuntu.swallow-cliff.ts.net:443
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - web-build:/srv:ro
       - caddy-data:/data
       - caddy-config:/config
       - /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock:ro
     depends_on:
       - api
-      # Note: web is a one-shot builder, not a runtime dependency
-      # Frontend assets are built via: docker compose run --rm web
     restart: unless-stopped
 
 volumes:
   feedstream-data:
   caddy-data:
   caddy-config:
-  web-build:
