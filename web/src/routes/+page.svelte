@@ -1252,7 +1252,7 @@
 					</button>
 				</button>
 			{/each}
-		</div>
+		</nav>
 	</aside>
 
 	<!-- Main Content -->
