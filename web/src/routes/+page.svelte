@@ -2034,87 +2034,108 @@
 						role="button"
 						tabindex="0"
 					>
-						<div class="article-header">
-							<h3 class="article-title">
+						<div class="card-content-wrapper">
+							<!-- Top Metadata Row -->
+							<div class="article-meta-top">
+								<div class="feed-info">
+									{#if item.feed_icon_url}
+										<img
+											src={item.feed_icon_url}
+											alt=""
+											class="feed-favicon"
+											on:error={(e) => {
+												const target = e.target;
+												if (
+													target instanceof
+													HTMLImageElement
+												)
+													target.style.display =
+														"none";
+											}}
+										/>
+									{/if}
+									<span class="feed-title-meta"
+										>{item.feed_title || "Feed"}</span
+									>
+									{#if item.published}
+										<span class="meta-sep">•</span>
+										<span class="publish-time"
+											>{formatDate(item.published)}</span
+										>
+									{/if}
+								</div>
+
+								<div class="article-actions-floating">
+									<button
+										class="action-icon-btn"
+										class:active={item.is_starred === 1}
+										on:click|stopPropagation={() =>
+											toggleStar(item)}
+										title={item.is_starred === 1
+											? "Remove bookmark"
+											: "Bookmark"}
+									>
+										<Bookmark
+											size={18}
+											fill={item.is_starred === 1
+												? "currentColor"
+												: "none"}
+										/>
+									</button>
+									<button
+										class="action-icon-btn"
+										class:read={item.is_read === 1}
+										on:click|stopPropagation={() =>
+											toggleRead(item)}
+										title={item.is_read === 1
+											? "Mark as unread"
+											: "Mark as read"}
+									>
+										<div class="read-indicator-dot"></div>
+									</button>
+								</div>
+							</div>
+
+							<!-- Title Row -->
+							<h3 class="article-title-premium">
 								{item.title || "Untitled"}
 							</h3>
-							<div class="article-actions">
-								<button
-									class="star-btn"
-									class:starred={item.is_starred === 1}
-									on:click={() => toggleStar(item)}
-									title={item.is_starred === 1
-										? "Remove bookmark"
-										: "Bookmark"}
-								>
-									<Bookmark
-										size={16}
-										fill={item.is_starred === 1
-											? "currentColor"
-											: "none"}
-									/>
-								</button>
-								<button
-									class="read-dot"
-									class:read={item.is_read === 1}
-									on:click={() => toggleRead(item)}
-									title={item.is_read === 1
-										? "Mark as unread"
-										: "Mark as read"}
-								>
-									<span class="dot"></span>
-								</button>
-							</div>
-						</div>
 
-						<div class="article-meta">
-							{#if item.feed_icon_url}
-								<img
-									src={item.feed_icon_url}
-									alt=""
-									class="feed-favicon"
-									on:error={(e) => {
-										const target = e.target;
-										if (target instanceof HTMLImageElement)
-											target.style.display = "none";
-									}}
-								/>
-							{/if}
-							<span class="feed-title-meta"
-								>{item.feed_title || "Unknown Feed"}</span
-							>
-							{#if item.author}
-								<span class="meta-sep">•</span>
-								<span>{item.author}</span>
-							{/if}
-							{#if item.published}
-								<span class="meta-sep">•</span>
-								<span>{formatDate(item.published)}</span>
-							{/if}
-						</div>
+							<!-- Content Body -->
+							<div class="article-body-layout">
+								<div class="article-text-col">
+									{#if item.summary}
+										<p class="article-summary-premium">
+											{item.summary}
+										</p>
+									{/if}
+								</div>
 
-						{#if item.summary}
-							<p class="article-summary">{item.summary}</p>
-						{/if}
-
-						{#if activeInlineVideoId === item.id && item.source === "youtube"}
-							<div class="inline-video-container">
-								<div id="yt-player-inline-{item.id}"></div>
-							</div>
-						{:else if item.media_thumbnail}
-							<div class="article-thumbnail">
-								<img
-									src={item.media_thumbnail}
-									alt={item.title || "Thumbnail"}
-									loading="lazy"
-								/>
-								{#if item.source === "youtube"}
-									<div class="play-overlay">
-										<Play size={32} fill="currentColor" />
+								{#if item.media_thumbnail}
+									<div class="article-thumbnail-premium">
+										<img
+											src={item.media_thumbnail}
+											alt={item.title || "Thumbnail"}
+											loading="lazy"
+										/>
+										{#if item.source === "youtube"}
+											<div class="play-overlay-small">
+												<Play
+													size={20}
+													fill="currentColor"
+												/>
+											</div>
+										{/if}
 									</div>
 								{/if}
 							</div>
-						{/if}
+
+							{#if activeInlineVideoId === item.id && item.source === "youtube"}
+								<div class="inline-video-container">
+									<div id="yt-player-inline-{item.id}"></div>
+								</div>
+							{/if}
+						</div>
 					</article>
 				{/each}
 			{/if}
@@ -3661,202 +3682,220 @@
 		);
 	}
 
+	/* Premium Article Card */
 	.article-card {
-		padding: 32px;
-		transition:
-			transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
-			box-shadow 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
-			background 0.2s;
+		position: relative;
+		border: 1px solid var(--stroke);
+		border-radius: 20px;
+		background: #141416; /* Deep dark background */
+		transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+		overflow: hidden;
 		display: flex;
 		flex-direction: column;
-		gap: 16px;
-		border: 1px solid var(--stroke);
-		border-radius: var(--radiusL);
-		background: var(--panel0);
 	}
 
 	.article-card:hover {
 		transform: translateY(-4px);
-		background: var(--panel1);
 		border-color: var(--stroke-strong);
-		box-shadow: var(--shadow-lg);
+		box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+		background: #18181b; /* Slightly lighter on hover */
 	}
 
-	.article-header {
+	.card-content-wrapper {
+		padding: 28px;
 		display: flex;
-		align-items: flex-start;
+		flex-direction: column;
 		gap: 16px;
-		margin-bottom: 4px;
 	}
 
-	.article-title {
-		flex: 1;
-		font-size: 18px;
-		font-weight: 600;
-		line-height: 1.4;
-		margin: 0;
-		font-family: var(--font-display);
-		letter-spacing: -0.01em;
-	}
-
-	.article-card.unread .article-title {
-		font-weight: 700;
-		color: #fff;
-		text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
-	}
-
-	.article-title a {
-		color: inherit;
-		text-decoration: none;
-	}
-
-	.article-title a:hover {
-		color: var(--accent);
-	}
-
-	.article-actions {
+	/* Top Meta Row */
+	.article-meta-top {
 		display: flex;
 		align-items: center;
-		gap: 4px;
-		flex-shrink: 0;
-	}
-
-	.star-btn {
-		width: 32px;
-		height: 32px;
-		background: transparent;
-		border: 1px solid transparent;
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: var(--muted);
-		transition: all 0.2s;
-		border-radius: 50%;
-	}
-
-	.star-btn:hover {
-		background: var(--chip);
-		color: var(--accent);
-		border-color: var(--stroke);
-	}
-
-	.star-btn.starred {
-		color: #ff9500;
-		background: rgba(255, 149, 0, 0.1);
-		border-color: rgba(255, 149, 0, 0.2);
-	}
-
-	.star-btn.starred:hover {
-		background: rgba(255, 149, 0, 0.2);
-		box-shadow: 0 0 12px rgba(255, 149, 0, 0.2);
-	}
-
-	.read-dot {
-		width: 32px;
-		height: 32px;
-		background: transparent;
-		border: none;
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		flex-shrink: 0;
-		border-radius: 50%;
-		transition: all 0.2s;
-	}
-
-	.read-dot:hover {
-		background: var(--chip);
-	}
-
-	.read-dot .dot {
-		width: 8px;
-		height: 8px;
-		background: var(--accent);
-		border-radius: 50%;
-		transition: all 0.2s;
-		box-shadow: 0 0 8px var(--accent);
-	}
-
-	.read-dot.read .dot {
-		width: 6px;
-		height: 6px;
-		background: var(--stroke-strong);
-		opacity: 0.3;
-		box-shadow: none;
-	}
-
-	.article-meta {
-		display: flex;
-		align-items: center;
-		color: var(--muted2);
-		font-size: 13px;
-		margin-bottom: 12px;
-		gap: 6px;
-		font-weight: 500;
+		justify-content: space-between;
 		font-family: var(--font-ui);
+		font-size: 13px;
+		color: var(--muted2);
+	}
+
+	.feed-info {
+		display: flex;
+		align-items: center;
+		gap: 8px;
 	}
 
 	.feed-favicon {
-		width: 16px;
-		height: 16px;
-		border-radius: 4px;
+		width: 18px;
+		height: 18px;
 		object-fit: contain;
+		border-radius: 4px;
 	}
 
 	.feed-title-meta {
 		color: var(--accent);
-		opacity: 0.9;
+		font-weight: 600;
+		letter-spacing: 0.01em;
 	}
 
-	.meta-sep {
-		font-size: 10px;
-	}
-
-	.article-summary {
-		font-size: 14px;
-		line-height: 1.6;
-		color: var(--muted);
-		margin: 0 0 16px 0;
+	.publish-time {
+		color: var(--muted2);
 		font-weight: 400;
 	}
 
-	.article-thumbnail {
-		position: relative;
-		border-radius: var(--radiusS);
+	/* Floating Actions (Top Right) */
+	.article-actions-floating {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		opacity: 0.6;
+		transition: opacity 0.2s;
+	}
+
+	.article-card:hover .article-actions-floating {
+		opacity: 1;
+	}
+
+	.action-icon-btn {
+		background: transparent;
+		border: none;
+		cursor: pointer;
+		color: var(--muted);
+		padding: 6px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.2s;
+	}
+
+	.action-icon-btn:hover {
+		background: rgba(255,255,255,0.06);
+		color: var(--text);
+	}
+
+	.action-icon-btn.active {
+		color: #FFB02E; /* Star color */
+	}
+
+	.read-indicator-dot {
+		width: 8px;
+		height: 8px;
+		background: var(--accent);
+		border-radius: 50%;
+		box-shadow: 0 0 8px var(--accent-glow);
+	}
+	
+	.action-icon-btn.read .read-indicator-dot {
+		background: var(--stroke-strong);
+		box-shadow: none;
+		opacity: 0.3;
+		width: 6px; 
+		height: 6px;
+	}
+
+
+	/* Title */
+	.article-title-premium {
+		font-family: var(--font-display);
+		font-size: 22px;
+		line-height: 1.3;
+		font-weight: 600;
+		color: var(--text);
+		letter-spacing: -0.01em;
+		margin: 0;
+		transition: color 0.2s;
+	}
+	
+	/* Unread State Highlight */
+	.article-card.unread .article-title-premium {
+		color: #fff;
+		font-weight: 700;
+	}
+
+
+	/* Body Layout (Text Left, Image Right) */
+	.article-body-layout {
+		display: flex;
+		flex-direction: column; /* Mobile first: stack */
+		gap: 16px;
+	}
+
+	.article-text-col {
+		flex: 1;
+	}
+
+	.article-summary-premium {
+		font-size: 15px;
+		line-height: 1.6;
+		color: var(--muted);
+		margin: 0;
+		font-weight: 400;
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		-webkit-box-orient: vertical;
 		overflow: hidden;
-		max-width: 100%;
-		margin-top: 4px;
+	}
+
+	.article-thumbnail-premium {
+		position: relative;
+		border-radius: 12px;
+		overflow: hidden;
+		flex-shrink: 0;
+		background: var(--bg2);
 		border: 1px solid var(--stroke);
+	}
+	
+	.article-thumbnail-premium img {
+		width: 100%;
+		height: auto;
+		display: block;
+		object-fit: cover;
+	}
+	
+	.play-overlay-small {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 36px;
+		height: 36px;
+		background: rgba(0,0,0,0.6);
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		backdrop-filter: blur(4px);
+		color: #fff;
 	}
 
 	.inline-video-container {
 		width: 100%;
 		aspect-ratio: 16 / 9;
 		margin-top: 8px;
-		border-radius: var(--radiusS);
+		border-radius: 12px;
 		overflow: hidden;
 		background: #000;
 		border: 1px solid var(--stroke);
 	}
 
-	.play-overlay {
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		width: 44px;
-		height: 44px;
-		background: rgba(220, 38, 38, 0.9);
-		color: white;
-		border-radius: 50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-		pointer-events: none;
+
+	/* Desktop Adjustments */
+	@media (min-width: 768px) {
+		.article-body-layout {
+			flex-direction: row;
+			align-items: flex-start;
+		}
+
+		.article-thumbnail-premium {
+			width: 180px; 
+			height: 120px; /* Fixed sized crop roughly */
+		}
+		
+		.article-thumbnail-premium img {
+			width: 100%;
+			height: 100%;
+		}
+	}
 	}
 
 	.article-card:hover .play-overlay {
