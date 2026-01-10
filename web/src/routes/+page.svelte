@@ -4615,18 +4615,20 @@
 		color: var(--text);
 	}
 
-	/* Mobile Bottom Tab Bar */
+	/* Mobile Bottom Tab Bar - iOS Native Style */
 	.mobile-tab-bar {
 		position: fixed;
 		bottom: 0;
 		left: 0;
 		right: 0;
 		display: flex;
-		background: var(--panel1);
-		border-top: 1px solid var(--stroke);
-		padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+		background: rgba(18, 18, 20, 0.85);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+		border-top: 0.5px solid rgba(255, 255, 255, 0.1);
+		padding: 4px 8px calc(4px + env(safe-area-inset-bottom));
 		z-index: 1000;
-		box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.3);
+		height: calc(65px + env(safe-area-inset-bottom));
 	}
 
 	.mobile-tab {
@@ -4634,17 +4636,19 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 4px;
-		padding: 8px;
+		justify-content: center;
+		gap: 2px;
+		min-height: 56px;
 		background: none;
 		border: none;
-		color: var(--muted);
-		font-size: 11px;
+		color: rgba(255, 255, 255, 0.55);
+		font-size: 10px;
 		font-weight: 500;
-		font-family: var(--font-ui);
+		font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+			var(--font-ui);
 		cursor: pointer;
-		border-radius: var(--radiusM);
-		transition: all 0.2s;
+		transition: all 0.15s ease;
+		-webkit-tap-highlight-color: transparent;
 	}
 
 	.mobile-tab.active {
