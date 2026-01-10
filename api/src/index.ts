@@ -7,6 +7,7 @@ import { XMLParser } from 'fast-xml-parser';
 import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
 import sanitizeHtml from 'sanitize-html';
+import { searchFeeds } from './feed-search.js';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const DB_PATH = process.env.DB_PATH || '/data/feedstream.sqlite';
@@ -1134,6 +1135,45 @@ fastify.get('/feeds', async (request, reply) => {
         return {
             ok: false,
             error: 'Database error'
+        };
+    }
+});
+
+// Feed search endpoint
+fastify.get('/feeds/search', async (request, reply) => {
+    const query = request.query as any;
+    const searchQuery = query?.q?.trim();
+    const searchType = query?.type || 'all';
+
+    if (!searchQuery) {
+        reply.code(400);
+        return {
+            ok: false,
+            error: 'Missing search query parameter "q"'
+        };
+    }
+
+    if (!['all', 'rss', 'youtube', 'reddit'].includes(searchType)) {
+        reply.code(400);
+        return {
+            ok: false,
+            error: 'Invalid type parameter. Must be one of: all, rss, youtube, reddit'
+        };
+    }
+
+    try {
+        const results = await searchFeeds(searchQuery, searchType as any);
+
+        return {
+            ok: true,
+            results
+        };
+    } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500);
+        return {
+            ok: false,
+            error: 'Search failed'
         };
     }
 });

@@ -59,6 +59,20 @@
 	let addFeedError: string | null = null;
 	let addFeedLoading = false;
 
+	// Feed search state
+	let feedSearchQuery = '';
+	let feedSearchResults: Array<{
+		title: string;
+		url: string;
+		description: string;
+		type: 'rss' | 'youtube' | 'reddit';
+		thumbnail?: string;
+	}> = [];
+	let feedSearchLoading = false;
+	let feedSearchError: string | null = null;
+	let feedSearchType: 'all' | 'rss' | 'youtube' | 'reddit' = 'all';
+	let feedSearchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
 	// Refresh toast state
 	let showRefreshToast = false;
 	let refreshJobId: string | null = null;
@@ -73,7 +87,7 @@
 	let foldersError: string | null = null;
 
 	// View mode state
-	type ViewMode = 'all' | 'unread' | 'smart' | 'folder' | 'feed';
+	type ViewMode = 'all' | 'unread' | 'bookmarks' | 'smart' | 'folder' | 'feed';
 	let viewMode: ViewMode = 'all';
 	let activeSmartFolder: 'rss' | 'youtube' | 'reddit' | null = null;
 	let activeFolderId: string | null = null;
@@ -97,10 +111,22 @@
 	// Add Feed modal folder selection
 	let selectedFolderIdsForNewFeed: string[] = [];
 
+	// Mobile navigation state
+	let isMobile = false;
+	let mobileMenuOpen = false;
+	let mobileActiveTab: 'all' | 'unread' | 'bookmarks' | 'feeds' = 'all';
+
 	onMount(() => {
 		loadFeeds();
 		loadFolders();
 		loadItems();
+
+		// Check if mobile and add resize listener
+		const checkMobile = () => {
+			isMobile = window.innerWidth <= 768;
+		};
+		checkMobile();
+		window.addEventListener('resize', checkMobile);
 
 		// ESC key to close reader and modals
 		const handleKeydown = (e: KeyboardEvent) => {
@@ -125,11 +151,16 @@
 					showFeedFolderPopover = false;
 					showCreateFolderInPopover = false;
 					newFolderNameInPopover = '';
+				} else if (mobileMenuOpen) {
+					mobileMenuOpen = false;
 				}
 			}
 		};
 		window.addEventListener('keydown', handleKeydown);
-		return () => window.removeEventListener('keydown', handleKeydown);
+		return () => {
+			window.removeEventListener('keydown', handleKeydown);
+			window.removeEventListener('resize', checkMobile);
+		};
 	});
 
 	// Process links in reader content after render for safety
@@ -159,6 +190,10 @@
 		acc[folder.id] = unread;
 		return acc;
 	}, {} as Record<string, number>);
+
+	// Compute bookmarked items count
+	$: bookmarkedCount = items.filter(i => i.is_starred === 1).length;
+
 
 	async function loadFeeds() {
 		feedsLoading = true;
@@ -611,6 +646,90 @@
 		addFeedError = null;
 		addFeedLoading = false;
 		selectedFolderIdsForNewFeed = [];
+		feedSearchQuery = '';
+		feedSearchResults = [];
+		feedSearchError = null;
+	}
+
+	// Feed search functions
+	async function searchFeedsDebounced() {
+		if (feedSearchDebounceTimer) {
+			clearTimeout(feedSearchDebounceTimer);
+		}
+
+		feedSearchDebounceTimer = setTimeout(() => {
+			searchFeedsNow();
+		}, 400);
+	}
+
+	async function searchFeedsNow() {
+		if (!feedSearchQuery.trim()) {
+			feedSearchResults = [];
+			feedSearchError = null;
+			return;
+		}
+
+		feedSearchLoading = true;
+		feedSearchError = null;
+
+		try {
+			const params = new URLSearchParams({
+				q: feedSearchQuery.trim(),
+				type: feedSearchType
+			});
+
+			const response = await fetch(`/api/feeds/search?${params}`);
+			const data = await response.json();
+
+			if (!response.ok) {
+				throw new Error(data.error || 'Search failed');
+			}
+
+			feedSearchResults = data.results || [];
+		} catch (err) {
+			feedSearchError = err instanceof Error ? err.message : 'Search failed';
+			feedSearchResults = [];
+		} finally {
+			feedSearchLoading = false;
+		}
+	}
+
+	async function addFeedFromSearch(result: typeof feedSearchResults[0]) {
+		addFeedLoading = true;
+		addFeedError = null;
+
+		try {
+			const response = await fetch('/api/feeds', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ 
+					url: result.url, 
+					refresh: true,
+					folderIds: selectedFolderIdsForNewFeed
+				})
+			});
+
+			const data = await response.json();
+
+			if (!response.ok) {
+				throw new Error(data.error || 'Failed to add feed');
+			}
+
+			// Remove from search results
+			feedSearchResults = feedSearchResults.filter(r => r.url !== result.url);
+
+			await loadFeeds();
+			await loadFolders();
+			await loadItems();
+
+			if (feedSearchResults.length === 0) {
+				closeAddFeedModal();
+			}
+		} catch (err) {
+			addFeedError = err instanceof Error ? err.message : 'Failed to add feed';
+		} finally {
+			addFeedLoading = false;
+		}
 	}
 
 	function validateFeedUrl(url: string): boolean {
@@ -816,6 +935,16 @@
 		activeSmartFolder = null;
 		activeFolderId = null;
 		selectedFeedUrl = null;
+		starredOnly = false;
+		loadItems();
+	}
+
+	function setViewBookmarks() {
+		viewMode = 'bookmarks';
+		activeSmartFolder = null;
+		activeFolderId = null;
+		selectedFeedUrl = null;
+		starredOnly = true;
 		loadItems();
 	}
 
@@ -1093,6 +1222,20 @@
 			</button>
 
 			<button 
+				class="nav-item" 
+				class:active={viewMode === 'bookmarks'}
+				on:click={setViewBookmarks}
+			>
+				<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+					<path d="M4 2h10v14l-5-3-5 3V2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+				</svg>
+				<span>Bookmarks</span>
+				{#if bookmarkedCount > 0}
+					<span class="badge">{bookmarkedCount}</span>
+				{/if}
+			</button>
+
+			<button 
 				class="nav-item smart-folder" 
 				class:active={viewMode === 'smart' && activeSmartFolder === 'rss'}
 				on:click={() => setViewSmartFolder('rss')}
@@ -1260,6 +1403,13 @@
 		<!-- Top Bar -->
 		<header class="topbar glass-panel">
 			<div class="topbar-left">
+				{#if isMobile}
+					<button class="hamburger-btn" on:click={() => mobileMenuOpen = true} title="Menu">
+						<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+							<path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+						</svg>
+					</button>
+				{/if}
 				<div class="logo-small">
 					<div class="logo-icon">
 						<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -1302,8 +1452,10 @@
 				</button>
 				<button class="icon-btn" on:click={() => showSettings = true} title="Settings">
 					<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-						<circle cx="10" cy="10" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
-						<path d="M10 2v2m0 12v2M18 10h-2M4 10H2m13.66-5.66l-1.42 1.42M7.76 12.24l-1.42 1.42m11.32 0l-1.42-1.42M7.76 7.76L6.34 6.34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						<circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
+						<circle cx="10" cy="10" r="2" fill="currentColor"/>
+						<path d="M10 3v1.5M10 15.5V17M17 10h-1.5M4.5 10H3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						<path d="M14.5 5.5l-1 1M6.5 13.5l-1 1M14.5 14.5l-1-1M6.5 6.5l-1-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
 					</svg>
 				</button>
 				<button class="add-btn" on:click={openAddFeedModal}>
@@ -1323,7 +1475,8 @@
 					<button class="chip" class:active={timeFilter === 'week'} on:click={() => timeFilter = 'week'}>Week</button>
 					<button class="chip" class:active={timeFilter === 'all'} on:click={() => timeFilter = 'all'}>All</button>
 				</div>
-			</div>!-- Articles List -->
+			</div>
+		<!-- Articles List -->
 		<div class="articles-container">
 			{#if itemsLoading}
 				<div class="empty-state">Loading articles...</div>
@@ -1347,19 +1500,20 @@
 						</h3>
 							<div class="article-actions">
 								<button 
-									class="star-btn" 
-									class:starred={item.is_starred === 1}
-									on:click={() => toggleStar(item)}
-									title={item.is_starred === 1 ? 'Unstar' : 'Star'}
-								>
-									<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-										<path d="M8 1.5l1.902 3.854 4.252.618-3.077 3-726.726 3.917L8 11.5l-3.803 2 .726-4.252-3.077-3 4.252-.618L8 1.5z" 
-											stroke="currentColor" 
-											stroke-width="1.5" 
-											fill={item.is_starred === 1 ? 'currentColor' : 'none'}
-										/>
-									</svg>
-								</button>
+								class="star-btn" 
+								class:starred={item.is_starred === 1}
+								on:click={() => toggleStar(item)}
+								title={item.is_starred === 1 ? 'Remove bookmark' : 'Bookmark'}
+							>
+								<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+									<path d="M3 1h10v13l-5-3-5 3V1z" 
+										stroke="currentColor" 
+										stroke-width="1.5" 
+										stroke-linejoin="round"
+										fill={item.is_starred === 1 ? 'currentColor' : 'none'}
+									/>
+								</svg>
+							</button>
 								<button 
 									class="read-dot" 
 									class:read={item.is_read === 1}
@@ -1395,6 +1549,189 @@
 			{/if}
 		</div>
 	</main>
+
+	<!-- Mobile Drawer Overlay -->
+	{#if isMobile && mobileMenuOpen}
+		<div class="mobile-drawer-overlay" on:click={() => mobileMenuOpen = false}>
+			<aside class="mobile-drawer sidebar" on:click|stopPropagation>
+				<!-- Drawer Header -->
+				<div class="drawer-header">
+					<div class="logo">
+						<div class="logo-icon">
+							<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+								<path d="M4 4h12v12H4z" fill="currentColor"/>
+							</svg>
+						</div>
+						<span class="logo-text">FeedStream</span>
+					</div>
+					<button class="close-drawer-btn" on:click={() => mobileMenuOpen = false} title="Close">
+						<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+							<path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+						</svg>
+					</button>
+				</div>
+
+				<!-- Drawer Navigation (reuse sidebar content) -->
+				<nav class="sidebar-nav">
+					<!-- Smart Folders Section -->
+					<div class="nav-section-label">SMART FOLDERS</div>
+					
+					<button 
+						class="nav-item smart-folder" 
+						class:active={viewMode === 'smart' && activeSmartFolder === 'rss'}
+						on:click={() => { setViewSmartFolder('rss'); mobileMenuOpen = false; }}
+					>
+						<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+							<circle cx="3" cy="15" r="2" fill="currentColor"/>
+							<path d="M3 9a6 6 0 016 6M3 3a12 12 0 0112 12" stroke="currentColor" stroke-width="2" fill="none"/>
+						</svg>
+						<span>RSS</span>
+						{#if rssUnread > 0}
+							<span class="badge">{rssUnread}</span>
+						{/if}
+					</button>
+
+					<button 
+						class="nav-item smart-folder" 
+						class:active={viewMode === 'smart' && activeSmartFolder === 'youtube'}
+						on:click={() => { setViewSmartFolder('youtube'); mobileMenuOpen = false; }}
+					>
+						<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+							<path d="M17 6s0-2-2-2H3c-2 0-2 2-2 2v6s0 2 2 2h12c2 0 2-2 2-2V6z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+							<path d="M7 5l5 4-5 4V5z" fill="currentColor"/>
+						</svg>
+						<span>YouTube</span>
+						{#if youtubeUnread > 0}
+							<span class="badge">{youtubeUnread}</span>
+						{/if}
+					</button>
+
+					<button 
+						class="nav-item smart-folder" 
+						class:active={viewMode === 'smart' && activeSmartFolder === 'reddit'}
+						on:click={() => { setViewSmartFolder('reddit'); mobileMenuOpen = false; }}
+					>
+						<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+							<circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
+							<circle cx="6" cy="8" r="1" fill="currentColor"/>
+							<circle cx="12" cy="8" r="1" fill="currentColor"/>
+							<path d="M6 11c.5 1 1.5 1.5 3 1.5s2.5-.5 3-1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						</svg>
+						<span>Reddit</span>
+						{#if redditUnread > 0}
+							<span class="badge">{redditUnread}</span>
+						{/if}
+					</button>
+
+					<!-- Custom Folders Section -->
+					<div class="nav-section-header">
+						<div class="nav-section-label">FOLDERS</div>
+						<button 
+							class="add-folder-btn" 
+							on:click={() => {
+								showCreateFolderModal = true;
+								folderModalName = '';
+								folderModalError = null;
+								mobileMenuOpen = false;
+							}}
+							title="New folder"
+						>
+							<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+								<path d="M7 3v8M3 7h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+							</svg>
+						</button>
+					</div>
+
+					{#if folders.length > 0}
+						{#each folders as folder}
+							<button 
+								class="nav-item folder-item" 
+								class:active={viewMode === 'folder' && activeFolderId === folder.id}
+								on:click={() => { setViewFolder(folder.id); mobileMenuOpen = false; }}
+							>
+								<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+									<path d="M2 4h5l1 2h8v10H2V4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+								</svg>
+								<span class="folder-name">{folder.name}</span>
+								{#if folderUnreadCounts[folder.id] > 0}
+									<span class="badge">{folderUnreadCounts[folder.id]}</span>
+								{/if}
+							</button>
+						{/each}
+					{/if}
+
+					<!-- Settings Button -->
+					<button 
+						class="nav-item" 
+						on:click={() => { showSettings = true; mobileMenuOpen = false; }}
+						style="margin-top: auto;"
+					>
+						<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+							<circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
+							<circle cx="9" cy="9" r="2" fill="currentColor"/>
+							<path d="M9 3v1.5M9 13.5V15M15 9h-1.5M4.5 9H3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+							<path d="M12.5 5.5l-1 1M6.5 11.5l-1 1M12.5 12.5l-1-1M6.5 6.5l-1-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						</svg>
+						<span>Settings</span>
+					</button>
+				</nav>
+			</aside>
+		</div>
+	{/if}
+
+	<!-- Mobile Bottom Tab Bar -->
+	{#if isMobile}
+		<div class="mobile-tab-bar">
+			<button 
+				class="mobile-tab" 
+				class:active={mobileActiveTab === 'all'}
+				on:click={() => { mobileActiveTab = 'all'; setViewAll(); }}
+			>
+				<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+					<rect x="3" y="3" width="8" height="8" rx="1" fill="currentColor"/>
+					<rect x="13" y="3" width="8" height="8" rx="1" fill="currentColor"/>
+					<rect x="3" y="13" width="8" height="8" rx="1" fill="currentColor"/>
+					<rect x="13" y="13" width="8" height="8" rx="1" fill="currentColor"/>
+				</svg>
+				<span>All</span>
+			</button>
+			
+			<button 
+				class="mobile-tab" 
+				class:active={mobileActiveTab === 'unread'}
+				on:click={() => { mobileActiveTab = 'unread'; setViewUnread(); }}
+			>
+				<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+					<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/>
+					<circle cx="12" cy="12" r="4" fill="currentColor"/>
+				</svg>
+				<span>Unread</span>
+			</button>
+			
+			<button 
+				class="mobile-tab" 
+				class:active={mobileActiveTab === 'bookmarks'}
+				on:click={() => { mobileActiveTab = 'bookmarks'; setViewBookmarks(); }}
+			>
+				<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+					<path d="M5 3h14v18l-7-4-7 4V3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="none"/>
+				</svg>
+				<span>Bookmarks</span>
+			</button>
+			
+			<button 
+				class="mobile-tab" 
+				class:active={mobileActiveTab === 'feeds'}
+				on:click={() => { mobileActiveTab = 'feeds'; mobileMenuOpen = true; }}
+			>
+				<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+					<circle cx="5" cy="19" r="2" fill="currentColor"/>
+					<path d="M5 12a7 7 0 017 7M5 5a14 14 0 0114 14" stroke="currentColor" stroke-width="2" fill="none"/>
+				</svg>
+				<span>Feeds</span>
+			</button>
+		</div>
+	{/if}
 
 	<!-- Settings Modal -->
 	{#if showSettings}
@@ -1594,13 +1931,88 @@
 							</div>
 						{/if}
 					{:else if addFeedTab === 'search'}
-						<div class="search-placeholder">
-							<svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-								<circle cx="20" cy="20" r="12" stroke="currentColor" stroke-width="2" fill="none"/>
-								<path d="M29 29l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-							</svg>
-							<p>Search for feeds</p>
-							<span class="placeholder-hint">Coming soon</span>
+						<div class="feed-search-container">
+							<div class="input-group">
+								<label class="input-label">Search for feeds</label>
+								<input
+									type="text"
+									bind:value={feedSearchQuery}
+									on:input={searchFeedsDebounced}
+									placeholder="e.g., omgubuntu, mkbhd, technology"
+									class="feed-input"
+								/>
+							</div>
+
+							<div class="search-type-filters">
+								<button 
+									class="type-filter-btn" 
+									class:active={feedSearchType === 'all'}
+									on:click={() => { feedSearchType = 'all'; searchFeedsNow(); }}
+								>
+									All
+								</button>
+								<button 
+									class="type-filter-btn" 
+									class:active={feedSearchType === 'rss'}
+									on:click={() => { feedSearchType = 'rss'; searchFeedsNow(); }}
+								>
+									RSS
+								</button>
+								<button 
+									class="type-filter-btn" 
+									class:active={feedSearchType === 'youtube'}
+									on:click={() => { feedSearchType = 'youtube'; searchFeedsNow(); }}
+								>
+									YouTube
+								</button>
+								<button 
+									class="type-filter-btn" 
+									class:active={feedSearchType === 'reddit'}
+									on:click={() => { feedSearchType = 'reddit'; searchFeedsNow(); }}
+								>
+									Reddit
+								</button>
+							</div>
+
+							{#if feedSearchLoading}
+								<div class="search-loading">Searching...</div>
+							{:else if feedSearchError}
+								<div class="search-error">{feedSearchError}</div>
+							{:else if feedSearchResults.length > 0}
+								<div class="search-results">
+									{#each feedSearchResults as result}
+										<div class="search-result-item">
+											<div class="result-info">
+												<div class="result-header">
+													<span class="result-title">{result.title}</span>
+													<span class="result-type-badge {result.type}">{result.type.toUpperCase()}</span>
+												</div>
+												<p class="result-description">{result.description}</p>
+												<span class="result-url">{result.url}</span>
+											</div>
+											<button 
+												class="add-result-btn"
+												on:click={() => addFeedFromSearch(result)}
+												disabled={addFeedLoading}
+											>
+												<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+													<path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+												</svg>
+												Add
+											</button>
+										</div>
+									{/each}
+								</div>
+							{:else if feedSearchQuery.trim()}
+								<div class="search-empty">
+									<svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+										<circle cx="20" cy="20" r="12" stroke="currentColor" stroke-width="2" fill="none"/>
+										<path d="M29 29l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+									</svg>
+									<p>No feeds found</p>
+									<span class="placeholder-hint">Try a different search term</span>
+								</div>
+							{/if}
 						</div>
 					{:else if addFeedTab === 'bulk'}
 						<div class="input-group">
@@ -2320,30 +2732,162 @@
 		color: #ff5252;
 	}
 
+	/* Mobile Navigation Styles */
+	.hamburger-btn {
+		width: 44px;
+		height: 44px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: none;
+		border: none;
+		color: var(--text);
+		cursor: pointer;
+		border-radius: var(--radiusM);
+		transition: all 0.2s;
+		margin-right: 8px;
+	}
+
+	.hamburger-btn:hover {
+		background: rgba(255, 255, 255, 0.1);
+	}
+
+	/* Mobile Drawer */
+	.mobile-drawer-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.6);
+		z-index: 2000;
+		animation: fadeIn 0.2s;
+	}
+
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	.mobile-drawer {
+		position: fixed;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		width: 80%;
+		max-width: 320px;
+		background: var(--panel1);
+		box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+		animation: slideInLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	@keyframes slideInLeft {
+		from {
+			transform: translateX(-100%);
+		}
+		to {
+			transform: translateX(0);
+		}
+	}
+
+	.drawer-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 16px;
+		border-bottom: 1px solid var(--stroke);
+		background: var(--panel0);
+	}
+
+	.close-drawer-btn {
+		width: 40px;
+		height: 40px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: none;
+		border: none;
+		color: var(--muted);
+		cursor: pointer;
+		border-radius: var(--radiusM);
+		transition: all 0.2s;
+	}
+
+	.close-drawer-btn:hover {
+		background: rgba(255, 255, 255, 0.1);
+		color: var(--text);
+	}
+
+	/* Mobile Bottom Tab Bar */
+	.mobile-tab-bar {
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		display: flex;
+		background: var(--panel1);
+		border-top: 1px solid var(--stroke);
+		padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+		z-index: 1000;
+		box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.3);
+	}
+
+	.mobile-tab {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 4px;
+		padding: 8px;
+		background: none;
+		border: none;
+		color: var(--muted);
+		font-size: 11px;
+		font-weight: 500;
+		font-family: var(--font-ui);
+		cursor: pointer;
+		border-radius: var(--radiusM);
+		transition: all 0.2s;
+	}
+
+	.mobile-tab.active {
+		color: var(--accent);
+		background: rgba(255, 255, 255, 0.05);
+	}
+
+	.mobile-tab svg {
+		width: 24px;
+		height: 24px;
+		flex-shrink: 0;
+	}
+
 	/* Responsive */
 	@media (max-width: 768px) {
 		.app {
 			flex-direction: column;
 		}
 
-		.sidebar {
-            /* Mobile Drawer Style? Or simple fixed top? */
-            /* Let's make it a bottom drawer or just keep it simple for now */
-			position: fixed;
-			top: 0;
-			left: 0;
-			width: 100%;
-			height: auto;
-			max-height: 40vh; /* make it smaller */
-			overflow-y: auto;
-			z-index: 100;
-            border-right: none;
-            border-bottom: 1px solid var(--stroke);
-            box-shadow: var(--shadow-lg);
+		/* Hide desktop sidebar on mobile */
+		.sidebar:not(.mobile-drawer) {
+			display: none;
 		}
 
 		.main-content {
-			margin-top: 40vh; /* push content down */
+			margin-top: 0;
+			padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* Space for bottom tab bar */
+		}
+
+		.topbar {
+			position: sticky;
+			top: 0;
+			z-index: 100;
 		}
         
         .topbar-center {
@@ -2937,6 +3481,188 @@
 		color: var(--muted2);
 	}
 
+	/* Feed Search Styles */
+	.feed-search-container {
+		display: flex;
+		flex-direction: column;
+		gap: 20px;
+	}
+
+	.search-type-filters {
+		display: flex;
+		gap: 8px;
+		padding: 4px;
+		background: var(--panel0);
+		border-radius: var(--radiusM);
+	}
+
+	.type-filter-btn {
+		flex: 1;
+		padding: 8px 16px;
+		background: transparent;
+		border: none;
+		color: var(--muted);
+		font-size: 13px;
+		font-weight: 500;
+		font-family: var(--font-ui);
+		cursor: pointer;
+		border-radius: calc(var(--radiusM) - 2px);
+		transition: all 0.2s;
+	}
+
+	.type-filter-btn:hover {
+		background: rgba(255, 255, 255, 0.05);
+		color: var(--text);
+	}
+
+	.type-filter-btn.active {
+		background: var(--accent);
+		color: #000;
+	}
+
+	.search-loading,
+	.search-error,
+	.search-empty {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		padding: 40px 20px;
+		text-align: center;
+		color: var(--muted);
+	}
+
+	.search-loading {
+		font-size: 14px;
+		font-weight: 500;
+	}
+
+	.search-error {
+		color: #ff6b6b;
+	}
+
+	.search-empty svg {
+		margin-bottom: 16px;
+		opacity: 0.5;
+	}
+
+	.search-empty p {
+		font-size: 16px;
+		font-weight: 500;
+		margin: 0 0 8px 0;
+	}
+
+	.search-results {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		max-height: 400px;
+		overflow-y: auto;
+	}
+
+	.search-result-item {
+		display: flex;
+		align-items: flex-start;
+		gap: 16px;
+		padding: 16px;
+		background: var(--panel0);
+		border: 1px solid var(--stroke);
+		border-radius: var(--radiusM);
+		transition: all 0.2s;
+	}
+
+	.search-result-item:hover {
+		background: rgba(255, 255, 255, 0.03);
+		border-color: rgba(255, 255, 255, 0.15);
+	}
+
+	.result-info {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.result-header {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin-bottom: 8px;
+	}
+
+	.result-title {
+		font-size: 15px;
+		font-weight: 600;
+		color: var(--text);
+	}
+
+	.result-type-badge {
+		padding: 2px 8px;
+		font-size: 10px;
+		font-weight: 700;
+		letter-spacing: 0.5px;
+		border-radius: 4px;
+		text-transform: uppercase;
+	}
+
+	.result-type-badge.rss {
+		background: rgba(255, 152, 0, 0.2);
+		color: #ff9800;
+	}
+
+	.result-type-badge.youtube {
+		background: rgba(255, 0, 0, 0.2);
+		color: #ff0000;
+	}
+
+	.result-type-badge.reddit {
+		background: rgba(255, 69, 0, 0.2);
+		color: #ff4500;
+	}
+
+	.result-description {
+		font-size: 13px;
+		color: var(--muted);
+		margin: 0 0 8px 0;
+		line-height: 1.5;
+	}
+
+	.result-url {
+		font-size: 12px;
+		color: var(--muted2);
+		font-family: var(--font-mono);
+		word-break: break-all;
+	}
+
+	.add-result-btn {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: 10px 16px;
+		background: var(--accent);
+		color: #000;
+		border: none;
+		border-radius: var(--radiusM);
+		font-size: 13px;
+		font-weight: 600;
+		font-family: var(--font-ui);
+		cursor: pointer;
+		transition: all 0.2s;
+		white-space: nowrap;
+	}
+
+	.add-result-btn:hover:not(:disabled) {
+		background: var(--accentHover);
+		transform: translateY(-1px);
+	}
+
+	.add-result-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.add-result-btn svg {
+		flex-shrink: 0;
+	}
+
 	.input-label {
 		display: block;
 		font-size: 13px;
@@ -3200,7 +3926,7 @@
 	.folder-actions-menu {
 		position: absolute;
 		top: 100%;
-		right: 0;
+		left: 0;
 		margin-top: 4px;
 		min-width: 140px;
 		background: var(--panel1);
