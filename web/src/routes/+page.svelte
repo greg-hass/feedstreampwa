@@ -58,6 +58,7 @@
 	let ytPlayer: any = null;
 	let ytProgressInterval: ReturnType<typeof setInterval> | null = null;
 	let ytApiLoaded = false;
+	let activeInlineVideoId: string | null = null;
 
 	// Add Feed modal state
 	let showAddFeedModal = false;
@@ -742,19 +743,19 @@
 			(currentItemUrl.includes("youtube.com/watch") ||
 				currentItemUrl.includes("youtu.be/"))
 		) {
-			initYouTubePlayer();
+			initYouTubePlayer("yt-player-container");
 		}
 	}
 
-	function initYouTubePlayer() {
+	function initYouTubePlayer(targetId = "yt-player-container") {
 		if (!ytApiLoaded) {
-			loadYouTubeAPI();
+			loadYouTubeAPI(targetId);
 			return;
 		}
 
 		// Wait for DOM to be ready
 		setTimeout(() => {
-			const container = document.getElementById("yt-player-container");
+			const container = document.getElementById(targetId);
 			if (!container) return;
 
 			let videoId = null;
@@ -762,6 +763,8 @@
 				videoId = currentItemUrl.split("v=")[1]?.split("&")[0];
 			} else if (currentItemUrl?.includes("youtu.be/")) {
 				videoId = currentItemUrl.split("youtu.be/")[1]?.split("?")[0];
+			} else if (currentItem?.external_id) {
+				videoId = currentItem.external_id;
 			}
 
 			if (!videoId) return;
@@ -775,7 +778,7 @@
 
 			const startPos = Math.floor(currentItem?.playback_position || 0);
 
-			ytPlayer = new (window as any).YT.Player("yt-player-container", {
+			ytPlayer = new (window as any).YT.Player(targetId, {
 				height: "100%",
 				width: "100%",
 				videoId: videoId,
@@ -793,10 +796,10 @@
 		}, 100);
 	}
 
-	function loadYouTubeAPI() {
+	function loadYouTubeAPI(targetId = "yt-player-container") {
 		if ((window as any).YT) {
 			ytApiLoaded = true;
-			initYouTubePlayer();
+			initYouTubePlayer(targetId);
 			return;
 		}
 
@@ -807,7 +810,7 @@
 
 		(window as any).onYouTubeIframeAPIReady = () => {
 			ytApiLoaded = true;
-			initYouTubePlayer();
+			initYouTubePlayer(targetId);
 		};
 	}
 
@@ -877,6 +880,7 @@
 			ytPlayer = null;
 		}
 		showReader = false;
+		activeInlineVideoId = null;
 		readerData = null;
 		readerError = null;
 		currentItemUrl = null;
@@ -894,6 +898,36 @@
 		) {
 			return;
 		}
+
+		if (isMobile && item.source === "youtube") {
+			if (activeInlineVideoId === item.id) {
+				activeInlineVideoId = null;
+				stopProgressSync();
+				if (ytPlayer) {
+					try {
+						ytPlayer.destroy();
+						ytPlayer = null;
+					} catch (e) {}
+				}
+			} else {
+				// Stop any existing player
+				if (activeInlineVideoId || ytPlayer) {
+					stopProgressSync();
+					if (ytPlayer) {
+						try {
+							ytPlayer.destroy();
+							ytPlayer = null;
+						} catch (e) {}
+					}
+				}
+				activeInlineVideoId = item.id;
+				currentItem = item;
+				currentItemUrl = item.url;
+				initYouTubePlayer(`yt-player-inline-${item.id}`);
+			}
+			return;
+		}
+
 		openReader(item);
 	}
 
@@ -2306,13 +2340,31 @@
 							<p class="article-summary">{item.summary}</p>
 						{/if}
 
-						{#if item.media_thumbnail}
+						{#if activeInlineVideoId === item.id && item.source === "youtube"}
+							<div class="inline-video-container">
+								<div id="yt-player-inline-{item.id}"></div>
+							</div>
+						{:else if item.media_thumbnail}
 							<div class="article-thumbnail">
 								<img
 									src={item.media_thumbnail}
 									alt={item.title || "Thumbnail"}
 									loading="lazy"
 								/>
+								{#if item.source === "youtube"}
+									<div class="play-overlay">
+										<svg
+											viewBox="0 0 24 24"
+											width="32"
+											height="32"
+										>
+											<path
+												fill="currentColor"
+												d="M8 5v14l11-7z"
+											/>
+										</svg>
+									</div>
+								{/if}
 							</div>
 						{/if}
 					</article>
@@ -3880,13 +3932,13 @@
 	.logo-icon {
 		width: 40px;
 		height: 40px;
-		background: linear-gradient(135deg, var(--accent), #3fb88a);
+		background: var(--accent);
 		border-radius: var(--radiusS);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		color: var(--bg0);
-		box-shadow: 0 4px 12px rgba(63, 184, 138, 0.3);
+		box-shadow: 0 4px 12px var(--accent-glow);
 	}
 
 	.logo-text {
@@ -3932,7 +3984,7 @@
 	.nav-item.active {
 		background: var(--accent-glow);
 		color: var(--accent);
-		border-color: rgba(63, 184, 138, 0.1);
+		border-color: var(--stroke-strong);
 	}
 
 	.feed-item.active {
@@ -4189,11 +4241,6 @@
 		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 	}
 
-	.article-card.unread {
-		border-left: 3px solid var(--accent);
-		background: rgba(63, 184, 138, 0.02); /* Very subtle tint */
-	}
-
 	.article-header {
 		display: flex;
 		align-items: flex-start;
@@ -4334,11 +4381,45 @@
 	}
 
 	.article-thumbnail {
+		position: relative;
 		border-radius: var(--radiusS);
 		overflow: hidden;
 		max-width: 100%;
 		margin-top: 4px;
 		border: 1px solid var(--stroke);
+	}
+
+	.inline-video-container {
+		width: 100%;
+		aspect-ratio: 16 / 9;
+		margin-top: 8px;
+		border-radius: var(--radiusS);
+		overflow: hidden;
+		background: #000;
+		border: 1px solid var(--stroke);
+	}
+
+	.play-overlay {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 44px;
+		height: 44px;
+		background: rgba(220, 38, 38, 0.9);
+		color: white;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		pointer-events: none;
+	}
+
+	.article-card:hover .play-overlay {
+		background: rgba(220, 38, 38, 1);
+		transform: translate(-50%, -50%) scale(1.1);
 	}
 
 	.article-thumbnail img {
@@ -5668,7 +5749,7 @@
 		padding: 10px var(--gap-md);
 		background: none;
 		border: none;
-		border-left: 3px solid transparent;
+		/* Removed green left-border accent */
 		color: var(--text);
 		font-size: 14px;
 		font-family: var(--font-ui);
@@ -5684,7 +5765,7 @@
 
 	.feed-item.active {
 		background: var(--panel0);
-		border-left-color: var(--accent);
+		/* Removed green left-border accent */
 	}
 
 	.feed-item-content {
