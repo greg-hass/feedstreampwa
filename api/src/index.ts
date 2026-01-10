@@ -253,6 +253,13 @@ if (!columnExists('feeds', 'custom_title')) {
     fastify.log.info('custom_title column added successfully');
 }
 
+// Safe migration: Add playback_position column to items table if it doesn't exist
+if (!columnExists('items', 'playback_position')) {
+    fastify.log.info('Adding playback_position column to items table...');
+    db.exec(`ALTER TABLE items ADD COLUMN playback_position REAL DEFAULT 0`);
+    fastify.log.info('playback_position column added successfully');
+}
+
 // FTS5 setup: Check if FTS5 is available
 try {
     db.exec(`CREATE VIRTUAL TABLE IF NOT EXISTS _fts5_test USING fts5(test)`);
@@ -1833,7 +1840,7 @@ fastify.get('/items', async (request, reply) => {
         SELECT 
             i.id, i.feed_url, i.source, i.title, i.url, i.author, i.summary, i.content,
             i.published, i.updated, i.media_thumbnail, i.media_duration_seconds,
-            i.external_id, i.raw_guid, i.created_at, i.is_read, i.is_starred,
+            i.external_id, i.raw_guid, i.created_at, i.is_read, i.is_starred, i.playback_position,
             f.icon_url as feed_icon_url, COALESCE(f.custom_title, f.title) as feed_title
         ${fromClause}
         ${whereClause}
@@ -1994,6 +2001,29 @@ fastify.post('/items/:id/star', async (request, reply) => {
             ok: false,
             error: 'Database error'
         };
+    }
+});
+
+fastify.patch('/items/:id/playback-position', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = request.body as any;
+
+    if (body.position === undefined || typeof body.position !== 'number') {
+        reply.code(400);
+        return { ok: false, error: 'Missing or invalid "position" number' };
+    }
+
+    try {
+        const result = db.prepare('UPDATE items SET playback_position = ? WHERE id = ?').run(body.position, id);
+        if (result.changes === 0) {
+            reply.code(404);
+            return { ok: false, error: 'Item not found' };
+        }
+        return { ok: true, playback_position: body.position };
+    } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500);
+        return { ok: false, error: 'Database error' };
     }
 });
 

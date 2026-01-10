@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount } from "svelte";
 
 	// Feed subscription state
 	let feeds: any[] = [];
@@ -8,7 +8,7 @@
 	let feedsError: string | null = null;
 
 	// Add feed state
-	let newFeedUrl = '';
+	let newFeedUrl = "";
 	let addingFeed = false;
 
 	// Items state
@@ -16,13 +16,13 @@
 	let itemsTotal = 0;
 	let itemsLoading = false;
 	let itemsError: string | null = null;
-	let sourceFilter = 'all';
+	let sourceFilter = "all";
 	let unreadOnly = false;
 	let starredOnly = false;
-	let timeFilter = 'all'; // today, 24h, week, all
+	let timeFilter = "all"; // today, 24h, week, all
 
 	// Search
-	let searchQuery = '';
+	let searchQuery = "";
 
 	// Settings modal
 	let showSettings = false;
@@ -52,27 +52,33 @@
 	let readerCache: Map<string, ReaderData> = new Map();
 	let prefetchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 	let currentItemUrl: string | null = null;
+	let currentItem: any = null;
+
+	// YouTube Player State
+	let ytPlayer: any = null;
+	let ytProgressInterval: ReturnType<typeof setInterval> | null = null;
+	let ytApiLoaded = false;
 
 	// Add Feed modal state
 	let showAddFeedModal = false;
-	let addFeedTab: 'url' | 'search' | 'bulk' = 'url';
-	let addFeedUrl = '';
-	let addFeedBulkUrls = '';
+	let addFeedTab: "url" | "search" | "bulk" = "url";
+	let addFeedUrl = "";
+	let addFeedBulkUrls = "";
 	let addFeedError: string | null = null;
 	let addFeedLoading = false;
 
 	// Feed search state
-	let feedSearchQuery = '';
+	let feedSearchQuery = "";
 	let feedSearchResults: Array<{
 		title: string;
 		url: string;
 		description: string;
-		type: 'rss' | 'youtube' | 'reddit';
+		type: "rss" | "youtube" | "reddit";
 		thumbnail?: string;
 	}> = [];
 	let feedSearchLoading = false;
 	let feedSearchError: string | null = null;
-	let feedSearchType: 'all' | 'rss' | 'youtube' | 'reddit' = 'all';
+	let feedSearchType: "all" | "rss" | "youtube" | "reddit" = "all";
 	let feedSearchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 	// Refresh toast state
@@ -80,7 +86,7 @@
 	let refreshJobId: string | null = null;
 	let refreshCurrent = 0;
 	let refreshTotal = 0;
-	let refreshMessage = '';
+	let refreshMessage = "";
 	let refreshPollTimer: ReturnType<typeof setInterval> | null = null;
 
 	// Folder state
@@ -89,16 +95,22 @@
 	let foldersError: string | null = null;
 
 	// View mode state
-	type ViewMode = 'all' | 'unread' | 'bookmarks' | 'smart' | 'folder' | 'feed';
-	let viewMode: ViewMode = 'all';
-	let activeSmartFolder: 'rss' | 'youtube' | 'reddit' | null = null;
+	type ViewMode =
+		| "all"
+		| "unread"
+		| "bookmarks"
+		| "smart"
+		| "folder"
+		| "feed";
+	let viewMode: ViewMode = "all";
+	let activeSmartFolder: "rss" | "youtube" | "reddit" | null = null;
 	let activeFolderId: string | null = null;
 
 	// Folder management modals
 	let showCreateFolderModal = false;
 	let showRenameFolderModal = false;
 	let showDeleteFolderConfirm = false;
-	let folderModalName = '';
+	let folderModalName = "";
 	let folderModalLoading = false;
 	let folderModalError: string | null = null;
 	let selectedFolderForAction: any = null;
@@ -108,11 +120,11 @@
 	let feedFolderPopoverFeed: any = null;
 	let feedFolderPopoverPosition = { x: 0, y: 0 };
 	let showCreateFolderInPopover = false;
-	let newFolderNameInPopover = '';
+	let newFolderNameInPopover = "";
 
 	// Context Menu
 	let showContextMenu = false;
-	let contextMenuType: 'folder' | 'feed' | null = null;
+	let contextMenuType: "folder" | "feed" | null = null;
 	let contextMenuTarget: any = null;
 	let contextMenuPosition = { x: 0, y: 0 };
 
@@ -122,52 +134,52 @@
 	// Mobile navigation state
 	let isMobile = false;
 	let mobileMenuOpen = false;
-	let mobileActiveTab: 'all' | 'unread' | 'bookmarks' | 'feeds' = 'all';
+	let mobileActiveTab: "all" | "unread" | "bookmarks" | "feeds" = "all";
 
-    let syncInterval = 'off';
-    let settingsLoading = false;
+	let syncInterval = "off";
+	let settingsLoading = false;
 
-    async function fetchSettings() {
-        try {
-            settingsLoading = true;
-            const response = await fetch('/api/settings');
-            if (response.ok) {
-                const data = await response.json();
-                if (data.ok) {
-                    syncInterval = data.settings.sync_interval || 'off';
-                }
-            }
-        } catch (e) {
-            console.error('Failed to fetch settings:', e);
-        } finally {
-            settingsLoading = false;
-        }
-    }
+	async function fetchSettings() {
+		try {
+			settingsLoading = true;
+			const response = await fetch("/api/settings");
+			if (response.ok) {
+				const data = await response.json();
+				if (data.ok) {
+					syncInterval = data.settings.sync_interval || "off";
+				}
+			}
+		} catch (e) {
+			console.error("Failed to fetch settings:", e);
+		} finally {
+			settingsLoading = false;
+		}
+	}
 
-    async function updateSyncInterval(newInterval: string) {
-        try {
-            const response = await fetch('/api/settings', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sync_interval: newInterval })
-            });
-            if (response.ok) {
-                const data = await response.json();
-                if (data.ok) {
-                    syncInterval = newInterval;
-                }
-            }
-        } catch (e) {
-            console.error('Failed to update settings:', e);
-        }
-    }
+	async function updateSyncInterval(newInterval: string) {
+		try {
+			const response = await fetch("/api/settings", {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ sync_interval: newInterval }),
+			});
+			if (response.ok) {
+				const data = await response.json();
+				if (data.ok) {
+					syncInterval = newInterval;
+				}
+			}
+		} catch (e) {
+			console.error("Failed to update settings:", e);
+		}
+	}
 
-    async function handleSyncIntervalChange(e: Event) {
-        const target = e.target as HTMLSelectElement;
-        if (target) {
-            await updateSyncInterval(target.value);
-        }
-    }
+	async function handleSyncIntervalChange(e: Event) {
+		const target = e.target as HTMLSelectElement;
+		if (target) {
+			await updateSyncInterval(target.value);
+		}
+	}
 
 	onMount(() => {
 		(async () => {
@@ -175,7 +187,7 @@
 				loadFeeds(),
 				loadFolders(),
 				loadItems(),
-				fetchSettings()
+				fetchSettings(),
 			]);
 		})();
 
@@ -184,11 +196,11 @@
 			isMobile = window.innerWidth <= 768;
 		};
 		checkMobile();
-		window.addEventListener('resize', checkMobile);
+		window.addEventListener("resize", checkMobile);
 
 		// ESC key to close reader and modals
 		const handleKeydown = (e: KeyboardEvent) => {
-			if (e.key === 'Escape') {
+			if (e.key === "Escape") {
 				if (showReader) {
 					closeReader();
 				} else if (showAddFeedModal) {
@@ -197,76 +209,92 @@
 					showSettings = false;
 				} else if (showCreateFolderModal) {
 					showCreateFolderModal = false;
-					folderModalName = '';
+					folderModalName = "";
 					folderModalError = null;
 				} else if (showRenameFolderModal) {
 					showRenameFolderModal = false;
-					folderModalName = '';
+					folderModalName = "";
 					folderModalError = null;
 				} else if (showDeleteFolderConfirm) {
 					showDeleteFolderConfirm = false;
 				} else if (showFeedFolderPopover) {
 					showFeedFolderPopover = false;
 					showCreateFolderInPopover = false;
-					newFolderNameInPopover = '';
+					newFolderNameInPopover = "";
 				} else if (mobileMenuOpen) {
 					mobileMenuOpen = false;
 				}
 			}
 		};
-		window.addEventListener('keydown', handleKeydown);
+		window.addEventListener("keydown", handleKeydown);
 		return () => {
-			window.removeEventListener('keydown', handleKeydown);
-			window.removeEventListener('resize', checkMobile);
+			window.removeEventListener("keydown", handleKeydown);
+			window.removeEventListener("resize", checkMobile);
 		};
 	});
 
 	// Process links in reader content after render for safety
-	$: if (showReader && readerData && typeof document !== 'undefined') {
+	$: if (showReader && readerData && typeof document !== "undefined") {
 		setTimeout(() => {
-			const container = document.getElementById('reader-body-content');
+			const container = document.getElementById("reader-body-content");
 			if (container) {
-				container.querySelectorAll('a').forEach((link: HTMLAnchorElement) => {
-					link.target = '_blank';
-					link.rel = 'noopener noreferrer';
-				});
+				container
+					.querySelectorAll("a")
+					.forEach((link: HTMLAnchorElement) => {
+						link.target = "_blank";
+						link.rel = "noopener noreferrer";
+					});
 			}
 		}, 0);
 	}
 
 	// Compute unread counts for smart folders
-	$: totalUnread = feeds.reduce((sum, feed) => sum + (feed.unreadCount || 0), 0);
-	$: rssUnread = feeds.filter(f => f.smartFolder === 'rss').reduce((sum, feed) => sum + (feed.unreadCount || 0), 0);
-	$: youtubeUnread = feeds.filter(f => f.smartFolder === 'youtube').reduce((sum, feed) => sum + (feed.unreadCount || 0), 0);
-	$: redditUnread = feeds.filter(f => f.smartFolder === 'reddit').reduce((sum, feed) => sum + (feed.unreadCount || 0), 0);
+	$: totalUnread = feeds.reduce(
+		(sum, feed) => sum + (feed.unreadCount || 0),
+		0,
+	);
+	$: rssUnread = feeds
+		.filter((f) => f.smartFolder === "rss")
+		.reduce((sum, feed) => sum + (feed.unreadCount || 0), 0);
+	$: youtubeUnread = feeds
+		.filter((f) => f.smartFolder === "youtube")
+		.reduce((sum, feed) => sum + (feed.unreadCount || 0), 0);
+	$: redditUnread = feeds
+		.filter((f) => f.smartFolder === "reddit")
+		.reduce((sum, feed) => sum + (feed.unreadCount || 0), 0);
 
 	// Compute unread counts for custom folders
-	$: folderUnreadCounts = folders.reduce((acc, folder) => {
-		const unread = feeds
-			.filter(f => f.folders && f.folders.includes(folder.id))
-			.reduce((sum, feed) => sum + (feed.unreadCount || 0), 0);
-		acc[folder.id] = unread;
-		return acc;
-	}, {} as Record<string, number>);
+	$: folderUnreadCounts = folders.reduce(
+		(acc, folder) => {
+			const unread = feeds
+				.filter((f) => f.folders && f.folders.includes(folder.id))
+				.reduce((sum, feed) => sum + (feed.unreadCount || 0), 0);
+			acc[folder.id] = unread;
+			return acc;
+		},
+		{} as Record<string, number>,
+	);
 
 	// Compute bookmarked items count
-	$: bookmarkedCount = items.filter(i => i.is_starred === 1).length;
-
+	$: bookmarkedCount = items.filter((i) => i.is_starred === 1).length;
 
 	async function loadFeeds() {
 		feedsLoading = true;
 		feedsError = null;
 
 		try {
-			const response = await fetch('/api/feeds');
+			const response = await fetch("/api/feeds");
 			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+				throw new Error(
+					`HTTP ${response.status}: ${response.statusText}`,
+				);
 			}
 
 			const data = await response.json();
 			feeds = data.feeds || [];
 		} catch (err) {
-			feedsError = err instanceof Error ? err.message : 'Unknown error occurred';
+			feedsError =
+				err instanceof Error ? err.message : "Unknown error occurred";
 		} finally {
 			feedsLoading = false;
 		}
@@ -278,24 +306,27 @@
 		addingFeed = true;
 
 		try {
-			const response = await fetch('/api/feeds', {
-				method: 'POST',
+			const response = await fetch("/api/feeds", {
+				method: "POST",
 				headers: {
-					'Content-Type': 'application/json'
+					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({ url: newFeedUrl.trim(), refresh: true })
+				body: JSON.stringify({ url: newFeedUrl.trim(), refresh: true }),
 			});
 
 			if (!response.ok) {
 				const errorData = await response.json();
-				throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+				throw new Error(
+					errorData.error ||
+						`HTTP ${response.status}: ${response.statusText}`,
+				);
 			}
 
-			newFeedUrl = '';
+			newFeedUrl = "";
 			await loadFeeds();
 			await loadItems();
 		} catch (err) {
-			alert(err instanceof Error ? err.message : 'Failed to add feed');
+			alert(err instanceof Error ? err.message : "Failed to add feed");
 		} finally {
 			addingFeed = false;
 		}
@@ -305,13 +336,19 @@
 		if (!confirm(`Delete feed: ${url}?`)) return;
 
 		try {
-			const response = await fetch(`/api/feeds?url=${encodeURIComponent(url)}`, {
-				method: 'DELETE'
-			});
+			const response = await fetch(
+				`/api/feeds?url=${encodeURIComponent(url)}`,
+				{
+					method: "DELETE",
+				},
+			);
 
 			if (!response.ok) {
 				const errorData = await response.json();
-				throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+				throw new Error(
+					errorData.error ||
+						`HTTP ${response.status}: ${response.statusText}`,
+				);
 			}
 
 			if (selectedFeedUrl === url) {
@@ -321,29 +358,32 @@
 			await loadFeeds();
 			await loadItems();
 		} catch (err) {
-			alert(err instanceof Error ? err.message : 'Failed to delete feed');
+			alert(err instanceof Error ? err.message : "Failed to delete feed");
 		}
 	}
 
 	async function refreshAll() {
 		try {
-			const response = await fetch('/api/refresh', {
-				method: 'POST',
+			const response = await fetch("/api/refresh", {
+				method: "POST",
 				headers: {
-					'Content-Type': 'application/json'
+					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({})
+				body: JSON.stringify({}),
 			});
 
 			if (!response.ok) {
 				const errorData = await response.json();
-				throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+				throw new Error(
+					errorData.error ||
+						`HTTP ${response.status}: ${response.statusText}`,
+				);
 			}
 
 			await loadFeeds();
 			await loadItems();
 		} catch (err) {
-			alert(err instanceof Error ? err.message : 'Failed to refresh');
+			alert(err instanceof Error ? err.message : "Failed to refresh");
 		}
 	}
 
@@ -352,15 +392,18 @@
 		foldersError = null;
 
 		try {
-			const response = await fetch('/api/folders');
+			const response = await fetch("/api/folders");
 			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+				throw new Error(
+					`HTTP ${response.status}: ${response.statusText}`,
+				);
 			}
 
 			const data = await response.json();
 			folders = data.folders || [];
 		} catch (err) {
-			foldersError = err instanceof Error ? err.message : 'Unknown error occurred';
+			foldersError =
+				err instanceof Error ? err.message : "Unknown error occurred";
 		} finally {
 			foldersLoading = false;
 		}
@@ -375,13 +418,15 @@
 			if (searchQuery.trim()) {
 				const params = new URLSearchParams({
 					q: searchQuery.trim(),
-					limit: '100',
-					offset: '0'
+					limit: "100",
+					offset: "0",
 				});
 
 				const response = await fetch(`/api/search?${params}`);
 				if (!response.ok) {
-					throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+					throw new Error(
+						`HTTP ${response.status}: ${response.statusText}`,
+					);
 				}
 
 				const data = await response.json();
@@ -394,45 +439,48 @@
 			// Normal item listing
 			isSearching = false;
 			const params = new URLSearchParams({
-				limit: '100',
-				offset: '0'
+				limit: "100",
+				offset: "0",
 			});
 
 			// View mode filtering
-			if (viewMode === 'feed' && selectedFeedUrl) {
-				params.set('feed', selectedFeedUrl);
-			} else if (viewMode === 'smart' && activeSmartFolder) {
-				params.set('smartFolder', activeSmartFolder);
-			} else if (viewMode === 'folder' && activeFolderId) {
-				params.set('folderId', activeFolderId);
-			} else if (viewMode === 'unread') {
-				params.set('unreadOnly', 'true');
+			if (viewMode === "feed" && selectedFeedUrl) {
+				params.set("feed", selectedFeedUrl);
+			} else if (viewMode === "smart" && activeSmartFolder) {
+				params.set("smartFolder", activeSmartFolder);
+			} else if (viewMode === "folder" && activeFolderId) {
+				params.set("folderId", activeFolderId);
+			} else if (viewMode === "unread") {
+				params.set("unreadOnly", "true");
 			}
 			// viewMode === 'all' requires no special params
 
 			// Legacy filters (keep for compatibility)
-			if (sourceFilter !== 'all') {
-				params.set('source', sourceFilter);
+			if (sourceFilter !== "all") {
+				params.set("source", sourceFilter);
 			}
 
-			if (unreadOnly && viewMode !== 'unread') {
-				params.set('unreadOnly', 'true');
+			if (unreadOnly && viewMode !== "unread") {
+				params.set("unreadOnly", "true");
 			}
 
 			if (starredOnly) {
-				params.set('starredOnly', '1');
+				params.set("starredOnly", "1");
 			}
 
 			const response = await fetch(`/api/items?${params}`);
 			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+				throw new Error(
+					`HTTP ${response.status}: ${response.statusText}`,
+				);
 			}
 
 			const data = await response.json();
 			items = data.items || [];
 			itemsTotal = data.total || 0;
 		} catch (err) {
-			itemsError = err instanceof Error ? err.message : 'Unknown error occurred';
+			itemsError =
+				err instanceof Error ? err.message : "Unknown error occurred";
 		} finally {
 			itemsLoading = false;
 		}
@@ -443,15 +491,17 @@
 
 		try {
 			const response = await fetch(`/api/items/${item.id}/read`, {
-				method: 'POST',
+				method: "POST",
 				headers: {
-					'Content-Type': 'application/json'
+					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({ read: newReadState })
+				body: JSON.stringify({ read: newReadState }),
 			});
 
 			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+				throw new Error(
+					`HTTP ${response.status}: ${response.statusText}`,
+				);
 			}
 
 			// Update local state
@@ -461,7 +511,11 @@
 			// Refresh feed list to update unread counts
 			await loadFeeds();
 		} catch (err) {
-			alert(err instanceof Error ? err.message : 'Failed to update read status');
+			alert(
+				err instanceof Error
+					? err.message
+					: "Failed to update read status",
+			);
 		}
 	}
 
@@ -475,29 +529,42 @@
 
 		try {
 			const response = await fetch(`/api/items/${item.id}/star`, {
-				method: 'POST',
+				method: "POST",
 				headers: {
-					'Content-Type': 'application/json'
+					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({ starred: newStarredState })
+				body: JSON.stringify({ starred: newStarredState }),
 			});
 
 			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+				throw new Error(
+					`HTTP ${response.status}: ${response.statusText}`,
+				);
 			}
 		} catch (err) {
 			// Rollback on error
 			item.is_starred = oldStarredState;
 			items = [...items];
-			alert(err instanceof Error ? err.message : 'Failed to update starred status');
+			alert(
+				err instanceof Error
+					? err.message
+					: "Failed to update starred status",
+			);
 		}
 	}
 
 	function formatDate(dateStr: string | null): string {
-		if (!dateStr) return 'Unknown';
+		if (!dateStr) return "Unknown";
 		try {
 			const date = new Date(dateStr);
-			return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+			return (
+				date.toLocaleDateString() +
+				" " +
+				date.toLocaleTimeString([], {
+					hour: "2-digit",
+					minute: "2-digit",
+				})
+			);
 		} catch {
 			return dateStr;
 		}
@@ -511,7 +578,12 @@
 	// Reactive stats
 
 	// Reload items when filters change
-	$: if (sourceFilter || unreadOnly !== undefined || starredOnly !== undefined || selectedFeedUrl !== undefined) {
+	$: if (
+		sourceFilter ||
+		unreadOnly !== undefined ||
+		starredOnly !== undefined ||
+		selectedFeedUrl !== undefined
+	) {
 		loadItems();
 	}
 
@@ -527,26 +599,28 @@
 	}
 
 	function clearSearch() {
-		searchQuery = '';
+		searchQuery = "";
 		loadItems();
 	}
 
 	function handleSearchKeydown(event: KeyboardEvent) {
-		if (event.key === 'Escape') {
+		if (event.key === "Escape") {
 			clearSearch();
 		}
 	}
 
 	async function exportOpml() {
 		try {
-			const response = await fetch('/api/opml/export');
+			const response = await fetch("/api/opml/export");
 			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+				throw new Error(
+					`HTTP ${response.status}: ${response.statusText}`,
+				);
 			}
 
 			const blob = await response.blob();
 			const url = window.URL.createObjectURL(blob);
-			const a = document.createElement('a');
+			const a = document.createElement("a");
 			a.href = url;
 			a.download = `feedstream-${Date.now()}.opml`;
 			document.body.appendChild(a);
@@ -554,7 +628,7 @@
 			document.body.removeChild(a);
 			window.URL.revokeObjectURL(url);
 		} catch (err) {
-			alert(err instanceof Error ? err.message : 'Failed to export OPML');
+			alert(err instanceof Error ? err.message : "Failed to export OPML");
 		}
 	}
 
@@ -570,18 +644,21 @@
 		try {
 			const opmlText = await file.text();
 
-			const response = await fetch('/api/opml/import', {
-				method: 'POST',
+			const response = await fetch("/api/opml/import", {
+				method: "POST",
 				headers: {
-					'Content-Type': 'application/json'
+					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({ opml: opmlText })
+				body: JSON.stringify({ opml: opmlText }),
 			});
 
 			const data = await response.json();
 
 			if (!response.ok) {
-				throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
+				throw new Error(
+					data.error ||
+						`HTTP ${response.status}: ${response.statusText}`,
+				);
 			}
 
 			importResults = data;
@@ -592,20 +669,22 @@
 				await loadItems();
 			}
 		} catch (err) {
-			alert(err instanceof Error ? err.message : 'Failed to import OPML');
+			alert(err instanceof Error ? err.message : "Failed to import OPML");
 		} finally {
 			importingOpml = false;
 			// Reset file input
-			input.value = '';
+			input.value = "";
 		}
 	}
 
 	// Reader View functions
 	async function fetchReaderContent(url: string): Promise<typeof readerData> {
-		const response = await fetch(`/api/reader?url=${encodeURIComponent(url)}`);
+		const response = await fetch(
+			`/api/reader?url=${encodeURIComponent(url)}`,
+		);
 		const data = await response.json();
 		if (!data.ok) {
-			throw new Error(data.error || 'Failed to load reader content');
+			throw new Error(data.error || "Failed to load reader content");
 		}
 		return {
 			url: data.url,
@@ -615,46 +694,166 @@
 			siteName: data.siteName,
 			imageUrl: data.imageUrl,
 			contentHtml: data.contentHtml,
-			fromCache: data.fromCache
+			fromCache: data.fromCache,
 		};
 	}
 
 	async function openReader(item: any) {
 		if (!item.url) return;
-		
+
+		currentItem = item;
 		currentItemUrl = item.url;
 		showReader = true;
 		readerError = null;
-		
+
 		// Check local cache first
 		const cached = readerCache.get(item.url);
 		if (cached) {
 			readerData = cached;
 			readerLoading = false;
+			handleReaderOpened();
 			return;
 		}
-		
+
 		readerLoading = true;
 		readerData = null;
-		
+
 		try {
 			const data = await fetchReaderContent(item.url);
 			readerData = data;
 			if (data) readerCache.set(item.url, data);
+			handleReaderOpened();
 		} catch (err) {
-			readerError = err instanceof Error ? err.message : 'Failed to load reader';
+			readerError =
+				err instanceof Error ? err.message : "Failed to load reader";
 		} finally {
 			readerLoading = false;
 		}
 	}
 
+	function handleReaderOpened() {
+		// If it's a YouTube video, initialize the player
+		if (
+			currentItemUrl &&
+			(currentItemUrl.includes("youtube.com/watch") ||
+				currentItemUrl.includes("youtu.be/"))
+		) {
+			initYouTubePlayer();
+		}
+	}
+
+	function initYouTubePlayer() {
+		if (!ytApiLoaded) {
+			loadYouTubeAPI();
+			return;
+		}
+
+		// Wait for DOM to be ready
+		setTimeout(() => {
+			const container = document.getElementById("yt-player-container");
+			if (!container) return;
+
+			let videoId = null;
+			if (currentItemUrl?.includes("v=")) {
+				videoId = currentItemUrl.split("v=")[1]?.split("&")[0];
+			} else if (currentItemUrl?.includes("youtu.be/")) {
+				videoId = currentItemUrl.split("youtu.be/")[1]?.split("?")[0];
+			}
+
+			if (!videoId) return;
+
+			// Clear existing player
+			if (ytPlayer) {
+				try {
+					ytPlayer.destroy();
+				} catch (e) {}
+			}
+
+			const startPos = Math.floor(currentItem?.playback_position || 0);
+
+			ytPlayer = new (window as any).YT.Player("yt-player-container", {
+				height: "100%",
+				width: "100%",
+				videoId: videoId,
+				playerVars: {
+					autoplay: 1,
+					playsinline: 1,
+					modestbranding: 1,
+					rel: 0,
+					start: startPos,
+				},
+				events: {
+					onStateChange: onPlayerStateChange,
+				},
+			});
+		}, 100);
+	}
+
+	function loadYouTubeAPI() {
+		if ((window as any).YT) {
+			ytApiLoaded = true;
+			initYouTubePlayer();
+			return;
+		}
+
+		const tag = document.createElement("script");
+		tag.src = "https://www.youtube.com/iframe_api";
+		const firstScriptTag = document.getElementsByTagName("script")[0];
+		firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+
+		(window as any).onYouTubeIframeAPIReady = () => {
+			ytApiLoaded = true;
+			initYouTubePlayer();
+		};
+	}
+
+	function onPlayerStateChange(event: any) {
+		if (event.data === (window as any).YT.PlayerState.PLAYING) {
+			startProgressSync();
+		} else {
+			stopProgressSync();
+			// Save final position
+			syncPlaybackPosition();
+		}
+	}
+
+	function startProgressSync() {
+		if (ytProgressInterval) clearInterval(ytProgressInterval);
+		ytProgressInterval = setInterval(syncPlaybackPosition, 5000);
+	}
+
+	function stopProgressSync() {
+		if (ytProgressInterval) {
+			clearInterval(ytProgressInterval);
+			ytProgressInterval = null;
+		}
+	}
+
+	async function syncPlaybackPosition() {
+		if (!ytPlayer || !ytPlayer.getCurrentTime || !currentItem) return;
+
+		const currentTime = ytPlayer.getCurrentTime();
+		// Update local state
+		currentItem.playback_position = currentTime;
+
+		try {
+			await fetch(`/api/items/${currentItem.id}/playback-position`, {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ position: currentTime }),
+			});
+		} catch (e) {
+			console.error("Failed to sync playback position:", e);
+		}
+	}
+
 	function prefetchReader(url: string) {
 		if (!url || readerCache.has(url)) return;
-		
+
 		if (prefetchDebounceTimer) {
 			clearTimeout(prefetchDebounceTimer);
 		}
-		
+
 		prefetchDebounceTimer = setTimeout(async () => {
 			try {
 				const data = await fetchReaderContent(url);
@@ -666,16 +865,29 @@
 	}
 
 	function closeReader() {
+		stopProgressSync();
+		if (ytPlayer) {
+			try {
+				ytPlayer.destroy();
+			} catch (e) {}
+			ytPlayer = null;
+		}
 		showReader = false;
 		readerData = null;
 		readerError = null;
 		currentItemUrl = null;
+		currentItem = null;
 	}
 
 	function handleArticleClick(event: MouseEvent, item: any) {
 		// Don't open reader if clicking on a link or button
 		const target = event.target as HTMLElement;
-		if (target.tagName === 'A' || target.tagName === 'BUTTON' || target.closest('a') || target.closest('button')) {
+		if (
+			target.tagName === "A" ||
+			target.tagName === "BUTTON" ||
+			target.closest("a") ||
+			target.closest("button")
+		) {
 			return;
 		}
 		openReader(item);
@@ -690,20 +902,20 @@
 	// Add Feed modal functions
 	function openAddFeedModal() {
 		showAddFeedModal = true;
-		addFeedTab = 'url';
-		addFeedUrl = '';
-		addFeedBulkUrls = '';
+		addFeedTab = "url";
+		addFeedUrl = "";
+		addFeedBulkUrls = "";
 		addFeedError = null;
 	}
 
 	function closeAddFeedModal() {
 		showAddFeedModal = false;
-		addFeedUrl = '';
-		addFeedBulkUrls = '';
+		addFeedUrl = "";
+		addFeedBulkUrls = "";
 		addFeedError = null;
 		addFeedLoading = false;
 		selectedFolderIdsForNewFeed = [];
-		feedSearchQuery = '';
+		feedSearchQuery = "";
 		feedSearchResults = [];
 		feedSearchError = null;
 	}
@@ -732,48 +944,51 @@
 		try {
 			const params = new URLSearchParams({
 				q: feedSearchQuery.trim(),
-				type: feedSearchType
+				type: feedSearchType,
 			});
 
 			const response = await fetch(`/api/feeds/search?${params}`);
 			const data = await response.json();
 
 			if (!response.ok) {
-				throw new Error(data.error || 'Search failed');
+				throw new Error(data.error || "Search failed");
 			}
 
 			feedSearchResults = data.results || [];
 		} catch (err) {
-			feedSearchError = err instanceof Error ? err.message : 'Search failed';
+			feedSearchError =
+				err instanceof Error ? err.message : "Search failed";
 			feedSearchResults = [];
 		} finally {
 			feedSearchLoading = false;
 		}
 	}
 
-	async function addFeedFromSearch(result: typeof feedSearchResults[0]) {
+	async function addFeedFromSearch(result: (typeof feedSearchResults)[0]) {
 		addFeedLoading = true;
 		addFeedError = null;
 
 		try {
-			const response = await fetch('/api/feeds', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ 
-					url: result.url, 
+			const response = await fetch("/api/feeds", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					url: result.url,
 					refresh: true,
-					folderIds: selectedFolderIdsForNewFeed
-				})
+					folderIds: selectedFolderIdsForNewFeed,
+				}),
 			});
 
 			const data = await response.json();
 
 			if (!response.ok) {
-				throw new Error(data.error || 'Failed to add feed');
+				throw new Error(data.error || "Failed to add feed");
 			}
 
 			// Remove from search results
-			feedSearchResults = feedSearchResults.filter(r => r.url !== result.url);
+			feedSearchResults = feedSearchResults.filter(
+				(r) => r.url !== result.url,
+			);
 
 			await loadFeeds();
 			await loadFolders();
@@ -783,7 +998,8 @@
 				closeAddFeedModal();
 			}
 		} catch (err) {
-			addFeedError = err instanceof Error ? err.message : 'Failed to add feed';
+			addFeedError =
+				err instanceof Error ? err.message : "Failed to add feed";
 		} finally {
 			addFeedLoading = false;
 		}
@@ -792,20 +1008,24 @@
 	function validateFeedUrl(url: string): boolean {
 		if (!url.trim()) return false;
 		// Basic validation: must contain a dot or start with http
-		return url.includes('.') || url.startsWith('http://') || url.startsWith('https://');
+		return (
+			url.includes(".") ||
+			url.startsWith("http://") ||
+			url.startsWith("https://")
+		);
 	}
 
 	async function submitAddFeed() {
-		if (addFeedTab === 'url') {
+		if (addFeedTab === "url") {
 			await submitSingleFeed();
-		} else if (addFeedTab === 'bulk') {
+		} else if (addFeedTab === "bulk") {
 			await submitBulkFeeds();
 		}
 	}
 
 	async function submitSingleFeed() {
 		if (!validateFeedUrl(addFeedUrl)) {
-			addFeedError = 'Please enter a valid URL';
+			addFeedError = "Please enter a valid URL";
 			return;
 		}
 
@@ -813,14 +1033,14 @@
 		addFeedError = null;
 
 		try {
-			const response = await fetch('/api/feeds', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ 
-					url: addFeedUrl.trim(), 
+			const response = await fetch("/api/feeds", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					url: addFeedUrl.trim(),
 					refresh: true,
-					folderIds: selectedFolderIdsForNewFeed
-				})
+					folderIds: selectedFolderIdsForNewFeed,
+				}),
 			});
 
 			const data = await response.json();
@@ -834,7 +1054,8 @@
 			await loadFolders();
 			await loadItems();
 		} catch (err) {
-			addFeedError = err instanceof Error ? err.message : 'Failed to add feed';
+			addFeedError =
+				err instanceof Error ? err.message : "Failed to add feed";
 		} finally {
 			addFeedLoading = false;
 		}
@@ -842,12 +1063,12 @@
 
 	async function submitBulkFeeds() {
 		const urls = addFeedBulkUrls
-			.split('\n')
-			.map(u => u.trim())
-			.filter(u => u.length > 0);
+			.split("\n")
+			.map((u) => u.trim())
+			.filter((u) => u.length > 0);
 
 		if (urls.length === 0) {
-			addFeedError = 'Please enter at least one URL';
+			addFeedError = "Please enter at least one URL";
 			return;
 		}
 
@@ -860,21 +1081,21 @@
 
 		for (const url of urls) {
 			try {
-				const response = await fetch('/api/feeds', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ 
-						url, 
+				const response = await fetch("/api/feeds", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						url,
 						refresh: false,
-						folderIds: selectedFolderIdsForNewFeed
-					})
+						folderIds: selectedFolderIdsForNewFeed,
+					}),
 				});
 
 				if (response.ok) {
 					added++;
 				} else {
 					const data = await response.json();
-					if (data.error?.includes('already exists')) {
+					if (data.error?.includes("already exists")) {
 						skipped++;
 					} else {
 						failed++;
@@ -898,28 +1119,28 @@
 	// Refresh toast functions
 	async function startRefresh() {
 		try {
-			const response = await fetch('/api/refresh/start', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({})
+			const response = await fetch("/api/refresh/start", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({}),
 			});
 
 			const data = await response.json();
 
 			if (!response.ok) {
-				throw new Error(data.error || 'Failed to start refresh');
+				throw new Error(data.error || "Failed to start refresh");
 			}
 
 			refreshJobId = data.jobId;
 			showRefreshToast = true;
 			refreshCurrent = 0;
 			refreshTotal = 0;
-			refreshMessage = 'Starting refresh...';
+			refreshMessage = "Starting refresh...";
 
 			// Start polling
 			pollRefreshStatus();
 		} catch (err) {
-			console.error('Failed to start refresh:', err);
+			console.error("Failed to start refresh:", err);
 		}
 	}
 
@@ -937,7 +1158,9 @@
 			}
 
 			try {
-				const response = await fetch(`/api/refresh/status?jobId=${encodeURIComponent(refreshJobId)}`);
+				const response = await fetch(
+					`/api/refresh/status?jobId=${encodeURIComponent(refreshJobId)}`,
+				);
 				const data = await response.json();
 
 				if (!response.ok) {
@@ -947,9 +1170,9 @@
 
 				refreshCurrent = data.current;
 				refreshTotal = data.total;
-				refreshMessage = data.message || '';
+				refreshMessage = data.message || "";
 
-				if (data.status === 'done' || data.status === 'error') {
+				if (data.status === "done" || data.status === "error") {
 					stopRefreshPolling();
 					// Refresh feeds and items
 					await loadFeeds();
@@ -960,7 +1183,7 @@
 					}, 2000);
 				}
 			} catch (err) {
-				console.error('Failed to poll refresh status:', err);
+				console.error("Failed to poll refresh status:", err);
 				stopRefreshPolling();
 			}
 		}, 500);
@@ -980,7 +1203,7 @@
 
 	// View switching functions
 	function setViewAll() {
-		viewMode = 'all';
+		viewMode = "all";
 		activeSmartFolder = null;
 		activeFolderId = null;
 		selectedFeedUrl = null;
@@ -988,7 +1211,7 @@
 	}
 
 	function setViewUnread() {
-		viewMode = 'unread';
+		viewMode = "unread";
 		activeSmartFolder = null;
 		activeFolderId = null;
 		selectedFeedUrl = null;
@@ -997,7 +1220,7 @@
 	}
 
 	function setViewBookmarks() {
-		viewMode = 'bookmarks';
+		viewMode = "bookmarks";
 		activeSmartFolder = null;
 		activeFolderId = null;
 		selectedFeedUrl = null;
@@ -1005,8 +1228,8 @@
 		loadItems();
 	}
 
-	function setViewSmartFolder(folder: 'rss' | 'youtube' | 'reddit') {
-		viewMode = 'smart';
+	function setViewSmartFolder(folder: "rss" | "youtube" | "reddit") {
+		viewMode = "smart";
 		activeSmartFolder = folder;
 		activeFolderId = null;
 		selectedFeedUrl = null;
@@ -1014,7 +1237,7 @@
 	}
 
 	function setViewFolder(folderId: string) {
-		viewMode = 'folder';
+		viewMode = "folder";
 		activeSmartFolder = null;
 		activeFolderId = folderId;
 		selectedFeedUrl = null;
@@ -1022,7 +1245,7 @@
 	}
 
 	function setViewFeed(feedUrl: string) {
-		viewMode = 'feed';
+		viewMode = "feed";
 		activeSmartFolder = null;
 		activeFolderId = null;
 		selectedFeedUrl = feedUrl;
@@ -1033,7 +1256,8 @@
 	async function createFolder() {
 		const name = folderModalName.trim();
 		if (!name || name.length < 1 || name.length > 60) {
-			folderModalError = 'Folder name must be between 1 and 60 characters';
+			folderModalError =
+				"Folder name must be between 1 and 60 characters";
 			return;
 		}
 
@@ -1041,10 +1265,10 @@
 		folderModalError = null;
 
 		try {
-			const response = await fetch('/api/folders', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name })
+			const response = await fetch("/api/folders", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ name }),
 			});
 
 			const data = await response.json();
@@ -1054,11 +1278,12 @@
 			}
 
 			showCreateFolderModal = false;
-			folderModalName = '';
+			folderModalName = "";
 			await loadFolders();
 			await loadFeeds();
 		} catch (err) {
-			folderModalError = err instanceof Error ? err.message : 'Failed to create folder';
+			folderModalError =
+				err instanceof Error ? err.message : "Failed to create folder";
 		} finally {
 			folderModalLoading = false;
 		}
@@ -1067,7 +1292,8 @@
 	async function renameFolder() {
 		const name = folderModalName.trim();
 		if (!name || name.length < 1 || name.length > 60) {
-			folderModalError = 'Folder name must be between 1 and 60 characters';
+			folderModalError =
+				"Folder name must be between 1 and 60 characters";
 			return;
 		}
 
@@ -1077,11 +1303,14 @@
 		folderModalError = null;
 
 		try {
-			const response = await fetch(`/api/folders/${selectedFolderForAction.id}`, {
-				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name })
-			});
+			const response = await fetch(
+				`/api/folders/${selectedFolderForAction.id}`,
+				{
+					method: "PATCH",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ name }),
+				},
+			);
 
 			const data = await response.json();
 
@@ -1090,11 +1319,12 @@
 			}
 
 			showRenameFolderModal = false;
-			folderModalName = '';
+			folderModalName = "";
 			selectedFolderForAction = null;
 			await loadFolders();
 		} catch (err) {
-			folderModalError = err instanceof Error ? err.message : 'Failed to rename folder';
+			folderModalError =
+				err instanceof Error ? err.message : "Failed to rename folder";
 		} finally {
 			folderModalLoading = false;
 		}
@@ -1104,9 +1334,12 @@
 		if (!selectedFolderForAction) return;
 
 		try {
-			const response = await fetch(`/api/folders/${selectedFolderForAction.id}`, {
-				method: 'DELETE'
-			});
+			const response = await fetch(
+				`/api/folders/${selectedFolderForAction.id}`,
+				{
+					method: "DELETE",
+				},
+			);
 
 			if (!response.ok) {
 				const data = await response.json();
@@ -1114,9 +1347,12 @@
 			}
 
 			showDeleteFolderConfirm = false;
-			
+
 			// If we're viewing the deleted folder, switch to All
-			if (viewMode === 'folder' && activeFolderId === selectedFolderForAction.id) {
+			if (
+				viewMode === "folder" &&
+				activeFolderId === selectedFolderForAction.id
+			) {
 				setViewAll();
 			}
 
@@ -1124,43 +1360,51 @@
 			await loadFolders();
 			await loadFeeds();
 		} catch (err) {
-			alert(err instanceof Error ? err.message : 'Failed to delete folder');
+			alert(
+				err instanceof Error ? err.message : "Failed to delete folder",
+			);
 		}
 	}
 
-	async function toggleFeedInFolder(folderId: string, feedUrl: string, currentlyInFolder: boolean) {
+	async function toggleFeedInFolder(
+		folderId: string,
+		feedUrl: string,
+		currentlyInFolder: boolean,
+	) {
 		try {
 			if (currentlyInFolder) {
 				// Remove from folder
 				const response = await fetch(`/api/folders/${folderId}/feeds`, {
-					method: 'DELETE',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ feedUrl })
+					method: "DELETE",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ feedUrl }),
 				});
 
 				if (!response.ok) {
-					throw new Error('Failed to remove feed from folder');
+					throw new Error("Failed to remove feed from folder");
 				}
 
 				// Update local state
-				const feed = feeds.find(f => f.url === feedUrl);
+				const feed = feeds.find((f) => f.url === feedUrl);
 				if (feed) {
-					feed.folders = feed.folders.filter((id: string) => id !== folderId);
+					feed.folders = feed.folders.filter(
+						(id: string) => id !== folderId,
+					);
 				}
 			} else {
 				// Add to folder
 				const response = await fetch(`/api/folders/${folderId}/feeds`, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ feedUrl })
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ feedUrl }),
 				});
 
 				if (!response.ok) {
-					throw new Error('Failed to add feed to folder');
+					throw new Error("Failed to add feed to folder");
 				}
 
 				// Update local state
-				const feed = feeds.find(f => f.url === feedUrl);
+				const feed = feeds.find((f) => f.url === feedUrl);
 				if (feed) {
 					if (!feed.folders) feed.folders = [];
 					feed.folders.push(folderId);
@@ -1170,7 +1414,9 @@
 			// Trigger reactivity
 			feeds = [...feeds];
 		} catch (err) {
-			alert(err instanceof Error ? err.message : 'Failed to update folder');
+			alert(
+				err instanceof Error ? err.message : "Failed to update folder",
+			);
 			// Reload to get correct state
 			await loadFeeds();
 		}
@@ -1181,26 +1427,32 @@
 		if (!name || !feedFolderPopoverFeed) return;
 
 		try {
-			const response = await fetch('/api/folders', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name })
+			const response = await fetch("/api/folders", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ name }),
 			});
 
 			const data = await response.json();
 
 			if (!response.ok) {
-				throw new Error(data.error || 'Failed to create folder');
+				throw new Error(data.error || "Failed to create folder");
 			}
 
 			// Add feed to new folder
-			await toggleFeedInFolder(data.folder.id, feedFolderPopoverFeed.url, false);
-			
-			newFolderNameInPopover = '';
+			await toggleFeedInFolder(
+				data.folder.id,
+				feedFolderPopoverFeed.url,
+				false,
+			);
+
+			newFolderNameInPopover = "";
 			showCreateFolderInPopover = false;
 			await loadFolders();
 		} catch (err) {
-			alert(err instanceof Error ? err.message : 'Failed to create folder');
+			alert(
+				err instanceof Error ? err.message : "Failed to create folder",
+			);
 		}
 	}
 
@@ -1211,7 +1463,7 @@
 		const rect = button.getBoundingClientRect();
 		feedFolderPopoverPosition = {
 			x: rect.left,
-			y: rect.bottom + 4
+			y: rect.bottom + 4,
 		};
 		showFeedFolderPopover = true;
 	}
@@ -1219,64 +1471,71 @@
 	function closeFeedFolderPopover() {
 		showFeedFolderPopover = false;
 		showCreateFolderInPopover = false;
-		newFolderNameInPopover = '';
+		newFolderNameInPopover = "";
 		feedFolderPopoverFeed = null;
 	}
 
 	// Context Menu Logic
-	function openContextMenu(type: 'folder' | 'feed', target: any, event: MouseEvent) {
+	function openContextMenu(
+		type: "folder" | "feed",
+		target: any,
+		event: MouseEvent,
+	) {
 		event.preventDefault();
 		event.stopPropagation();
-		
+
 		contextMenuType = type;
 		contextMenuTarget = target;
-		
+
 		const menuWidth = 180; // Estimated
-		const menuHeight = type === 'feed' ? 140 : 100; // Estimated based on items
-		
+		const menuHeight = type === "feed" ? 140 : 100; // Estimated based on items
+
 		let x = event.clientX;
 		let y = event.clientY;
-		
+
 		// Smart positioning
 		if (x + menuWidth > window.innerWidth) {
 			x = window.innerWidth - menuWidth - 10;
 		}
-		
+
 		if (y + menuHeight > window.innerHeight) {
 			y = window.innerHeight - menuHeight - 10;
 		}
-		
+
 		contextMenuPosition = { x, y };
 		showContextMenu = true;
-		
+
 		// Click outside listener
 		setTimeout(() => {
-			window.addEventListener('click', closeContextMenu);
+			window.addEventListener("click", closeContextMenu);
 		}, 0);
 	}
 
 	function closeContextMenu() {
 		showContextMenu = false;
-		window.removeEventListener('click', closeContextMenu);
+		window.removeEventListener("click", closeContextMenu);
 	}
 
 	async function renameFeed() {
 		const name = folderModalName.trim();
 		if (!name || name.length < 1 || name.length > 100) {
-			folderModalError = 'Feed name must be between 1 and 100 characters';
+			folderModalError = "Feed name must be between 1 and 100 characters";
 			return;
 		}
 
-		if (contextMenuType !== 'feed' || !contextMenuTarget) return;
+		if (contextMenuType !== "feed" || !contextMenuTarget) return;
 
 		folderModalLoading = true;
 		folderModalError = null;
 
 		try {
-			const response = await fetch('/api/feeds', {
-				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ url: contextMenuTarget.url, title: name })
+			const response = await fetch("/api/feeds", {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					url: contextMenuTarget.url,
+					title: name,
+				}),
 			});
 
 			const data = await response.json();
@@ -1286,22 +1545,26 @@
 			}
 
 			showRenameFolderModal = false; // Reuse rename modal
-			folderModalName = '';
+			folderModalName = "";
 			await loadFeeds();
 		} catch (err) {
-			folderModalError = err instanceof Error ? err.message : 'Failed to rename feed';
+			folderModalError =
+				err instanceof Error ? err.message : "Failed to rename feed";
 		} finally {
 			folderModalLoading = false;
 		}
 	}
 
 	async function deleteFeedConfirm() {
-		if (contextMenuType !== 'feed' || !contextMenuTarget) return;
+		if (contextMenuType !== "feed" || !contextMenuTarget) return;
 
 		try {
-			const response = await fetch(`/api/feeds?url=${encodeURIComponent(contextMenuTarget.url)}`, {
-				method: 'DELETE'
-			});
+			const response = await fetch(
+				`/api/feeds?url=${encodeURIComponent(contextMenuTarget.url)}`,
+				{
+					method: "DELETE",
+				},
+			);
 
 			if (!response.ok) {
 				const data = await response.json();
@@ -1309,15 +1572,18 @@
 			}
 
 			showDeleteFolderConfirm = false; // Reuse delete confirm
-			
+
 			// If we're viewing the deleted feed, switch to All
-			if (viewMode === 'feed' && selectedFeedUrl === contextMenuTarget.url) {
+			if (
+				viewMode === "feed" &&
+				selectedFeedUrl === contextMenuTarget.url
+			) {
 				setViewAll();
 			}
 
 			await loadFeeds();
 		} catch (err) {
-			alert(err instanceof Error ? err.message : 'Failed to delete feed');
+			alert(err instanceof Error ? err.message : "Failed to delete feed");
 		}
 	}
 </script>
@@ -1333,7 +1599,7 @@
 			<div class="logo">
 				<div class="logo-icon">
 					<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-						<path d="M4 4h12v12H4z" fill="currentColor"/>
+						<path d="M4 4h12v12H4z" fill="currentColor" />
 					</svg>
 				</div>
 				<span class="logo-text">FeedStream</span>
@@ -1343,17 +1609,45 @@
 		<nav class="sidebar-nav">
 			<!-- Smart Folders Section -->
 			<div class="nav-section-label">SMART FOLDERS</div>
-			
-			<button 
-				class="nav-item" 
-				class:active={viewMode === 'all'}
+
+			<button
+				class="nav-item"
+				class:active={viewMode === "all"}
 				on:click={setViewAll}
 			>
 				<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-					<rect x="2" y="2" width="6" height="6" rx="1" fill="currentColor"/>
-					<rect x="10" y="2" width="6" height="6" rx="1" fill="currentColor"/>
-					<rect x="2" y="10" width="6" height="6" rx="1" fill="currentColor"/>
-					<rect x="10" y="10" width="6" height="6" rx="1" fill="currentColor"/>
+					<rect
+						x="2"
+						y="2"
+						width="6"
+						height="6"
+						rx="1"
+						fill="currentColor"
+					/>
+					<rect
+						x="10"
+						y="2"
+						width="6"
+						height="6"
+						rx="1"
+						fill="currentColor"
+					/>
+					<rect
+						x="2"
+						y="10"
+						width="6"
+						height="6"
+						rx="1"
+						fill="currentColor"
+					/>
+					<rect
+						x="10"
+						y="10"
+						width="6"
+						height="6"
+						rx="1"
+						fill="currentColor"
+					/>
 				</svg>
 				<span>All</span>
 				{#if totalUnread > 0}
@@ -1361,14 +1655,21 @@
 				{/if}
 			</button>
 
-			<button 
-				class="nav-item" 
-				class:active={viewMode === 'unread'}
+			<button
+				class="nav-item"
+				class:active={viewMode === "unread"}
 				on:click={setViewUnread}
 			>
 				<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-					<circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="2" fill="none"/>
-					<circle cx="9" cy="9" r="3" fill="currentColor"/>
+					<circle
+						cx="9"
+						cy="9"
+						r="7"
+						stroke="currentColor"
+						stroke-width="2"
+						fill="none"
+					/>
+					<circle cx="9" cy="9" r="3" fill="currentColor" />
 				</svg>
 				<span>Unread</span>
 				{#if totalUnread > 0}
@@ -1376,13 +1677,19 @@
 				{/if}
 			</button>
 
-			<button 
-				class="nav-item" 
-				class:active={viewMode === 'bookmarks'}
+			<button
+				class="nav-item"
+				class:active={viewMode === "bookmarks"}
 				on:click={setViewBookmarks}
 			>
 				<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-					<path d="M4 2h10v14l-5-3-5 3V2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+					<path
+						d="M4 2h10v14l-5-3-5 3V2z"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linejoin="round"
+						fill="none"
+					/>
 				</svg>
 				<span>Bookmarks</span>
 				{#if bookmarkedCount > 0}
@@ -1390,14 +1697,20 @@
 				{/if}
 			</button>
 
-			<button 
-				class="nav-item smart-folder" 
-				class:active={viewMode === 'smart' && activeSmartFolder === 'rss'}
-				on:click={() => setViewSmartFolder('rss')}
+			<button
+				class="nav-item smart-folder"
+				class:active={viewMode === "smart" &&
+					activeSmartFolder === "rss"}
+				on:click={() => setViewSmartFolder("rss")}
 			>
 				<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-					<circle cx="3" cy="15" r="2" fill="currentColor"/>
-					<path d="M3 9a6 6 0 016 6M3 3a12 12 0 0112 12" stroke="currentColor" stroke-width="2" fill="none"/>
+					<circle cx="3" cy="15" r="2" fill="currentColor" />
+					<path
+						d="M3 9a6 6 0 016 6M3 3a12 12 0 0112 12"
+						stroke="currentColor"
+						stroke-width="2"
+						fill="none"
+					/>
 				</svg>
 				<span>RSS</span>
 				{#if rssUnread > 0}
@@ -1405,14 +1718,20 @@
 				{/if}
 			</button>
 
-			<button 
-				class="nav-item smart-folder" 
-				class:active={viewMode === 'smart' && activeSmartFolder === 'youtube'}
-				on:click={() => setViewSmartFolder('youtube')}
+			<button
+				class="nav-item smart-folder"
+				class:active={viewMode === "smart" &&
+					activeSmartFolder === "youtube"}
+				on:click={() => setViewSmartFolder("youtube")}
 			>
 				<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-					<path d="M17 6s0-2-2-2H3c-2 0-2 2-2 2v6s0 2 2 2h12c2 0 2-2 2-2V6z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-					<path d="M7 5l5 4-5 4V5z" fill="currentColor"/>
+					<path
+						d="M17 6s0-2-2-2H3c-2 0-2 2-2 2v6s0 2 2 2h12c2 0 2-2 2-2V6z"
+						stroke="currentColor"
+						stroke-width="1.5"
+						fill="none"
+					/>
+					<path d="M7 5l5 4-5 4V5z" fill="currentColor" />
 				</svg>
 				<span>YouTube</span>
 				{#if youtubeUnread > 0}
@@ -1420,16 +1739,29 @@
 				{/if}
 			</button>
 
-			<button 
-				class="nav-item smart-folder" 
-				class:active={viewMode === 'smart' && activeSmartFolder === 'reddit'}
-				on:click={() => setViewSmartFolder('reddit')}
+			<button
+				class="nav-item smart-folder"
+				class:active={viewMode === "smart" &&
+					activeSmartFolder === "reddit"}
+				on:click={() => setViewSmartFolder("reddit")}
 			>
 				<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-					<circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
-					<circle cx="6" cy="8" r="1" fill="currentColor"/>
-					<circle cx="12" cy="8" r="1" fill="currentColor"/>
-					<path d="M6 11c.5 1 1.5 1.5 3 1.5s2.5-.5 3-1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+					<circle
+						cx="9"
+						cy="9"
+						r="7"
+						stroke="currentColor"
+						stroke-width="1.5"
+						fill="none"
+					/>
+					<circle cx="6" cy="8" r="1" fill="currentColor" />
+					<circle cx="12" cy="8" r="1" fill="currentColor" />
+					<path
+						d="M6 11c.5 1 1.5 1.5 3 1.5s2.5-.5 3-1.5"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+					/>
 				</svg>
 				<span>Reddit</span>
 				{#if redditUnread > 0}
@@ -1440,17 +1772,22 @@
 			<!-- Custom Folders Section -->
 			<div class="nav-section-header">
 				<div class="nav-section-label">FOLDERS</div>
-				<button 
-					class="add-folder-btn" 
+				<button
+					class="add-folder-btn"
 					on:click={() => {
 						showCreateFolderModal = true;
-						folderModalName = '';
+						folderModalName = "";
 						folderModalError = null;
 					}}
 					title="New folder"
 				>
 					<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-						<path d="M7 3v8M3 7h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						<path
+							d="M7 3v8M3 7h8"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+						/>
 					</svg>
 				</button>
 			</div>
@@ -1462,31 +1799,68 @@
 			{:else}
 				{#each folders as folder}
 					<div class="folder-item-wrapper">
-						<button 
-							class="nav-item folder-item" 
-							class:active={viewMode === 'folder' && activeFolderId === folder.id}
+						<button
+							class="nav-item folder-item"
+							class:active={viewMode === "folder" &&
+								activeFolderId === folder.id}
 							on:click={() => setViewFolder(folder.id)}
 						>
-							<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-								<path d="M2 4h5l1 2h8v10H2V4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+							<svg
+								width="18"
+								height="18"
+								viewBox="0 0 18 18"
+								fill="none"
+							>
+								<path
+									d="M2 4h5l1 2h8v10H2V4z"
+									stroke="currentColor"
+									stroke-width="1.5"
+									stroke-linejoin="round"
+									fill="none"
+								/>
 							</svg>
 							<span class="folder-name">{folder.name}</span>
 							<div class="folder-meta">
 								{#if folderUnreadCounts[folder.id] > 0}
-									<span class="badge">{folderUnreadCounts[folder.id]}</span>
+									<span class="badge"
+										>{folderUnreadCounts[folder.id]}</span
+									>
 								{/if}
-								<span class="feed-count">{folder.feedCount}</span>
+								<span class="feed-count"
+									>{folder.feedCount}</span
+								>
 							</div>
 						</button>
-						<button 
+						<button
 							class="folder-actions-btn"
-							on:click={(e) => openContextMenu('folder', folder, e)}
+							on:click={(e) =>
+								openContextMenu("folder", folder, e)}
 							title="Folder actions"
 						>
-							<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-								<circle cx="8" cy="3" r="1.5" fill="currentColor"/>
-								<circle cx="8" cy="8" r="1.5" fill="currentColor"/>
-								<circle cx="8" cy="13" r="1.5" fill="currentColor"/>
+							<svg
+								width="16"
+								height="16"
+								viewBox="0 0 16 16"
+								fill="none"
+							>
+								<circle
+									cx="8"
+									cy="3"
+									r="1.5"
+									fill="currentColor"
+								/>
+								<circle
+									cx="8"
+									cy="8"
+									r="1.5"
+									fill="currentColor"
+								/>
+								<circle
+									cx="8"
+									cy="13"
+									r="1.5"
+									fill="currentColor"
+								/>
 							</svg>
 						</button>
 					</div>
@@ -1496,32 +1870,97 @@
 			<!-- Feeds Section -->
 			<div class="nav-section-label" style="margin-top: 20px;">FEEDS</div>
 			{#each feeds as feed}
-				<button 
-					class="feed-item" 
-					class:active={viewMode === 'feed' && selectedFeedUrl === feed.url}
+				<button
+					class="feed-item"
+					class:active={viewMode === "feed" &&
+						selectedFeedUrl === feed.url}
 					on:click={() => setViewFeed(feed.url)}
 				>
 					<div class="feed-item-content">
 						{#if feed.icon_url}
-							<img src={feed.icon_url} alt="" class="feed-icon" on:error={(e) => { const target = e.target; if (target instanceof HTMLImageElement) target.style.display = 'none'; }} />
+							<img
+								src={feed.icon_url}
+								alt=""
+								class="feed-icon"
+								on:error={(e) => {
+									const target = e.target;
+									if (target instanceof HTMLImageElement)
+										target.style.display = "none";
+								}}
+							/>
 						{:else}
 							<div class="feed-icon-fallback {feed.kind}">
-								{#if feed.kind === 'youtube'}
-									<svg width="14" height="14" viewBox="0 0 18 18" fill="none">
-										<path d="M17 6s0-2-2-2H3c-2 0-2 2-2 2v6s0 2 2 2h12c2 0 2-2 2-2V6z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-										<path d="M7 5l5 4-5 4V5z" fill="currentColor"/>
+								{#if feed.kind === "youtube"}
+									<svg
+										width="14"
+										height="14"
+										viewBox="0 0 18 18"
+										fill="none"
+									>
+										<path
+											d="M17 6s0-2-2-2H3c-2 0-2 2-2 2v6s0 2 2 2h12c2 0 2-2 2-2V6z"
+											stroke="currentColor"
+											stroke-width="1.5"
+											fill="none"
+										/>
+										<path
+											d="M7 5l5 4-5 4V5z"
+											fill="currentColor"
+										/>
 									</svg>
-								{:else if feed.kind === 'reddit'}
-									<svg width="14" height="14" viewBox="0 0 18 18" fill="none">
-										<circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
-										<circle cx="6" cy="8" r="1" fill="currentColor"/>
-										<circle cx="12" cy="8" r="1" fill="currentColor"/>
-										<path d="M6 11c.5 1 1.5 1.5 3 1.5s2.5-.5 3-1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+								{:else if feed.kind === "reddit"}
+									<svg
+										width="14"
+										height="14"
+										viewBox="0 0 18 18"
+										fill="none"
+									>
+										<circle
+											cx="9"
+											cy="9"
+											r="7"
+											stroke="currentColor"
+											stroke-width="1.5"
+											fill="none"
+										/>
+										<circle
+											cx="6"
+											cy="8"
+											r="1"
+											fill="currentColor"
+										/>
+										<circle
+											cx="12"
+											cy="8"
+											r="1"
+											fill="currentColor"
+										/>
+										<path
+											d="M6 11c.5 1 1.5 1.5 3 1.5s2.5-.5 3-1.5"
+											stroke="currentColor"
+											stroke-width="1.5"
+											stroke-linecap="round"
+										/>
 									</svg>
 								{:else}
-									<svg width="14" height="14" viewBox="0 0 18 18" fill="none">
-										<circle cx="3" cy="15" r="2" fill="currentColor"/>
-										<path d="M3 9a6 6 0 016 6M3 3a12 12 0 0112 12" stroke="currentColor" stroke-width="2" fill="none"/>
+									<svg
+										width="14"
+										height="14"
+										viewBox="0 0 18 18"
+										fill="none"
+									>
+										<circle
+											cx="3"
+											cy="15"
+											r="2"
+											fill="currentColor"
+										/>
+										<path
+											d="M3 9a6 6 0 016 6M3 3a12 12 0 0112 12"
+											stroke="currentColor"
+											stroke-width="2"
+											fill="none"
+										/>
 									</svg>
 								{/if}
 							</div>
@@ -1531,15 +1970,25 @@
 							<span class="badge">{feed.unreadCount}</span>
 						{/if}
 					</div>
-					<button 
+					<button
 						class="feed-folder-btn"
-						on:click={(e) => openContextMenu('feed', feed, e)}
+						on:click={(e) => openContextMenu("feed", feed, e)}
 						title="Feed actions"
 					>
-						<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-							<circle cx="8" cy="3" r="1.5" fill="currentColor"/>
-							<circle cx="8" cy="8" r="1.5" fill="currentColor"/>
-							<circle cx="8" cy="13" r="1.5" fill="currentColor"/>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 16 16"
+							fill="none"
+						>
+							<circle cx="8" cy="3" r="1.5" fill="currentColor" />
+							<circle cx="8" cy="8" r="1.5" fill="currentColor" />
+							<circle
+								cx="8"
+								cy="13"
+								r="1.5"
+								fill="currentColor"
+							/>
 						</svg>
 					</button>
 				</button>
@@ -1553,16 +2002,35 @@
 		<header class="topbar glass-panel">
 			<div class="topbar-left">
 				{#if isMobile}
-					<button class="hamburger-btn" on:click={() => mobileMenuOpen = true} title="Menu">
-						<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-							<path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+					<button
+						class="hamburger-btn"
+						on:click={() => (mobileMenuOpen = true)}
+						title="Menu"
+					>
+						<svg
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+						>
+							<path
+								d="M3 12h18M3 6h18M3 18h18"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+							/>
 						</svg>
 					</button>
 				{/if}
 				<div class="logo-small">
 					<div class="logo-icon">
-						<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-							<path d="M3 3h10v10H3z" fill="currentColor"/>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 16 16"
+							fill="none"
+						>
+							<path d="M3 3h10v10H3z" fill="currentColor" />
 						</svg>
 					</div>
 					<span>FeedStream</span>
@@ -1572,20 +2040,46 @@
 			<div class="topbar-center">
 				<div class="search-box">
 					<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-						<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/>
-						<path d="M12.5 12.5l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						<circle
+							cx="8"
+							cy="8"
+							r="6"
+							stroke="currentColor"
+							stroke-width="1.5"
+							fill="none"
+						/>
+						<path
+							d="M12.5 12.5l3 3"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+						/>
 					</svg>
-					<input 
-						type="text" 
-						placeholder="Search articles..." 
+					<input
+						type="text"
+						placeholder="Search articles..."
 						bind:value={searchQuery}
 						on:input={handleSearchInput}
 						on:keydown={handleSearchKeydown}
 					/>
 					{#if searchQuery}
-						<button class="search-clear" on:click={clearSearch} title="Clear search (ESC)">
-							<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-								<path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						<button
+							class="search-clear"
+							on:click={clearSearch}
+							title="Clear search (ESC)"
+						>
+							<svg
+								width="16"
+								height="16"
+								viewBox="0 0 16 16"
+								fill="none"
+							>
+								<path
+									d="M4 4l8 8M12 4l-8 8"
+									stroke="currentColor"
+									stroke-width="1.5"
+									stroke-linecap="round"
+								/>
 							</svg>
 						</button>
 					{/if}
@@ -1593,38 +2087,97 @@
 			</div>
 
 			<div class="topbar-right">
-				<button class="icon-btn" on:click={startRefresh} title="Refresh all feeds">
+				<button
+					class="icon-btn"
+					on:click={startRefresh}
+					title="Refresh all feeds"
+				>
 					<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-						<path d="M17 10c0 3.866-3.134 7-7 7s-7-3.134-7-7 3.134-7 7-7c1.933 0 3.683.783 4.95 2.05" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-						<path d="M17 6v4h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+						<path
+							d="M17 10c0 3.866-3.134 7-7 7s-7-3.134-7-7 3.134-7 7-7c1.933 0 3.683.783 4.95 2.05"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+						/>
+						<path
+							d="M17 6v4h-4"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/>
 					</svg>
 				</button>
-				<button class="icon-btn" on:click={() => showSettings = true} title="Settings">
+				<button
+					class="icon-btn"
+					on:click={() => (showSettings = true)}
+					title="Settings"
+				>
 					<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-						<circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
-						<circle cx="10" cy="10" r="2" fill="currentColor"/>
-						<path d="M10 3v1.5M10 15.5V17M17 10h-1.5M4.5 10H3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-						<path d="M14.5 5.5l-1 1M6.5 13.5l-1 1M14.5 14.5l-1-1M6.5 6.5l-1-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						<circle
+							cx="10"
+							cy="10"
+							r="7"
+							stroke="currentColor"
+							stroke-width="1.5"
+							fill="none"
+						/>
+						<circle cx="10" cy="10" r="2" fill="currentColor" />
+						<path
+							d="M10 3v1.5M10 15.5V17M17 10h-1.5M4.5 10H3"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+						/>
+						<path
+							d="M14.5 5.5l-1 1M6.5 13.5l-1 1M14.5 14.5l-1-1M6.5 6.5l-1-1"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+						/>
 					</svg>
 				</button>
 				<button class="add-btn" on:click={openAddFeedModal}>
 					<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-						<path d="M10 5v10M5 10h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+						<path
+							d="M10 5v10M5 10h10"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+						/>
 					</svg>
 				</button>
 			</div>
 		</header>
 
 		<!-- Filter Chips -->
-			<div class="content-header">
-				<h1>{isSearching ? `Search Results (${itemsTotal})` : 'Articles'}</h1>
-				<div class="filter-chips">
-					<button class="chip" class:active={timeFilter === 'today'} on:click={() => timeFilter = 'today'}>Today</button>
-					<button class="chip" class:active={timeFilter === '24h'} on:click={() => timeFilter = '24h'}>Last 24h</button>
-					<button class="chip" class:active={timeFilter === 'week'} on:click={() => timeFilter = 'week'}>Week</button>
-					<button class="chip" class:active={timeFilter === 'all'} on:click={() => timeFilter = 'all'}>All</button>
-				</div>
+		<div class="content-header">
+			<h1>
+				{isSearching ? `Search Results (${itemsTotal})` : "Articles"}
+			</h1>
+			<div class="filter-chips">
+				<button
+					class="chip"
+					class:active={timeFilter === "today"}
+					on:click={() => (timeFilter = "today")}>Today</button
+				>
+				<button
+					class="chip"
+					class:active={timeFilter === "24h"}
+					on:click={() => (timeFilter = "24h")}>Last 24h</button
+				>
+				<button
+					class="chip"
+					class:active={timeFilter === "week"}
+					on:click={() => (timeFilter = "week")}>Week</button
+				>
+				<button
+					class="chip"
+					class:active={timeFilter === "all"}
+					on:click={() => (timeFilter = "all")}>All</button
+				>
 			</div>
+		</div>
 		<!-- Articles List -->
 		<div class="articles-container">
 			{#if itemsLoading}
@@ -1632,11 +2185,13 @@
 			{:else if itemsError}
 				<div class="empty-state error">{itemsError}</div>
 			{:else if items.length === 0}
-				<div class="empty-state">No articles found. Add some feeds to get started!</div>
+				<div class="empty-state">
+					No articles found. Add some feeds to get started!
+				</div>
 			{:else}
 				{#each items as item}
-					<article 
-						class="article-card glass-panel-light" 
+					<article
+						class="article-card glass-panel-light"
 						class:unread={item.is_read === 0}
 						on:click={(e) => handleArticleClick(e, item)}
 						on:mouseenter={() => handleArticleMouseEnter(item)}
@@ -1644,30 +2199,42 @@
 						tabindex="0"
 					>
 						<div class="article-header">
-						<h3 class="article-title">
-							{item.title || 'Untitled'}
-						</h3>
+							<h3 class="article-title">
+								{item.title || "Untitled"}
+							</h3>
 							<div class="article-actions">
-								<button 
-								class="star-btn" 
-								class:starred={item.is_starred === 1}
-								on:click={() => toggleStar(item)}
-								title={item.is_starred === 1 ? 'Remove bookmark' : 'Bookmark'}
-							>
-								<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-									<path d="M3 1h10v13l-5-3-5 3V1z" 
-										stroke="currentColor" 
-										stroke-width="1.5" 
-										stroke-linejoin="round"
-										fill={item.is_starred === 1 ? 'currentColor' : 'none'}
-									/>
-								</svg>
-							</button>
-								<button 
-									class="read-dot" 
+								<button
+									class="star-btn"
+									class:starred={item.is_starred === 1}
+									on:click={() => toggleStar(item)}
+									title={item.is_starred === 1
+										? "Remove bookmark"
+										: "Bookmark"}
+								>
+									<svg
+										width="16"
+										height="16"
+										viewBox="0 0 16 16"
+										fill="none"
+									>
+										<path
+											d="M3 1h10v13l-5-3-5 3V1z"
+											stroke="currentColor"
+											stroke-width="1.5"
+											stroke-linejoin="round"
+											fill={item.is_starred === 1
+												? "currentColor"
+												: "none"}
+										/>
+									</svg>
+								</button>
+								<button
+									class="read-dot"
 									class:read={item.is_read === 1}
 									on:click={() => toggleRead(item)}
-									title={item.is_read === 1 ? 'Mark as unread' : 'Mark as read'}
+									title={item.is_read === 1
+										? "Mark as unread"
+										: "Mark as read"}
 								>
 									<span class="dot"></span>
 								</button>
@@ -1676,17 +2243,20 @@
 
 						<div class="article-meta">
 							{#if item.feed_icon_url}
-								<img 
-									src={item.feed_icon_url} 
-									alt="" 
-									class="feed-favicon" 
+								<img
+									src={item.feed_icon_url}
+									alt=""
+									class="feed-favicon"
 									on:error={(e) => {
 										const target = e.target;
-										if (target instanceof HTMLImageElement) target.style.display = 'none';
+										if (target instanceof HTMLImageElement)
+											target.style.display = "none";
 									}}
 								/>
 							{/if}
-							<span class="feed-title-meta">{item.feed_title || 'Unknown Feed'}</span>
+							<span class="feed-title-meta"
+								>{item.feed_title || "Unknown Feed"}</span
+							>
 							{#if item.author}
 								<span class="meta-sep">•</span>
 								<span>{item.author}</span>
@@ -1703,7 +2273,11 @@
 
 						{#if item.media_thumbnail}
 							<div class="article-thumbnail">
-								<img src={item.media_thumbnail} alt={item.title || 'Thumbnail'} loading="lazy" />
+								<img
+									src={item.media_thumbnail}
+									alt={item.title || "Thumbnail"}
+									loading="lazy"
+								/>
 							</div>
 						{/if}
 					</article>
@@ -1714,21 +2288,43 @@
 
 	<!-- Mobile Drawer Overlay -->
 	{#if isMobile && mobileMenuOpen}
-		<div class="mobile-drawer-overlay" on:click={() => mobileMenuOpen = false}>
+		<div
+			class="mobile-drawer-overlay"
+			on:click={() => (mobileMenuOpen = false)}
+		>
 			<aside class="mobile-drawer sidebar" on:click|stopPropagation>
 				<!-- Drawer Header -->
 				<div class="drawer-header">
 					<div class="logo">
 						<div class="logo-icon">
-							<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-								<path d="M4 4h12v12H4z" fill="currentColor"/>
+							<svg
+								width="20"
+								height="20"
+								viewBox="0 0 20 20"
+								fill="none"
+							>
+								<path d="M4 4h12v12H4z" fill="currentColor" />
 							</svg>
 						</div>
 						<span class="logo-text">FeedStream</span>
 					</div>
-					<button class="close-drawer-btn" on:click={() => mobileMenuOpen = false} title="Close">
-						<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-							<path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+					<button
+						class="close-drawer-btn"
+						on:click={() => (mobileMenuOpen = false)}
+						title="Close"
+					>
+						<svg
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+						>
+							<path
+								d="M18 6L6 18M6 6l12 12"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+							/>
 						</svg>
 					</button>
 				</div>
@@ -1737,15 +2333,29 @@
 				<nav class="sidebar-nav">
 					<!-- Smart Folders Section -->
 					<div class="nav-section-label">SMART FOLDERS</div>
-					
-					<button 
-						class="nav-item smart-folder" 
-						class:active={viewMode === 'smart' && activeSmartFolder === 'rss'}
-						on:click={() => { setViewSmartFolder('rss'); mobileMenuOpen = false; }}
+
+					<button
+						class="nav-item smart-folder"
+						class:active={viewMode === "smart" &&
+							activeSmartFolder === "rss"}
+						on:click={() => {
+							setViewSmartFolder("rss");
+							mobileMenuOpen = false;
+						}}
 					>
-						<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-							<circle cx="3" cy="15" r="2" fill="currentColor"/>
-							<path d="M3 9a6 6 0 016 6M3 3a12 12 0 0112 12" stroke="currentColor" stroke-width="2" fill="none"/>
+						<svg
+							width="18"
+							height="18"
+							viewBox="0 0 18 18"
+							fill="none"
+						>
+							<circle cx="3" cy="15" r="2" fill="currentColor" />
+							<path
+								d="M3 9a6 6 0 016 6M3 3a12 12 0 0112 12"
+								stroke="currentColor"
+								stroke-width="2"
+								fill="none"
+							/>
 						</svg>
 						<span>RSS</span>
 						{#if rssUnread > 0}
@@ -1753,14 +2363,28 @@
 						{/if}
 					</button>
 
-					<button 
-						class="nav-item smart-folder" 
-						class:active={viewMode === 'smart' && activeSmartFolder === 'youtube'}
-						on:click={() => { setViewSmartFolder('youtube'); mobileMenuOpen = false; }}
+					<button
+						class="nav-item smart-folder"
+						class:active={viewMode === "smart" &&
+							activeSmartFolder === "youtube"}
+						on:click={() => {
+							setViewSmartFolder("youtube");
+							mobileMenuOpen = false;
+						}}
 					>
-						<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-							<path d="M17 6s0-2-2-2H3c-2 0-2 2-2 2v6s0 2 2 2h12c2 0 2-2 2-2V6z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-							<path d="M7 5l5 4-5 4V5z" fill="currentColor"/>
+						<svg
+							width="18"
+							height="18"
+							viewBox="0 0 18 18"
+							fill="none"
+						>
+							<path
+								d="M17 6s0-2-2-2H3c-2 0-2 2-2 2v6s0 2 2 2h12c2 0 2-2 2-2V6z"
+								stroke="currentColor"
+								stroke-width="1.5"
+								fill="none"
+							/>
+							<path d="M7 5l5 4-5 4V5z" fill="currentColor" />
 						</svg>
 						<span>YouTube</span>
 						{#if youtubeUnread > 0}
@@ -1768,16 +2392,37 @@
 						{/if}
 					</button>
 
-					<button 
-						class="nav-item smart-folder" 
-						class:active={viewMode === 'smart' && activeSmartFolder === 'reddit'}
-						on:click={() => { setViewSmartFolder('reddit'); mobileMenuOpen = false; }}
+					<button
+						class="nav-item smart-folder"
+						class:active={viewMode === "smart" &&
+							activeSmartFolder === "reddit"}
+						on:click={() => {
+							setViewSmartFolder("reddit");
+							mobileMenuOpen = false;
+						}}
 					>
-						<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-							<circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
-							<circle cx="6" cy="8" r="1" fill="currentColor"/>
-							<circle cx="12" cy="8" r="1" fill="currentColor"/>
-							<path d="M6 11c.5 1 1.5 1.5 3 1.5s2.5-.5 3-1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						<svg
+							width="18"
+							height="18"
+							viewBox="0 0 18 18"
+							fill="none"
+						>
+							<circle
+								cx="9"
+								cy="9"
+								r="7"
+								stroke="currentColor"
+								stroke-width="1.5"
+								fill="none"
+							/>
+							<circle cx="6" cy="8" r="1" fill="currentColor" />
+							<circle cx="12" cy="8" r="1" fill="currentColor" />
+							<path
+								d="M6 11c.5 1 1.5 1.5 3 1.5s2.5-.5 3-1.5"
+								stroke="currentColor"
+								stroke-width="1.5"
+								stroke-linecap="round"
+							/>
 						</svg>
 						<span>Reddit</span>
 						{#if redditUnread > 0}
@@ -1788,92 +2433,220 @@
 					<!-- Custom Folders Section -->
 					<div class="nav-section-header">
 						<div class="nav-section-label">FOLDERS</div>
-						<button 
-							class="add-folder-btn" 
+						<button
+							class="add-folder-btn"
 							on:click={() => {
 								showCreateFolderModal = true;
-								folderModalName = '';
+								folderModalName = "";
 								folderModalError = null;
 								mobileMenuOpen = false;
 							}}
 							title="New folder"
 						>
-							<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-								<path d="M7 3v8M3 7h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 14 14"
+								fill="none"
+							>
+								<path
+									d="M7 3v8M3 7h8"
+									stroke="currentColor"
+									stroke-width="1.5"
+									stroke-linecap="round"
+								/>
 							</svg>
 						</button>
 					</div>
 
 					{#if folders.length > 0}
 						{#each folders as folder}
-							<button 
-								class="nav-item folder-item" 
-								class:active={viewMode === 'folder' && activeFolderId === folder.id}
-								on:click={() => { setViewFolder(folder.id); mobileMenuOpen = false; }}
+							<button
+								class="nav-item folder-item"
+								class:active={viewMode === "folder" &&
+									activeFolderId === folder.id}
+								on:click={() => {
+									setViewFolder(folder.id);
+									mobileMenuOpen = false;
+								}}
 							>
-								<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-									<path d="M2 4h5l1 2h8v10H2V4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+								<svg
+									width="18"
+									height="18"
+									viewBox="0 0 18 18"
+									fill="none"
+								>
+									<path
+										d="M2 4h5l1 2h8v10H2V4z"
+										stroke="currentColor"
+										stroke-width="1.5"
+										stroke-linejoin="round"
+										fill="none"
+									/>
 								</svg>
 								<span class="folder-name">{folder.name}</span>
 								{#if folderUnreadCounts[folder.id] > 0}
-									<span class="badge">{folderUnreadCounts[folder.id]}</span>
+									<span class="badge"
+										>{folderUnreadCounts[folder.id]}</span
+									>
 								{/if}
 							</button>
 						{/each}
 					{/if}
 
 					<!-- Feeds Section in Mobile Drawer -->
-					<div class="nav-section-label" style="margin-top: 20px;">FEEDS</div>
+					<div class="nav-section-label" style="margin-top: 20px;">
+						FEEDS
+					</div>
 					{#each feeds as feed}
-						<button 
-							class="feed-item" 
-							class:active={viewMode === 'feed' && selectedFeedUrl === feed.url}
-							on:click={() => { setViewFeed(feed.url); mobileMenuOpen = false; }}
+						<button
+							class="feed-item"
+							class:active={viewMode === "feed" &&
+								selectedFeedUrl === feed.url}
+							on:click={() => {
+								setViewFeed(feed.url);
+								mobileMenuOpen = false;
+							}}
 						>
 							<div class="feed-item-content">
 								{#if feed.icon_url}
-									<img src={feed.icon_url} alt="" class="feed-icon" on:error={(e) => { const target = e.target; if (target instanceof HTMLImageElement) target.style.display = 'none'; }} />
+									<img
+										src={feed.icon_url}
+										alt=""
+										class="feed-icon"
+										on:error={(e) => {
+											const target = e.target;
+											if (
+												target instanceof
+												HTMLImageElement
+											)
+												target.style.display = "none";
+										}}
+									/>
 								{:else}
 									<div class="feed-icon-fallback {feed.kind}">
-										{#if feed.kind === 'youtube'}
-											<svg width="14" height="14" viewBox="0 0 18 18" fill="none">
-												<path d="M17 6s0-2-2-2H3c-2 0-2 2-2 2v6s0 2 2 2h12c2 0 2-2 2-2V6z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-												<path d="M7 5l5 4-5 4V5z" fill="currentColor"/>
+										{#if feed.kind === "youtube"}
+											<svg
+												width="14"
+												height="14"
+												viewBox="0 0 18 18"
+												fill="none"
+											>
+												<path
+													d="M17 6s0-2-2-2H3c-2 0-2 2-2 2v6s0 2 2 2h12c2 0 2-2 2-2V6z"
+													stroke="currentColor"
+													stroke-width="1.5"
+													fill="none"
+												/>
+												<path
+													d="M7 5l5 4-5 4V5z"
+													fill="currentColor"
+												/>
 											</svg>
-										{:else if feed.kind === 'reddit'}
-											<svg width="14" height="14" viewBox="0 0 18 18" fill="none">
-												<circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
-												<circle cx="6" cy="8" r="1" fill="currentColor"/>
-												<circle cx="12" cy="8" r="1" fill="currentColor"/>
-												<path d="M6 11c.5 1 1.5 1.5 3 1.5s2.5-.5 3-1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+										{:else if feed.kind === "reddit"}
+											<svg
+												width="14"
+												height="14"
+												viewBox="0 0 18 18"
+												fill="none"
+											>
+												<circle
+													cx="9"
+													cy="9"
+													r="7"
+													stroke="currentColor"
+													stroke-width="1.5"
+													fill="none"
+												/>
+												<circle
+													cx="6"
+													cy="8"
+													r="1"
+													fill="currentColor"
+												/>
+												<circle
+													cx="12"
+													cy="8"
+													r="1"
+													fill="currentColor"
+												/>
+												<path
+													d="M6 11c.5 1 1.5 1.5 3 1.5s2.5-.5 3-1.5"
+													stroke="currentColor"
+													stroke-width="1.5"
+													stroke-linecap="round"
+												/>
 											</svg>
 										{:else}
-											<svg width="14" height="14" viewBox="0 0 18 18" fill="none">
-												<circle cx="3" cy="15" r="2" fill="currentColor"/>
-												<path d="M3 9a6 6 0 016 6M3 3a12 12 0 0112 12" stroke="currentColor" stroke-width="2" fill="none"/>
+											<svg
+												width="14"
+												height="14"
+												viewBox="0 0 18 18"
+												fill="none"
+											>
+												<circle
+													cx="3"
+													cy="15"
+													r="2"
+													fill="currentColor"
+												/>
+												<path
+													d="M3 9a6 6 0 016 6M3 3a12 12 0 0112 12"
+													stroke="currentColor"
+													stroke-width="2"
+													fill="none"
+												/>
 											</svg>
 										{/if}
 									</div>
 								{/if}
-								<span class="feed-title">{feed.title || feed.url}</span>
+								<span class="feed-title"
+									>{feed.title || feed.url}</span
+								>
 								{#if feed.unreadCount > 0}
-									<span class="badge">{feed.unreadCount}</span>
+									<span class="badge">{feed.unreadCount}</span
+									>
 								{/if}
 							</div>
 						</button>
 					{/each}
 
 					<!-- Settings Button -->
-					<button 
-						class="nav-item" 
-						on:click={() => { showSettings = true; mobileMenuOpen = false; }}
+					<button
+						class="nav-item"
+						on:click={() => {
+							showSettings = true;
+							mobileMenuOpen = false;
+						}}
 						style="margin-top: auto;"
 					>
-						<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-							<circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
-							<circle cx="9" cy="9" r="2" fill="currentColor"/>
-							<path d="M9 3v1.5M9 13.5V15M15 9h-1.5M4.5 9H3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-							<path d="M12.5 5.5l-1 1M6.5 11.5l-1 1M12.5 12.5l-1-1M6.5 6.5l-1-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						<svg
+							width="18"
+							height="18"
+							viewBox="0 0 18 18"
+							fill="none"
+						>
+							<circle
+								cx="9"
+								cy="9"
+								r="7"
+								stroke="currentColor"
+								stroke-width="1.5"
+								fill="none"
+							/>
+							<circle cx="9" cy="9" r="2" fill="currentColor" />
+							<path
+								d="M9 3v1.5M9 13.5V15M15 9h-1.5M4.5 9H3"
+								stroke="currentColor"
+								stroke-width="1.5"
+								stroke-linecap="round"
+							/>
+							<path
+								d="M12.5 5.5l-1 1M6.5 11.5l-1 1M12.5 12.5l-1-1M6.5 6.5l-1-1"
+								stroke="currentColor"
+								stroke-width="1.5"
+								stroke-linecap="round"
+							/>
 						</svg>
 						<span>Settings</span>
 					</button>
@@ -1885,51 +2658,109 @@
 	<!-- Mobile Bottom Tab Bar -->
 	{#if isMobile}
 		<div class="mobile-tab-bar">
-			<button 
-				class="mobile-tab" 
-				class:active={mobileActiveTab === 'all'}
-				on:click={() => { mobileActiveTab = 'all'; setViewAll(); }}
+			<button
+				class="mobile-tab"
+				class:active={mobileActiveTab === "all"}
+				on:click={() => {
+					mobileActiveTab = "all";
+					setViewAll();
+				}}
 			>
 				<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-					<rect x="3" y="3" width="8" height="8" rx="1" fill="currentColor"/>
-					<rect x="13" y="3" width="8" height="8" rx="1" fill="currentColor"/>
-					<rect x="3" y="13" width="8" height="8" rx="1" fill="currentColor"/>
-					<rect x="13" y="13" width="8" height="8" rx="1" fill="currentColor"/>
+					<rect
+						x="3"
+						y="3"
+						width="8"
+						height="8"
+						rx="1"
+						fill="currentColor"
+					/>
+					<rect
+						x="13"
+						y="3"
+						width="8"
+						height="8"
+						rx="1"
+						fill="currentColor"
+					/>
+					<rect
+						x="3"
+						y="13"
+						width="8"
+						height="8"
+						rx="1"
+						fill="currentColor"
+					/>
+					<rect
+						x="13"
+						y="13"
+						width="8"
+						height="8"
+						rx="1"
+						fill="currentColor"
+					/>
 				</svg>
 				<span>All</span>
 			</button>
-			
-			<button 
-				class="mobile-tab" 
-				class:active={mobileActiveTab === 'unread'}
-				on:click={() => { mobileActiveTab = 'unread'; setViewUnread(); }}
+
+			<button
+				class="mobile-tab"
+				class:active={mobileActiveTab === "unread"}
+				on:click={() => {
+					mobileActiveTab = "unread";
+					setViewUnread();
+				}}
 			>
 				<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-					<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/>
-					<circle cx="12" cy="12" r="4" fill="currentColor"/>
+					<circle
+						cx="12"
+						cy="12"
+						r="9"
+						stroke="currentColor"
+						stroke-width="2"
+						fill="none"
+					/>
+					<circle cx="12" cy="12" r="4" fill="currentColor" />
 				</svg>
 				<span>Unread</span>
 			</button>
-			
-			<button 
-				class="mobile-tab" 
-				class:active={mobileActiveTab === 'bookmarks'}
-				on:click={() => { mobileActiveTab = 'bookmarks'; setViewBookmarks(); }}
+
+			<button
+				class="mobile-tab"
+				class:active={mobileActiveTab === "bookmarks"}
+				on:click={() => {
+					mobileActiveTab = "bookmarks";
+					setViewBookmarks();
+				}}
 			>
 				<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-					<path d="M5 3h14v18l-7-4-7 4V3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="none"/>
+					<path
+						d="M5 3h14v18l-7-4-7 4V3z"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linejoin="round"
+						fill="none"
+					/>
 				</svg>
 				<span>Bookmarks</span>
 			</button>
-			
-			<button 
-				class="mobile-tab" 
-				class:active={mobileActiveTab === 'feeds'}
-				on:click={() => { mobileActiveTab = 'feeds'; mobileMenuOpen = true; }}
+
+			<button
+				class="mobile-tab"
+				class:active={mobileActiveTab === "feeds"}
+				on:click={() => {
+					mobileActiveTab = "feeds";
+					mobileMenuOpen = true;
+				}}
 			>
 				<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-					<circle cx="5" cy="19" r="2" fill="currentColor"/>
-					<path d="M5 12a7 7 0 017 7M5 5a14 14 0 0114 14" stroke="currentColor" stroke-width="2" fill="none"/>
+					<circle cx="5" cy="19" r="2" fill="currentColor" />
+					<path
+						d="M5 12a7 7 0 017 7M5 5a14 14 0 0114 14"
+						stroke="currentColor"
+						stroke-width="2"
+						fill="none"
+					/>
 				</svg>
 				<span>Feeds</span>
 			</button>
@@ -1938,11 +2769,14 @@
 
 	<!-- Settings Modal -->
 	{#if showSettings}
-		<div class="modal-overlay" on:click={() => showSettings = false}>
+		<div class="modal-overlay" on:click={() => (showSettings = false)}>
 			<div class="modal glass-panel" on:click|stopPropagation>
 				<div class="modal-header">
 					<h2>Settings</h2>
-					<button class="close-btn" on:click={() => showSettings = false}>×</button>
+					<button
+						class="close-btn"
+						on:click={() => (showSettings = false)}>×</button
+					>
 				</div>
 
 				<div class="modal-body">
@@ -1950,10 +2784,10 @@
 						<h3>Automatic Sync</h3>
 						<div class="settings-field">
 							<label for="sync-interval">Sync Interval</label>
-							<select 
-								id="sync-interval" 
-								class="settings-select" 
-								value={syncInterval} 
+							<select
+								id="sync-interval"
+								class="settings-select"
+								value={syncInterval}
 								on:change={handleSyncIntervalChange}
 							>
 								<option value="off">Off</option>
@@ -1972,30 +2806,75 @@
 						<h3>OPML</h3>
 						<div class="settings-actions">
 							<button class="settings-btn" on:click={exportOpml}>
-								<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-									<path d="M8 2v8m0 0l3-3m-3 3L5 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-									<path d="M14 10v3a1 1 0 01-1 1H3a1 1 0 01-1-1v-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+								<svg
+									width="16"
+									height="16"
+									viewBox="0 0 16 16"
+									fill="none"
+								>
+									<path
+										d="M8 2v8m0 0l3-3m-3 3L5 7"
+										stroke="currentColor"
+										stroke-width="1.5"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									/>
+									<path
+										d="M14 10v3a1 1 0 01-1 1H3a1 1 0 01-1-1v-3"
+										stroke="currentColor"
+										stroke-width="1.5"
+										stroke-linecap="round"
+									/>
 								</svg>
 								Export OPML
 							</button>
 
 							<label class="settings-btn">
-								<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-									<path d="M8 14V6m0 0l3 3m-3-3L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-									<path d="M14 6V3a1 1 0 00-1-1H3a1 1 0 00-1 1v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+								<svg
+									width="16"
+									height="16"
+									viewBox="0 0 16 16"
+									fill="none"
+								>
+									<path
+										d="M8 14V6m0 0l3 3m-3-3L5 9"
+										stroke="currentColor"
+										stroke-width="1.5"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									/>
+									<path
+										d="M14 6V3a1 1 0 00-1-1H3a1 1 0 00-1 1v3"
+										stroke="currentColor"
+										stroke-width="1.5"
+										stroke-linecap="round"
+									/>
 								</svg>
-								{importingOpml ? 'Importing...' : 'Import OPML'}
-								<input type="file" accept=".opml,.xml" on:change={importOpml} disabled={importingOpml} style="display: none;"/>
+								{importingOpml ? "Importing..." : "Import OPML"}
+								<input
+									type="file"
+									accept=".opml,.xml"
+									on:change={importOpml}
+									disabled={importingOpml}
+									style="display: none;"
+								/>
 							</label>
 						</div>
 
 						{#if importResults}
 							<div class="import-results">
 								<div class="results-summary">
-									<span class="result-item success">✓ Added: {importResults.added}</span>
-									<span class="result-item">⊘ Skipped: {importResults.skipped}</span>
+									<span class="result-item success"
+										>✓ Added: {importResults.added}</span
+									>
+									<span class="result-item"
+										>⊘ Skipped: {importResults.skipped}</span
+									>
 									{#if importResults.failed.length > 0}
-										<span class="result-item error">✗ Failed: {importResults.failed.length}</span>
+										<span class="result-item error"
+											>✗ Failed: {importResults.failed
+												.length}</span
+										>
 									{/if}
 								</div>
 
@@ -2004,8 +2883,12 @@
 										<h4>Failed Feeds:</h4>
 										{#each importResults.failed as fail}
 											<div class="failed-item">
-												<div class="failed-url">{fail.url}</div>
-												<div class="failed-error">{fail.error}</div>
+												<div class="failed-url">
+													{fail.url}
+												</div>
+												<div class="failed-error">
+													{fail.error}
+												</div>
 											</div>
 										{/each}
 									</div>
@@ -2023,13 +2906,32 @@
 		<div class="reader-overlay" on:click={closeReader}>
 			<div class="reader-container" on:click|stopPropagation>
 				<div class="reader-header">
-					<button class="reader-close" on:click={closeReader} title="Close (ESC)">
-						<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-							<path d="M5 5l10 10M15 5l-10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+					<button
+						class="reader-close"
+						on:click={closeReader}
+						title="Close (ESC)"
+					>
+						<svg
+							width="20"
+							height="20"
+							viewBox="0 0 20 20"
+							fill="none"
+						>
+							<path
+								d="M5 5l10 10M15 5l-10 10"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+							/>
 						</svg>
 					</button>
 					{#if currentItemUrl}
-						<a href={currentItemUrl} target="_blank" rel="noopener noreferrer" class="reader-source">
+						<a
+							href={currentItemUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="reader-source"
+						>
 							Open Original ↗
 						</a>
 					{/if}
@@ -2044,26 +2946,55 @@
 					<div class="reader-error">
 						<p>{readerError}</p>
 						{#if currentItemUrl}
-							<a href={currentItemUrl} target="_blank" rel="noopener noreferrer" class="reader-fallback-btn">
+							<a
+								href={currentItemUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="reader-fallback-btn"
+							>
 								Open Original Article
 							</a>
 						{/if}
 					</div>
 				{:else if readerData}
 					<article class="reader-content">
-						{#if readerData.imageUrl}
-							<img src={readerData.imageUrl} alt="" class="reader-hero" />
+						{#if currentItemUrl && (currentItemUrl.includes("youtube.com/watch") || currentItemUrl.includes("youtu.be/"))}
+							<div
+								class="video-wrapper"
+								style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 12px; margin-bottom: 24px; background: #000;"
+							>
+								<div
+									id="yt-player-container"
+									style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+								></div>
+							</div>
+						{:else if readerData.imageUrl}
+							<img
+								src={readerData.imageUrl}
+								alt=""
+								class="reader-hero"
+							/>
 						{/if}
-						<h1 class="reader-title">{readerData.title || 'Untitled'}</h1>
+						<h1 class="reader-title">
+							{readerData.title || "Untitled"}
+						</h1>
 						{#if readerData.byline || readerData.siteName}
 							<div class="reader-meta">
-								{#if readerData.byline}<span>{readerData.byline}</span>{/if}
-								{#if readerData.byline && readerData.siteName}<span class="meta-sep">•</span>{/if}
-								{#if readerData.siteName}<span>{readerData.siteName}</span>{/if}
+								{#if readerData.byline}<span
+										>{readerData.byline}</span
+									>{/if}
+								{#if readerData.byline && readerData.siteName}<span
+										class="meta-sep">•</span
+									>{/if}
+								{#if readerData.siteName}<span
+										>{readerData.siteName}</span
+									>{/if}
 							</div>
 						{/if}
 						<div class="reader-body" id="reader-body-content">
-							{@html readerData.contentHtml}
+							{#if !(currentItemUrl && (currentItemUrl.includes("youtube.com/watch") || currentItemUrl.includes("youtu.be/")))}
+								{@html readerData.contentHtml}
+							{/if}
 						</div>
 					</article>
 				{/if}
@@ -2077,75 +3008,141 @@
 			<div class="add-feed-modal glass-panel" on:click|stopPropagation>
 				<div class="modal-header">
 					<h2>Add Feed</h2>
-					<button class="close-btn" on:click={closeAddFeedModal}>×</button>
+					<button class="close-btn" on:click={closeAddFeedModal}
+						>×</button
+					>
 				</div>
 
 				<div class="modal-tabs">
-					<button 
-						class="tab-btn" 
-						class:active={addFeedTab === 'url'}
-						on:click={() => addFeedTab = 'url'}
+					<button
+						class="tab-btn"
+						class:active={addFeedTab === "url"}
+						on:click={() => (addFeedTab = "url")}
 					>
-						<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-							<path d="M6.5 10.5l-3 3a2.121 2.121 0 01-3-3l3-3m9-6l-3 3a2.121 2.121 0 01-3-3l3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 16 16"
+							fill="none"
+						>
+							<path
+								d="M6.5 10.5l-3 3a2.121 2.121 0 01-3-3l3-3m9-6l-3 3a2.121 2.121 0 01-3-3l3-3"
+								stroke="currentColor"
+								stroke-width="1.5"
+								stroke-linecap="round"
+							/>
 						</svg>
 						URL
 					</button>
-					<button 
-						class="tab-btn" 
-						class:active={addFeedTab === 'search'}
-						on:click={() => addFeedTab = 'search'}
+					<button
+						class="tab-btn"
+						class:active={addFeedTab === "search"}
+						on:click={() => (addFeedTab = "search")}
 					>
-						<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-							<circle cx="7" cy="7" r="4" stroke="currentColor" stroke-width="1.5" fill="none"/>
-							<path d="M10 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 16 16"
+							fill="none"
+						>
+							<circle
+								cx="7"
+								cy="7"
+								r="4"
+								stroke="currentColor"
+								stroke-width="1.5"
+								fill="none"
+							/>
+							<path
+								d="M10 10l3 3"
+								stroke="currentColor"
+								stroke-width="1.5"
+								stroke-linecap="round"
+							/>
 						</svg>
 						Search
 					</button>
-					<button 
-						class="tab-btn" 
-						class:active={addFeedTab === 'bulk'}
-						on:click={() => addFeedTab = 'bulk'}
+					<button
+						class="tab-btn"
+						class:active={addFeedTab === "bulk"}
+						on:click={() => (addFeedTab = "bulk")}
 					>
-						<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-							<path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 16 16"
+							fill="none"
+						>
+							<path
+								d="M2 4h12M2 8h12M2 12h12"
+								stroke="currentColor"
+								stroke-width="1.5"
+								stroke-linecap="round"
+							/>
 						</svg>
 						Bulk
 					</button>
 				</div>
 
 				<div class="modal-body">
-					{#if addFeedTab === 'url'}
+					{#if addFeedTab === "url"}
 						<div class="input-group">
 							<div class="input-with-icon">
-								<svg width="18" height="18" viewBox="0 0 18 18" fill="none" class="input-icon">
-									<path d="M7 11l-3.5 3.5a2.475 2.475 0 01-3.5-3.5L3.5 7.5m11-4L11 7a2.475 2.475 0 01-3.5-3.5L11 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+								<svg
+									width="18"
+									height="18"
+									viewBox="0 0 18 18"
+									fill="none"
+									class="input-icon"
+								>
+									<path
+										d="M7 11l-3.5 3.5a2.475 2.475 0 01-3.5-3.5L3.5 7.5m11-4L11 7a2.475 2.475 0 01-3.5-3.5L11 0"
+										stroke="currentColor"
+										stroke-width="1.5"
+										stroke-linecap="round"
+									/>
 								</svg>
 								<input
 									type="text"
 									bind:value={addFeedUrl}
 									placeholder="Paste feed URL, YouTube channel, or Reddit subreddit…"
 									class="feed-input"
-									on:keydown={(e) => e.key === 'Enter' && submitAddFeed()}
+									on:keydown={(e) =>
+										e.key === "Enter" && submitAddFeed()}
 								/>
 							</div>
 						</div>
 
 						{#if folders.length > 0}
 							<div class="folder-selection-section">
-								<div class="section-label">Also add to folder(s)</div>
+								<div class="section-label">
+									Also add to folder(s)
+								</div>
 								<div class="folder-checkboxes">
 									{#each folders as folder}
 										<label class="folder-checkbox-label">
 											<input
 												type="checkbox"
 												value={folder.id}
-												checked={selectedFolderIdsForNewFeed.includes(folder.id)}
+												checked={selectedFolderIdsForNewFeed.includes(
+													folder.id,
+												)}
 												on:change={(e) => {
-													if (e.currentTarget.checked) {
-														selectedFolderIdsForNewFeed = [...selectedFolderIdsForNewFeed, folder.id];
+													if (
+														e.currentTarget.checked
+													) {
+														selectedFolderIdsForNewFeed =
+															[
+																...selectedFolderIdsForNewFeed,
+																folder.id,
+															];
 													} else {
-														selectedFolderIdsForNewFeed = selectedFolderIdsForNewFeed.filter(id => id !== folder.id);
+														selectedFolderIdsForNewFeed =
+															selectedFolderIdsForNewFeed.filter(
+																(id) =>
+																	id !==
+																	folder.id,
+															);
 													}
 												}}
 											/>
@@ -2155,10 +3152,12 @@
 								</div>
 							</div>
 						{/if}
-					{:else if addFeedTab === 'search'}
+					{:else if addFeedTab === "search"}
 						<div class="feed-search-container">
 							<div class="input-group">
-								<label class="input-label">Search for feeds</label>
+								<label class="input-label"
+									>Search for feeds</label
+								>
 								<input
 									type="text"
 									bind:value={feedSearchQuery}
@@ -2169,31 +3168,43 @@
 							</div>
 
 							<div class="search-type-filters">
-								<button 
-									class="type-filter-btn" 
-									class:active={feedSearchType === 'all'}
-									on:click={() => { feedSearchType = 'all'; searchFeedsNow(); }}
+								<button
+									class="type-filter-btn"
+									class:active={feedSearchType === "all"}
+									on:click={() => {
+										feedSearchType = "all";
+										searchFeedsNow();
+									}}
 								>
 									All
 								</button>
-								<button 
-									class="type-filter-btn" 
-									class:active={feedSearchType === 'rss'}
-									on:click={() => { feedSearchType = 'rss'; searchFeedsNow(); }}
+								<button
+									class="type-filter-btn"
+									class:active={feedSearchType === "rss"}
+									on:click={() => {
+										feedSearchType = "rss";
+										searchFeedsNow();
+									}}
 								>
 									RSS
 								</button>
-								<button 
-									class="type-filter-btn" 
-									class:active={feedSearchType === 'youtube'}
-									on:click={() => { feedSearchType = 'youtube'; searchFeedsNow(); }}
+								<button
+									class="type-filter-btn"
+									class:active={feedSearchType === "youtube"}
+									on:click={() => {
+										feedSearchType = "youtube";
+										searchFeedsNow();
+									}}
 								>
 									YouTube
 								</button>
-								<button 
-									class="type-filter-btn" 
-									class:active={feedSearchType === 'reddit'}
-									on:click={() => { feedSearchType = 'reddit'; searchFeedsNow(); }}
+								<button
+									class="type-filter-btn"
+									class:active={feedSearchType === "reddit"}
+									on:click={() => {
+										feedSearchType = "reddit";
+										searchFeedsNow();
+									}}
 								>
 									Reddit
 								</button>
@@ -2202,26 +3213,48 @@
 							{#if feedSearchLoading}
 								<div class="search-loading">Searching...</div>
 							{:else if feedSearchError}
-								<div class="search-error">{feedSearchError}</div>
+								<div class="search-error">
+									{feedSearchError}
+								</div>
 							{:else if feedSearchResults.length > 0}
 								<div class="search-results">
 									{#each feedSearchResults as result}
 										<div class="search-result-item">
 											<div class="result-info">
 												<div class="result-header">
-													<span class="result-title">{result.title}</span>
-													<span class="result-type-badge {result.type}">{result.type.toUpperCase()}</span>
+													<span class="result-title"
+														>{result.title}</span
+													>
+													<span
+														class="result-type-badge {result.type}"
+														>{result.type.toUpperCase()}</span
+													>
 												</div>
-												<p class="result-description">{result.description}</p>
-												<span class="result-url">{result.url}</span>
+												<p class="result-description">
+													{result.description}
+												</p>
+												<span class="result-url"
+													>{result.url}</span
+												>
 											</div>
-											<button 
+											<button
 												class="add-result-btn"
-												on:click={() => addFeedFromSearch(result)}
+												on:click={() =>
+													addFeedFromSearch(result)}
 												disabled={addFeedLoading}
 											>
-												<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-													<path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+												<svg
+													width="16"
+													height="16"
+													viewBox="0 0 16 16"
+													fill="none"
+												>
+													<path
+														d="M8 3v10M3 8h10"
+														stroke="currentColor"
+														stroke-width="2"
+														stroke-linecap="round"
+													/>
 												</svg>
 												Add
 											</button>
@@ -2230,18 +3263,39 @@
 								</div>
 							{:else if feedSearchQuery.trim()}
 								<div class="search-empty">
-									<svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-										<circle cx="20" cy="20" r="12" stroke="currentColor" stroke-width="2" fill="none"/>
-										<path d="M29 29l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+									<svg
+										width="48"
+										height="48"
+										viewBox="0 0 48 48"
+										fill="none"
+									>
+										<circle
+											cx="20"
+											cy="20"
+											r="12"
+											stroke="currentColor"
+											stroke-width="2"
+											fill="none"
+										/>
+										<path
+											d="M29 29l10 10"
+											stroke="currentColor"
+											stroke-width="2"
+											stroke-linecap="round"
+										/>
 									</svg>
 									<p>No feeds found</p>
-									<span class="placeholder-hint">Try a different search term</span>
+									<span class="placeholder-hint"
+										>Try a different search term</span
+									>
 								</div>
 							{/if}
 						</div>
-					{:else if addFeedTab === 'bulk'}
+					{:else if addFeedTab === "bulk"}
 						<div class="input-group">
-							<label class="input-label">Paste URLs (one per line)</label>
+							<label class="input-label"
+								>Paste URLs (one per line)</label
+							>
 							<textarea
 								bind:value={addFeedBulkUrls}
 								placeholder="https://example.com/feed&#10;https://youtube.com/@channel&#10;https://reddit.com/r/subreddit"
@@ -2252,19 +3306,34 @@
 
 						{#if folders.length > 0}
 							<div class="folder-selection-section">
-								<div class="section-label">Also add to folder(s)</div>
+								<div class="section-label">
+									Also add to folder(s)
+								</div>
 								<div class="folder-checkboxes">
 									{#each folders as folder}
 										<label class="folder-checkbox-label">
 											<input
 												type="checkbox"
 												value={folder.id}
-												checked={selectedFolderIdsForNewFeed.includes(folder.id)}
+												checked={selectedFolderIdsForNewFeed.includes(
+													folder.id,
+												)}
 												on:change={(e) => {
-													if (e.currentTarget.checked) {
-														selectedFolderIdsForNewFeed = [...selectedFolderIdsForNewFeed, folder.id];
+													if (
+														e.currentTarget.checked
+													) {
+														selectedFolderIdsForNewFeed =
+															[
+																...selectedFolderIdsForNewFeed,
+																folder.id,
+															];
 													} else {
-														selectedFolderIdsForNewFeed = selectedFolderIdsForNewFeed.filter(id => id !== folder.id);
+														selectedFolderIdsForNewFeed =
+															selectedFolderIdsForNewFeed.filter(
+																(id) =>
+																	id !==
+																	folder.id,
+															);
 													}
 												}}
 											/>
@@ -2282,12 +3351,17 @@
 				</div>
 
 				<div class="modal-footer">
-					<button 
-						class="primary-btn" 
-						disabled={addFeedLoading || (addFeedTab === 'url' && !validateFeedUrl(addFeedUrl)) || (addFeedTab === 'bulk' && !addFeedBulkUrls.trim()) || addFeedTab === 'search'}
+					<button
+						class="primary-btn"
+						disabled={addFeedLoading ||
+							(addFeedTab === "url" &&
+								!validateFeedUrl(addFeedUrl)) ||
+							(addFeedTab === "bulk" &&
+								!addFeedBulkUrls.trim()) ||
+							addFeedTab === "search"}
 						on:click={submitAddFeed}
 					>
-						{addFeedLoading ? 'Adding...' : 'Add Feed'}
+						{addFeedLoading ? "Adding..." : "Add Feed"}
 					</button>
 				</div>
 			</div>
@@ -2296,11 +3370,25 @@
 
 	<!-- Create Folder Modal -->
 	{#if showCreateFolderModal}
-		<div class="modal-overlay" on:click={() => { showCreateFolderModal = false; folderModalName = ''; folderModalError = null; }}>
+		<div
+			class="modal-overlay"
+			on:click={() => {
+				showCreateFolderModal = false;
+				folderModalName = "";
+				folderModalError = null;
+			}}
+		>
 			<div class="folder-modal glass-panel" on:click|stopPropagation>
 				<div class="modal-header">
 					<h2>Create Folder</h2>
-					<button class="close-btn" on:click={() => { showCreateFolderModal = false; folderModalName = ''; folderModalError = null; }}>×</button>
+					<button
+						class="close-btn"
+						on:click={() => {
+							showCreateFolderModal = false;
+							folderModalName = "";
+							folderModalError = null;
+						}}>×</button
+					>
 				</div>
 				<div class="modal-body">
 					<input
@@ -2309,16 +3397,27 @@
 						placeholder="Folder name"
 						class="folder-input"
 						maxlength="60"
-						on:keydown={(e) => e.key === 'Enter' && createFolder()}
+						on:keydown={(e) => e.key === "Enter" && createFolder()}
 					/>
 					{#if folderModalError}
 						<div class="folder-error">{folderModalError}</div>
 					{/if}
 				</div>
 				<div class="modal-footer">
-					<button class="secondary-btn" on:click={() => { showCreateFolderModal = false; folderModalName = ''; folderModalError = null; }}>Cancel</button>
-					<button class="primary-btn" disabled={folderModalLoading || !folderModalName.trim()} on:click={createFolder}>
-						{folderModalLoading ? 'Creating...' : 'Create'}
+					<button
+						class="secondary-btn"
+						on:click={() => {
+							showCreateFolderModal = false;
+							folderModalName = "";
+							folderModalError = null;
+						}}>Cancel</button
+					>
+					<button
+						class="primary-btn"
+						disabled={folderModalLoading || !folderModalName.trim()}
+						on:click={createFolder}
+					>
+						{folderModalLoading ? "Creating..." : "Create"}
 					</button>
 				</div>
 			</div>
@@ -2327,11 +3426,34 @@
 
 	<!-- Rename Folder Modal -->
 	{#if showRenameFolderModal}
-		<div class="modal-overlay" on:click={() => { showRenameFolderModal = false; folderModalName = ''; folderModalError = null; contextMenuType = null; contextMenuTarget = null; }}>
-			<div class="modal folder-modal glass-panel" on:click|stopPropagation>
+		<div
+			class="modal-overlay"
+			on:click={() => {
+				showRenameFolderModal = false;
+				folderModalName = "";
+				folderModalError = null;
+				contextMenuType = null;
+				contextMenuTarget = null;
+			}}
+		>
+			<div
+				class="modal folder-modal glass-panel"
+				on:click|stopPropagation
+			>
 				<div class="modal-header">
-					<h2>Rename {contextMenuType === 'feed' ? 'Feed' : 'Folder'}</h2>
-					<button class="close-btn" on:click={() => { showRenameFolderModal = false; folderModalName = ''; folderModalError = null; contextMenuType = null; contextMenuTarget = null; }}>×</button>
+					<h2>
+						Rename {contextMenuType === "feed" ? "Feed" : "Folder"}
+					</h2>
+					<button
+						class="close-btn"
+						on:click={() => {
+							showRenameFolderModal = false;
+							folderModalName = "";
+							folderModalError = null;
+							contextMenuType = null;
+							contextMenuTarget = null;
+						}}>×</button
+					>
 				</div>
 				<div class="modal-body">
 					<input
@@ -2340,16 +3462,33 @@
 						placeholder="Enter new name..."
 						class="folder-input"
 						maxlength="100"
-						on:keydown={(e) => e.key === 'Enter' && (contextMenuType === 'feed' ? renameFeed() : renameFolder())}
+						on:keydown={(e) =>
+							e.key === "Enter" &&
+							(contextMenuType === "feed"
+								? renameFeed()
+								: renameFolder())}
 					/>
 					{#if folderModalError}
 						<div class="folder-error">{folderModalError}</div>
 					{/if}
 				</div>
 				<div class="modal-footer">
-					<button class="secondary-btn" on:click={() => { showRenameFolderModal = false; folderModalName = ''; folderModalError = null; }}>Cancel</button>
-					<button class="primary-btn" disabled={folderModalLoading || !folderModalName.trim()} on:click={contextMenuType === 'feed' ? renameFeed : renameFolder}>
-						{folderModalLoading ? 'Renaming...' : 'Rename'}
+					<button
+						class="secondary-btn"
+						on:click={() => {
+							showRenameFolderModal = false;
+							folderModalName = "";
+							folderModalError = null;
+						}}>Cancel</button
+					>
+					<button
+						class="primary-btn"
+						disabled={folderModalLoading || !folderModalName.trim()}
+						on:click={contextMenuType === "feed"
+							? renameFeed
+							: renameFolder}
+					>
+						{folderModalLoading ? "Renaming..." : "Rename"}
 					</button>
 				</div>
 			</div>
@@ -2358,23 +3497,68 @@
 
 	<!-- Delete Confirm (Generic) -->
 	{#if showDeleteFolderConfirm}
-		<div class="modal-overlay" on:click={() => { showDeleteFolderConfirm = false; selectedFolderForAction = null; contextMenuType = null; contextMenuTarget = null; }}>
-			<div class="modal folder-modal glass-panel" on:click|stopPropagation>
+		<div
+			class="modal-overlay"
+			on:click={() => {
+				showDeleteFolderConfirm = false;
+				selectedFolderForAction = null;
+				contextMenuType = null;
+				contextMenuTarget = null;
+			}}
+		>
+			<div
+				class="modal folder-modal glass-panel"
+				on:click|stopPropagation
+			>
 				<div class="modal-header">
-					<h2>Delete {contextMenuType === 'feed' ? 'Feed' : 'Folder'}</h2>
-					<button class="close-btn" on:click={() => { showDeleteFolderConfirm = false; selectedFolderForAction = null; contextMenuType = null; contextMenuTarget = null; }}>×</button>
+					<h2>
+						Delete {contextMenuType === "feed" ? "Feed" : "Folder"}
+					</h2>
+					<button
+						class="close-btn"
+						on:click={() => {
+							showDeleteFolderConfirm = false;
+							selectedFolderForAction = null;
+							contextMenuType = null;
+							contextMenuTarget = null;
+						}}>×</button
+					>
 				</div>
 				<div class="modal-body">
-					<p>Are you sure you want to delete <strong>{contextMenuType === 'feed' ? (contextMenuTarget?.title || contextMenuTarget?.url) : selectedFolderForAction?.name}</strong>?</p>
-					{#if contextMenuType !== 'feed'}
-						<p class="warning-text">This will remove all feed associations but won't delete the feeds themselves.</p>
+					<p>
+						Are you sure you want to delete <strong
+							>{contextMenuType === "feed"
+								? contextMenuTarget?.title ||
+									contextMenuTarget?.url
+								: selectedFolderForAction?.name}</strong
+						>?
+					</p>
+					{#if contextMenuType !== "feed"}
+						<p class="warning-text">
+							This will remove all feed associations but won't
+							delete the feeds themselves.
+						</p>
 					{:else}
-						<p class="warning-text">This will remove the feed and all its articles from your library.</p>
+						<p class="warning-text">
+							This will remove the feed and all its articles from
+							your library.
+						</p>
 					{/if}
 				</div>
 				<div class="modal-footer">
-					<button class="secondary-btn" on:click={() => { showDeleteFolderConfirm = false; selectedFolderForAction = null; }}>Cancel</button>
-					<button class="danger-btn" on:click={contextMenuType === 'feed' ? deleteFeedConfirm : deleteFolder}>Delete</button>
+					<button
+						class="secondary-btn"
+						on:click={() => {
+							showDeleteFolderConfirm = false;
+							selectedFolderForAction = null;
+						}}>Cancel</button
+					>
+					<button
+						class="danger-btn"
+						on:click={contextMenuType === "feed"
+							? deleteFeedConfirm
+							: deleteFolder}>Delete</button
+					>
 				</div>
 			</div>
 		</div>
@@ -2383,14 +3567,17 @@
 	<!-- Feed Folder Popover -->
 	{#if showFeedFolderPopover && feedFolderPopoverFeed}
 		<div class="popover-overlay" on:click={closeFeedFolderPopover}>
-			<div 
-				class="feed-folder-popover glass-panel" 
+			<div
+				class="feed-folder-popover glass-panel"
 				style="left: {feedFolderPopoverPosition.x}px; top: {feedFolderPopoverPosition.y}px;"
 				on:click|stopPropagation
 			>
 				<div class="popover-header">
 					<span>Add to folder</span>
-					<button class="close-btn-small" on:click={closeFeedFolderPopover}>×</button>
+					<button
+						class="close-btn-small"
+						on:click={closeFeedFolderPopover}>×</button
+					>
 				</div>
 				<div class="popover-body">
 					{#if folders.length === 0}
@@ -2400,22 +3587,42 @@
 							<label class="folder-checkbox-item">
 								<input
 									type="checkbox"
-									checked={feedFolderPopoverFeed.folders && feedFolderPopoverFeed.folders.includes(folder.id)}
-									on:change={() => toggleFeedInFolder(
-										folder.id,
-										feedFolderPopoverFeed.url,
-										feedFolderPopoverFeed.folders && feedFolderPopoverFeed.folders.includes(folder.id)
-									)}
+									checked={feedFolderPopoverFeed.folders &&
+										feedFolderPopoverFeed.folders.includes(
+											folder.id,
+										)}
+									on:change={() =>
+										toggleFeedInFolder(
+											folder.id,
+											feedFolderPopoverFeed.url,
+											feedFolderPopoverFeed.folders &&
+												feedFolderPopoverFeed.folders.includes(
+													folder.id,
+												),
+										)}
 								/>
 								<span>{folder.name}</span>
 							</label>
 						{/each}
 					{/if}
-					
+
 					{#if !showCreateFolderInPopover}
-						<button class="create-folder-in-popover-btn" on:click={() => showCreateFolderInPopover = true}>
-							<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-								<path d="M7 3v8M3 7h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						<button
+							class="create-folder-in-popover-btn"
+							on:click={() => (showCreateFolderInPopover = true)}
+						>
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 14 14"
+								fill="none"
+							>
+								<path
+									d="M7 3v8M3 7h8"
+									stroke="currentColor"
+									stroke-width="1.5"
+									stroke-linecap="round"
+								/>
 							</svg>
 							Create new folder
 						</button>
@@ -2427,9 +3634,16 @@
 								placeholder="Folder name"
 								class="inline-folder-input"
 								maxlength="60"
-								on:keydown={(e) => e.key === 'Enter' && createFolderInPopover()}
+								on:keydown={(e) =>
+									e.key === "Enter" &&
+									createFolderInPopover()}
 							/>
-							<button class="inline-create-btn" on:click={createFolderInPopover} disabled={!newFolderNameInPopover.trim()}>Add</button>
+							<button
+								class="inline-create-btn"
+								on:click={createFolderInPopover}
+								disabled={!newFolderNameInPopover.trim()}
+								>Add</button
+							>
 						</div>
 					{/if}
 				</div>
@@ -2444,8 +3658,18 @@
 				<div class="toast-header">
 					<span class="toast-title">Refreshing Feeds</span>
 					<button class="toast-close" on:click={dismissRefreshToast}>
-						<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-							<path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 16 16"
+							fill="none"
+						>
+							<path
+								d="M4 4l8 8M12 4l-8 8"
+								stroke="currentColor"
+								stroke-width="1.5"
+								stroke-linecap="round"
+							/>
 						</svg>
 					</button>
 				</div>
@@ -2453,7 +3677,12 @@
 					{refreshCurrent} / {refreshTotal} • {refreshMessage}
 				</div>
 				<div class="progress-bar">
-					<div class="progress-fill" style="width: {refreshTotal > 0 ? (refreshCurrent / refreshTotal * 100) : 0}%"></div>
+					<div
+						class="progress-fill"
+						style="width: {refreshTotal > 0
+							? (refreshCurrent / refreshTotal) * 100
+							: 0}%"
+					></div>
 				</div>
 			</div>
 		</div>
@@ -2461,21 +3690,21 @@
 
 	<!-- Context Menu -->
 	{#if showContextMenu}
-		<div 
-			class="context-menu glass-panel" 
+		<div
+			class="context-menu glass-panel"
 			style="left: {contextMenuPosition.x}px; top: {contextMenuPosition.y}px;"
 			on:click|stopPropagation
 		>
-			<button 
+			<button
 				class="menu-item"
 				on:click={() => {
-					if (contextMenuType === 'folder') {
+					if (contextMenuType === "folder") {
 						selectedFolderForAction = contextMenuTarget;
 						folderModalName = contextMenuTarget.name;
 						folderModalError = null;
 						showRenameFolderModal = true;
 					} else {
-						folderModalName = contextMenuTarget.title || '';
+						folderModalName = contextMenuTarget.title || "";
 						folderModalError = null;
 						showRenameFolderModal = true;
 					}
@@ -2483,13 +3712,18 @@
 				}}
 			>
 				<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-					<path d="M10 1l3 3-7 7H3v-3l7-7z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+					<path
+						d="M10 1l3 3-7 7H3v-3l7-7z"
+						stroke="currentColor"
+						stroke-width="1.5"
+						fill="none"
+					/>
 				</svg>
 				Rename
 			</button>
 
-			{#if contextMenuType === 'feed'}
-				<button 
+			{#if contextMenuType === "feed"}
+				<button
 					class="menu-item"
 					on:click={(e) => {
 						openFeedFolderPopover(contextMenuTarget, e);
@@ -2497,26 +3731,37 @@
 					}}
 				>
 					<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-						<path d="M2 4h5l1 2h8v10H2V4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+						<path
+							d="M2 4h5l1 2h8v10H2V4z"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linejoin="round"
+							fill="none"
+						/>
 					</svg>
 					Move to Folder
 				</button>
 			{/if}
 
-			<button 
+			<button
 				class="menu-item danger"
 				on:click={() => {
-					if (contextMenuType === 'folder') {
+					if (contextMenuType === "folder") {
 						selectedFolderForAction = contextMenuTarget;
 						showDeleteFolderConfirm = true;
 					} else {
-						showDeleteFolderConfirm = true; 
+						showDeleteFolderConfirm = true;
 					}
 					closeContextMenu();
 				}}
 			>
 				<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-					<path d="M2 4h10M5 4V2h4v2M4 4v8h6V4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+					<path
+						d="M2 4h10M5 4V2h4v2M4 4v8h6V4"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+					/>
 				</svg>
 				Delete
 			</button>
@@ -2542,8 +3787,8 @@
 		background: var(--panel0);
 		border-right: 1px solid var(--stroke);
 	}
-    
-    /* Remove individual panels if sidebar is whole panel, or keep panels inside? 
+
+	/* Remove individual panels if sidebar is whole panel, or keep panels inside? 
        Design decision: The sidebar ITSELF is a glass panel in app structure. 
        Let's refine .sidebar-header and nav items.
     */
@@ -2551,7 +3796,7 @@
 	.sidebar-header {
 		padding-bottom: var(--gap);
 		border-bottom: 1px solid var(--stroke);
-        margin-bottom: var(--gap);
+		margin-bottom: var(--gap);
 	}
 
 	.logo {
@@ -2569,7 +3814,7 @@
 		align-items: center;
 		justify-content: center;
 		color: var(--bg0);
-        box-shadow: 0 4px 12px rgba(63, 184, 138, 0.3);
+		box-shadow: 0 4px 12px rgba(63, 184, 138, 0.3);
 	}
 
 	.logo-text {
@@ -2577,7 +3822,7 @@
 		font-size: 20px;
 		font-weight: 700;
 		color: var(--text);
-        letter-spacing: -0.02em;
+		letter-spacing: -0.02em;
 	}
 
 	.sidebar-nav {
@@ -2586,7 +3831,8 @@
 		gap: 6px;
 	}
 
-	.nav-item, .feed-item {
+	.nav-item,
+	.feed-item {
 		display: flex;
 		align-items: center;
 		gap: 12px;
@@ -2596,46 +3842,49 @@
 		border-radius: var(--radiusS);
 		color: var(--muted);
 		font-size: 14px;
-        font-weight: 500;
+		font-weight: 500;
 		cursor: pointer;
 		transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 		text-align: left;
 		width: 100%;
 	}
 
-	.nav-item:hover, .feed-item:hover {
+	.nav-item:hover,
+	.feed-item:hover {
 		background: var(--chip);
 		color: var(--text);
-        border-color: var(--stroke);
-        transform: translateX(2px);
+		border-color: var(--stroke);
+		transform: translateX(2px);
 	}
 
 	.nav-item.active {
 		background: var(--accent-glow);
 		color: var(--accent);
-        border-color: rgba(63, 184, 138, 0.1);
+		border-color: rgba(63, 184, 138, 0.1);
 	}
-    
-    .feed-item.active {
-         background: var(--chip-hover);
-         color: var(--text);
-         border-color: var(--stroke);
-    }
 
-	.nav-item svg, .feed-item .feed-icon {
+	.feed-item.active {
+		background: var(--chip-hover);
+		color: var(--text);
+		border-color: var(--stroke);
+	}
+
+	.nav-item svg,
+	.feed-item .feed-icon {
 		flex-shrink: 0;
-        opacity: 0.8;
+		opacity: 0.8;
 	}
-    
-    .nav-item.active svg {
-        opacity: 1;
-    }
 
-	.nav-item span:first-of-type, .feed-name {
+	.nav-item.active svg {
+		opacity: 1;
+	}
+
+	.nav-item span:first-of-type,
+	.feed-name {
 		flex: 1;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	.badge {
@@ -2645,15 +3894,15 @@
 		border-radius: 99px;
 		font-size: 11px;
 		font-weight: 700;
-        min-width: 20px;
-        text-align: center;
+		min-width: 20px;
+		text-align: center;
 	}
 
 	.sidebar-section {
 		display: flex;
 		flex-direction: column;
 		gap: 6px;
-        margin-top: var(--gap);
+		margin-top: var(--gap);
 	}
 
 	.section-header {
@@ -2671,7 +3920,7 @@
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
-        position: relative;
+		position: relative;
 	}
 
 	/* Top Bar */
@@ -2681,29 +3930,30 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 0 var(--page-padding);
-        margin-bottom: 0;
-        z-index: 10;
-        /* Removed glass effect for solid opaque look */
-        background: var(--bg0); 
-        border-bottom: 1px solid var(--stroke);
-        backdrop-filter: none;
-        box-shadow: none;
+		margin-bottom: 0;
+		z-index: 10;
+		/* Removed glass effect for solid opaque look */
+		background: var(--bg0);
+		border-bottom: 1px solid var(--stroke);
+		backdrop-filter: none;
+		box-shadow: none;
 	}
-    
-    /* Topbar needs to be clean, search bar is the focus */
 
-	.topbar-left, .topbar-right {
+	/* Topbar needs to be clean, search bar is the focus */
+
+	.topbar-left,
+	.topbar-right {
 		display: flex;
 		align-items: center;
 		gap: 12px;
 	}
-    
-    .logo-small {
-        /* Hide logo small on desktop if sidebar is visible, handled by media query usually
+
+	.logo-small {
+		/* Hide logo small on desktop if sidebar is visible, handled by media query usually
            But here we keep it simple.
         */
-        display: none; 
-    }
+		display: none;
+	}
 
 	.topbar-center {
 		flex: 1;
@@ -2721,15 +3971,15 @@
 		border: 1px solid var(--stroke);
 		border-radius: 999px;
 		color: var(--muted);
-        transition: all 0.2s ease;
+		transition: all 0.2s ease;
 	}
-    
-    .search-box:focus-within {
-        background: var(--panel0);
-        border-color: var(--accent);
-        box-shadow: 0 0 0 4px rgba(63, 184, 138, 0.1);
-        color: var(--text);
-    }
+
+	.search-box:focus-within {
+		background: var(--panel0);
+		border-color: var(--accent);
+		box-shadow: 0 0 0 4px rgba(63, 184, 138, 0.1);
+		color: var(--text);
+	}
 
 	.search-box input {
 		flex: 1;
@@ -2738,7 +3988,7 @@
 		outline: none;
 		color: var(--text);
 		font-size: 15px;
-        font-weight: 500;
+		font-weight: 500;
 	}
 
 	.search-box input::placeholder {
@@ -2763,7 +4013,7 @@
 		background: var(--chip-hover);
 		color: var(--text);
 		border-color: var(--stroke-strong);
-        transform: translateY(-1px);
+		transform: translateY(-1px);
 	}
 
 	.add-btn {
@@ -2783,25 +4033,25 @@
 
 	.add-btn:hover {
 		transform: scale(1.05) rotate(90deg);
-        background: #3fb88a;
+		background: #3fb88a;
 	}
 
 	/* Filter Chips */
-    .content-header {
-        padding: 0 var(--page-padding);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: var(--gap);
-    }
-    
-    .content-header h1 {
-        font-size: 24px;
-        margin: 0;
-        background: linear-gradient(to right, #fff, #bbb);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
+	.content-header {
+		padding: 0 var(--page-padding);
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: var(--gap);
+	}
+
+	.content-header h1 {
+		font-size: 24px;
+		margin: 0;
+		background: linear-gradient(to right, #fff, #bbb);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+	}
 
 	.filter-chips {
 		display: flex;
@@ -2823,17 +4073,17 @@
 	.chip:hover {
 		background: var(--chip-hover);
 		color: var(--text);
-        border-color: var(--stroke-strong);
+		border-color: var(--stroke-strong);
 	}
 
 	.chip.active {
 		background: var(--text);
 		color: var(--bg0);
 		border-color: var(--text);
-        font-weight: 600;
+		font-weight: 600;
 	}
-    
-    /* Articles Container */
+
+	/* Articles Container */
 	.articles-container {
 		flex: 1;
 		overflow-y: auto;
@@ -2841,29 +4091,35 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--gap);
-        /* Add mask to fade bottom scroll */
-        mask-image: linear-gradient(to bottom, black calc(100% - 40px), transparent 100%); 
+		/* Add mask to fade bottom scroll */
+		mask-image: linear-gradient(
+			to bottom,
+			black calc(100% - 40px),
+			transparent 100%
+		);
 	}
 
 	.article-card {
 		padding: 24px;
-		transition: transform 0.2s, box-shadow 0.2s;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        border: 1px solid var(--stroke); /* Ensure border exists */
+		transition:
+			transform 0.2s,
+			box-shadow 0.2s;
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		border: 1px solid var(--stroke); /* Ensure border exists */
 	}
 
 	.article-card:hover {
 		transform: translateY(-2px);
-        background: rgba(255, 255, 255, 0.04); /* Totally slightly lighter */
-        border-color: var(--stroke-strong);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+		background: rgba(255, 255, 255, 0.04); /* Totally slightly lighter */
+		border-color: var(--stroke-strong);
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 	}
 
 	.article-card.unread {
 		border-left: 3px solid var(--accent);
-        background: rgba(63, 184, 138, 0.02); /* Very subtle tint */
+		background: rgba(63, 184, 138, 0.02); /* Very subtle tint */
 	}
 
 	.article-header {
@@ -2879,23 +4135,23 @@
 		font-weight: 600;
 		line-height: 1.4;
 		margin: 0;
-        font-family: var(--font-display);
-        letter-spacing: -0.01em;
+		font-family: var(--font-display);
+		letter-spacing: -0.01em;
 	}
 
 	.article-card.unread .article-title {
 		font-weight: 700;
-        color: #fff;
+		color: #fff;
 	}
-    
-    .article-title a {
-        color: inherit;
-        text-decoration: none;
-    }
-    
-    .article-title a:hover {
-        color: var(--accent);
-    }
+
+	.article-title a {
+		color: inherit;
+		text-decoration: none;
+	}
+
+	.article-title a:hover {
+		color: var(--accent);
+	}
 
 	.article-actions {
 		display: flex;
@@ -2921,18 +4177,18 @@
 	.star-btn:hover {
 		background: var(--chip);
 		color: var(--accent);
-        border-color: var(--stroke);
+		border-color: var(--stroke);
 	}
 
 	.star-btn.starred {
 		color: var(--accent);
-        background: rgba(63, 184, 138, 0.1);
-        border-color: rgba(63, 184, 138, 0.2);
+		background: rgba(63, 184, 138, 0.1);
+		border-color: rgba(63, 184, 138, 0.2);
 	}
 
 	.star-btn.starred:hover {
 		background: rgba(63, 184, 138, 0.2);
-        box-shadow: 0 0 12px rgba(63, 184, 138, 0.2);
+		box-shadow: 0 0 12px rgba(63, 184, 138, 0.2);
 	}
 
 	.read-dot {
@@ -2945,13 +4201,13 @@
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-        border-radius: 50%;
-        transition: all 0.2s;
+		border-radius: 50%;
+		transition: all 0.2s;
 	}
-    
-    .read-dot:hover {
-        background: var(--chip);
-    }
+
+	.read-dot:hover {
+		background: var(--chip);
+	}
 
 	.read-dot .dot {
 		width: 8px;
@@ -2959,7 +4215,7 @@
 		background: var(--accent);
 		border-radius: 50%;
 		transition: all 0.2s;
-        box-shadow: 0 0 8px var(--accent);
+		box-shadow: 0 0 8px var(--accent);
 	}
 
 	.read-dot.read .dot {
@@ -2967,7 +4223,7 @@
 		height: 6px;
 		background: var(--stroke-strong);
 		opacity: 0.3;
-        box-shadow: none;
+		box-shadow: none;
 	}
 
 	.article-meta {
@@ -2977,24 +4233,24 @@
 		font-size: 13px;
 		margin-bottom: 12px;
 		gap: 6px;
-        font-weight: 500;
-        font-family: var(--font-ui);
+		font-weight: 500;
+		font-family: var(--font-ui);
 	}
 
-    .feed-favicon {
-        width: 16px;
-        height: 16px;
-        border-radius: 4px;
-        object-fit: contain;
-    }
+	.feed-favicon {
+		width: 16px;
+		height: 16px;
+		border-radius: 4px;
+		object-fit: contain;
+	}
 
-    .feed-title-meta {
-        color: var(--accent);
-        opacity: 0.9;
-    }
+	.feed-title-meta {
+		color: var(--accent);
+		opacity: 0.9;
+	}
 
 	.meta-sep {
-        font-size: 10px;
+		font-size: 10px;
 	}
 
 	.article-summary {
@@ -3002,22 +4258,22 @@
 		line-height: 1.6;
 		color: var(--muted);
 		margin: 0 0 16px 0;
-        font-weight: 400;
+		font-weight: 400;
 	}
 
 	.article-thumbnail {
 		border-radius: var(--radiusS);
 		overflow: hidden;
 		max-width: 100%;
-        margin-top: 4px;
-        border: 1px solid var(--stroke);
+		margin-top: 4px;
+		border: 1px solid var(--stroke);
 	}
 
 	.article-thumbnail img {
 		width: 100%;
-        height: auto;
-        max-height: 400px;
-        object-fit: cover;
+		height: auto;
+		max-height: 400px;
+		object-fit: cover;
 		display: block;
 	}
 
@@ -3026,11 +4282,11 @@
 		text-align: center;
 		color: var(--muted2);
 		font-size: 15px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        gap: 16px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-direction: column;
+		gap: 16px;
 	}
 
 	.empty-state.error {
@@ -3186,7 +4442,9 @@
 
 		.main-content {
 			margin-top: 0;
-			padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* Space for bottom tab bar */
+			padding-bottom: calc(
+				80px + env(safe-area-inset-bottom)
+			); /* Space for bottom tab bar */
 		}
 
 		.topbar {
@@ -3194,14 +4452,14 @@
 			top: 0;
 			z-index: 100;
 		}
-        
-        .topbar-center {
-            margin: 0 8px;
-        }
-        
-        .search-box {
-            padding: 0 12px;
-        }
+
+		.topbar-center {
+			margin: 0 8px;
+		}
+
+		.search-box {
+			padding: 0 12px;
+		}
 	}
 
 	/* Modal Styles */
@@ -3216,7 +4474,7 @@
 		align-items: center;
 		justify-content: center;
 		z-index: 1000;
-        animation: fadeIn 0.2s ease;
+		animation: fadeIn 0.2s ease;
 	}
 
 	.modal {
@@ -3225,11 +4483,11 @@
 		max-height: 85vh;
 		overflow-y: auto;
 		padding: 0;
-        background: var(--bg0);
-        border: 1px solid var(--stroke);
-        border-radius: var(--radiusL);
-        box-shadow: 0 40px 80px rgba(0,0,0,0.8);
-        animation: scaleIn 0.2s ease-out;
+		background: var(--bg0);
+		border: 1px solid var(--stroke);
+		border-radius: var(--radiusL);
+		box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8);
+		animation: scaleIn 0.2s ease-out;
 	}
 
 	.modal-header {
@@ -3245,8 +4503,8 @@
 		font-size: 20px;
 		font-weight: 700;
 		color: var(--text);
-        font-family: var(--font-display);
-        letter-spacing: -0.01em;
+		font-family: var(--font-display);
+		letter-spacing: -0.01em;
 	}
 
 	.close-btn {
@@ -3260,16 +4518,16 @@
 		cursor: pointer;
 		transition: all 0.2s;
 		border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.close-btn:hover {
 		background: var(--chip-hover);
 		color: var(--text);
-        border-color: var(--stroke-strong);
-        transform: rotate(90deg);
+		border-color: var(--stroke-strong);
+		transform: rotate(90deg);
 	}
 
 	.modal-body {
@@ -3312,10 +4570,10 @@
 		cursor: pointer;
 		outline: none;
 		transition: all 0.2s;
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 16px center;
+		appearance: none;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: right 16px center;
 	}
 
 	.settings-select:hover {
@@ -3355,14 +4613,14 @@
 		background: var(--chip);
 		border-color: var(--accent);
 		color: var(--accent);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 	}
 
 	.settings-btn:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
-        transform: none;
+		transform: none;
 	}
 
 	.import-results {
@@ -3378,13 +4636,13 @@
 		gap: 20px;
 		flex-wrap: wrap;
 		margin-bottom: 16px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid var(--stroke);
+		padding-bottom: 16px;
+		border-bottom: 1px solid var(--stroke);
 	}
 
 	.result-item {
 		font-size: 14px;
-        font-weight: 500;
+		font-weight: 500;
 		color: var(--muted);
 	}
 
@@ -3406,15 +4664,15 @@
 		font-weight: 700;
 		color: var(--muted);
 		text-transform: uppercase;
-        letter-spacing: 0.05em;
+		letter-spacing: 0.05em;
 	}
 
 	.failed-item {
 		padding: 12px;
 		margin-bottom: 8px;
-		background: rgba(0,0,0,0.3);
+		background: rgba(0, 0, 0, 0.3);
 		border-radius: 8px;
-        border: 1px solid var(--stroke);
+		border: 1px solid var(--stroke);
 	}
 
 	.failed-url {
@@ -3422,23 +4680,33 @@
 		color: var(--text);
 		word-break: break-all;
 		margin-bottom: 6px;
-        font-family: monospace;
+		font-family: monospace;
 	}
 
 	.failed-error {
 		font-size: 12px;
 		color: #ff6b6b;
 	}
-    
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-    
-    @keyframes scaleIn {
-        from { opacity: 0; transform: scale(0.95); }
-        to { opacity: 1; transform: scale(1); }
-    }
+
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes scaleIn {
+		from {
+			opacity: 0;
+			transform: scale(0.95);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1);
+		}
+	}
 
 	/* Reader View Styles */
 	.reader-overlay {
@@ -3509,7 +4777,8 @@
 		color: var(--bg0);
 	}
 
-	.reader-loading, .reader-error {
+	.reader-loading,
+	.reader-error {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -3530,7 +4799,9 @@
 	}
 
 	@keyframes spin {
-		to { transform: rotate(360deg); }
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
 	.reader-error {
@@ -3612,10 +4883,11 @@
 		font-style: italic;
 	}
 
-	.reader-body pre, .reader-body code {
+	.reader-body pre,
+	.reader-body code {
 		background: var(--panel0);
 		border-radius: 6px;
-		font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+		font-family: "SF Mono", "Monaco", "Consolas", monospace;
 		font-size: 0.9em;
 	}
 
@@ -3629,7 +4901,8 @@
 		padding: 2px 6px;
 	}
 
-	.reader-body ul, .reader-body ol {
+	.reader-body ul,
+	.reader-body ol {
 		margin: 1.5em 0;
 		padding-left: 1.5em;
 	}
@@ -3638,7 +4911,8 @@
 		margin-bottom: 0.5em;
 	}
 
-	.reader-body h2, .reader-body h3 {
+	.reader-body h2,
+	.reader-body h3 {
 		font-family: var(--font-display);
 		margin: 2em 0 1em 0;
 		color: #fff;
