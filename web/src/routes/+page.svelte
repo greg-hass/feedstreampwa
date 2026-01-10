@@ -37,7 +37,7 @@
 	let showReader = false;
 	let readerLoading = false;
 	let readerError: string | null = null;
-	let readerData: {
+	interface ReaderData {
 		url: string;
 		title: string | null;
 		byline: string | null;
@@ -46,8 +46,10 @@
 		imageUrl: string | null;
 		contentHtml: string;
 		fromCache: boolean;
-	} | null = null;
-	let readerCache: Map<string, typeof readerData> = new Map();
+	}
+
+	let readerData: ReaderData | null = null;
+	let readerCache: Map<string, ReaderData> = new Map();
 	let prefetchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 	let currentItemUrl: string | null = null;
 
@@ -457,7 +459,6 @@
 	}
 
 	// Reactive stats
-	$: totalUnread = feeds.reduce((sum, f) => sum + (f.unreadCount || 0), 0);
 
 	// Reload items when filters change
 	$: if (sourceFilter || unreadOnly !== undefined || starredOnly !== undefined || selectedFeedUrl !== undefined) {
@@ -589,7 +590,7 @@
 		try {
 			const data = await fetchReaderContent(item.url);
 			readerData = data;
-			readerCache.set(item.url, data);
+			if (data) readerCache.set(item.url, data);
 		} catch (err) {
 			readerError = err instanceof Error ? err.message : 'Failed to load reader';
 		} finally {
@@ -607,7 +608,7 @@
 		prefetchDebounceTimer = setTimeout(async () => {
 			try {
 				const data = await fetchReaderContent(url);
-				readerCache.set(url, data);
+				if (data) readerCache.set(url, data);
 			} catch {
 				// Silently fail prefetch
 			}
@@ -1206,8 +1207,6 @@
 
 	function closeContextMenu() {
 		showContextMenu = false;
-		contextMenuType = null;
-		contextMenuTarget = null;
 		window.removeEventListener('click', closeContextMenu);
 	}
 
@@ -2243,11 +2242,11 @@
 
 	<!-- Rename Folder Modal -->
 	{#if showRenameFolderModal}
-		<div class="modal-overlay" on:click={() => { showRenameFolderModal = false; folderModalName = ''; folderModalError = null; }}>
-			<div class="folder-modal glass-panel" on:click|stopPropagation>
+		<div class="modal-overlay" on:click={() => { showRenameFolderModal = false; folderModalName = ''; folderModalError = null; contextMenuType = null; contextMenuTarget = null; }}>
+			<div class="modal folder-modal glass-panel" on:click|stopPropagation>
 				<div class="modal-header">
 					<h2>Rename {contextMenuType === 'feed' ? 'Feed' : 'Folder'}</h2>
-					<button class="close-btn" on:click={() => { showRenameFolderModal = false; folderModalName = ''; folderModalError = null; }}>×</button>
+					<button class="close-btn" on:click={() => { showRenameFolderModal = false; folderModalName = ''; folderModalError = null; contextMenuType = null; contextMenuTarget = null; }}>×</button>
 				</div>
 				<div class="modal-body">
 					<input
@@ -2274,11 +2273,11 @@
 
 	<!-- Delete Confirm (Generic) -->
 	{#if showDeleteFolderConfirm}
-		<div class="modal-overlay" on:click={() => { showDeleteFolderConfirm = false; selectedFolderForAction = null; }}>
+		<div class="modal-overlay" on:click={() => { showDeleteFolderConfirm = false; selectedFolderForAction = null; contextMenuType = null; contextMenuTarget = null; }}>
 			<div class="modal folder-modal glass-panel" on:click|stopPropagation>
 				<div class="modal-header">
 					<h2>Delete {contextMenuType === 'feed' ? 'Feed' : 'Folder'}</h2>
-					<button class="close-btn" on:click={() => { showDeleteFolderConfirm = false; selectedFolderForAction = null; }}>×</button>
+					<button class="close-btn" on:click={() => { showDeleteFolderConfirm = false; selectedFolderForAction = null; contextMenuType = null; contextMenuTarget = null; }}>×</button>
 				</div>
 				<div class="modal-body">
 					<p>Are you sure you want to delete <strong>{contextMenuType === 'feed' ? (contextMenuTarget?.title || contextMenuTarget?.url) : selectedFolderForAction?.name}</strong>?</p>
