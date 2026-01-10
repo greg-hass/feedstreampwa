@@ -11,6 +11,10 @@ export interface Feed {
     unreachable: boolean;
     created_at: string;
     updated_at: string;
+    unreadCount?: number;
+    kind?: string;
+    smartFolder?: string;
+    folders?: string[];
 }
 
 export interface Item {
@@ -24,17 +28,22 @@ export interface Item {
     content: string | null;
     published_at: string;
     created_at: string;
-    is_read: boolean;
-    is_starred: boolean;
+    is_read: number | boolean; // API might return 0/1, frontend uses bool sometimes
+    is_starred: number | boolean;
     feed_title: string;
     feed_icon_url: string | null;
+    published?: string; // alias if needed
+    source?: string;
+    media_thumbnail?: string;
 }
 
 export interface Folder {
+    id: string; // or number depending on DB
     name: string;
     feeds: Feed[];
     unreadCount: number;
     isOpen: boolean;
+    feedCount?: number;
 }
 
 export interface SearchResult {
@@ -43,4 +52,10 @@ export interface SearchResult {
     description: string;
     type: 'rss' | 'youtube' | 'reddit';
     thumbnail?: string;
+}
+
+export interface ImportResult {
+    added: number;
+    skipped: number;
+    failed: { url: string; error: string }[];
 }

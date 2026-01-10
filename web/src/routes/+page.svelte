@@ -21,10 +21,14 @@
 		Download,
 		Upload,
 		Link,
-		List,
-	import type { Item, Feed, Folder, SearchResult } from "$lib/types";
-	import {
-		LayoutGrid,
+	} from "lucide-svelte";
+	import type {
+		Item,
+		Feed,
+		Folder,
+		SearchResult,
+		ImportResult,
+	} from "$lib/types";
 
 	// Feed subscription state
 	let feeds: Feed[] = [];
@@ -51,7 +55,7 @@
 
 	// Settings modal
 	let showSettings = false;
-	let importResults: any = null;
+	let importResults: ImportResult | null = null;
 	let importingOpml = false;
 
 	// Search state
@@ -208,10 +212,10 @@
 		}
 	}
 
-	async 	function handleImageError(e: Event) {
+	async function handleImageError(e: Event) {
 		const target = e.target as HTMLImageElement;
 		if (target) {
-			await updateSyncInterval(target.value);
+			target.style.display = "none";
 		}
 	}
 
@@ -284,28 +288,31 @@
 
 	// Compute unread counts for smart folders
 	$: totalUnread = feeds.reduce(
-		(sum, feed) => sum + (feed.unreadCount || 0),
+		(sum: number, feed: Feed) => sum + (feed.unreadCount || 0),
 		0,
 	);
 	$: rssUnread = feeds
-		.filter((f) => f.smartFolder === "rss")
-		.reduce((sum, feed) => sum + (feed.unreadCount || 0), 0);
+		.filter((f: Feed) => f.smartFolder === "rss")
+		.reduce((sum: number, feed: Feed) => sum + (feed.unreadCount || 0), 0);
 	$: youtubeUnread = feeds
-		.filter((f) => f.smartFolder === "youtube")
-		.reduce((sum, feed) => sum + (feed.unreadCount || 0), 0);
+		.filter((f: Feed) => f.smartFolder === "youtube")
+		.reduce((sum: number, feed: Feed) => sum + (feed.unreadCount || 0), 0);
 	$: redditUnread = feeds
-		.filter((f) => f.smartFolder === "reddit")
-		.reduce((sum, feed) => sum + (feed.unreadCount || 0), 0);
+		.filter((f: Feed) => f.smartFolder === "reddit")
+		.reduce((sum: number, feed: Feed) => sum + (feed.unreadCount || 0), 0);
 	$: podcastUnread = feeds
-		.filter((f) => f.smartFolder === "podcast")
-		.reduce((sum, feed) => sum + (feed.unreadCount || 0), 0);
+		.filter((f: Feed) => f.smartFolder === "podcast")
+		.reduce((sum: number, feed: Feed) => sum + (feed.unreadCount || 0), 0);
 
 	// Compute unread counts for custom folders
 	$: folderUnreadCounts = folders.reduce(
-		(acc, folder) => {
+		(acc: Record<string, number>, folder: Folder) => {
 			const unread = feeds
-				.filter((f) => f.folders && f.folders.includes(folder.id))
-				.reduce((sum, feed) => sum + (feed.unreadCount || 0), 0);
+				.filter((f: Feed) => f.folders && f.folders.includes(folder.id))
+				.reduce(
+					(sum: number, feed: Feed) => sum + (feed.unreadCount || 0),
+					0,
+				);
 			acc[folder.id] = unread;
 			return acc;
 		},
