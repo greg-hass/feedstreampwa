@@ -3004,7 +3004,7 @@
 	}
 
 	.primary-btn:hover:not(:disabled) {
-		background: #1ed685;
+		background: #3fb88a;
 		transform: translateY(-1px);
 		box-shadow: 0 4px 12px var(--accent-glow);
 	}
@@ -3604,7 +3604,7 @@
 	}
 
 	.inline-create-btn:hover:not(:disabled) {
-		background: #1ed685;
+		background: #3fb88a;
 	}
 
 	.inline-create-btn:disabled {

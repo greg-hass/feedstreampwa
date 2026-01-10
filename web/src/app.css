@@ -19,9 +19,9 @@
   --muted: rgba(255, 255, 255, 0.60);
   --muted2: rgba(255, 255, 255, 0.40);
 
-  /* Accent - Neon Mint */
-  --accent: #22E598;
-  --accent-glow: rgba(34, 229, 152, 0.25);
+  /* Accent - Sage Green */
+  --accent: #46A777;
+  --accent-glow: rgba(70, 167, 119, 0.25);
 
   /* UI Elements */
   --chip: rgba(255, 255, 255, 0.05);
