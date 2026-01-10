@@ -1961,10 +1961,27 @@
 			</div>
 
 			<div class="topbar-right">
+				<!-- Desktop Actions -->
+				<button
+					class="icon-btn desktop-only"
+					on:click={openAddFeedModal}
+					title="Add Feed"
+				>
+					<Plus size={20} />
+				</button>
+				<button
+					class="icon-btn desktop-only"
+					on:click={() => (showSettings = true)}
+					title="Settings"
+				>
+					<Settings size={20} />
+				</button>
+
 				<button
 					class="icon-btn"
-					on:click={startRefresh}
-					title="Refresh all feeds"
+					on:click={refreshAll}
+					class:spinning={feedsLoading || itemsLoading}
+					title="Refresh"
 				>
 					<RefreshCw size={20} />
 				</button>
@@ -3601,7 +3618,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		margin-bottom: var(--gap-lg);
+		margin-bottom: var(--gap); /* Reduced from gap-lg to standard gap */
+		padding-top: 16px; /* Add breathing room from header */
 	}
 
 	.content-header h1 {
@@ -3653,34 +3671,34 @@
 		overflow-y: auto;
 		display: flex;
 		flex-direction: column;
-		gap: var(--gap);
-		padding: var(--page-padding) var(--page-padding);
-		border: 2px solid red; /* DEBUG: Verify container visibility */
+		/* gap: var(--gap); Remove gap for list view */
+		padding: 0; /* Remove padding for edge-to-edge list on mobile */
 		/* transform: translateZ(0); */ /* Ensure GPU layer */
 	}
 
-	/* Premium Article Card */
+	/* Premium Article List Item (formerly card) */
 	.article-card {
 		position: relative;
-		border: 1px solid var(--stroke);
-		border-radius: 20px;
-		background: #141416; /* Deep dark background */
-		transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+		border-bottom: 1px solid var(--stroke);
+		background: transparent;
+		transition: background 0.2s;
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
-		min-height: 120px; /* Prevent collapse if empty */
+		min-height: 120px;
+		padding: 24px var(--page-padding); /* Add padding inside the item */
 	}
 
 	.article-card:hover {
-		transform: translateY(-4px);
-		border-color: var(--stroke-strong);
-		box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-		background: #18181b; /* Slightly lighter on hover */
+		background: rgba(255, 255, 255, 0.02);
+	}
+
+	.article-card:last-child {
+		border-bottom: none;
 	}
 
 	.card-content-wrapper {
-		padding: 28px;
+		padding: 0; /* Remove wrapper padding since it's on the card now */
 		display: flex;
 		flex-direction: column;
 		gap: 16px;
@@ -4073,6 +4091,11 @@
 		.topbar-center {
 			margin: 0;
 			flex: 1;
+		}
+
+		/* Hide desktop actions on mobile */
+		.desktop-only {
+			display: none !important;
 		}
 
 		.search-box {
