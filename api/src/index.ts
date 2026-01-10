@@ -6,11 +6,57 @@ import { createHash } from 'crypto';
 import { XMLParser } from 'fast-xml-parser';
 import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
+import sanitizeHtml from 'sanitize-html';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const DB_PATH = process.env.DB_PATH || '/data/feedstream.sqlite';
 const FETCH_TIMEOUT_MS = parseInt(process.env.FETCH_TIMEOUT_MS || '12000', 10);
 const MAX_CONCURRENCY = parseInt(process.env.MAX_CONCURRENCY || '6', 10);
+const READER_CACHE_TTL_HOURS = 168; // 7 days
+
+// Helper: Check if reader cache entry is fresh
+function isCacheFresh(updatedAtIso: string): boolean {
+    const updatedAt = new Date(updatedAtIso).getTime();
+    const now = Date.now();
+    const ttlMs = READER_CACHE_TTL_HOURS * 60 * 60 * 1000;
+    return now - updatedAt < ttlMs;
+}
+
+// Sanitize-html options for reader content
+const sanitizeOptions: sanitizeHtml.IOptions = {
+    allowedTags: ['p', 'a', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code', 'em', 'strong', 'hr', 'br', 'h2', 'h3'],
+    allowedAttributes: {
+        'a': ['href', 'title']
+    },
+    allowedSchemes: ['http', 'https', 'mailto'],
+    disallowedTagsMode: 'discard'
+};
+
+// Refresh job tracking
+interface RefreshJob {
+    id: string;
+    status: 'running' | 'done' | 'error';
+    current: number;
+    total: number;
+    message?: string;
+    startedAt: number;
+}
+
+const refreshJobs = new Map<string, RefreshJob>();
+const MAX_JOBS = 5;
+
+function createJobId(): string {
+    return `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+function cleanupOldJobs() {
+    if (refreshJobs.size > MAX_JOBS) {
+        const sorted = Array.from(refreshJobs.entries())
+            .sort((a, b) => a[1].startedAt - b[1].startedAt);
+        const toDelete = sorted.slice(0, sorted.length - MAX_JOBS);
+        toDelete.forEach(([id]) => refreshJobs.delete(id));
+    }
+}
 
 // Initialize Fastify
 const fastify = Fastify({
@@ -169,6 +215,45 @@ if (!columnExists('feeds', 'next_retry_after')) {
     db.exec(`ALTER TABLE feeds ADD COLUMN next_retry_after TEXT`);
     fastify.log.info('next_retry_after column added successfully');
 }
+
+// Reader cache table for storing extracted article content
+db.exec(`
+    CREATE TABLE IF NOT EXISTS reader_cache (
+        url TEXT PRIMARY KEY,
+        title TEXT,
+        byline TEXT,
+        excerpt TEXT,
+        site_name TEXT,
+        image_url TEXT,
+        content_html TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_reader_cache_updated ON reader_cache(updated_at);
+`);
+
+// Custom folders table for user-defined organization
+db.exec(`
+    CREATE TABLE IF NOT EXISTS folders (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL UNIQUE,
+        created_at TEXT NOT NULL
+    );
+`);
+
+// Folder-feed associations (many-to-many)
+db.exec(`
+    CREATE TABLE IF NOT EXISTS folder_feeds (
+        folder_id TEXT NOT NULL,
+        feed_url TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY(folder_id, feed_url),
+        FOREIGN KEY(folder_id) REFERENCES folders(id) ON DELETE CASCADE,
+        FOREIGN KEY(feed_url) REFERENCES feeds(url) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_folder_feeds_feed_url ON folder_feeds(feed_url);
+    CREATE INDEX IF NOT EXISTS idx_folder_feeds_folder_id ON folder_feeds(folder_id);
+`);
 
 fastify.log.info(`Database initialized at ${DB_PATH}`);
 
@@ -573,7 +658,121 @@ fastify.get('/health', async (request, reply) => {
     }
 });
 
-// Refresh feeds endpoint
+// Start refresh job endpoint
+fastify.post('/refresh/start', async (request, reply) => {
+    const body = request.body as any;
+
+    let urls: string[];
+    const force = body?.force === true;
+
+    // If no URLs provided, refresh all feeds from database
+    if (!body || !body.urls || !Array.isArray(body.urls) || body.urls.length === 0) {
+        const allFeeds = db.prepare('SELECT url FROM feeds').all() as any[];
+        urls = allFeeds.map((f: any) => f.url);
+
+        if (urls.length === 0) {
+            reply.code(400);
+            return {
+                ok: false,
+                error: 'No feeds to refresh'
+            };
+        }
+    } else {
+        urls = body.urls;
+    }
+
+    // Validate URL count
+    if (urls.length > 50) {
+        reply.code(400);
+        return {
+            ok: false,
+            error: 'Maximum 50 URLs per request'
+        };
+    }
+
+    // Create job
+    const jobId = createJobId();
+    const job: RefreshJob = {
+        id: jobId,
+        status: 'running',
+        current: 0,
+        total: urls.length,
+        message: 'Starting refresh...',
+        startedAt: Date.now()
+    };
+
+    refreshJobs.set(jobId, job);
+    cleanupOldJobs();
+
+    // Start async refresh
+    (async () => {
+        const limit = pLimit(MAX_CONCURRENCY);
+        let completed = 0;
+
+        try {
+            await Promise.all(
+                urls.map((url: string) => limit(async () => {
+                    try {
+                        await fetchFeed(url, force);
+                    } catch (error) {
+                        // Continue on individual feed errors
+                        fastify.log.error(`Failed to fetch ${url}:`, error);
+                    } finally {
+                        completed++;
+                        job.current = completed;
+                        job.message = `Updating feeds...`;
+                    }
+                }))
+            );
+
+            job.status = 'done';
+            job.message = 'Refresh complete';
+        } catch (error: any) {
+            job.status = 'error';
+            job.message = error.message || 'Refresh failed';
+            fastify.log.error('Refresh job error:', error);
+        }
+    })();
+
+    return {
+        ok: true,
+        jobId
+    };
+});
+
+// Get refresh status endpoint
+fastify.get('/refresh/status', async (request, reply) => {
+    const query = request.query as any;
+    const jobId = query.jobId;
+
+    if (!jobId || typeof jobId !== 'string') {
+        reply.code(400);
+        return {
+            ok: false,
+            error: 'Missing jobId parameter'
+        };
+    }
+
+    const job = refreshJobs.get(jobId);
+
+    if (!job) {
+        reply.code(404);
+        return {
+            ok: false,
+            error: 'Job not found'
+        };
+    }
+
+    return {
+        ok: true,
+        status: job.status,
+        current: job.current,
+        total: job.total,
+        message: job.message
+    };
+});
+
+// Legacy refresh endpoint (kept for backwards compatibility)
 fastify.post('/refresh', async (request, reply) => {
     const body = request.body as any;
 
@@ -628,6 +827,248 @@ fastify.post('/refresh', async (request, reply) => {
     };
 });
 
+// Folder management endpoints
+
+// Get all custom folders with feed counts
+fastify.get('/folders', async (request, reply) => {
+    try {
+        const folders = db.prepare(`
+            SELECT 
+                f.id,
+                f.name,
+                f.created_at,
+                COUNT(ff.feed_url) as feedCount
+            FROM folders f
+            LEFT JOIN folder_feeds ff ON f.id = ff.folder_id
+            GROUP BY f.id
+            ORDER BY f.name ASC
+        `).all();
+
+        return {
+            ok: true,
+            folders
+        };
+    } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500);
+        return {
+            ok: false,
+            error: 'Database error'
+        };
+    }
+});
+
+// Create a new custom folder
+fastify.post('/folders', async (request, reply) => {
+    const body = request.body as any;
+    const name = body?.name?.trim();
+
+    if (!name || name.length < 1 || name.length > 60) {
+        reply.code(400);
+        return {
+            ok: false,
+            error: 'Folder name must be between 1 and 60 characters'
+        };
+    }
+
+    try {
+        const id = `folder_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const created_at = new Date().toISOString();
+
+        db.prepare(`
+            INSERT INTO folders (id, name, created_at)
+            VALUES (?, ?, ?)
+        `).run(id, name, created_at);
+
+        return {
+            ok: true,
+            folder: { id, name, created_at }
+        };
+    } catch (error: any) {
+        if (error.message?.includes('UNIQUE constraint')) {
+            reply.code(409);
+            return {
+                ok: false,
+                error: 'A folder with this name already exists'
+            };
+        }
+        fastify.log.error(error);
+        reply.code(500);
+        return {
+            ok: false,
+            error: 'Database error'
+        };
+    }
+});
+
+// Rename a custom folder
+fastify.patch('/folders/:id', async (request, reply) => {
+    const { id } = request.params as any;
+    const body = request.body as any;
+    const name = body?.name?.trim();
+
+    if (!name || name.length < 1 || name.length > 60) {
+        reply.code(400);
+        return {
+            ok: false,
+            error: 'Folder name must be between 1 and 60 characters'
+        };
+    }
+
+    try {
+        const result = db.prepare(`
+            UPDATE folders SET name = ? WHERE id = ?
+        `).run(name, id);
+
+        if (result.changes === 0) {
+            reply.code(404);
+            return {
+                ok: false,
+                error: 'Folder not found'
+            };
+        }
+
+        return { ok: true };
+    } catch (error: any) {
+        if (error.message?.includes('UNIQUE constraint')) {
+            reply.code(409);
+            return {
+                ok: false,
+                error: 'A folder with this name already exists'
+            };
+        }
+        fastify.log.error(error);
+        reply.code(500);
+        return {
+            ok: false,
+            error: 'Database error'
+        };
+    }
+});
+
+// Delete a custom folder
+fastify.delete('/folders/:id', async (request, reply) => {
+    const { id } = request.params as any;
+
+    try {
+        // Count associations before deletion
+        const associations = db.prepare(`
+            SELECT COUNT(*) as count FROM folder_feeds WHERE folder_id = ?
+        `).get(id) as any;
+
+        // Delete folder (CASCADE will delete associations)
+        const result = db.prepare(`
+            DELETE FROM folders WHERE id = ?
+        `).run(id);
+
+        if (result.changes === 0) {
+            reply.code(404);
+            return {
+                ok: false,
+                error: 'Folder not found'
+            };
+        }
+
+        return {
+            ok: true,
+            removedAssociations: associations.count
+        };
+    } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500);
+        return {
+            ok: false,
+            error: 'Database error'
+        };
+    }
+});
+
+// Add feed to custom folder
+fastify.post('/folders/:id/feeds', async (request, reply) => {
+    const { id } = request.params as any;
+    const body = request.body as any;
+    const feedUrl = body?.feedUrl;
+
+    if (!feedUrl || typeof feedUrl !== 'string') {
+        reply.code(400);
+        return {
+            ok: false,
+            error: 'feedUrl is required'
+        };
+    }
+
+    try {
+        // Verify folder exists
+        const folder = db.prepare('SELECT id FROM folders WHERE id = ?').get(id);
+        if (!folder) {
+            reply.code(404);
+            return {
+                ok: false,
+                error: 'Folder not found'
+            };
+        }
+
+        // Verify feed exists
+        const feed = db.prepare('SELECT url FROM feeds WHERE url = ?').get(feedUrl);
+        if (!feed) {
+            reply.code(404);
+            return {
+                ok: false,
+                error: 'Feed not found'
+            };
+        }
+
+        // Insert association (ignore if exists)
+        const created_at = new Date().toISOString();
+        db.prepare(`
+            INSERT OR IGNORE INTO folder_feeds (folder_id, feed_url, created_at)
+            VALUES (?, ?, ?)
+        `).run(id, feedUrl, created_at);
+
+        return { ok: true };
+    } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500);
+        return {
+            ok: false,
+            error: 'Database error'
+        };
+    }
+});
+
+// Remove feed from custom folder
+fastify.delete('/folders/:id/feeds', async (request, reply) => {
+    const { id } = request.params as any;
+    const body = request.body as any;
+    const feedUrl = body?.feedUrl;
+
+    if (!feedUrl || typeof feedUrl !== 'string') {
+        reply.code(400);
+        return {
+            ok: false,
+            error: 'feedUrl is required'
+        };
+    }
+
+    try {
+        const result = db.prepare(`
+            DELETE FROM folder_feeds WHERE folder_id = ? AND feed_url = ?
+        `).run(id, feedUrl);
+
+        return {
+            ok: true,
+            removed: result.changes
+        };
+    } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500);
+        return {
+            ok: false,
+            error: 'Database error'
+        };
+    }
+});
+
 // Get feeds endpoint
 fastify.get('/feeds', async (request, reply) => {
     try {
@@ -645,11 +1086,47 @@ fastify.get('/feeds', async (request, reply) => {
             LEFT JOIN items i ON f.url = i.feed_url
             GROUP BY f.url
             ORDER BY f.title ASC
-        `).all();
+        `).all() as any[];
+
+        // Get all folder associations for these feeds
+        const feedUrls = feedsData.map((f: any) => f.url);
+        const associations = feedUrls.length > 0
+            ? db.prepare(`
+                SELECT feed_url, folder_id
+                FROM folder_feeds
+                WHERE feed_url IN (${feedUrls.map(() => '?').join(',')})
+            `).all(...feedUrls) as any[]
+            : [];
+
+        // Map associations by feed_url
+        const foldersByFeed = new Map<string, string[]>();
+        for (const assoc of associations) {
+            if (!foldersByFeed.has(assoc.feed_url)) {
+                foldersByFeed.set(assoc.feed_url, []);
+            }
+            foldersByFeed.get(assoc.feed_url)!.push(assoc.folder_id);
+        }
+
+        // Enhance feeds with smartFolder and folders
+        const enhancedFeeds = feedsData.map((feed: any) => {
+            // Derive smartFolder from kind
+            let smartFolder: 'rss' | 'youtube' | 'reddit' = 'rss';
+            if (feed.kind === 'youtube') {
+                smartFolder = 'youtube';
+            } else if (feed.kind === 'reddit') {
+                smartFolder = 'reddit';
+            }
+
+            return {
+                ...feed,
+                smartFolder,
+                folders: foldersByFeed.get(feed.url) || []
+            };
+        });
 
         return {
             ok: true,
-            feeds: feedsData
+            feeds: enhancedFeeds
         };
     } catch (error: any) {
         fastify.log.error(error);
@@ -675,6 +1152,7 @@ fastify.post('/feeds', async (request, reply) => {
 
     const url = body.url.trim();
     const refresh = body.refresh === true;
+    const folderIds = Array.isArray(body.folderIds) ? body.folderIds : [];
 
     // Validate URL
     if (!url.match(/^https?:\/\/.+/)) {
@@ -695,6 +1173,23 @@ fastify.post('/feeds', async (request, reply) => {
             VALUES (?, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
         `);
         stmt.run(url, kind);
+
+        // Add to custom folders if provided
+        if (folderIds.length > 0) {
+            const created_at = new Date().toISOString();
+            const insertAssoc = db.prepare(`
+                INSERT OR IGNORE INTO folder_feeds (folder_id, feed_url, created_at)
+                VALUES (?, ?, ?)
+            `);
+
+            for (const folderId of folderIds) {
+                // Verify folder exists
+                const folderExists = db.prepare('SELECT id FROM folders WHERE id = ?').get(folderId);
+                if (folderExists) {
+                    insertAssoc.run(folderId, url, created_at);
+                }
+            }
+        }
 
         // Optionally refresh the feed
         let refreshResult = null;
@@ -957,6 +1452,8 @@ fastify.get('/items', async (request, reply) => {
     // Parse query parameters
     const feed = query.feed || null;
     const source = query.source || null;
+    const smartFolder = query.smartFolder || null;
+    const folderId = query.folderId || null;
     const unreadOnly = query.unreadOnly === 'true';
     const starredOnly = query.starredOnly === '1' || query.starredOnly === 'true';
     const limit = Math.min(parseInt(query.limit || '50', 10), 200);
@@ -967,40 +1464,60 @@ fastify.get('/items', async (request, reply) => {
     const params: any[] = [];
 
     if (feed) {
-        conditions.push('feed_url = ?');
+        conditions.push('i.feed_url = ?');
         params.push(feed);
     }
 
     if (source && ['generic', 'youtube', 'reddit'].includes(source)) {
-        conditions.push('source = ?');
+        conditions.push('i.source = ?');
         params.push(source);
     }
 
+    // Smart folder filter (by feed kind)
+    if (smartFolder && ['rss', 'youtube', 'reddit'].includes(smartFolder)) {
+        let kindValue = 'generic';
+        if (smartFolder === 'youtube') kindValue = 'youtube';
+        if (smartFolder === 'reddit') kindValue = 'reddit';
+        conditions.push('f.kind = ?');
+        params.push(kindValue);
+    }
+
+    // Custom folder filter
+    if (folderId) {
+        conditions.push('i.feed_url IN (SELECT feed_url FROM folder_feeds WHERE folder_id = ?)');
+        params.push(folderId);
+    }
+
     if (unreadOnly) {
-        conditions.push('is_read = 0');
+        conditions.push('i.is_read = 0');
     }
 
     if (starredOnly) {
-        conditions.push('is_starred = 1');
+        conditions.push('i.is_starred = 1');
     }
 
+    // Need to join feeds table if filtering by smartFolder
+    const needsFeedJoin = smartFolder !== null;
+    const fromClause = needsFeedJoin
+        ? 'FROM items i INNER JOIN feeds f ON i.feed_url = f.url'
+        : 'FROM items i';
     const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
 
     // Get total count
-    const countQuery = `SELECT COUNT(*) as total FROM items ${whereClause}`;
+    const countQuery = `SELECT COUNT(*) as total ${fromClause} ${whereClause}`;
     const countResult = db.prepare(countQuery).get(...params) as any;
     const total = countResult.total;
 
     // Get items
     const itemsQuery = `
         SELECT 
-            id, feed_url, source, title, url, author, summary, content,
-            published, updated, media_thumbnail, media_duration_seconds,
-            external_id, raw_guid, created_at, is_read, is_starred
-        FROM items
+            i.id, i.feed_url, i.source, i.title, i.url, i.author, i.summary, i.content,
+            i.published, i.updated, i.media_thumbnail, i.media_duration_seconds,
+            i.external_id, i.raw_guid, i.created_at, i.is_read, i.is_starred
+        ${fromClause}
         ${whereClause}
         ORDER BY 
-            CASE WHEN published IS NOT NULL THEN published ELSE created_at END DESC
+            CASE WHEN i.published IS NOT NULL THEN i.published ELSE i.created_at END DESC
         LIMIT ? OFFSET ?
     `;
 
@@ -1179,7 +1696,7 @@ function isUsableImage(src: string): boolean {
     return true;
 }
 
-// Reader View endpoint
+// Reader View endpoint with caching and sanitization
 fastify.get('/reader', async (request, reply) => {
     const query = request.query as any;
     const targetUrl = query.url;
@@ -1192,7 +1709,39 @@ fastify.get('/reader', async (request, reply) => {
         };
     }
 
+    // Validate URL is http/https
     try {
+        const parsed = new URL(targetUrl);
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+            reply.code(400);
+            return { ok: false, error: 'Only http/https URLs are allowed' };
+        }
+    } catch {
+        reply.code(400);
+        return { ok: false, error: 'Invalid URL format' };
+    }
+
+    try {
+        // Check cache first
+        const cached = db.prepare(`
+            SELECT url, title, byline, excerpt, site_name, image_url, content_html, created_at, updated_at
+            FROM reader_cache WHERE url = ?
+        `).get(targetUrl) as any;
+
+        if (cached && isCacheFresh(cached.updated_at)) {
+            return {
+                ok: true,
+                url: cached.url,
+                title: cached.title,
+                byline: cached.byline,
+                excerpt: cached.excerpt,
+                siteName: cached.site_name,
+                imageUrl: cached.image_url,
+                contentHtml: cached.content_html,
+                fromCache: true
+            };
+        }
+
         // Fetch the page HTML
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -1221,6 +1770,18 @@ fastify.get('/reader', async (request, reply) => {
         // Parse with JSDOM
         const dom = new JSDOM(html, { url: finalUrl });
         const document = dom.window.document;
+
+        // Extract og:image BEFORE stripping junk (priority image source)
+        let imageUrl: string | null = null;
+        const ogImage = document.querySelector('meta[property="og:image"]');
+        const twitterImage = document.querySelector('meta[name="twitter:image"]');
+        if (ogImage) {
+            const content = ogImage.getAttribute('content');
+            if (content) imageUrl = normalizeUrl(content, finalUrl);
+        } else if (twitterImage) {
+            const content = twitterImage.getAttribute('content');
+            if (content) imageUrl = normalizeUrl(content, finalUrl);
+        }
 
         // Pre-strip junk before Readability
         const junkSelectors = [
@@ -1252,51 +1813,96 @@ fastify.get('/reader', async (request, reply) => {
             };
         }
 
-        // Parse the article content
+        // Parse the article content to extract first image (fallback if no og:image)
         const contentDom = new JSDOM(article.content);
         const contentDoc = contentDom.window.document;
 
-        // Extract header image
-        let imageUrl: string | null = null;
-
-        // Try first image in article content
-        const images = contentDoc.querySelectorAll('img');
-        for (const img of Array.from(images)) {
-            const src = (img as HTMLImageElement).getAttribute('src');
-            if (src && isUsableImage(src)) {
-                imageUrl = normalizeUrl(src, finalUrl);
-                break;
-            }
-        }
-
-        // Fallback to meta tags
         if (!imageUrl) {
-            const ogImage = document.querySelector('meta[property="og:image"]');
-            const twitterImage = document.querySelector('meta[name="twitter:image"]');
-
-            if (ogImage) {
-                const content = ogImage.getAttribute('content');
-                if (content) imageUrl = normalizeUrl(content, finalUrl);
-            } else if (twitterImage) {
-                const content = twitterImage.getAttribute('content');
-                if (content) imageUrl = normalizeUrl(content, finalUrl);
+            const images = contentDoc.querySelectorAll('img');
+            for (const img of Array.from(images)) {
+                const src = (img as HTMLImageElement).getAttribute('src');
+                if (src && isUsableImage(src)) {
+                    imageUrl = normalizeUrl(src, finalUrl);
+                    break;
+                }
             }
         }
 
-        // Remove all headings from content
+        // Remove all headings from content (title is separate)
         contentDoc.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((el: Element) => el.remove());
 
-        // Remove all images from content
+        // Remove all images from content (hero image is separate)
         contentDoc.querySelectorAll('img').forEach((el: Element) => el.remove());
 
-        // Get cleaned HTML
-        const cleanedHtml = contentDoc.body.innerHTML;
+        // Get raw HTML before sanitizing
+        const rawHtml = contentDoc.body.innerHTML;
+
+        // Sanitize the final content
+        const contentHtml = sanitizeHtml(rawHtml, sanitizeOptions);
+
+        // Build structured response
+        const result = {
+            ok: true,
+            url: finalUrl,
+            title: article.title || null,
+            byline: article.byline || null,
+            excerpt: article.excerpt || null,
+            siteName: article.siteName || null,
+            imageUrl,
+            contentHtml,
+            fromCache: false
+        };
+
+        // Upsert into cache
+        const now = new Date().toISOString();
+        db.prepare(`
+            INSERT INTO reader_cache (url, title, byline, excerpt, site_name, image_url, content_html, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(url) DO UPDATE SET
+                title = excluded.title,
+                byline = excluded.byline,
+                excerpt = excluded.excerpt,
+                site_name = excluded.site_name,
+                image_url = excluded.image_url,
+                content_html = excluded.content_html,
+                updated_at = excluded.updated_at
+        `).run(
+            finalUrl,
+            result.title,
+            result.byline,
+            result.excerpt,
+            result.siteName,
+            result.imageUrl,
+            result.contentHtml,
+            cached?.created_at || now,
+            now
+        );
+
+        return result;
+    } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500);
+        return {
+            ok: false,
+            error: error.message || 'Internal server error'
+        };
+    }
+});
+
+// Purge old reader cache entries
+fastify.post('/reader/purge', async (request, reply) => {
+    const body = request.body as any || {};
+    const olderThanHours = body.olderThanHours ?? 720; // 30 days default
+
+    try {
+        const cutoff = new Date(Date.now() - olderThanHours * 60 * 60 * 1000).toISOString();
+        const result = db.prepare(`
+            DELETE FROM reader_cache WHERE updated_at < ?
+        `).run(cutoff);
 
         return {
             ok: true,
-            url: finalUrl,
-            imageUrl,
-            html: cleanedHtml
+            deleted: result.changes
         };
     } catch (error: any) {
         fastify.log.error(error);
