@@ -2027,7 +2027,7 @@
 			{:else}
 				{#each items as item}
 					<article
-						class="article-card glass-panel-light"
+						class="article-card"
 						class:unread={item.is_read === 0}
 						on:click={(e) => handleArticleClick(e, item)}
 						on:mouseenter={() => handleArticleMouseEnter(item)}
