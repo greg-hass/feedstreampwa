@@ -22,10 +22,12 @@
 		Upload,
 		Link,
 		List,
-	} from "lucide-svelte";
+	import type { Item, Feed, Folder, SearchResult } from "$lib/types";
+	import {
+		LayoutGrid,
 
 	// Feed subscription state
-	let feeds: any[] = [];
+	let feeds: Feed[] = [];
 	let selectedFeedUrl: string | null = null;
 	let feedsLoading = false;
 	let feedsError: string | null = null;
@@ -35,7 +37,7 @@
 	let addingFeed = false;
 
 	// Items state
-	let items: any[] = [];
+	let items: Item[] = [];
 	let itemsTotal = 0;
 	let itemsLoading = false;
 	let itemsError: string | null = null;
@@ -114,7 +116,7 @@
 	let refreshPollTimer: ReturnType<typeof setInterval> | null = null;
 
 	// Folder state
-	let folders: any[] = [];
+	let folders: Folder[] = [];
 	let foldersLoading = false;
 	let foldersError: string | null = null;
 
@@ -201,6 +203,13 @@
 
 	async function handleSyncIntervalChange(e: Event) {
 		const target = e.target as HTMLSelectElement;
+		if (target) {
+			await updateSyncInterval(target.value);
+		}
+	}
+
+	async 	function handleImageError(e: Event) {
+		const target = e.target as HTMLImageElement;
 		if (target) {
 			await updateSyncInterval(target.value);
 		}
@@ -1940,7 +1949,20 @@
 
 			<div class="topbar-center">
 				<div class="search-box">
-					<Search size={16} />
+					<div class="search-icon-wrapper">
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 16 16"
+							fill="none"
+						>
+							<circle cx="8" cy="8" r="8" fill="#10b981" />
+							<path
+								d="M4.5 6.5h3v3h-1v-2h-2v-1zm4 0h3v1h-2v2h-1v-3z"
+								fill="white"
+							/>
+						</svg>
+					</div>
 					<input
 						type="text"
 						placeholder="Search articles..."
@@ -2025,7 +2047,7 @@
 				{#each items as item}
 					<article
 						class="article-card"
-						class:unread={item.is_read === 0}
+						class:unread={Boolean(!item.is_read)}
 						on:click={(e) => handleArticleClick(e, item)}
 						on:mouseenter={() => handleArticleMouseEnter(item)}
 						role="button"
@@ -3356,8 +3378,8 @@
 		width: var(--sidebar-width);
 		display: flex;
 		flex-direction: column;
-		padding: var(--gap-lg);
-		gap: var(--gap);
+		padding: 20px; /* More refined padding */
+		gap: 6px; /* More refined gap */
 		overflow-y: auto;
 		background: var(--panel0);
 		border-right: 1px solid var(--stroke);
@@ -3410,13 +3432,13 @@
 	.feed-item {
 		display: flex;
 		align-items: center;
-		gap: 12px;
-		padding: 12px 16px;
+		gap: 10px; /* More refined gap */
+		padding: 10px 14px; /* More refined padding */
 		background: transparent;
 		border: 1px solid transparent;
-		border-radius: var(--radiusS);
+		border-radius: 10px; /* More refined radius */
 		color: var(--muted);
-		font-size: 15px;
+		font-size: 14px; /* More refined size */
 		font-weight: 500;
 		cursor: pointer;
 		transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -3429,7 +3451,7 @@
 		background: var(--chip);
 		color: var(--text);
 		border-color: var(--stroke);
-		transform: translateX(2px);
+		transform: translateX(1px); /* More subtle movement */
 	}
 
 	.nav-item.active {
@@ -3466,11 +3488,11 @@
 	.badge {
 		background: var(--accent);
 		color: var(--bg0);
-		padding: 2px 8px;
+		padding: 2px 7px; /* More refined padding */
 		border-radius: 99px;
 		font-size: 11px;
-		font-weight: 700;
-		min-width: 20px;
+		font-weight: 600; /* More refined weight */
+		min-width: 18px; /* More refined min-width */
 		text-align: center;
 	}
 
@@ -3505,10 +3527,9 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 0 var(--page-padding);
+		padding: 0 24px; /* More refined padding */
 		margin-bottom: 0;
 		z-index: 10;
-		/* Removed glass effect for solid opaque look */
 		background: var(--bg0);
 		border-bottom: 1px solid var(--stroke);
 		backdrop-filter: none;
@@ -3533,8 +3554,7 @@
 
 	.topbar-center {
 		flex: 1;
-		max-width: 640px;
-		margin: 0 var(--gap-lg);
+		margin: 0;
 	}
 
 	.search-box {
@@ -3548,6 +3568,13 @@
 		border-radius: 999px;
 		color: var(--muted);
 		transition: all 0.2s ease;
+	}
+
+	.search-icon-wrapper {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
 	}
 
 	.search-box:focus-within {
@@ -3572,8 +3599,8 @@
 	}
 
 	.icon-btn {
-		width: 42px;
-		height: 42px;
+		width: 40px; /* More refined size */
+		height: 40px;
 		background: var(--panel1);
 		border: 1px solid var(--stroke);
 		border-radius: 50%;
@@ -3710,8 +3737,9 @@
 		align-items: center;
 		justify-content: space-between;
 		font-family: var(--font-ui);
-		font-size: 13px;
+		font-size: 12px; /* More refined size */
 		color: var(--muted2);
+		gap: 8px; /* Add gap */
 	}
 
 	.feed-info {
@@ -3721,8 +3749,8 @@
 	}
 
 	.feed-favicon {
-		width: 18px;
-		height: 18px;
+		width: 16px; /* More refined size */
+		height: 16px;
 		object-fit: contain;
 		border-radius: 4px;
 	}
@@ -3730,7 +3758,8 @@
 	.feed-title-meta {
 		color: var(--accent);
 		font-weight: 600;
-		letter-spacing: 0.01em;
+		letter-spacing: 0;
+		font-size: 12px; /* More refined size */
 	}
 
 	.publish-time {
@@ -3756,7 +3785,7 @@
 		border: none;
 		cursor: pointer;
 		color: var(--muted);
-		padding: 6px;
+		padding: 4px; /* More refined padding */
 		border-radius: 50%;
 		display: flex;
 		align-items: center;
@@ -3774,11 +3803,11 @@
 	}
 
 	.read-indicator-dot {
-		width: 8px;
-		height: 8px;
+		width: 7px; /* More refined size */
+		height: 7px;
 		background: var(--accent);
 		border-radius: 50%;
-		box-shadow: 0 0 8px var(--accent-glow);
+		box-shadow: 0 0 6px var(--accent-glow); /* More refined glow */
 	}
 
 	.action-icon-btn.read .read-indicator-dot {
@@ -3792,8 +3821,8 @@
 	/* Title */
 	.article-title-premium {
 		font-family: var(--font-display);
-		font-size: 22px;
-		line-height: 1.3;
+		font-size: 20px; /* More refined size */
+		line-height: 1.35;
 		font-weight: 600;
 		color: var(--text);
 		letter-spacing: -0.01em;
@@ -3819,7 +3848,7 @@
 	}
 
 	.article-summary-premium {
-		font-size: 15px;
+		font-size: 14px; /* More refined size */
 		line-height: 1.6;
 		color: var(--muted);
 		margin: 0;
@@ -3832,7 +3861,7 @@
 
 	.article-thumbnail-premium {
 		position: relative;
-		border-radius: 12px;
+		border-radius: 10px; /* More refined radius */
 		overflow: hidden;
 		flex-shrink: 0;
 		background: var(--bg2);
@@ -3851,8 +3880,8 @@
 		top: 50%;
 		left: 50%;
 		transform: translate(-50%, -50%);
-		width: 36px;
-		height: 36px;
+		width: 32px; /* More refined size */
+		height: 32px;
 		background: rgba(0, 0, 0, 0.6);
 		border-radius: 50%;
 		display: flex;
@@ -3866,7 +3895,7 @@
 		width: 100%;
 		aspect-ratio: 16 / 9;
 		margin-top: 8px;
-		border-radius: 12px;
+		border-radius: 10px; /* More refined radius */
 		overflow: hidden;
 		background: #000;
 		border: 1px solid var(--stroke);
@@ -3880,8 +3909,8 @@
 		}
 
 		.article-thumbnail-premium {
-			width: 180px;
-			height: 120px; /* Fixed sized crop roughly */
+			width: 160px; /* More refined size */
+			height: 100px; /* Fixed sized crop roughly */
 		}
 
 		.article-thumbnail-premium img {
@@ -3988,7 +4017,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 16px;
+		padding: max(env(safe-area-inset-top), 14px) 12px 14px; /* Match mobile topbar padding */
 		border-bottom: 1px solid var(--stroke);
 		background: var(--panel0);
 	}
@@ -4155,13 +4184,13 @@
 
 		/* Mobile Articles Container */
 		.articles-container {
-			padding: 0 var(--mobile-padding) var(--mobile-padding);
-			gap: var(--mobile-gap);
+			padding: 0 8px 8px; /* Further reduced padding */
+			gap: 12px;
 		}
 
 		/* Mobile Article Cards - iOS Native Feel */
 		.article-card {
-			padding: 20px;
+			padding: 16px; /* Reduced padding */
 			border-radius: 16px;
 		}
 
@@ -4190,9 +4219,9 @@
 		/* Larger Touch Targets for Mobile */
 		.star-btn,
 		.read-dot {
-			width: 44px;
-			height: 44px;
-			min-width: 44px;
+			width: 40px; /* More refined size */
+			height: 40px;
+			min-width: 40px;
 		}
 
 		.star-btn svg,
@@ -4261,9 +4290,9 @@
 		.mobile-fab {
 			position: fixed;
 			bottom: 80px;
-			right: 20px;
-			width: 56px;
-			height: 56px;
+			right: 16px; /* More refined position */
+			width: 52px; /* More refined size */
+			height: 52px;
 			border-radius: 50%;
 			background: var(--accent);
 			color: white;
