@@ -90,7 +90,8 @@ db.exec(`
     last_modified TEXT,
     last_checked TEXT,
     last_status INTEGER,
-    last_error TEXT
+    last_error TEXT,
+    icon_url TEXT
   );
 
   CREATE TABLE IF NOT EXISTS items (
@@ -137,6 +138,13 @@ if (!columnExists('items', 'is_starred')) {
 
 // Create index on is_starred (safe to run multiple times)
 db.exec(`CREATE INDEX IF NOT EXISTS idx_items_is_starred ON items(is_starred)`);
+
+// Safe migration: Add icon_url column to feeds table if it doesn't exist
+if (!columnExists('feeds', 'icon_url')) {
+    fastify.log.info('Adding icon_url column to feeds table...');
+    db.exec(`ALTER TABLE feeds ADD COLUMN icon_url TEXT`);
+    fastify.log.info('icon_url column added successfully');
+}
 
 // FTS5 setup: Check if FTS5 is available
 try {
@@ -337,6 +345,40 @@ const xmlParser = new XMLParser({
 });
 
 // Helper: Detect feed kind from URL
+// Helper: Fetch icon for a feed
+async function fetchFeedIcon(feedUrl: string, kind: string): Promise<string | null> {
+    try {
+        if (kind === 'youtube') {
+            const channelId = feedUrl.split('channel_id=')[1];
+            if (channelId) {
+                const response = await fetch(`https://www.youtube.com/channel/${channelId}`);
+                if (response.ok) {
+                    const text = await response.text();
+                    const match = text.match(/"avatar":{"thumbnails":\[{"url":"([^"]+)"/);
+                    if (match) return match[1].replace(/=s\d+-c-k-c0x\d+-no-rj/, '=s64-c-k-c0x00ffffff-no-rj');
+                }
+            }
+        } else if (kind === 'reddit') {
+            const match = feedUrl.match(/reddit\.com\/r\/([^/]+)/);
+            if (match) {
+                const subreddit = match[1];
+                const response = await fetch(`https://www.reddit.com/r/${subreddit}/about.json`);
+                if (response.ok) {
+                    const json = (await response.json()) as any;
+                    return json.data?.icon_img || json.data?.community_icon || null;
+                }
+            }
+        } else {
+            // Generic RSS - use site favicon
+            const url = new URL(feedUrl);
+            return `https://www.google.com/s2/favicons?sz=64&domain=${url.hostname}`;
+        }
+    } catch (e) {
+        console.error(`Failed to fetch icon for ${feedUrl}:`, e);
+    }
+    return null;
+}
+
 function detectFeedKind(url: string): 'youtube' | 'reddit' | 'generic' {
     const lower = url.toLowerCase();
 
@@ -1082,6 +1124,7 @@ fastify.get('/feeds', async (request, reply) => {
                 f.last_checked,
                 f.last_status,
                 f.last_error,
+                f.icon_url,
                 COUNT(CASE WHEN i.is_read = 0 THEN 1 END) as unreadCount
             FROM feeds f
             LEFT JOIN items i ON f.url = i.feed_url
@@ -1204,15 +1247,16 @@ fastify.post('/feeds', async (request, reply) => {
     }
 
     try {
-        // Detect feed kind
+        // Detect feed kind and fetch icon
         const kind = detectFeedKind(url);
+        const icon_url = await fetchFeedIcon(url, kind);
 
         // Insert feed if not exists
         const stmt = db.prepare(`
-            INSERT OR IGNORE INTO feeds (url, kind, title, site_url, etag, last_modified, last_checked, last_status, last_error)
-            VALUES (?, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
+            INSERT OR IGNORE INTO feeds (url, kind, title, site_url, etag, last_modified, last_checked, last_status, last_error, icon_url)
+            VALUES (?, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, ?)
         `);
-        stmt.run(url, kind);
+        stmt.run(url, kind, icon_url);
 
         // Add to custom folders if provided
         if (folderIds.length > 0) {
@@ -1424,39 +1468,47 @@ fastify.post('/opml/import', async (request, reply) => {
         let skipped = 0;
         const failed: Array<{ url: string; error: string }> = [];
 
-        // Process each feed
-        for (const feed of feedsToImport) {
+        // Process each feed concurrently with p-limit
+        const limit = pLimit(MAX_CONCURRENCY);
+        const importPromises = feedsToImport.map((feed: any) => limit(async () => {
             const url = feed.xmlUrl.trim();
 
             // Validate URL format
             if (!url.match(/^https?:\/\/.+/)) {
                 failed.push({ url, error: 'Invalid URL format' });
-                continue;
+                return;
             }
 
-            // Skip if already exists
+            // Skip if already exists (quick check)
             if (existingUrls.has(url)) {
                 skipped++;
-                continue;
+                return;
             }
 
             try {
-                // Detect feed kind
+                // Detect feed kind and fetch icon
                 const kind = detectFeedKind(url);
+                const icon_url = await fetchFeedIcon(url, kind);
 
                 // Insert feed (reuse same logic as POST /feeds)
                 const stmt = db.prepare(`
-                    INSERT INTO feeds (url, kind, title, site_url, etag, last_modified, last_checked, last_status, last_error)
-                    VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL)
+                    INSERT OR IGNORE INTO feeds (url, kind, title, site_url, etag, last_modified, last_checked, last_status, last_error, icon_url)
+                    VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, ?)
                 `);
-                stmt.run(url, kind, feed.title);
+                const result = stmt.run(url, kind, feed.title, icon_url);
 
-                existingUrls.add(url);
-                added++;
+                if (result.changes > 0) {
+                    existingUrls.add(url);
+                    added++;
+                } else {
+                    skipped++;
+                }
             } catch (error: any) {
                 failed.push({ url, error: error.message || 'Database error' });
             }
-        }
+        }));
+
+        await Promise.all(importPromises);
 
         return {
             ok: true,

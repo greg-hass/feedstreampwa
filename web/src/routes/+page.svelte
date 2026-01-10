@@ -1379,6 +1379,30 @@
 					on:click={() => setViewFeed(feed.url)}
 				>
 					<div class="feed-item-content">
+						{#if feed.icon_url}
+							<img src={feed.icon_url} alt="" class="feed-icon" on:error={(e) => e.target.style.display = 'none'} />
+						{:else}
+							<div class="feed-icon-fallback {feed.kind}">
+								{#if feed.kind === 'youtube'}
+									<svg width="14" height="14" viewBox="0 0 18 18" fill="none">
+										<path d="M17 6s0-2-2-2H3c-2 0-2 2-2 2v6s0 2 2 2h12c2 0 2-2 2-2V6z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+										<path d="M7 5l5 4-5 4V5z" fill="currentColor"/>
+									</svg>
+								{:else if feed.kind === 'reddit'}
+									<svg width="14" height="14" viewBox="0 0 18 18" fill="none">
+										<circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
+										<circle cx="6" cy="8" r="1" fill="currentColor"/>
+										<circle cx="12" cy="8" r="1" fill="currentColor"/>
+										<path d="M6 11c.5 1 1.5 1.5 3 1.5s2.5-.5 3-1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+									</svg>
+								{:else}
+									<svg width="14" height="14" viewBox="0 0 18 18" fill="none">
+										<circle cx="3" cy="15" r="2" fill="currentColor"/>
+										<path d="M3 9a6 6 0 016 6M3 3a12 12 0 0112 12" stroke="currentColor" stroke-width="2" fill="none"/>
+									</svg>
+								{/if}
+							</div>
+						{/if}
 						<span class="feed-title">{feed.title || feed.url}</span>
 						{#if feed.unreadCount > 0}
 							<span class="badge">{feed.unreadCount}</span>
@@ -1659,6 +1683,47 @@
 							</button>
 						{/each}
 					{/if}
+
+					<!-- Feeds Section in Mobile Drawer -->
+					<div class="nav-section-label" style="margin-top: 20px;">FEEDS</div>
+					{#each feeds as feed}
+						<button 
+							class="feed-item" 
+							class:active={viewMode === 'feed' && selectedFeedUrl === feed.url}
+							on:click={() => { setViewFeed(feed.url); mobileMenuOpen = false; }}
+						>
+							<div class="feed-item-content">
+								{#if feed.icon_url}
+									<img src={feed.icon_url} alt="" class="feed-icon" on:error={(e) => e.target.style.display = 'none'} />
+								{:else}
+									<div class="feed-icon-fallback {feed.kind}">
+										{#if feed.kind === 'youtube'}
+											<svg width="14" height="14" viewBox="0 0 18 18" fill="none">
+												<path d="M17 6s0-2-2-2H3c-2 0-2 2-2 2v6s0 2 2 2h12c2 0 2-2 2-2V6z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+												<path d="M7 5l5 4-5 4V5z" fill="currentColor"/>
+											</svg>
+										{:else if feed.kind === 'reddit'}
+											<svg width="14" height="14" viewBox="0 0 18 18" fill="none">
+												<circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
+												<circle cx="6" cy="8" r="1" fill="currentColor"/>
+												<circle cx="12" cy="8" r="1" fill="currentColor"/>
+												<path d="M6 11c.5 1 1.5 1.5 3 1.5s2.5-.5 3-1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+											</svg>
+										{:else}
+											<svg width="14" height="14" viewBox="0 0 18 18" fill="none">
+												<circle cx="3" cy="15" r="2" fill="currentColor"/>
+												<path d="M3 9a6 6 0 016 6M3 3a12 12 0 0112 12" stroke="currentColor" stroke-width="2" fill="none"/>
+											</svg>
+										{/if}
+									</div>
+								{/if}
+								<span class="feed-title">{feed.title || feed.url}</span>
+								{#if feed.unreadCount > 0}
+									<span class="badge">{feed.unreadCount}</span>
+								{/if}
+							</div>
+						</button>
+					{/each}
 
 					<!-- Settings Button -->
 					<button 
@@ -4004,8 +4069,46 @@
 		flex: 1;
 		display: flex;
 		align-items: center;
-		gap: 8px;
+		gap: 12px;
 		overflow: hidden;
+	}
+
+	.feed-icon {
+		width: 32px;
+		height: 32px;
+		border-radius: 6px;
+		flex-shrink: 0;
+		object-fit: cover;
+		background: var(--panel1);
+		border: 1px solid var(--stroke);
+	}
+
+	.feed-icon-fallback {
+		width: 32px;
+		height: 32px;
+		border-radius: 6px;
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--panel1);
+		border: 1px solid var(--stroke);
+		color: var(--muted);
+	}
+
+	.feed-icon-fallback.youtube {
+		color: #ff0000;
+		background: rgba(255, 0, 0, 0.1);
+	}
+
+	.feed-icon-fallback.reddit {
+		color: #ff4500;
+		background: rgba(255, 69, 0, 0.1);
+	}
+
+	.feed-icon-fallback.generic {
+		color: var(--accent);
+		background: rgba(var(--accent-rgb), 0.1);
 	}
 
 	.feed-title {
