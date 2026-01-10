@@ -21,6 +21,7 @@
 		Download,
 		Upload,
 		Link,
+		List,
 	} from "lucide-svelte";
 	import type {
 		Item,
@@ -87,7 +88,7 @@
 	let ytPlayer: any = null;
 	let ytProgressInterval: ReturnType<typeof setInterval> | null = null;
 	let ytApiLoaded = false;
-	let activeInlineVideoId: string | null = null;
+	let activeInlineVideoId: number | null = null;
 
 	// Add Feed modal state
 	let showAddFeedModal = false;
@@ -1461,7 +1462,7 @@
 				// Update local state
 				const feed = feeds.find((f) => f.url === feedUrl);
 				if (feed) {
-					feed.folders = feed.folders.filter(
+					feed.folders = (feed.folders || []).filter(
 						(id: string) => id !== folderId,
 					);
 				}
@@ -1883,7 +1884,7 @@
 							</div>
 						{/if}
 						<span class="feed-title">{feed.title || feed.url}</span>
-						{#if feed.unreadCount > 0}
+						{#if (feed.unreadCount || 0) > 0}
 							<span class="badge">{feed.unreadCount}</span>
 						{/if}
 					</div>
@@ -2343,7 +2344,7 @@
 								<span class="feed-title"
 									>{feed.title || feed.url}</span
 								>
-								{#if feed.unreadCount > 0}
+								{#if (feed.unreadCount || 0) > 0}
 									<span class="badge">{feed.unreadCount}</span
 									>
 								{/if}
@@ -3561,7 +3562,8 @@
 
 	.topbar-center {
 		flex: 1;
-		margin: 0;
+		margin: 0 24px;
+		max-width: 600px;
 	}
 
 	.search-box {
@@ -3575,6 +3577,7 @@
 		border-radius: 999px;
 		color: var(--muted);
 		transition: all 0.2s ease;
+		width: 100%;
 	}
 
 	.search-icon-wrapper {
@@ -4296,7 +4299,7 @@
 		/* Mobile Floating Action Button */
 		.mobile-fab {
 			position: fixed;
-			bottom: 80px;
+			bottom: 90px;
 			right: 16px; /* More refined position */
 			width: 52px; /* More refined size */
 			height: 52px;
