@@ -9,6 +9,7 @@ export default {
         surface: '#0e0e11',    // bg1
         
         // Custom Accents
+        accent: '#10B981', // Emerald 500
         youtube: '#FF0000',
         reddit: '#FF4500',
         podcast: '#8B5CF6', // Violet
