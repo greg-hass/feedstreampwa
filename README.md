@@ -1,6 +1,24 @@
 # FeedStream PWA
 
-A minimal Progressive Web App for private feed reading, built with SvelteKit and Fastify.
+A modern, self-hosted RSS/feed reader with support for RSS, YouTube, Reddit, and Podcasts.
+
+## Features
+
+- Multi-source support (RSS, YouTube, Reddit, Podcasts)
+- Full-text search with FTS5
+- Starred items and OPML import/export
+- Reader view and exponential backoff
+- Modern glassy UI with dark mode
+
+## Deployment
+
+**Ubuntu Server:**
+```bash
+git pull
+./scripts/deploy.sh
+```
+
+See [DEPLOY.md](./DEPLOY.md) for complete deployment instructions.
 
 ## Architecture
 
@@ -22,8 +40,11 @@ FeedStream-PWA/
 │   ├── src/
 │   │   └── index.ts  # Main server file
 │   └── Dockerfile
+├── scripts/
+│   └── deploy.sh     # Automated deployment script
 ├── docker-compose.yml
 ├── Caddyfile
+├── DEPLOY.md         # Deployment guide
 └── .gitignore
 ```
 

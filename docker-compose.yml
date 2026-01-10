@@ -2,15 +2,15 @@ version: '3.8'
 
 services:
   # Web builder: builds the SvelteKit frontend and outputs to a shared volume
-  # This service runs once to build the static site, then exits
+  # This service builds once and exits. Caddy serves the output.
+  # To rebuild frontend: docker compose run --rm web
   web:
-    image: node:20-alpine
-    working_dir: /app
+    build:
+      context: ./web
+      dockerfile: Dockerfile
     volumes:
-      - ./web:/app
+      # Mount named volume to /out where build artifacts are copied
       - web-build:/out
-    command: >
-      sh -c "npm ci && npm run build && rm -rf /out/* && cp -a build/* /out/"
     restart: "no"
 
   api:
@@ -35,7 +35,8 @@ services:
       - /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock:ro
     depends_on:
       - api
-      - web
+      # Note: web is a one-shot builder, not a runtime dependency
+      # Frontend assets are built via: docker compose run --rm web
     restart: unless-stopped
 
 volumes:

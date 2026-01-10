@@ -81,6 +81,95 @@ if (!columnExists('items', 'is_read')) {
 // Create index on is_read (safe to run multiple times)
 db.exec(`CREATE INDEX IF NOT EXISTS idx_items_is_read ON items(is_read)`);
 
+// Safe migration: Add is_starred column if it doesn't exist
+if (!columnExists('items', 'is_starred')) {
+    fastify.log.info('Adding is_starred column to items table...');
+    db.exec(`ALTER TABLE items ADD COLUMN is_starred INTEGER NOT NULL DEFAULT 0`);
+    fastify.log.info('is_starred column added successfully');
+}
+
+// Create index on is_starred (safe to run multiple times)
+db.exec(`CREATE INDEX IF NOT EXISTS idx_items_is_starred ON items(is_starred)`);
+
+// FTS5 setup: Check if FTS5 is available
+try {
+    db.exec(`CREATE VIRTUAL TABLE IF NOT EXISTS _fts5_test USING fts5(test)`);
+    db.exec(`DROP TABLE _fts5_test`);
+    fastify.log.info('FTS5 is available');
+} catch (error: any) {
+    fastify.log.error('FTS5 is not available in this SQLite build');
+    throw new Error('FTS5 extension is required but not available. Please use a SQLite build with FTS5 support.');
+}
+
+// Check if FTS5 virtual table exists
+const ftsTableExists = db.prepare(`
+    SELECT name FROM sqlite_master 
+    WHERE type='table' AND name='items_fts'
+`).get();
+
+if (!ftsTableExists) {
+    fastify.log.info('Creating FTS5 virtual table for full-text search...');
+
+    // Create FTS5 virtual table
+    db.exec(`
+        CREATE VIRTUAL TABLE items_fts USING fts5(
+            title,
+            summary,
+            content,
+            content=items,
+            content_rowid=rowid
+        )
+    `);
+
+    // Create triggers to keep FTS in sync
+    db.exec(`
+        CREATE TRIGGER items_ai AFTER INSERT ON items BEGIN
+            INSERT INTO items_fts(rowid, title, summary, content)
+            VALUES (new.rowid, new.title, new.summary, new.content);
+        END;
+    `);
+
+    db.exec(`
+        CREATE TRIGGER items_ad AFTER DELETE ON items BEGIN
+            DELETE FROM items_fts WHERE rowid = old.rowid;
+        END;
+    `);
+
+    db.exec(`
+        CREATE TRIGGER items_au AFTER UPDATE OF title, summary, content ON items BEGIN
+            UPDATE items_fts 
+            SET title = new.title, summary = new.summary, content = new.content
+            WHERE rowid = new.rowid;
+        END;
+    `);
+
+    // Populate initial FTS index from existing items
+    const itemCount = db.prepare('SELECT COUNT(*) as count FROM items').get() as any;
+    if (itemCount.count > 0) {
+        fastify.log.info(`Populating FTS index with ${itemCount.count} existing items...`);
+        db.exec(`
+            INSERT INTO items_fts(rowid, title, summary, content)
+            SELECT rowid, title, summary, content FROM items
+        `);
+    }
+
+    fastify.log.info('FTS5 setup complete');
+}
+
+// Safe migration: Add retry_count column if it doesn't exist
+if (!columnExists('feeds', 'retry_count')) {
+    fastify.log.info('Adding retry_count column to feeds table...');
+    db.exec(`ALTER TABLE feeds ADD COLUMN retry_count INTEGER NOT NULL DEFAULT 0`);
+    fastify.log.info('retry_count column added successfully');
+}
+
+// Safe migration: Add next_retry_after column if it doesn't exist
+if (!columnExists('feeds', 'next_retry_after')) {
+    fastify.log.info('Adding next_retry_after column to feeds table...');
+    db.exec(`ALTER TABLE feeds ADD COLUMN next_retry_after TEXT`);
+    fastify.log.info('next_retry_after column added successfully');
+}
+
 fastify.log.info(`Database initialized at ${DB_PATH}`);
 
 // Prepare statements
@@ -272,48 +361,71 @@ function normalizeItem(item: any, kind: 'youtube' | 'reddit' | 'generic'): any {
 
 // Helper: Fetch and parse a single feed
 async function fetchFeed(url: string, force: boolean): Promise<any> {
-    const now = new Date().toISOString();
-    const kind = detectFeedKind(url);
+    const feedRecord = getFeed.get(url) as any;
+    const kind = feedRecord?.kind || detectFeedKind(url);
+
+    // Check if feed is in backoff period
+    if (!force && feedRecord?.next_retry_after) {
+        const now = new Date();
+        const retryAfter = new Date(feedRecord.next_retry_after);
+
+        if (now < retryAfter) {
+            fastify.log.debug(`Skipping ${url} - in backoff until ${feedRecord.next_retry_after}`);
+            return {
+                url,
+                kind,
+                status: 0,
+                title: feedRecord?.title || null,
+                newItems: 0,
+                totalItemsParsed: 0,
+                totalItemsStored: (countItemsByFeed.get(url) as any)?.count || 0,
+                error: 'In backoff period',
+                skipped: true
+            };
+        }
+    }
+
+    const headers: Record<string, string> = {
+        'User-Agent': 'FeedStreamPWA/1.0'
+    };
+
+    // Add conditional request headers if available
+    if (!force && feedRecord) {
+        if (feedRecord.etag) {
+            headers['If-None-Match'] = feedRecord.etag;
+        }
+        if (feedRecord.last_modified) {
+            headers['If-Modified-Since'] = feedRecord.last_modified;
+        }
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
     try {
-        // Get cached feed metadata
-        const cached = getFeed.get(url) as any;
-
-        // Build fetch options with conditional GET headers
-        const headers: Record<string, string> = {
-            'User-Agent': 'FeedStreamPWA/1.0'
-        };
-
-        if (!force && cached) {
-            if (cached.etag) {
-                headers['If-None-Match'] = cached.etag;
-            }
-            if (cached.last_modified) {
-                headers['If-Modified-Since'] = cached.last_modified;
-            }
-        }
-
-        // Fetch the feed
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
         const response = await fetch(url, {
             headers,
             signal: controller.signal
         });
 
         clearTimeout(timeout);
+        const now = new Date().toISOString();
 
-        // Handle 304 Not Modified
+        // Handle 304 Not Modified - success, reset retry
         if (response.status === 304) {
             updateFeedChecked.run(now, 304, url);
-            const itemCount = (countItemsByFeed.get(url) as any)?.count || 0;
+            db.prepare(`
+                UPDATE feeds 
+                SET retry_count = 0, next_retry_after = NULL 
+                WHERE url = ?
+            `).run(url);
 
+            const itemCount = (countItemsByFeed.get(url) as any)?.count || 0;
             return {
                 url,
                 kind,
                 status: 304,
-                title: cached?.title || null,
+                title: feedRecord?.title || null,
                 newItems: 0,
                 totalItemsParsed: 0,
                 totalItemsStored: itemCount,
@@ -321,76 +433,43 @@ async function fetchFeed(url: string, force: boolean): Promise<any> {
             };
         }
 
-        // Handle non-200 responses
+        // Handle non-200 responses as failures
         if (response.status !== 200) {
-            const error = `HTTP ${response.status}: ${response.statusText}`;
-            upsertFeed.run(url, kind, null, null, null, null, now, response.status, error);
-
-            return {
-                url,
-                kind,
-                status: response.status,
-                title: null,
-                newItems: 0,
-                totalItemsParsed: 0,
-                totalItemsStored: 0,
-                error
-            };
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
         // Parse the feed
         const text = await response.text();
-        let feedData: any;
-        let siteUrl: string | null = null;
+        const feed = await rssParser.parseString(text);
 
-        // Try JSON Feed first
-        if (response.headers.get('content-type')?.includes('json')) {
-            try {
-                const json = JSON.parse(text);
-                if (json.version && json.items) {
-                    // JSON Feed format
-                    feedData = {
-                        title: json.title,
-                        items: json.items.map((item: any) => ({
-                            title: item.title,
-                            link: item.url,
-                            content: item.content_html || item.content_text,
-                            contentSnippet: item.summary,
-                            pubDate: item.date_published,
-                            updated: item.date_modified,
-                            guid: item.id,
-                            author: item.author?.name
-                        }))
-                    };
-                    siteUrl = json.home_page_url || null;
-                }
-            } catch (e) {
-                // Not JSON Feed, fall through to XML parsing
-            }
-        }
-
-        // Parse as RSS/Atom if not JSON Feed
-        if (!feedData) {
-            feedData = await rssParser.parseString(text);
-            siteUrl = feedData.link || null;
-        }
-
-        const feedTitle = feedData.title || null;
-        const items = feedData.items || [];
-
-        // Extract ETag and Last-Modified headers
+        // Extract feed metadata
+        const title = feed.title || null;
+        const siteUrl = feed.link || null;
         const etag = response.headers.get('etag') || null;
         const lastModified = response.headers.get('last-modified') || null;
 
         // Count existing items before insert
         const beforeCount = (countItemsByFeed.get(url) as any)?.count || 0;
 
-        // Insert items in a transaction
-        const insertItems = db.transaction((items: any[]) => {
-            items.forEach((item, index) => {
-                const normalized = normalizeItem(item, kind);
-                const id = generateItemId(url, item, index, normalized.external_id);
+        // Update feed record - success, reset retry
+        upsertFeed.run(url, kind, title, siteUrl, etag, lastModified, now, 200, null);
+        db.prepare(`
+            UPDATE feeds 
+            SET retry_count = 0, next_retry_after = NULL 
+            WHERE url = ?
+        `).run(url);
 
+        // Process items
+        const items = feed.items || [];
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            const normalized = normalizeItem(item, kind);
+
+            // Generate stable ID
+            const idSource = normalized.external_id || normalized.raw_guid || normalized.url || normalized.title || `${url}-${i}`;
+            const id = createHash('sha256').update(`${url}|${idSource}`).digest('hex');
+
+            try {
                 upsertItem.run(
                     id,
                     url,
@@ -408,13 +487,13 @@ async function fetchFeed(url: string, force: boolean): Promise<any> {
                     normalized.raw_guid,
                     now
                 );
-            });
-        });
-
-        insertItems(items);
-
-        // Update feed metadata
-        upsertFeed.run(url, kind, feedTitle, siteUrl, etag, lastModified, now, 200, null);
+            } catch (err: any) {
+                // Ignore duplicate key errors
+                if (!err.message.includes('UNIQUE constraint')) {
+                    fastify.log.error(`Error inserting item: ${err.message}`);
+                }
+            }
+        }
 
         // Count items after insert
         const afterCount = (countItemsByFeed.get(url) as any)?.count || 0;
@@ -424,16 +503,41 @@ async function fetchFeed(url: string, force: boolean): Promise<any> {
             url,
             kind,
             status: 200,
-            title: feedTitle,
+            title,
             newItems,
             totalItemsParsed: items.length,
             totalItemsStored: afterCount,
             error: null
         };
-
     } catch (error: any) {
-        const errorMsg = error.message || 'Unknown error';
-        upsertFeed.run(url, kind, null, null, null, null, now, 0, errorMsg);
+        clearTimeout(timeout);
+
+        const errorMessage = error.name === 'AbortError' ? 'Fetch timeout' : error.message;
+        const now = new Date().toISOString();
+
+        // Get current retry count
+        const currentRetryCount = feedRecord?.retry_count || 0;
+        const newRetryCount = currentRetryCount + 1;
+
+        // Calculate exponential backoff: min(24h, 10min * 2^retry_count)
+        const baseDelayMs = 10 * 60 * 1000; // 10 minutes
+        const maxDelayMs = 24 * 60 * 60 * 1000; // 24 hours
+        const delayMs = Math.min(maxDelayMs, baseDelayMs * Math.pow(2, currentRetryCount));
+
+        const nextRetryAfter = new Date(Date.now() + delayMs).toISOString();
+
+        // Update feed with error and backoff
+        db.prepare(`
+            UPDATE feeds 
+            SET last_checked = ?, 
+                last_status = ?, 
+                last_error = ?,
+                retry_count = ?,
+                next_retry_after = ?
+            WHERE url = ?
+        `).run(now, 0, errorMessage, newRetryCount, nextRetryAfter, url);
+
+        fastify.log.warn(`Feed ${url} failed (retry ${newRetryCount}): ${errorMessage}. Next retry after ${nextRetryAfter}`);
 
         return {
             url,
@@ -443,7 +547,7 @@ async function fetchFeed(url: string, force: boolean): Promise<any> {
             newItems: 0,
             totalItemsParsed: 0,
             totalItemsStored: 0,
-            error: errorMsg
+            error: errorMessage
         };
     }
 }
@@ -657,6 +761,195 @@ fastify.delete('/feeds', async (request, reply) => {
     }
 });
 
+// Export feeds as OPML
+fastify.get('/opml/export', async (request, reply) => {
+    try {
+        const allFeeds = db.prepare('SELECT url, title, site_url FROM feeds ORDER BY title, url').all() as any[];
+
+        // Generate OPML XML
+        const opmlHeader = `<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0">
+	<head>
+		<title>FeedStream Subscriptions</title>
+		<dateCreated>${new Date().toUTCString()}</dateCreated>
+	</head>
+	<body>`;
+
+        const outlines = allFeeds.map(feed => {
+            const text = feed.title || feed.url;
+            const title = feed.title || feed.url;
+            const xmlUrl = feed.url;
+            const htmlUrl = feed.site_url || '';
+
+            // Escape XML special characters
+            const escapeXml = (str: string) => {
+                return str
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&apos;');
+            };
+
+            let outline = `\n		<outline text="${escapeXml(text)}" title="${escapeXml(title)}" type="rss" xmlUrl="${escapeXml(xmlUrl)}"`;
+            if (htmlUrl) {
+                outline += ` htmlUrl="${escapeXml(htmlUrl)}"`;
+            }
+            outline += '/>';
+            return outline;
+        }).join('');
+
+        const opmlFooter = `\n	</body>
+</opml>`;
+
+        const opml = opmlHeader + outlines + opmlFooter;
+
+        reply.header('Content-Type', 'application/xml');
+        reply.header('Content-Disposition', `attachment; filename="feedstream-${Date.now()}.opml"`);
+        return opml;
+    } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500);
+        return {
+            ok: false,
+            error: 'Failed to generate OPML'
+        };
+    }
+});
+
+// Import feeds from OPML
+fastify.post('/opml/import', async (request, reply) => {
+    const body = request.body as any;
+
+    if (!body || typeof body.opml !== 'string') {
+        reply.code(400);
+        return {
+            ok: false,
+            error: 'Body must contain "opml" string'
+        };
+    }
+
+    try {
+        // Parse OPML XML
+        const parsed = xmlParser.parse(body.opml);
+
+        if (!parsed.opml || !parsed.opml.body) {
+            reply.code(400);
+            return {
+                ok: false,
+                error: 'Invalid OPML: missing opml or body element'
+            };
+        }
+
+        // Recursively extract all outline nodes with xmlUrl
+        const extractOutlines = (node: any): any[] => {
+            const results: any[] = [];
+
+            if (!node) return results;
+
+            // Handle single outline or array of outlines
+            const outlines = Array.isArray(node.outline) ? node.outline : (node.outline ? [node.outline] : []);
+
+            for (const outline of outlines) {
+                // Check for xmlUrl attribute (with @ prefix from parser)
+                const xmlUrl = outline['@_xmlUrl'] || outline.xmlUrl;
+
+                if (xmlUrl) {
+                    results.push({
+                        xmlUrl,
+                        title: outline['@_title'] || outline.title || outline['@_text'] || outline.text || null
+                    });
+                }
+
+                // Recursively check nested outlines
+                if (outline.outline) {
+                    results.push(...extractOutlines(outline));
+                }
+            }
+
+            return results;
+        };
+
+        const feedsToImport = extractOutlines(parsed.opml.body);
+
+        if (feedsToImport.length === 0) {
+            return {
+                ok: true,
+                added: 0,
+                skipped: 0,
+                failed: []
+            };
+        }
+
+        // Get existing feed URLs
+        const existingFeeds = db.prepare('SELECT url FROM feeds').all() as any[];
+        const existingUrls = new Set(existingFeeds.map((f: any) => f.url));
+
+        let added = 0;
+        let skipped = 0;
+        const failed: Array<{ url: string; error: string }> = [];
+
+        // Process each feed
+        for (const feed of feedsToImport) {
+            const url = feed.xmlUrl.trim();
+
+            // Validate URL format
+            if (!url.match(/^https?:\/\/.+/)) {
+                failed.push({ url, error: 'Invalid URL format' });
+                continue;
+            }
+
+            // Skip if already exists
+            if (existingUrls.has(url)) {
+                skipped++;
+                continue;
+            }
+
+            try {
+                // Detect feed kind
+                const kind = detectFeedKind(url);
+
+                // Insert feed (reuse same logic as POST /feeds)
+                const stmt = db.prepare(`
+                    INSERT INTO feeds (url, kind, title, site_url, etag, last_modified, last_checked, last_status, last_error)
+                    VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL)
+                `);
+                stmt.run(url, kind, feed.title);
+
+                existingUrls.add(url);
+                added++;
+            } catch (error: any) {
+                failed.push({ url, error: error.message || 'Database error' });
+            }
+        }
+
+        return {
+            ok: true,
+            added,
+            skipped,
+            failed
+        };
+    } catch (error: any) {
+        fastify.log.error(error);
+
+        // Check if it's an XML parsing error
+        if (error.message && error.message.includes('XML')) {
+            reply.code(400);
+            return {
+                ok: false,
+                error: 'Invalid XML: ' + error.message
+            };
+        }
+
+        reply.code(500);
+        return {
+            ok: false,
+            error: 'Failed to import OPML'
+        };
+    }
+});
+
+
 // Get items endpoint
 fastify.get('/items', async (request, reply) => {
     const query = request.query as any;
@@ -665,6 +958,7 @@ fastify.get('/items', async (request, reply) => {
     const feed = query.feed || null;
     const source = query.source || null;
     const unreadOnly = query.unreadOnly === 'true';
+    const starredOnly = query.starredOnly === '1' || query.starredOnly === 'true';
     const limit = Math.min(parseInt(query.limit || '50', 10), 200);
     const offset = parseInt(query.offset || '0', 10);
 
@@ -686,6 +980,10 @@ fastify.get('/items', async (request, reply) => {
         conditions.push('is_read = 0');
     }
 
+    if (starredOnly) {
+        conditions.push('is_starred = 1');
+    }
+
     const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
 
     // Get total count
@@ -698,7 +996,7 @@ fastify.get('/items', async (request, reply) => {
         SELECT 
             id, feed_url, source, title, url, author, summary, content,
             published, updated, media_thumbnail, media_duration_seconds,
-            external_id, raw_guid, created_at, is_read
+            external_id, raw_guid, created_at, is_read, is_starred
         FROM items
         ${whereClause}
         ORDER BY 
@@ -733,6 +1031,112 @@ fastify.post('/items/:id/read', async (request, reply) => {
     try {
         const stmt = db.prepare('UPDATE items SET is_read = ? WHERE id = ?');
         const result = stmt.run(isRead, id);
+
+        if (result.changes === 0) {
+            reply.code(404);
+            return {
+                ok: false,
+                error: 'Item not found'
+            };
+        }
+
+        return {
+            ok: true
+        };
+    } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500);
+        return {
+            ok: false,
+            error: 'Database error'
+        };
+    }
+});
+
+// Mark all items as read with optional filters
+fastify.post('/items/mark-all-read', async (request, reply) => {
+    const body = request.body as any;
+
+    // Validate body is an object
+    if (!body || typeof body !== 'object') {
+        reply.code(400);
+        return {
+            ok: false,
+            error: 'Request body must be a JSON object'
+        };
+    }
+
+    const feedUrl = body.feedUrl || null;
+    const source = body.source || null;
+    const before = body.before || null;
+
+    // Validate source if provided
+    if (source && !['generic', 'youtube', 'reddit'].includes(source)) {
+        reply.code(400);
+        return {
+            ok: false,
+            error: 'Invalid source. Must be: generic, youtube, or reddit'
+        };
+    }
+
+    try {
+        // Build WHERE clause dynamically
+        const conditions: string[] = ['is_read = 0'];
+        const params: any[] = [];
+
+        if (feedUrl) {
+            conditions.push('feed_url = ?');
+            params.push(feedUrl);
+        }
+
+        if (source) {
+            conditions.push('source = ?');
+            params.push(source);
+        }
+
+        if (before) {
+            conditions.push('published <= ?');
+            params.push(before);
+        }
+
+        const whereClause = conditions.join(' AND ');
+        const query = `UPDATE items SET is_read = 1 WHERE ${whereClause}`;
+
+        const stmt = db.prepare(query);
+        const result = stmt.run(...params);
+
+        return {
+            ok: true,
+            updated: result.changes
+        };
+    } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500);
+        return {
+            ok: false,
+            error: 'Database error'
+        };
+    }
+});
+
+// Star/unstar item
+fastify.post('/items/:id/star', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = request.body as any;
+
+    if (typeof body.starred !== 'boolean') {
+        reply.code(400);
+        return {
+            ok: false,
+            error: 'Body must contain "starred" boolean'
+        };
+    }
+
+    const isStarred = body.starred ? 1 : 0;
+
+    try {
+        const stmt = db.prepare('UPDATE items SET is_starred = ? WHERE id = ?');
+        const result = stmt.run(isStarred, id);
 
         if (result.changes === 0) {
             reply.code(404);
@@ -900,6 +1304,87 @@ fastify.get('/reader', async (request, reply) => {
         return {
             ok: false,
             error: error.message || 'Internal server error'
+        };
+    }
+});
+
+// Search endpoint using FTS5
+fastify.get('/search', async (request, reply) => {
+    const query = request.query as any;
+
+    const searchQuery = query.q || '';
+    const limit = Math.min(parseInt(query.limit || '50', 10), 200);
+    const offset = parseInt(query.offset || '0', 10);
+
+    if (!searchQuery.trim()) {
+        reply.code(400);
+        return {
+            ok: false,
+            error: 'Query parameter "q" is required'
+        };
+    }
+
+    try {
+        // Get total count of matching items
+        const countQuery = `
+            SELECT COUNT(*) as total
+            FROM items_fts
+            WHERE items_fts MATCH ?
+        `;
+        const countResult = db.prepare(countQuery).get(searchQuery) as any;
+        const total = countResult.total;
+
+        // Get matching items with relevance ranking
+        const searchSql = `
+            SELECT 
+                items.id,
+                items.feed_url,
+                items.source,
+                items.title,
+                items.url,
+                items.author,
+                items.summary,
+                items.content,
+                items.published,
+                items.updated,
+                items.media_thumbnail,
+                items.media_duration_seconds,
+                items.external_id,
+                items.raw_guid,
+                items.created_at,
+                items.is_read,
+                items.is_starred,
+                bm25(items_fts) as rank
+            FROM items_fts
+            JOIN items ON items.rowid = items_fts.rowid
+            WHERE items_fts MATCH ?
+            ORDER BY rank
+            LIMIT ? OFFSET ?
+        `;
+
+        const results = db.prepare(searchSql).all(searchQuery, limit, offset);
+
+        return {
+            ok: true,
+            total,
+            items: results
+        };
+    } catch (error: any) {
+        fastify.log.error(error);
+
+        // Check if it's an FTS syntax error
+        if (error.message && error.message.includes('fts5')) {
+            reply.code(400);
+            return {
+                ok: false,
+                error: 'Invalid search query syntax'
+            };
+        }
+
+        reply.code(500);
+        return {
+            ok: false,
+            error: 'Search failed'
         };
     }
 });

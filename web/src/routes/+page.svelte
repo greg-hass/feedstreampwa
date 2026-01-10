@@ -18,10 +18,20 @@
 	let itemsError: string | null = null;
 	let sourceFilter = 'all';
 	let unreadOnly = false;
+	let starredOnly = false;
 	let timeFilter = 'all'; // today, 24h, week, all
 
 	// Search
 	let searchQuery = '';
+
+	// Settings modal
+	let showSettings = false;
+	let importResults: any = null;
+	let importingOpml = false;
+
+	// Search state
+	let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+	let isSearching = false;
 
 	onMount(() => {
 		loadFeeds();
@@ -127,6 +137,28 @@
 		itemsError = null;
 
 		try {
+			// If searching, use search endpoint
+			if (searchQuery.trim()) {
+				const params = new URLSearchParams({
+					q: searchQuery.trim(),
+					limit: '100',
+					offset: '0'
+				});
+
+				const response = await fetch(`/api/search?${params}`);
+				if (!response.ok) {
+					throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+				}
+
+				const data = await response.json();
+				items = data.items || [];
+				itemsTotal = data.total || 0;
+				isSearching = true;
+				return;
+			}
+
+			// Normal item listing
+			isSearching = false;
 			const params = new URLSearchParams({
 				limit: '100',
 				offset: '0'
@@ -142,6 +174,10 @@
 
 			if (unreadOnly) {
 				params.set('unreadOnly', 'true');
+			}
+
+			if (starredOnly) {
+				params.set('starredOnly', '1');
 			}
 
 			const response = await fetch(`/api/items?${params}`);
@@ -186,6 +222,34 @@
 		}
 	}
 
+	async function toggleStar(item: any) {
+		const newStarredState = !item.is_starred;
+		const oldStarredState = item.is_starred;
+
+		// Optimistic update
+		item.is_starred = newStarredState ? 1 : 0;
+		items = [...items];
+
+		try {
+			const response = await fetch(`/api/items/${item.id}/star`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ starred: newStarredState })
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+			}
+		} catch (err) {
+			// Rollback on error
+			item.is_starred = oldStarredState;
+			items = [...items];
+			alert(err instanceof Error ? err.message : 'Failed to update starred status');
+		}
+	}
+
 	function formatDate(dateStr: string | null): string {
 		if (!dateStr) return 'Unknown';
 		try {
@@ -205,8 +269,93 @@
 	$: totalUnread = feeds.reduce((sum, f) => sum + (f.unreadCount || 0), 0);
 
 	// Reload items when filters change
-	$: if (sourceFilter || unreadOnly !== undefined || selectedFeedUrl !== undefined) {
+	$: if (sourceFilter || unreadOnly !== undefined || starredOnly !== undefined || selectedFeedUrl !== undefined) {
 		loadItems();
+	}
+
+	// Debounced search
+	function handleSearchInput() {
+		if (searchDebounceTimer) {
+			clearTimeout(searchDebounceTimer);
+		}
+
+		searchDebounceTimer = setTimeout(() => {
+			loadItems();
+		}, 300);
+	}
+
+	function clearSearch() {
+		searchQuery = '';
+		loadItems();
+	}
+
+	function handleSearchKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			clearSearch();
+		}
+	}
+
+	async function exportOpml() {
+		try {
+			const response = await fetch('/api/opml/export');
+			if (!response.ok) {
+				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+			}
+
+			const blob = await response.blob();
+			const url = window.URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `feedstream-${Date.now()}.opml`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			window.URL.revokeObjectURL(url);
+		} catch (err) {
+			alert(err instanceof Error ? err.message : 'Failed to export OPML');
+		}
+	}
+
+	async function importOpml(event: Event) {
+		const input = event.target as HTMLInputElement;
+		const file = input.files?.[0];
+
+		if (!file) return;
+
+		importingOpml = true;
+		importResults = null;
+
+		try {
+			const opmlText = await file.text();
+
+			const response = await fetch('/api/opml/import', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ opml: opmlText })
+			});
+
+			const data = await response.json();
+
+			if (!response.ok) {
+				throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
+			}
+
+			importResults = data;
+
+			// Refresh feeds list
+			if (data.added > 0) {
+				await loadFeeds();
+				await loadItems();
+			}
+		} catch (err) {
+			alert(err instanceof Error ? err.message : 'Failed to import OPML');
+		} finally {
+			importingOpml = false;
+			// Reset file input
+			input.value = '';
+		}
 	}
 </script>
 
@@ -253,6 +402,13 @@
 				</svg>
 				<span>Unread</span>
 			</button>
+
+			<button class="nav-item" on:click={() => starredOnly = !starredOnly} class:active={starredOnly}>
+				<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+					<path d="M9 2l2.163 4.382 4.837.703-3.5 3.411.826 4.819L9 13.09l-4.326 2.225.826-4.819-3.5-3.411 4.837-.703L9 2z" fill="currentColor"/>
+				</svg>
+				<span>Starred</span>
+			</button>
 		</nav>
 
 		<div class="sidebar-section">
@@ -294,14 +450,23 @@
 			<div class="topbar-center">
 				<div class="search-box">
 					<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-						<circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/>
-						<path d="M12 12l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/>
+						<path d="M12.5 12.5l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
 					</svg>
 					<input 
 						type="text" 
-						placeholder="Search articles…" 
+						placeholder="Search articles..." 
 						bind:value={searchQuery}
+						on:input={handleSearchInput}
+						on:keydown={handleSearchKeydown}
 					/>
+					{#if searchQuery}
+						<button class="search-clear" on:click={clearSearch} title="Clear search (ESC)">
+							<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+								<path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+							</svg>
+						</button>
+					{/if}
 				</div>
 			</div>
 
@@ -310,6 +475,12 @@
 					<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
 						<path d="M17 10c0 3.866-3.134 7-7 7s-7-3.134-7-7 3.134-7 7-7c1.933 0 3.683.783 4.95 2.05" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
 						<path d="M17 6v4h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+					</svg>
+				</button>
+				<button class="icon-btn" on:click={() => showSettings = true} title="Settings">
+					<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+						<circle cx="10" cy="10" r="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+						<path d="M10 2v2m0 12v2M18 10h-2M4 10H2m13.66-5.66l-1.42 1.42M7.76 12.24l-1.42 1.42m11.32 0l-1.42-1.42M7.76 7.76L6.34 6.34" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
 					</svg>
 				</button>
 				<button class="add-btn" on:click={() => {
@@ -327,22 +498,15 @@
 		</header>
 
 		<!-- Filter Chips -->
-		<div class="filters-row">
-			<button class="chip" class:active={timeFilter === 'today'} on:click={() => timeFilter = 'today'}>
-				Today
-			</button>
-			<button class="chip" class:active={timeFilter === '24h'} on:click={() => timeFilter = '24h'}>
-				Last 24h
-			</button>
-			<button class="chip" class:active={timeFilter === 'week'} on:click={() => timeFilter = 'week'}>
-				Week
-			</button>
-			<button class="chip" class:active={timeFilter === 'all'} on:click={() => timeFilter = 'all'}>
-				All
-			</button>
-		</div>
-
-		<!-- Articles List -->
+			<div class="content-header">
+				<h1>{isSearching ? `Search Results (${itemsTotal})` : 'Articles'}</h1>
+				<div class="filter-chips">
+					<button class="chip" class:active={timeFilter === 'today'} on:click={() => timeFilter = 'today'}>Today</button>
+					<button class="chip" class:active={timeFilter === '24h'} on:click={() => timeFilter = '24h'}>Last 24h</button>
+					<button class="chip" class:active={timeFilter === 'week'} on:click={() => timeFilter = 'week'}>Week</button>
+					<button class="chip" class:active={timeFilter === 'all'} on:click={() => timeFilter = 'all'}>All</button>
+				</div>
+			</div>!-- Articles List -->
 		<div class="articles-container">
 			{#if itemsLoading}
 				<div class="empty-state">Loading articles...</div>
@@ -363,14 +527,30 @@
 									{item.title || 'Untitled'}
 								{/if}
 							</h3>
-							<button 
-								class="read-dot" 
-								class:read={item.is_read === 1}
-								on:click={() => toggleRead(item)}
-								title={item.is_read === 1 ? 'Mark as unread' : 'Mark as read'}
-							>
-								<span class="dot"></span>
-							</button>
+							<div class="article-actions">
+								<button 
+									class="star-btn" 
+									class:starred={item.is_starred === 1}
+									on:click={() => toggleStar(item)}
+									title={item.is_starred === 1 ? 'Unstar' : 'Star'}
+								>
+									<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+										<path d="M8 1.5l1.902 3.854 4.252.618-3.077 3-726.726 3.917L8 11.5l-3.803 2 .726-4.252-3.077-3 4.252-.618L8 1.5z" 
+											stroke="currentColor" 
+											stroke-width="1.5" 
+											fill={item.is_starred === 1 ? 'currentColor' : 'none'}
+										/>
+									</svg>
+								</button>
+								<button 
+									class="read-dot" 
+									class:read={item.is_read === 1}
+									on:click={() => toggleRead(item)}
+									title={item.is_read === 1 ? 'Mark as unread' : 'Mark as read'}
+								>
+									<span class="dot"></span>
+								</button>
+							</div>
 						</div>
 
 						<div class="article-meta">
@@ -397,6 +577,66 @@
 			{/if}
 		</div>
 	</main>
+
+	<!-- Settings Modal -->
+	{#if showSettings}
+		<div class="modal-overlay" on:click={() => showSettings = false}>
+			<div class="modal glass-panel" on:click|stopPropagation>
+				<div class="modal-header">
+					<h2>Settings</h2>
+					<button class="close-btn" on:click={() => showSettings = false}>×</button>
+				</div>
+
+				<div class="modal-body">
+					<div class="settings-section">
+						<h3>OPML</h3>
+						<div class="settings-actions">
+							<button class="settings-btn" on:click={exportOpml}>
+								<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+									<path d="M8 2v8m0 0l3-3m-3 3L5 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M14 10v3a1 1 0 01-1 1H3a1 1 0 01-1-1v-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+								</svg>
+								Export OPML
+							</button>
+
+							<label class="settings-btn">
+								<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+									<path d="M8 14V6m0 0l3 3m-3-3L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M14 6V3a1 1 0 00-1-1H3a1 1 0 00-1 1v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+								</svg>
+								{importingOpml ? 'Importing...' : 'Import OPML'}
+								<input type="file" accept=".opml,.xml" on:change={importOpml} disabled={importingOpml} style="display: none;"/>
+							</label>
+						</div>
+
+						{#if importResults}
+							<div class="import-results">
+								<div class="results-summary">
+									<span class="result-item success">✓ Added: {importResults.added}</span>
+									<span class="result-item">⊘ Skipped: {importResults.skipped}</span>
+									{#if importResults.failed.length > 0}
+										<span class="result-item error">✗ Failed: {importResults.failed.length}</span>
+									{/if}
+								</div>
+
+								{#if importResults.failed.length > 0}
+									<div class="failed-feeds">
+										<h4>Failed Feeds:</h4>
+										{#each importResults.failed as fail}
+											<div class="failed-item">
+												<div class="failed-url">{fail.url}</div>
+												<div class="failed-error">{fail.error}</div>
+											</div>
+										{/each}
+									</div>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				</div>
+			</div>
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -607,6 +847,26 @@
 		color: var(--muted2);
 	}
 
+	.search-clear {
+		width: 24px;
+		height: 24px;
+		background: transparent;
+		border: none;
+		color: var(--muted);
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 4px;
+		transition: all 0.2s;
+		flex-shrink: 0;
+	}
+
+	.search-clear:hover {
+		background: var(--chip);
+		color: var(--text);
+	}
+
 	.icon-btn {
 		width: 40px;
 		height: 40px;
@@ -728,6 +988,40 @@
 		color: var(--accent);
 	}
 
+	.article-actions {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex-shrink: 0;
+	}
+
+	.star-btn {
+		width: 28px;
+		height: 28px;
+		background: transparent;
+		border: none;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--muted);
+		transition: all 0.2s;
+		border-radius: 4px;
+	}
+
+	.star-btn:hover {
+		background: var(--chip);
+		color: var(--accent);
+	}
+
+	.star-btn.starred {
+		color: var(--accent);
+	}
+
+	.star-btn.starred:hover {
+		background: rgba(24, 227, 138, 0.1);
+	}
+
 	.read-dot {
 		width: 24px;
 		height: 24px;
@@ -805,12 +1099,187 @@
 		}
 
 		.sidebar {
+			position: fixed;
+			top: 0;
+			left: 0;
 			width: 100%;
+			height: auto;
 			max-height: 50vh;
+			overflow-y: auto;
+			z-index: 100;
 		}
 
-		.topbar-center {
-			display: none;
+		.main-content {
+			margin-top: 50vh;
 		}
+	}
+
+	/* Modal Styles */
+	.modal-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.7);
+		backdrop-filter: blur(4px);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1000;
+	}
+
+	.modal {
+		width: 90%;
+		max-width: 500px;
+		max-height: 80vh;
+		overflow-y: auto;
+		padding: 0;
+	}
+
+	.modal-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 20px 24px;
+		border-bottom: 1px solid var(--stroke2);
+	}
+
+	.modal-header h2 {
+		margin: 0;
+		font-size: 18px;
+		font-weight: 600;
+		color: var(--text);
+	}
+
+	.close-btn {
+		width: 32px;
+		height: 32px;
+		background: transparent;
+		border: none;
+		color: var(--muted);
+		font-size: 28px;
+		line-height: 1;
+		cursor: pointer;
+		transition: all 0.2s;
+		border-radius: 4px;
+	}
+
+	.close-btn:hover {
+		background: var(--chip);
+		color: var(--text);
+	}
+
+	.modal-body {
+		padding: 24px;
+	}
+
+	.settings-section {
+		margin-bottom: 24px;
+	}
+
+	.settings-section h3 {
+		margin: 0 0 16px 0;
+		font-size: 14px;
+		font-weight: 600;
+		color: var(--muted);
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+
+	.settings-actions {
+		display: flex;
+		gap: 12px;
+		flex-wrap: wrap;
+	}
+
+	.settings-btn {
+		flex: 1;
+		min-width: 140px;
+		padding: 12px 16px;
+		background: var(--panel);
+		border: 1px solid var(--stroke2);
+		border-radius: 8px;
+		color: var(--text);
+		font-size: 14px;
+		font-weight: 500;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		transition: all 0.2s;
+	}
+
+	.settings-btn:hover {
+		background: var(--chip);
+		border-color: var(--stroke);
+		color: var(--accent);
+	}
+
+	.settings-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.import-results {
+		margin-top: 16px;
+		padding: 16px;
+		background: var(--bg0);
+		border: 1px solid var(--stroke2);
+		border-radius: 8px;
+	}
+
+	.results-summary {
+		display: flex;
+		gap: 16px;
+		flex-wrap: wrap;
+		margin-bottom: 12px;
+	}
+
+	.result-item {
+		font-size: 13px;
+		color: var(--muted);
+	}
+
+	.result-item.success {
+		color: var(--accent);
+	}
+
+	.result-item.error {
+		color: #ff6b6b;
+	}
+
+	.failed-feeds {
+		margin-top: 12px;
+		padding-top: 12px;
+		border-top: 1px solid var(--stroke2);
+	}
+
+	.failed-feeds h4 {
+		margin: 0 0 8px 0;
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--muted);
+		text-transform: uppercase;
+	}
+
+	.failed-item {
+		padding: 8px;
+		margin-bottom: 8px;
+		background: var(--panel);
+		border-radius: 4px;
+	}
+
+	.failed-url {
+		font-size: 12px;
+		color: var(--text);
+		word-break: break-all;
+		margin-bottom: 4px;
+	}
+
+	.failed-error {
+		font-size: 11px;
+		color: #ff6b6b;
 	}
 </style>
