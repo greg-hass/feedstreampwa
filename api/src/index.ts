@@ -4,6 +4,8 @@ import Parser from 'rss-parser';
 import pLimit from 'p-limit';
 import { createHash } from 'crypto';
 import { XMLParser } from 'fast-xml-parser';
+import { JSDOM } from 'jsdom';
+import { Readability } from '@mozilla/readability';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const DB_PATH = process.env.DB_PATH || '/data/feedstream.sqlite';
@@ -749,6 +751,155 @@ fastify.post('/items/:id/read', async (request, reply) => {
         return {
             ok: false,
             error: 'Database error'
+        };
+    }
+});
+
+// Helper: Normalize and resolve absolute URLs
+function normalizeUrl(url: string, baseUrl?: string): string {
+    try {
+        if (baseUrl) {
+            return new URL(url, baseUrl).href;
+        }
+        return new URL(url).href;
+    } catch {
+        return url;
+    }
+}
+
+// Helper: Check if URL is a usable image (not data URI, not tiny icon)
+function isUsableImage(src: string): boolean {
+    if (!src || src.startsWith('data:')) return false;
+    const lower = src.toLowerCase();
+    if (lower.includes('icon') || lower.includes('logo') || lower.includes('avatar')) return false;
+    return true;
+}
+
+// Reader View endpoint
+fastify.get('/reader', async (request, reply) => {
+    const query = request.query as any;
+    const targetUrl = query.url;
+
+    if (!targetUrl || typeof targetUrl !== 'string') {
+        reply.code(400);
+        return {
+            ok: false,
+            error: 'Missing or invalid url parameter'
+        };
+    }
+
+    try {
+        // Fetch the page HTML
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+        const response = await fetch(targetUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            },
+            signal: controller.signal,
+            redirect: 'follow'
+        });
+
+        clearTimeout(timeout);
+
+        if (!response.ok) {
+            reply.code(response.status);
+            return {
+                ok: false,
+                error: `Failed to fetch: ${response.statusText}`
+            };
+        }
+
+        const html = await response.text();
+        const finalUrl = response.url || targetUrl;
+
+        // Parse with JSDOM
+        const dom = new JSDOM(html, { url: finalUrl });
+        const document = dom.window.document;
+
+        // Pre-strip junk before Readability
+        const junkSelectors = [
+            'header', 'footer', 'nav', 'aside', 'form', 'noscript',
+            '[class*="ad"]', '[class*="ads"]', '[class*="advert"]',
+            '[class*="sponsor"]', '[class*="promo"]', '[class*="cookie"]',
+            '[class*="consent"]', '[class*="subscribe"]', '[class*="newsletter"]',
+            '[class*="share"]', '[class*="social"]', '[class*="sidebar"]',
+            '[class*="comments"]', '[id*="ad"]', '[id*="ads"]',
+            '[id*="advert"]', '[id*="sponsor"]', '[id*="promo"]',
+            '[id*="cookie"]', '[id*="consent"]', '[id*="subscribe"]',
+            '[id*="newsletter"]', '[id*="share"]', '[id*="social"]',
+            '[id*="sidebar"]', '[id*="comments"]'
+        ];
+
+        junkSelectors.forEach(selector => {
+            document.querySelectorAll(selector).forEach((el: Element) => el.remove());
+        });
+
+        // Run Readability
+        const reader = new Readability(document);
+        const article = reader.parse();
+
+        if (!article || !article.content) {
+            reply.code(422);
+            return {
+                ok: false,
+                error: 'Could not extract readable content'
+            };
+        }
+
+        // Parse the article content
+        const contentDom = new JSDOM(article.content);
+        const contentDoc = contentDom.window.document;
+
+        // Extract header image
+        let imageUrl: string | null = null;
+
+        // Try first image in article content
+        const images = contentDoc.querySelectorAll('img');
+        for (const img of Array.from(images)) {
+            const src = (img as HTMLImageElement).getAttribute('src');
+            if (src && isUsableImage(src)) {
+                imageUrl = normalizeUrl(src, finalUrl);
+                break;
+            }
+        }
+
+        // Fallback to meta tags
+        if (!imageUrl) {
+            const ogImage = document.querySelector('meta[property="og:image"]');
+            const twitterImage = document.querySelector('meta[name="twitter:image"]');
+
+            if (ogImage) {
+                const content = ogImage.getAttribute('content');
+                if (content) imageUrl = normalizeUrl(content, finalUrl);
+            } else if (twitterImage) {
+                const content = twitterImage.getAttribute('content');
+                if (content) imageUrl = normalizeUrl(content, finalUrl);
+            }
+        }
+
+        // Remove all headings from content
+        contentDoc.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((el: Element) => el.remove());
+
+        // Remove all images from content
+        contentDoc.querySelectorAll('img').forEach((el: Element) => el.remove());
+
+        // Get cleaned HTML
+        const cleanedHtml = contentDoc.body.innerHTML;
+
+        return {
+            ok: true,
+            url: finalUrl,
+            imageUrl,
+            html: cleanedHtml
+        };
+    } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500);
+        return {
+            ok: false,
+            error: error.message || 'Internal server error'
         };
     }
 });
