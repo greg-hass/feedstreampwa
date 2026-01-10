@@ -1342,15 +1342,9 @@
 						tabindex="0"
 					>
 						<div class="article-header">
-							<h3 class="article-title">
-								{#if item.url}
-									<a href={item.url} target="_blank" rel="noopener noreferrer">
-										{item.title || 'Untitled'}
-									</a>
-								{:else}
-									{item.title || 'Untitled'}
-								{/if}
-							</h3>
+						<h3 class="article-title">
+							{item.title || 'Untitled'}
+						</h3>
 							<div class="article-actions">
 								<button 
 									class="star-btn" 
