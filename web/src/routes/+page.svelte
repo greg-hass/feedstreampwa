@@ -1978,13 +1978,7 @@
 				>
 					<RefreshCw size={20} />
 				</button>
-				<button
-					class="icon-btn"
-					on:click={() => (showSettings = true)}
-					title="Settings"
-				>
-					<Settings size={20} />
-				</button>
+
 				<button class="add-btn" on:click={openAddFeedModal}>
 					<Plus size={20} />
 				</button>
@@ -2411,7 +2405,7 @@
 	<!-- Settings Modal -->
 	{#if showSettings}
 		<div class="modal-overlay" on:click={() => (showSettings = false)}>
-			<div class="modal glass-panel" on:click|stopPropagation>
+			<div class="modal settings-modal" on:click|stopPropagation>
 				<div class="modal-header">
 					<h2>Settings</h2>
 					<button
@@ -4101,7 +4095,9 @@
 			height: 44px;
 			padding: 0 16px;
 			font-size: 17px;
-			border-radius: 12px;
+			min-width: 0; /* Allow search box to shrink */
+			flex: 1;
+			margin-right: 8px; /* Spacing from refresh button */
 		}
 
 		.hamburger-btn,
@@ -4127,7 +4123,16 @@
 		/* Mobile Filter Chips */
 		.filter-chips {
 			gap: 8px;
+			gap: 8px;
 			padding: 0 var(--mobile-padding);
+			overflow-x: auto;
+			flex-wrap: nowrap;
+			-webkit-overflow-scrolling: touch;
+			scrollbar-width: none; /* Hide scrollbar */
+		}
+
+		.filter-chips::-webkit-scrollbar {
+			display: none;
 		}
 
 		.chip {
@@ -4135,7 +4140,10 @@
 			padding: 0 16px;
 			font-size: 15px;
 			font-weight: 600;
+			font-weight: 600;
 			min-width: auto;
+			white-space: nowrap; /* Prevent text wrapping */
+			flex-shrink: 0; /* Prevent pills from squashing */
 		}
 
 		/* Mobile Articles Container */
@@ -4319,6 +4327,13 @@
 		border-radius: var(--radiusL);
 		box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8);
 		animation: scaleIn 0.2s ease-out;
+	}
+
+	/* Specific styling for settings to match add-feed contrast */
+	.settings-modal {
+		background: #18181b;
+		border: 1px solid var(--stroke-strong);
+		box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
 	}
 
 	.modal-header {
