@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   api:
-    image: ghcr.io/<owner>/feedstream-api:latest
+    image: ghcr.io/greg-hass/feedstreampwa-api:latest
     ports:
       - "127.0.0.1:3060:3060"
     environment:
@@ -13,7 +13,7 @@ services:
     restart: unless-stopped
 
   web:
-    image: ghcr.io/<owner>/feedstream-web:latest
+    image: ghcr.io/greg-hass/feedstreampwa-web:latest
     network_mode: host
     environment:
       - DOMAIN_NAME=https://ubuntu.swallow-cliff.ts.net:443
