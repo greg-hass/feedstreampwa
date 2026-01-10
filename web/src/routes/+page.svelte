@@ -706,6 +706,11 @@
 	async function openReader(item: any) {
 		if (!item.url) return;
 
+		// Mark as read when opening
+		if (item.is_read === 0) {
+			await toggleRead(item);
+		}
+
 		currentItem = item;
 		currentItemUrl = item.url;
 		showReader = true;
@@ -2894,6 +2899,9 @@
 					/>
 				</svg>
 				<span>Bookmarks</span>
+				{#if bookmarkedCount > 0}
+					<span class="tab-badge">{bookmarkedCount}</span>
+				{/if}
 			</button>
 
 			<button
