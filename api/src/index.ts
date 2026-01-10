@@ -324,8 +324,8 @@ const getFeed = db.prepare(`
 `);
 
 const upsertFeed = db.prepare(`
-  INSERT INTO feeds (url, kind, title, site_url, etag, last_modified, last_checked, last_status, last_error)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO feeds (url, kind, title, site_url, etag, last_modified, last_checked, last_status, last_error, icon_url)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(url) DO UPDATE SET
     kind = excluded.kind,
     title = COALESCE(feeds.custom_title, excluded.title),
@@ -334,7 +334,8 @@ const upsertFeed = db.prepare(`
     last_modified = excluded.last_modified,
     last_checked = excluded.last_checked,
     last_status = excluded.last_status,
-    last_error = excluded.last_error
+    last_error = excluded.last_error,
+    icon_url = COALESCE(excluded.icon_url, feeds.icon_url)
 `);
 
 const updateFeedChecked = db.prepare(`
@@ -392,7 +393,7 @@ const xmlParser = new XMLParser({
 
 // Helper: Detect feed kind from URL
 // Helper: Fetch icon for a feed
-async function fetchFeedIcon(feedUrl: string, kind: string): Promise<string | null> {
+async function fetchFeedIcon(feedUrl: string, kind: string, siteUrl?: string | null): Promise<string | null> {
     try {
         if (kind === 'youtube') {
             const channelId = feedUrl.split('channel_id=')[1];
@@ -416,8 +417,13 @@ async function fetchFeedIcon(feedUrl: string, kind: string): Promise<string | nu
             }
         } else {
             // Generic RSS - use site favicon
-            const url = new URL(feedUrl);
-            return `https://www.google.com/s2/favicons?sz=64&domain=${url.hostname}`;
+            const domainSource = siteUrl || feedUrl;
+            try {
+                const url = new URL(domainSource);
+                return `https://www.google.com/s2/favicons?sz=64&domain=${url.hostname}`;
+            } catch {
+                return null;
+            }
         }
     } catch (e) {
         console.error(`Failed to fetch icon for ${feedUrl}:`, e);
@@ -649,11 +655,14 @@ async function fetchFeed(url: string, force: boolean): Promise<any> {
         const etag = response.headers.get('etag') || null;
         const lastModified = response.headers.get('last-modified') || null;
 
+        // Fetch/Update icon if missing or periodically
+        const icon_url = await fetchFeedIcon(url, kind, siteUrl);
+
         // Count existing items before insert
         const beforeCount = (countItemsByFeed.get(url) as any)?.count || 0;
 
         // Update feed record - success, reset retry
-        upsertFeed.run(url, kind, title, siteUrl, etag, lastModified, now, 200, null);
+        upsertFeed.run(url, kind, title, siteUrl, etag, lastModified, now, 200, null, icon_url);
         db.prepare(`
             UPDATE feeds 
             SET retry_count = 0, next_retry_after = NULL 
@@ -1722,10 +1731,7 @@ fastify.get('/items', async (request, reply) => {
     }
 
     // Need to join feeds table if filtering by smartFolder
-    const needsFeedJoin = smartFolder !== null;
-    const fromClause = needsFeedJoin
-        ? 'FROM items i INNER JOIN feeds f ON i.feed_url = f.url'
-        : 'FROM items i';
+    const fromClause = 'FROM items i INNER JOIN feeds f ON i.feed_url = f.url';
     const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
 
     // Get total count
@@ -1738,7 +1744,8 @@ fastify.get('/items', async (request, reply) => {
         SELECT 
             i.id, i.feed_url, i.source, i.title, i.url, i.author, i.summary, i.content,
             i.published, i.updated, i.media_thumbnail, i.media_duration_seconds,
-            i.external_id, i.raw_guid, i.created_at, i.is_read, i.is_starred
+            i.external_id, i.raw_guid, i.created_at, i.is_read, i.is_starred,
+            f.icon_url as feed_icon_url, COALESCE(f.custom_title, f.title) as feed_title
         ${fromClause}
         ${whereClause}
         ORDER BY 

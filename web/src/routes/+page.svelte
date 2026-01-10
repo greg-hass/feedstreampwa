@@ -1625,7 +1625,20 @@
 						</div>
 
 						<div class="article-meta">
+							{#if item.feed_icon_url}
+								<img 
+									src={item.feed_icon_url} 
+									alt="" 
+									class="feed-favicon" 
+									on:error={(e) => {
+										const target = e.target;
+										if (target instanceof HTMLImageElement) target.style.display = 'none';
+									}}
+								/>
+							{/if}
+							<span class="feed-title-meta">{item.feed_title || 'Unknown Feed'}</span>
 							{#if item.author}
+								<span class="meta-sep">•</span>
 								<span>{item.author}</span>
 							{/if}
 							{#if item.published}
@@ -2888,15 +2901,27 @@
 	.article-meta {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		font-size: 13px;
 		color: var(--muted2);
+		font-size: 13px;
 		margin-bottom: 12px;
+		gap: 6px;
+        font-weight: 500;
         font-family: var(--font-ui);
 	}
 
+    .feed-favicon {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        object-fit: contain;
+    }
+
+    .feed-title-meta {
+        color: var(--accent);
+        opacity: 0.9;
+    }
+
 	.meta-sep {
-		color: var(--stroke);
         font-size: 10px;
 	}
 
