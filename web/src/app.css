@@ -56,9 +56,9 @@
   --mobile-touch-target: 48px;
   --mobile-tab-height: 64px;
 
-  /* Fonts - Premium */
-  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* Fonts - Premium Native Stack from Reference Project */
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 * {
@@ -69,14 +69,21 @@
 }
 
 body {
-  font-family: var(--font-ui);
-  background: radial-gradient(circle at 50% 0%, var(--bg1), var(--bg0));
-  background-attachment: fixed;
+  background: var(--bg0);
+  /* Using local variable mapping */
   color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
+  font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "ss01" 1, "cv01" 1;
+  letter-spacing: -0.01em;
+  /* Safe area insets for notched devices */
+  padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  overscroll-behavior-y: none;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* Scrollbar - Elegant & Slim */
@@ -137,6 +144,36 @@ button {
   background: var(--panel1);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--stroke);
   border-radius: var(--radiusM);
+}
+
+/* =============================================
+   iOS PWA Scroll & Performance Optimizations (From Reference)
+   ============================================= */
+
+/* Article list container - force GPU layer */
+.articles-container {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: scroll-position;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Force hardware acceleration for content visibility */
+.article-card {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  contain: content;
+}
+
+/* Blur-up optimization */
+.img-blur-up {
+  filter: blur(8px);
+  transition: filter 0.4s ease-out;
+}
+
+.img-blur-up.loaded {
+  filter: blur(0);
 }
