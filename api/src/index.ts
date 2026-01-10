@@ -714,9 +714,9 @@ fastify.post('/refresh/start', async (request, reply) => {
                 urls.map((url: string) => limit(async () => {
                     try {
                         await fetchFeed(url, force);
-                    } catch (error) {
+                    } catch (error: any) {
                         // Continue on individual feed errors
-                        fastify.log.error(`Failed to fetch ${url}:`, error);
+                        fastify.log.error(`Failed to fetch ${url}: ${error.message || error}`);
                     } finally {
                         completed++;
                         job.current = completed;
