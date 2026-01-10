@@ -444,15 +444,25 @@ const rssParser = new Parser({
         'User-Agent': 'FeedStreamPWA/1.0'
     },
     customFields: {
+        feed: [
+            ['itunes:image', 'itunesImage'],
+            ['itunes:author', 'itunesAuthor'],
+            ['itunes:summary', 'itunesSummary'],
+            ['itunes:category', 'itunesCategory']
+        ],
         item: [
             ['media:thumbnail', 'mediaThumbnail'],
             ['media:content', 'mediaContent'],
             ['media:group', 'mediaGroup'],
             ['yt:videoId', 'ytVideoId'],
-            ['yt:channelId', 'ytChannelId']
+            ['yt:channelId', 'ytChannelId'],
+            ['itunes:image', 'itunesImage'],
+            ['itunes:duration', 'itunesDuration'],
+            ['itunes:episode', 'itunesEpisode'],
+            ['itunes:season', 'itunesSeason']
         ]
     }
-});
+} as any);
 
 const xmlParser = new XMLParser({
     ignoreAttributes: false,
@@ -461,37 +471,85 @@ const xmlParser = new XMLParser({
 
 // Helper: Detect feed kind from URL
 // Helper: Fetch icon for a feed
-async function fetchFeedIcon(feedUrl: string, kind: string, siteUrl?: string | null): Promise<string | null> {
+async function fetchFeedIcon(feedUrl: string, kind: string, siteUrl?: string | null, feedData?: any): Promise<string | null> {
     try {
         if (kind === 'youtube') {
-            const channelId = feedUrl.split('channel_id=')[1];
+            // Extract channel ID from feed URL
+            let channelId = feedUrl.split('channel_id=')[1]?.split('&')[0];
+
+            // If not in URL, try to find in feed data (Atom format)
+            if (!channelId && feedData?.items?.length > 0) {
+                const item = feedData.items[0];
+                channelId = item.ytChannelId;
+            }
+
             if (channelId) {
-                const response = await fetch(`https://www.youtube.com/channel/${channelId}`);
-                if (response.ok) {
-                    const text = await response.text();
-                    const match = text.match(/"avatar":{"thumbnails":\[{"url":"([^"]+)"/);
-                    if (match) return match[1].replace(/=s\d+-c-k-c0x\d+-no-rj/, '=s64-c-k-c0x00ffffff-no-rj');
+                try {
+                    const response = await fetch(`https://www.youtube.com/channel/${channelId}`, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                        }
+                    });
+                    if (response.ok) {
+                        const html = await response.text();
+
+                        // Try multiple patterns for avatar
+                        const avatarPatterns = [
+                            /"avatar":\{"thumbnails":\[\{"url":"([^"]+)"/,
+                            /"channelMetadataRenderer".*?"avatar".*?"url":"([^"]+)"/,
+                            /yt-img-shadow.*?src="(https:\/\/yt3\.googleusercontent.com\/[^"]+)"/,
+                            /<meta property="og:image" content="([^"]+)"/
+                        ];
+
+                        for (const pattern of avatarPatterns) {
+                            const match = html.match(pattern);
+                            if (match) {
+                                let avatarUrl = match[1].replace(/\\u0026/g, '&');
+                                // Force a reasonable resolution (s176 is standard high-res avatar)
+                                if (avatarUrl.includes('=s')) {
+                                    avatarUrl = avatarUrl.replace(/=s\d+.*/, '=s176-c-k-c0x00ffffff-no-rj-mo');
+                                }
+                                return avatarUrl;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    fastify.log.error(`Failed to scrape YT avatar for ${channelId}: ${e}`);
                 }
             }
         } else if (kind === 'reddit') {
-            const match = feedUrl.match(/reddit\.com\/r\/([^/]+)/);
+            const match = feedUrl.match(/reddit\.com\/r\/([^/?#.]+)/);
             if (match) {
                 const subreddit = match[1];
-                const response = await fetch(`https://www.reddit.com/r/${subreddit}/about.json`);
-                if (response.ok) {
-                    const json = (await response.json()) as any;
-                    return json.data?.icon_img || json.data?.community_icon || null;
+                try {
+                    const response = await fetch(`https://www.reddit.com/r/${subreddit}/about.json`);
+                    if (response.ok) {
+                        const json = (await response.json()) as any;
+                        const icon = json.data?.community_icon || json.data?.icon_img;
+                        if (icon) return icon.replace(/&amp;/g, '&');
+                    }
+                } catch (e) {
+                    fastify.log.error(`Failed to fetch Reddit icon for ${subreddit}: ${e}`);
                 }
             }
-        } else {
-            // Generic RSS - use site favicon
-            const domainSource = siteUrl || feedUrl;
-            try {
-                const url = new URL(domainSource);
-                return `https://www.google.com/s2/favicons?sz=64&domain=${url.hostname}`;
-            } catch {
-                return null;
+        } else if (kind === 'podcast') {
+            // Extract podcast artwork from feed data
+            if (feedData) {
+                const itunesImage = feedData.itunesImage;
+                if (typeof itunesImage === 'object' && itunesImage['@_href']) return itunesImage['@_href'];
+                if (typeof itunesImage === 'string') return itunesImage;
+
+                if (feedData.image?.url) return feedData.image.url;
             }
+        }
+
+        // Generic fallback or RSS
+        const domainSource = siteUrl || feedUrl;
+        try {
+            const url = new URL(domainSource);
+            return `https://www.google.com/s2/favicons?sz=128&domain=${url.hostname}`;
+        } catch {
+            return null;
         }
     } catch (e) {
         console.error(`Failed to fetch icon for ${feedUrl}:`, e);
@@ -499,7 +557,7 @@ async function fetchFeedIcon(feedUrl: string, kind: string, siteUrl?: string | n
     return null;
 }
 
-function detectFeedKind(url: string): 'youtube' | 'reddit' | 'generic' {
+function detectFeedKind(url: string): 'youtube' | 'reddit' | 'podcast' | 'generic' {
     const lower = url.toLowerCase();
 
     // YouTube detection
@@ -514,6 +572,14 @@ function detectFeedKind(url: string): 'youtube' | 'reddit' | 'generic' {
         lower.includes('/.rss') ||
         lower.includes('/r/')) {
         return 'reddit';
+    }
+
+    // Podcast detection
+    if (lower.includes('podcast') ||
+        lower.includes('.mp3') ||
+        lower.includes('itunes.apple.com') ||
+        lower.includes('anchor.fm')) {
+        return 'podcast';
     }
 
     return 'generic';
@@ -585,7 +651,7 @@ function generateItemId(feedUrl: string, item: any, index: number, externalId?: 
 }
 
 // Helper: Normalize parsed item
-function normalizeItem(item: any, kind: 'youtube' | 'reddit' | 'generic'): any {
+function normalizeItem(item: any, kind: 'youtube' | 'reddit' | 'podcast' | 'generic'): any {
     const rawPublished = item.pubDate || item.isoDate || item.date_published || null;
     const rawUpdated = item.updated || item.date_modified || null;
 
@@ -614,7 +680,8 @@ function normalizeItem(item: any, kind: 'youtube' | 'reddit' | 'generic'): any {
         published,
         updated,
         raw_guid: item.guid || item.id || null,
-        media_thumbnail: null,
+        source: kind,
+        media_thumbnail: item.mediaThumbnail || null,
         media_duration_seconds: null,
         external_id: null
     };
@@ -634,7 +701,13 @@ function normalizeItem(item: any, kind: 'youtube' | 'reddit' | 'generic'): any {
 // Helper: Fetch and parse a single feed
 async function fetchFeed(url: string, force: boolean): Promise<any> {
     const feedRecord = getFeed.get(url) as any;
-    const kind = feedRecord?.kind || detectFeedKind(url);
+    let kind = feedRecord?.kind || detectFeedKind(url);
+
+    // Allow upgrading 'generic' feeds if new patterns match
+    if (kind === 'generic') {
+        const upgradedKind = detectFeedKind(url);
+        if (upgradedKind !== 'generic') kind = upgradedKind;
+    }
 
     // Check if feed is in backoff period
     if (!force && feedRecord?.next_retry_after) {
@@ -724,7 +797,7 @@ async function fetchFeed(url: string, force: boolean): Promise<any> {
         const lastModified = response.headers.get('last-modified') || null;
 
         // Fetch/Update icon if missing or periodically
-        const icon_url = await fetchFeedIcon(url, kind, siteUrl);
+        const icon_url = await fetchFeedIcon(url, kind, siteUrl, feed);
 
         // Count existing items before insert
         const beforeCount = (countItemsByFeed.get(url) as any)?.count || 0;
@@ -1438,6 +1511,11 @@ fastify.post('/feeds', async (request, reply) => {
         }
     }
 
+    // Reddit auto-conversion
+    if (url.includes('reddit.com/r/') && !url.includes('.rss') && !url.includes('.json')) {
+        url = url.replace(/\/$/, '') + '.rss';
+    }
+
     // Validate URL
     if (!url.match(/^https?:\/\/.+/)) {
         reply.code(400);
@@ -1448,7 +1526,7 @@ fastify.post('/feeds', async (request, reply) => {
     }
 
     try {
-        // Detect feed kind and fetch icon
+        // Detect feed kind and fetch initial icon
         const kind = detectFeedKind(url);
         const icon_url = await fetchFeedIcon(url, kind);
 
@@ -1798,16 +1876,17 @@ fastify.get('/items', async (request, reply) => {
         params.push(feed);
     }
 
-    if (source && ['generic', 'youtube', 'reddit'].includes(source)) {
+    if (source && ['generic', 'youtube', 'reddit', 'podcast'].includes(source)) {
         conditions.push('i.source = ?');
         params.push(source);
     }
 
     // Smart folder filter (by feed kind)
-    if (smartFolder && ['rss', 'youtube', 'reddit'].includes(smartFolder)) {
+    if (smartFolder && ['rss', 'youtube', 'reddit', 'podcast'].includes(smartFolder)) {
         let kindValue = 'generic';
         if (smartFolder === 'youtube') kindValue = 'youtube';
         if (smartFolder === 'reddit') kindValue = 'reddit';
+        if (smartFolder === 'podcast') kindValue = 'podcast';
         conditions.push('f.kind = ?');
         params.push(kindValue);
     }

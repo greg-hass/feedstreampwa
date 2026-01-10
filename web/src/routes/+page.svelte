@@ -103,7 +103,8 @@
 		| "folder"
 		| "feed";
 	let viewMode: ViewMode = "all";
-	let activeSmartFolder: "rss" | "youtube" | "reddit" | null = null;
+	let activeSmartFolder: "rss" | "youtube" | "reddit" | "podcast" | null =
+		null;
 	let activeFolderId: string | null = null;
 
 	// Folder management modals
@@ -261,6 +262,9 @@
 		.reduce((sum, feed) => sum + (feed.unreadCount || 0), 0);
 	$: redditUnread = feeds
 		.filter((f) => f.smartFolder === "reddit")
+		.reduce((sum, feed) => sum + (feed.unreadCount || 0), 0);
+	$: podcastUnread = feeds
+		.filter((f) => f.smartFolder === "podcast")
 		.reduce((sum, feed) => sum + (feed.unreadCount || 0), 0);
 
 	// Compute unread counts for custom folders
@@ -1228,7 +1232,9 @@
 		loadItems();
 	}
 
-	function setViewSmartFolder(folder: "rss" | "youtube" | "reddit") {
+	function setViewSmartFolder(
+		folder: "rss" | "youtube" | "reddit" | "podcast",
+	) {
 		viewMode = "smart";
 		activeSmartFolder = folder;
 		activeFolderId = null;
@@ -1766,6 +1772,35 @@
 				<span>Reddit</span>
 				{#if redditUnread > 0}
 					<span class="badge">{redditUnread}</span>
+				{/if}
+			</button>
+
+			<button
+				class="nav-item smart-folder"
+				class:active={viewMode === "smart" &&
+					activeSmartFolder === "podcast"}
+				on:click={() => setViewSmartFolder("podcast")}
+			>
+				<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+					<circle
+						cx="9"
+						cy="9"
+						r="8"
+						stroke="currentColor"
+						stroke-width="1.5"
+						fill="none"
+					/>
+					<circle cx="9" cy="9" r="2" fill="currentColor" />
+					<path
+						d="M9 13v2M5 9a4 4 0 018 0M3 9a6 6 0 0112 0"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+					/>
+				</svg>
+				<span>Podcasts</span>
+				{#if podcastUnread > 0}
+					<span class="badge">{podcastUnread}</span>
 				{/if}
 			</button>
 
@@ -2427,6 +2462,43 @@
 						<span>Reddit</span>
 						{#if redditUnread > 0}
 							<span class="badge">{redditUnread}</span>
+						{/if}
+					</button>
+
+					<button
+						class="nav-item smart-folder"
+						class:active={viewMode === "smart" &&
+							activeSmartFolder === "podcast"}
+						on:click={() => {
+							setViewSmartFolder("podcast");
+							mobileMenuOpen = false;
+						}}
+					>
+						<svg
+							width="18"
+							height="18"
+							viewBox="0 0 18 18"
+							fill="none"
+						>
+							<circle
+								cx="9"
+								cy="9"
+								r="8"
+								stroke="currentColor"
+								stroke-width="1.5"
+								fill="none"
+							/>
+							<circle cx="9" cy="9" r="2" fill="currentColor" />
+							<path
+								d="M9 13v2M5 9a4 4 0 018 0M3 9a6 6 0 0112 0"
+								stroke="currentColor"
+								stroke-width="1.5"
+								stroke-linecap="round"
+							/>
+						</svg>
+						<span>Podcasts</span>
+						{#if podcastUnread > 0}
+							<span class="badge">{podcastUnread}</span>
 						{/if}
 					</button>
 
