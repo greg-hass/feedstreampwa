@@ -4776,6 +4776,9 @@
 		display: flex;
 		flex-direction: column;
 		animation: scaleIn 0.25s ease-out;
+		background: #18181b; /* Solid surface color for better contrast */
+		border: 1px solid var(--stroke-strong);
+		box-shadow: 0 24px 48px rgba(0,0,0,0.5);
 	}
 
 	.modal-tabs {
