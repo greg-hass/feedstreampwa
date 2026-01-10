@@ -1978,10 +1978,6 @@
 				>
 					<RefreshCw size={20} />
 				</button>
-
-				<button class="add-btn" on:click={openAddFeedModal}>
-					<Plus size={20} />
-				</button>
 			</div>
 		</header>
 
@@ -3668,12 +3664,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--gap);
-		/* Add mask to fade bottom scroll */
-		mask-image: linear-gradient(
-			to bottom,
-			black calc(100% - 40px),
-			transparent 100%
-		);
+		padding: var(--page-padding) var(--page-padding); /* Ensure padding isn't weird */
 	}
 
 	/* Premium Article Card */
@@ -4079,8 +4070,8 @@
 			position: sticky;
 			top: 0;
 			z-index: 100;
-			padding: max(env(safe-area-inset-top), 12px) 16px 12px;
-			background: rgba(18, 18, 20, 0.85);
+			padding: max(env(safe-area-inset-top), 8px) 16px 8px; /* Reduced vertical padding */
+			background: rgba(18, 18, 20, 0.95); /* Slightly more opaque */
 			backdrop-filter: blur(20px);
 			-webkit-backdrop-filter: blur(20px);
 			border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
