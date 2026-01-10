@@ -124,10 +124,60 @@
 	let mobileMenuOpen = false;
 	let mobileActiveTab: 'all' | 'unread' | 'bookmarks' | 'feeds' = 'all';
 
+    let syncInterval = 'off';
+    let settingsLoading = false;
+
+    async function fetchSettings() {
+        try {
+            settingsLoading = true;
+            const response = await fetch('/api/settings');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.ok) {
+                    syncInterval = data.settings.sync_interval || 'off';
+                }
+            }
+        } catch (e) {
+            console.error('Failed to fetch settings:', e);
+        } finally {
+            settingsLoading = false;
+        }
+    }
+
+    async function updateSyncInterval(newInterval: string) {
+        try {
+            const response = await fetch('/api/settings', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sync_interval: newInterval })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                if (data.ok) {
+                    syncInterval = newInterval;
+                }
+            }
+        } catch (e) {
+            console.error('Failed to update settings:', e);
+        }
+    }
+
+    async function handleSyncIntervalChange(e: Event) {
+        const target = e.target as HTMLSelectElement;
+        if (target) {
+            await updateSyncInterval(target.value);
+        }
+    }
+
 	onMount(() => {
-		loadFeeds();
-		loadFolders();
-		loadItems();
+		(async () => {
+			await Promise.all([
+				loadFeeds(),
+				loadFolders(),
+				loadItems(),
+				fetchSettings()
+			]);
+		})();
 
 		// Check if mobile and add resize listener
 		const checkMobile = () => {
@@ -1897,6 +1947,28 @@
 
 				<div class="modal-body">
 					<div class="settings-section">
+						<h3>Automatic Sync</h3>
+						<div class="settings-field">
+							<label for="sync-interval">Sync Interval</label>
+							<select 
+								id="sync-interval" 
+								class="settings-select" 
+								value={syncInterval} 
+								on:change={handleSyncIntervalChange}
+							>
+								<option value="off">Off</option>
+								<option value="15m">Every 15 minutes</option>
+								<option value="30m">Every 30 minutes</option>
+								<option value="1h">Every hour</option>
+								<option value="4h">Every 4 hours</option>
+								<option value="8h">Every 8 hours</option>
+								<option value="12h">Every 12 hours</option>
+								<option value="24h">Every 24 hours</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="settings-section">
 						<h3>OPML</h3>
 						<div class="settings-actions">
 							<button class="settings-btn" on:click={exportOpml}>
@@ -3215,6 +3287,44 @@
 		color: var(--muted);
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
+	}
+
+	.settings-field {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.settings-field label {
+		font-size: 14px;
+		color: var(--text);
+		font-weight: 500;
+	}
+
+	.settings-select {
+		width: 100%;
+		padding: 12px 16px;
+		background: var(--panel1);
+		border: 1px solid var(--stroke);
+		border-radius: 12px;
+		color: var(--text);
+		font-size: 14px;
+		cursor: pointer;
+		outline: none;
+		transition: all 0.2s;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 16px center;
+	}
+
+	.settings-select:hover {
+		border-color: var(--accent);
+	}
+
+	.settings-select:focus {
+		border-color: var(--accent);
+		box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.2);
 	}
 
 	.settings-actions {

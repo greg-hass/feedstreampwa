@@ -46,6 +46,67 @@ interface RefreshJob {
 const refreshJobs = new Map<string, RefreshJob>();
 const MAX_JOBS = 5;
 
+// Settings and Background Sync
+let backgroundSyncTimer: NodeJS.Timeout | null = null;
+const SYNC_INTERVAL_KEY = 'sync_interval';
+const LAST_SYNC_KEY = 'last_global_sync';
+
+function parseInterval(interval: string): number | null {
+    if (interval === 'off') return null;
+    const match = interval.match(/^(\d+)([mhd])$/);
+    if (!match) return null;
+    const val = parseInt(match[1], 10);
+    const unit = match[2];
+    if (unit === 'm') return val * 60 * 1000;
+    if (unit === 'h') return val * 60 * 60 * 1000;
+    if (unit === 'd') return val * 24 * 60 * 60 * 1000;
+    return null;
+}
+
+async function startBackgroundSync() {
+    fastify.log.info('Starting background sync runner...');
+
+    // Run every minute to check if sync is due
+    backgroundSyncTimer = setInterval(async () => {
+        try {
+            const intervalSetting = db.prepare('SELECT value FROM meta WHERE key = ?').get(SYNC_INTERVAL_KEY) as any;
+            const intervalStr = intervalSetting?.value || 'off';
+
+            if (intervalStr === 'off') return;
+
+            const intervalMs = parseInterval(intervalStr);
+            if (!intervalMs) return;
+
+            const lastSyncSetting = db.prepare('SELECT value FROM meta WHERE key = ?').get(LAST_SYNC_KEY) as any;
+            const lastSync = lastSyncSetting ? parseInt(lastSyncSetting.value, 10) : 0;
+            const now = Date.now();
+
+            if (now - lastSync >= intervalMs) {
+                fastify.log.info(`Background sync triggered (interval: ${intervalStr})...`);
+
+                // Get all feed URLs
+                const feeds = db.prepare('SELECT url FROM feeds').all() as any[];
+                const urls = feeds.map(f => f.url);
+
+                if (urls.length === 0) return;
+
+                // Update last sync time BEFORE starting to prevent concurrent triggers if it takes long
+                db.prepare('INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value')
+                    .run(LAST_SYNC_KEY, now.toString());
+
+                const limit = pLimit(MAX_CONCURRENCY);
+                await Promise.all(
+                    urls.map((url: string) => limit(() => fetchFeed(url, false)))
+                );
+
+                fastify.log.info('Background sync completed');
+            }
+        } catch (error: any) {
+            fastify.log.error(error, 'Background sync error');
+        }
+    }, 60 * 1000);
+}
+
 function createJobId(): string {
     return `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
@@ -2227,11 +2288,65 @@ fastify.get('/search', async (request, reply) => {
     }
 });
 
-// Start server
+// Settings management endpoints
+fastify.get('/settings', async (request, reply) => {
+    try {
+        const settings = db.prepare('SELECT key, value FROM meta').all() as any[];
+        const config: Record<string, string> = {};
+        settings.forEach(s => {
+            config[s.key] = s.value;
+        });
+
+        // Ensure defaults
+        if (!config[SYNC_INTERVAL_KEY]) config[SYNC_INTERVAL_KEY] = 'off';
+
+        return {
+            ok: true,
+            settings: config
+        };
+    } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500);
+        return { ok: false, error: 'Database error' };
+    }
+});
+
+fastify.patch('/settings', async (request, reply) => {
+    const body = request.body as any;
+    if (!body || typeof body !== 'object') {
+        reply.code(400);
+        return { ok: false, error: 'Invalid body' };
+    }
+
+    try {
+        const stmt = db.prepare(`
+            INSERT INTO meta (key, value) 
+            VALUES (?, ?) 
+            ON CONFLICT(key) DO UPDATE SET value = excluded.value
+        `);
+
+        db.transaction(() => {
+            for (const [key, value] of Object.entries(body)) {
+                if (typeof value === 'string') {
+                    stmt.run(key, value);
+                }
+            }
+        })();
+
+        return { ok: true };
+    } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500);
+        return { ok: false, error: 'Database error' };
+    }
+});
 const start = async () => {
     try {
         await fastify.listen({ port: PORT, host: '0.0.0.0' });
         fastify.log.info(`Server listening on http://0.0.0.0:${PORT}`);
+
+        // Start background sync
+        startBackgroundSync();
     } catch (err) {
         fastify.log.error(err);
         process.exit(1);
@@ -2241,6 +2356,9 @@ const start = async () => {
 // Graceful shutdown
 const shutdown = async () => {
     fastify.log.info('Shutting down gracefully...');
+    if (backgroundSyncTimer) {
+        clearInterval(backgroundSyncTimer);
+    }
     db.close();
     await fastify.close();
     process.exit(0);
