@@ -3697,7 +3697,7 @@
 	.article-card:hover {
 		transform: translateY(-4px);
 		border-color: var(--stroke-strong);
-		box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+		box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
 		background: #18181b; /* Slightly lighter on hover */
 	}
 
@@ -3769,12 +3769,12 @@
 	}
 
 	.action-icon-btn:hover {
-		background: rgba(255,255,255,0.06);
+		background: rgba(255, 255, 255, 0.06);
 		color: var(--text);
 	}
 
 	.action-icon-btn.active {
-		color: #FFB02E; /* Star color */
+		color: #ffb02e; /* Star color */
 	}
 
 	.read-indicator-dot {
@@ -3784,15 +3784,14 @@
 		border-radius: 50%;
 		box-shadow: 0 0 8px var(--accent-glow);
 	}
-	
+
 	.action-icon-btn.read .read-indicator-dot {
 		background: var(--stroke-strong);
 		box-shadow: none;
 		opacity: 0.3;
-		width: 6px; 
+		width: 6px;
 		height: 6px;
 	}
-
 
 	/* Title */
 	.article-title-premium {
@@ -3805,13 +3804,12 @@
 		margin: 0;
 		transition: color 0.2s;
 	}
-	
+
 	/* Unread State Highlight */
 	.article-card.unread .article-title-premium {
 		color: #fff;
 		font-weight: 700;
 	}
-
 
 	/* Body Layout (Text Left, Image Right) */
 	.article-body-layout {
@@ -3844,14 +3842,14 @@
 		background: var(--bg2);
 		border: 1px solid var(--stroke);
 	}
-	
+
 	.article-thumbnail-premium img {
 		width: 100%;
 		height: auto;
 		display: block;
 		object-fit: cover;
 	}
-	
+
 	.play-overlay-small {
 		position: absolute;
 		top: 50%;
@@ -3859,7 +3857,7 @@
 		transform: translate(-50%, -50%);
 		width: 36px;
 		height: 36px;
-		background: rgba(0,0,0,0.6);
+		background: rgba(0, 0, 0, 0.6);
 		border-radius: 50%;
 		display: flex;
 		align-items: center;
@@ -3878,7 +3876,6 @@
 		border: 1px solid var(--stroke);
 	}
 
-
 	/* Desktop Adjustments */
 	@media (min-width: 768px) {
 		.article-body-layout {
@@ -3887,15 +3884,14 @@
 		}
 
 		.article-thumbnail-premium {
-			width: 180px; 
+			width: 180px;
 			height: 120px; /* Fixed sized crop roughly */
 		}
-		
+
 		.article-thumbnail-premium img {
 			width: 100%;
 			height: 100%;
 		}
-	}
 	}
 
 	.article-card:hover .play-overlay {
@@ -4778,7 +4774,7 @@
 		animation: scaleIn 0.25s ease-out;
 		background: #18181b; /* Solid surface color for better contrast */
 		border: 1px solid var(--stroke-strong);
-		box-shadow: 0 24px 48px rgba(0,0,0,0.5);
+		box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
 	}
 
 	.modal-tabs {
