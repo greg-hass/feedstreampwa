@@ -3414,6 +3414,49 @@
 									>
 								</div>
 							{/if}
+
+							{#if folders.length > 0}
+								<div class="folder-selection-section">
+									<div class="section-label">
+										Also add to folder(s)
+									</div>
+									<div class="folder-checkboxes">
+										{#each folders as folder}
+											<label
+												class="folder-checkbox-label"
+											>
+												<input
+													type="checkbox"
+													value={folder.id}
+													checked={selectedFolderIdsForNewFeed.includes(
+														folder.id,
+													)}
+													on:change={(e) => {
+														if (
+															e.currentTarget
+																.checked
+														) {
+															selectedFolderIdsForNewFeed =
+																[
+																	...selectedFolderIdsForNewFeed,
+																	folder.id,
+																];
+														} else {
+															selectedFolderIdsForNewFeed =
+																selectedFolderIdsForNewFeed.filter(
+																	(id) =>
+																		id !==
+																		folder.id,
+																);
+														}
+													}}
+												/>
+												<span>{folder.name}</span>
+											</label>
+										{/each}
+									</div>
+								</div>
+							{/if}
 						</div>
 					{:else if addFeedTab === "bulk"}
 						<div class="input-group">
