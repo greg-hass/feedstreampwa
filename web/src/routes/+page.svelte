@@ -605,16 +605,6 @@
 
 	// Reactive stats
 
-	// Reload items when filters change
-	$: if (
-		sourceFilter ||
-		unreadOnly !== undefined ||
-		starredOnly !== undefined ||
-		selectedFeedUrl !== undefined
-	) {
-		loadItems();
-	}
-
 	// Debounced search
 	function handleSearchInput() {
 		if (searchDebounceTimer) {
