@@ -146,6 +146,13 @@ if (!columnExists('feeds', 'icon_url')) {
     fastify.log.info('icon_url column added successfully');
 }
 
+// Safe migration: Add custom_title column to feeds table if it doesn't exist
+if (!columnExists('feeds', 'custom_title')) {
+    fastify.log.info('Adding custom_title column to feeds table...');
+    db.exec(`ALTER TABLE feeds ADD COLUMN custom_title TEXT`);
+    fastify.log.info('custom_title column added successfully');
+}
+
 // FTS5 setup: Check if FTS5 is available
 try {
     db.exec(`CREATE VIRTUAL TABLE IF NOT EXISTS _fts5_test USING fts5(test)`);
@@ -282,7 +289,7 @@ const upsertFeed = db.prepare(`
   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(url) DO UPDATE SET
     kind = excluded.kind,
-    title = excluded.title,
+    title = COALESCE(feeds.custom_title, excluded.title),
     site_url = excluded.site_url,
     etag = excluded.etag,
     last_modified = excluded.last_modified,
@@ -426,8 +433,13 @@ function extractYouTubeMetadata(item: any, rawXml?: any): any {
     // Try media:group for thumbnail
     if (!metadata.media_thumbnail && item.mediaGroup) {
         const group = item.mediaGroup;
-        if (group['media:thumbnail'] && group['media:thumbnail']['@_url']) {
-            metadata.media_thumbnail = group['media:thumbnail']['@_url'];
+        const thumbnail = group['media:thumbnail'];
+        if (thumbnail) {
+            if (Array.isArray(thumbnail)) {
+                metadata.media_thumbnail = thumbnail[0]?.['@_url'] || thumbnail[0]?.url;
+            } else {
+                metadata.media_thumbnail = thumbnail['@_url'] || thumbnail.url;
+            }
         }
     }
 
@@ -571,7 +583,10 @@ async function fetchFeed(url: string, force: boolean): Promise<any> {
         const feed = await rssParser.parseString(text);
 
         // Extract feed metadata
-        const title = feed.title || null;
+        let title = feed.title || null;
+        if (kind === 'reddit' && title && !title.startsWith('r/')) {
+            title = `r/${title}`;
+        }
         const siteUrl = feed.link || null;
         const etag = response.headers.get('etag') || null;
         const lastModified = response.headers.get('last-modified') || null;
@@ -1125,6 +1140,7 @@ fastify.get('/feeds', async (request, reply) => {
                 f.last_status,
                 f.last_error,
                 f.icon_url,
+                f.custom_title,
                 COUNT(CASE WHEN i.is_read = 0 THEN 1 END) as unreadCount
             FROM feeds f
             LEFT JOIN items i ON f.url = i.feed_url
@@ -1233,9 +1249,34 @@ fastify.post('/feeds', async (request, reply) => {
         };
     }
 
-    const url = body.url.trim();
+    let url = body.url.trim();
     const refresh = body.refresh === true;
     const folderIds = Array.isArray(body.folderIds) ? body.folderIds : [];
+
+    // YouTube URL conversion: handle/channel to RSS
+    if (url.includes('youtube.com/')) {
+        // Handle @usernames
+        const handleMatch = url.match(/youtube\.com\/(@[a-zA-Z0-9_-]+)/);
+        if (handleMatch) {
+            try {
+                const response = await fetch(`https://www.youtube.com/${handleMatch[1]}`);
+                if (response.ok) {
+                    const text = await response.text();
+                    const channelIdMatch = text.match(/"channelId":"(UC[a-zA-Z0-9_-]+)"/);
+                    if (channelIdMatch) {
+                        url = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelIdMatch[1]}`;
+                    }
+                }
+            } catch (e) {
+                fastify.log.error(`Failed to convert YT handle: ${e}`);
+            }
+        }
+        // Handle /c/ or /channel/ or /user/
+        else if (url.includes('/channel/')) {
+            const id = url.split('/channel/')[1]?.split('/')[0]?.split('?')[0];
+            if (id) url = `https://www.youtube.com/feeds/videos.xml?channel_id=${id}`;
+        }
+    }
 
     // Validate URL
     if (!url.match(/^https?:\/\/.+/)) {
@@ -1292,6 +1333,40 @@ fastify.post('/feeds', async (request, reply) => {
             ok: false,
             error: 'Database error'
         };
+    }
+});
+
+// Rename feed endpoint
+fastify.patch('/feeds', async (request, reply) => {
+    const body = request.body as any;
+    const url = body?.url;
+    const title = body?.title?.trim();
+
+    if (!url || typeof url !== 'string') {
+        reply.code(400);
+        return { ok: false, error: 'url is required' };
+    }
+
+    if (title === undefined) {
+        reply.code(400);
+        return { ok: false, error: 'title is required' };
+    }
+
+    try {
+        const result = db.prepare(`
+            UPDATE feeds SET custom_title = ?, title = COALESCE(?, title) WHERE url = ?
+        `).run(title || null, title || null, url);
+
+        if (result.changes === 0) {
+            reply.code(404);
+            return { ok: false, error: 'Feed not found' };
+        }
+
+        return { ok: true };
+    } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500);
+        return { ok: false, error: 'Database error' };
     }
 });
 

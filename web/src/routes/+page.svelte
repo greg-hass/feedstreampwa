@@ -108,6 +108,12 @@
 	let showCreateFolderInPopover = false;
 	let newFolderNameInPopover = '';
 
+	// Context Menu
+	let showContextMenu = false;
+	let contextMenuType: 'folder' | 'feed' | null = null;
+	let contextMenuTarget: any = null;
+	let contextMenuPosition = { x: 0, y: 0 };
+
 	// Add Feed modal folder selection
 	let selectedFolderIdsForNewFeed: string[] = [];
 
@@ -1165,6 +1171,106 @@
 		newFolderNameInPopover = '';
 		feedFolderPopoverFeed = null;
 	}
+
+	// Context Menu Logic
+	function openContextMenu(type: 'folder' | 'feed', target: any, event: MouseEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+		
+		contextMenuType = type;
+		contextMenuTarget = target;
+		
+		const menuWidth = 180; // Estimated
+		const menuHeight = type === 'feed' ? 140 : 100; // Estimated based on items
+		
+		let x = event.clientX;
+		let y = event.clientY;
+		
+		// Smart positioning
+		if (x + menuWidth > window.innerWidth) {
+			x = window.innerWidth - menuWidth - 10;
+		}
+		
+		if (y + menuHeight > window.innerHeight) {
+			y = window.innerHeight - menuHeight - 10;
+		}
+		
+		contextMenuPosition = { x, y };
+		showContextMenu = true;
+		
+		// Click outside listener
+		setTimeout(() => {
+			window.addEventListener('click', closeContextMenu);
+		}, 0);
+	}
+
+	function closeContextMenu() {
+		showContextMenu = false;
+		contextMenuType = null;
+		contextMenuTarget = null;
+		window.removeEventListener('click', closeContextMenu);
+	}
+
+	async function renameFeed() {
+		const name = folderModalName.trim();
+		if (!name || name.length < 1 || name.length > 100) {
+			folderModalError = 'Feed name must be between 1 and 100 characters';
+			return;
+		}
+
+		if (contextMenuType !== 'feed' || !contextMenuTarget) return;
+
+		folderModalLoading = true;
+		folderModalError = null;
+
+		try {
+			const response = await fetch('/api/feeds', {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ url: contextMenuTarget.url, title: name })
+			});
+
+			const data = await response.json();
+
+			if (!response.ok) {
+				throw new Error(data.error || `HTTP ${response.status}`);
+			}
+
+			showRenameFolderModal = false; // Reuse rename modal
+			folderModalName = '';
+			await loadFeeds();
+		} catch (err) {
+			folderModalError = err instanceof Error ? err.message : 'Failed to rename feed';
+		} finally {
+			folderModalLoading = false;
+		}
+	}
+
+	async function deleteFeedConfirm() {
+		if (contextMenuType !== 'feed' || !contextMenuTarget) return;
+
+		try {
+			const response = await fetch(`/api/feeds?url=${encodeURIComponent(contextMenuTarget.url)}`, {
+				method: 'DELETE'
+			});
+
+			if (!response.ok) {
+				const data = await response.json();
+				throw new Error(data.error || `HTTP ${response.status}`);
+			}
+
+			showDeleteFolderConfirm = false; // Reuse delete confirm
+			
+			// If we're viewing the deleted feed, switch to All
+			if (viewMode === 'feed' && selectedFeedUrl === contextMenuTarget.url) {
+				setViewAll();
+			}
+
+			await loadFeeds();
+		} catch (err) {
+			alert(err instanceof Error ? err.message : 'Failed to delete feed');
+		}
+	}
 </script>
 
 <svelte:head>
@@ -1325,46 +1431,14 @@
 						</button>
 						<button 
 							class="folder-actions-btn"
-							on:click={(e) => {
-								e.stopPropagation();
-								selectedFolderForAction = folder;
-							}}
+							on:click={(e) => openContextMenu('folder', folder, e)}
+							title="Folder actions"
 						>
 							<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
 								<circle cx="8" cy="3" r="1.5" fill="currentColor"/>
 								<circle cx="8" cy="8" r="1.5" fill="currentColor"/>
 								<circle cx="8" cy="13" r="1.5" fill="currentColor"/>
 							</svg>
-							{#if selectedFolderForAction?.id === folder.id}
-								<div class="folder-actions-menu" on:click|stopPropagation>
-									<button 
-										class="menu-item"
-										on:click={() => {
-											folderModalName = folder.name;
-											folderModalError = null;
-											showRenameFolderModal = true;
-											selectedFolderForAction = folder;
-										}}
-									>
-										<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-											<path d="M10 1l3 3-7 7H3v-3l7-7z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-										</svg>
-										Rename
-									</button>
-									<button 
-										class="menu-item danger"
-										on:click={() => {
-											showDeleteFolderConfirm = true;
-											selectedFolderForAction = folder;
-										}}
-									>
-										<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-											<path d="M2 4h10M5 4V2h4v2M4 4v8h6V4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-										</svg>
-										Delete
-									</button>
-								</div>
-							{/if}
 						</button>
 					</div>
 				{/each}
@@ -1380,7 +1454,7 @@
 				>
 					<div class="feed-item-content">
 						{#if feed.icon_url}
-							<img src={feed.icon_url} alt="" class="feed-icon" on:error={(e) => e.target.style.display = 'none'} />
+							<img src={feed.icon_url} alt="" class="feed-icon" on:error={(e) => { const target = e.target; if (target instanceof HTMLImageElement) target.style.display = 'none'; }} />
 						{:else}
 							<div class="feed-icon-fallback {feed.kind}">
 								{#if feed.kind === 'youtube'}
@@ -1410,11 +1484,13 @@
 					</div>
 					<button 
 						class="feed-folder-btn"
-						on:click={(e) => openFeedFolderPopover(feed, e)}
-						title="Add to folder"
+						on:click={(e) => openContextMenu('feed', feed, e)}
+						title="Feed actions"
 					>
-						<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-							<path d="M7 3v8M3 7h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+							<circle cx="8" cy="3" r="1.5" fill="currentColor"/>
+							<circle cx="8" cy="8" r="1.5" fill="currentColor"/>
+							<circle cx="8" cy="13" r="1.5" fill="currentColor"/>
 						</svg>
 					</button>
 				</button>
@@ -1694,7 +1770,7 @@
 						>
 							<div class="feed-item-content">
 								{#if feed.icon_url}
-									<img src={feed.icon_url} alt="" class="feed-icon" on:error={(e) => e.target.style.display = 'none'} />
+									<img src={feed.icon_url} alt="" class="feed-icon" on:error={(e) => { const target = e.target; if (target instanceof HTMLImageElement) target.style.display = 'none'; }} />
 								{:else}
 									<div class="feed-icon-fallback {feed.kind}">
 										{#if feed.kind === 'youtube'}
@@ -2170,17 +2246,17 @@
 		<div class="modal-overlay" on:click={() => { showRenameFolderModal = false; folderModalName = ''; folderModalError = null; }}>
 			<div class="folder-modal glass-panel" on:click|stopPropagation>
 				<div class="modal-header">
-					<h2>Rename Folder</h2>
+					<h2>Rename {contextMenuType === 'feed' ? 'Feed' : 'Folder'}</h2>
 					<button class="close-btn" on:click={() => { showRenameFolderModal = false; folderModalName = ''; folderModalError = null; }}>×</button>
 				</div>
 				<div class="modal-body">
 					<input
 						type="text"
 						bind:value={folderModalName}
-						placeholder="Folder name"
+						placeholder="Enter new name..."
 						class="folder-input"
-						maxlength="60"
-						on:keydown={(e) => e.key === 'Enter' && renameFolder()}
+						maxlength="100"
+						on:keydown={(e) => e.key === 'Enter' && (contextMenuType === 'feed' ? renameFeed() : renameFolder())}
 					/>
 					{#if folderModalError}
 						<div class="folder-error">{folderModalError}</div>
@@ -2188,7 +2264,7 @@
 				</div>
 				<div class="modal-footer">
 					<button class="secondary-btn" on:click={() => { showRenameFolderModal = false; folderModalName = ''; folderModalError = null; }}>Cancel</button>
-					<button class="primary-btn" disabled={folderModalLoading || !folderModalName.trim()} on:click={renameFolder}>
+					<button class="primary-btn" disabled={folderModalLoading || !folderModalName.trim()} on:click={contextMenuType === 'feed' ? renameFeed : renameFolder}>
 						{folderModalLoading ? 'Renaming...' : 'Rename'}
 					</button>
 				</div>
@@ -2196,21 +2272,25 @@
 		</div>
 	{/if}
 
-	<!-- Delete Folder Confirm -->
+	<!-- Delete Confirm (Generic) -->
 	{#if showDeleteFolderConfirm}
 		<div class="modal-overlay" on:click={() => { showDeleteFolderConfirm = false; selectedFolderForAction = null; }}>
-			<div class="folder-modal glass-panel" on:click|stopPropagation>
+			<div class="modal folder-modal glass-panel" on:click|stopPropagation>
 				<div class="modal-header">
-					<h2>Delete Folder</h2>
+					<h2>Delete {contextMenuType === 'feed' ? 'Feed' : 'Folder'}</h2>
 					<button class="close-btn" on:click={() => { showDeleteFolderConfirm = false; selectedFolderForAction = null; }}>×</button>
 				</div>
 				<div class="modal-body">
-					<p>Are you sure you want to delete "{selectedFolderForAction?.name}"?</p>
-					<p class="warning-text">This will remove all feed associations but won't delete the feeds themselves.</p>
+					<p>Are you sure you want to delete <strong>{contextMenuType === 'feed' ? (contextMenuTarget?.title || contextMenuTarget?.url) : selectedFolderForAction?.name}</strong>?</p>
+					{#if contextMenuType !== 'feed'}
+						<p class="warning-text">This will remove all feed associations but won't delete the feeds themselves.</p>
+					{:else}
+						<p class="warning-text">This will remove the feed and all its articles from your library.</p>
+					{/if}
 				</div>
 				<div class="modal-footer">
 					<button class="secondary-btn" on:click={() => { showDeleteFolderConfirm = false; selectedFolderForAction = null; }}>Cancel</button>
-					<button class="danger-btn" on:click={deleteFolder}>Delete</button>
+					<button class="danger-btn" on:click={contextMenuType === 'feed' ? deleteFeedConfirm : deleteFolder}>Delete</button>
 				</div>
 			</div>
 		</div>
@@ -2292,6 +2372,70 @@
 					<div class="progress-fill" style="width: {refreshTotal > 0 ? (refreshCurrent / refreshTotal * 100) : 0}%"></div>
 				</div>
 			</div>
+		</div>
+	{/if}
+
+	<!-- Context Menu -->
+	{#if showContextMenu}
+		<div 
+			class="context-menu glass-panel" 
+			style="left: {contextMenuPosition.x}px; top: {contextMenuPosition.y}px;"
+			on:click|stopPropagation
+		>
+			<button 
+				class="menu-item"
+				on:click={() => {
+					if (contextMenuType === 'folder') {
+						selectedFolderForAction = contextMenuTarget;
+						folderModalName = contextMenuTarget.name;
+						folderModalError = null;
+						showRenameFolderModal = true;
+					} else {
+						folderModalName = contextMenuTarget.title || '';
+						folderModalError = null;
+						showRenameFolderModal = true;
+					}
+					closeContextMenu();
+				}}
+			>
+				<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+					<path d="M10 1l3 3-7 7H3v-3l7-7z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+				</svg>
+				Rename
+			</button>
+
+			{#if contextMenuType === 'feed'}
+				<button 
+					class="menu-item"
+					on:click={(e) => {
+						openFeedFolderPopover(contextMenuTarget, e);
+						closeContextMenu();
+					}}
+				>
+					<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+						<path d="M2 4h5l1 2h8v10H2V4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+					</svg>
+					Move to Folder
+				</button>
+			{/if}
+
+			<button 
+				class="menu-item danger"
+				on:click={() => {
+					if (contextMenuType === 'folder') {
+						selectedFolderForAction = contextMenuTarget;
+						showDeleteFolderConfirm = true;
+					} else {
+						showDeleteFolderConfirm = true; 
+					}
+					closeContextMenu();
+				}}
+			>
+				<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+					<path d="M2 4h10M5 4V2h4v2M4 4v8h6V4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+				</svg>
+				Delete
+			</button>
 		</div>
 	{/if}
 </div>
@@ -2455,9 +2599,9 @@
 		padding: 0 var(--page-padding);
         margin-bottom: 0;
         z-index: 10;
-        /* Remove glass-panel class style overrides as it might be double applied */
-        background: transparent; 
-        border: none;
+        /* Removed glass effect for solid opaque look */
+        background: var(--bg0); 
+        border-bottom: 1px solid var(--stroke);
         backdrop-filter: none;
         box-shadow: none;
 	}
@@ -2824,7 +2968,7 @@
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background: rgba(0, 0, 0, 0.6);
+		background: rgba(0, 0, 0, 0.75);
 		z-index: 2000;
 		animation: fadeIn 0.2s;
 	}
@@ -2972,7 +3116,6 @@
 		right: 0;
 		bottom: 0;
 		background: rgba(0, 0, 0, 0.85);
-		backdrop-filter: blur(8px);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -3167,8 +3310,7 @@
 	.reader-overlay {
 		position: fixed;
 		inset: 0;
-		background: rgba(0, 0, 0, 0.92);
-		backdrop-filter: blur(12px);
+		background: var(--bg0);
 		z-index: 2000;
 		display: flex;
 		justify-content: center;
@@ -3191,8 +3333,8 @@
 		margin-bottom: 32px;
 		position: sticky;
 		top: 0;
-		background: rgba(0, 0, 0, 0.8);
-		backdrop-filter: blur(8px);
+		background: var(--bg0);
+		border-bottom: 1px solid var(--stroke);
 		padding: 16px 0;
 		z-index: 10;
 	}
@@ -4282,7 +4424,6 @@
 		inset: 0;
 		z-index: 2000;
 	}
-
 	.feed-folder-popover {
 		position: fixed;
 		min-width: 240px;
@@ -4298,6 +4439,24 @@
 		justify-content: space-between;
 		padding: 12px 14px;
 		border-bottom: 1px solid var(--stroke);
+	}
+
+	.context-menu {
+		position: fixed;
+		min-width: 180px;
+		background: var(--panel1);
+		border: 1px solid var(--stroke);
+		border-radius: var(--radiusM);
+		box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+		padding: 6px;
+		z-index: 3000;
+		animation: scaleIn 0.15s ease-out;
+	}
+
+	.context-menu .menu-item {
+		width: 100%;
+		padding: 10px 12px;
+		border-radius: var(--radiusS);
 	}
 
 	.popover-header span {
