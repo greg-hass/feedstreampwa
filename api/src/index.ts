@@ -1382,17 +1382,28 @@ fastify.post('/feeds', async (request, reply) => {
     const folderIds = Array.isArray(body.folderIds) ? body.folderIds : [];
 
     // YouTube URL conversion: handle/channel to RSS
+    let extractedTitle: string | null = null;
     if (url.includes('youtube.com/')) {
         // Handle @usernames
         const handleMatch = url.match(/youtube\.com\/(@[a-zA-Z0-9_-]+)/);
         if (handleMatch) {
             try {
-                const response = await fetch(`https://www.youtube.com/${handleMatch[1]}`);
+                const response = await fetch(`https://www.youtube.com/${handleMatch[1]}`, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    }
+                });
                 if (response.ok) {
                     const text = await response.text();
                     const channelIdMatch = text.match(/"channelId":"(UC[a-zA-Z0-9_-]+)"/);
                     if (channelIdMatch) {
                         url = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelIdMatch[1]}`;
+                    }
+
+                    // Try to extract channel name
+                    const titleMatch = text.match(/<title>([^<]+) - YouTube<\/title>/i) || text.match(/"title":"([^"]+)"/);
+                    if (titleMatch) {
+                        extractedTitle = titleMatch[1];
                     }
                 }
             } catch (e) {
@@ -1402,7 +1413,21 @@ fastify.post('/feeds', async (request, reply) => {
         // Handle /c/ or /channel/ or /user/
         else if (url.includes('/channel/')) {
             const id = url.split('/channel/')[1]?.split('/')[0]?.split('?')[0];
-            if (id) url = `https://www.youtube.com/feeds/videos.xml?channel_id=${id}`;
+            if (id) {
+                url = `https://www.youtube.com/feeds/videos.xml?channel_id=${id}`;
+                try {
+                    const response = await fetch(`https://www.youtube.com/channel/${id}`, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                        }
+                    });
+                    if (response.ok) {
+                        const text = await response.text();
+                        const titleMatch = text.match(/<title>([^<]+) - YouTube<\/title>/i) || text.match(/"title":"([^"]+)"/);
+                        if (titleMatch) extractedTitle = titleMatch[1];
+                    }
+                } catch (e) { }
+            }
         }
     }
 
@@ -1422,10 +1447,13 @@ fastify.post('/feeds', async (request, reply) => {
 
         // Insert feed if not exists
         const stmt = db.prepare(`
-            INSERT OR IGNORE INTO feeds (url, kind, title, site_url, etag, last_modified, last_checked, last_status, last_error, icon_url)
-            VALUES (?, ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, ?)
+            INSERT INTO feeds (url, kind, title, site_url, etag, last_modified, last_checked, last_status, last_error, icon_url)
+            VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, ?)
+            ON CONFLICT(url) DO UPDATE SET 
+                title = CASE WHEN excluded.title IS NOT NULL THEN excluded.title ELSE feeds.title END,
+                icon_url = excluded.icon_url
         `);
-        stmt.run(url, kind, icon_url);
+        stmt.run(url, kind, extractedTitle, icon_url);
 
         // Add to custom folders if provided
         if (folderIds.length > 0) {
@@ -2033,6 +2061,55 @@ fastify.get('/reader', async (request, reply) => {
                 contentHtml: cached.content_html,
                 fromCache: true
             };
+        }
+
+        // Special handling for YouTube videos
+        if (targetUrl.includes('youtube.com/watch') || targetUrl.includes('youtu.be/')) {
+            let videoId = null;
+            if (targetUrl.includes('v=')) {
+                videoId = targetUrl.split('v=')[1]?.split('&')[0];
+            } else if (targetUrl.includes('youtu.be/')) {
+                videoId = targetUrl.split('youtu.be/')[1]?.split('?')[0];
+            }
+
+            if (videoId) {
+                const embedHtml = `
+                    <div class="video-container" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 12px; margin-bottom: 20px;">
+                        <iframe 
+                            src="https://www.youtube.com/embed/${videoId}?autoplay=1" 
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" 
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                `;
+
+                const result = {
+                    ok: true,
+                    url: targetUrl,
+                    title: 'YouTube Video',
+                    byline: null,
+                    excerpt: null,
+                    siteName: 'YouTube',
+                    imageUrl: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+                    contentHtml: embedHtml,
+                    fromCache: false
+                };
+
+                // Cache it
+                const now = new Date().toISOString();
+                db.prepare(`
+                    INSERT INTO reader_cache (url, title, byline, excerpt, site_name, image_url, content_html, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(url) DO UPDATE SET
+                        title = excluded.title,
+                        content_html = excluded.content_html,
+                        updated_at = excluded.updated_at
+                `).run(targetUrl, result.title, null, null, 'YouTube', result.imageUrl, embedHtml, now, now);
+
+                return result;
+            }
         }
 
         // Fetch the page HTML
