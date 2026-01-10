@@ -1786,18 +1786,29 @@
 				on:click={() => setViewSmartFolder("reddit")}
 			>
 				<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+					<!-- Reddit alien head -->
 					<circle
 						cx="9"
-						cy="9"
-						r="7"
+						cy="10"
+						r="6"
 						stroke="currentColor"
 						stroke-width="1.5"
 						fill="none"
 					/>
-					<circle cx="6" cy="8" r="1" fill="currentColor" />
-					<circle cx="12" cy="8" r="1" fill="currentColor" />
+					<!-- Antenna -->
 					<path
-						d="M6 11c.5 1 1.5 1.5 3 1.5s2.5-.5 3-1.5"
+						d="M9 4V2"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+					/>
+					<circle cx="9" cy="2" r="1.5" fill="currentColor" />
+					<!-- Eyes -->
+					<circle cx="6.5" cy="9.5" r="1" fill="currentColor" />
+					<circle cx="11.5" cy="9.5" r="1" fill="currentColor" />
+					<!-- Smile -->
+					<path
+						d="M6.5 12c.5.8 1.2 1.2 2.5 1.2s2-.4 2.5-1.2"
 						stroke="currentColor"
 						stroke-width="1.5"
 						stroke-linecap="round"
@@ -2494,18 +2505,39 @@
 							viewBox="0 0 18 18"
 							fill="none"
 						>
+							<!-- Reddit alien head -->
 							<circle
 								cx="9"
-								cy="9"
-								r="7"
+								cy="10"
+								r="6"
 								stroke="currentColor"
 								stroke-width="1.5"
 								fill="none"
 							/>
-							<circle cx="6" cy="8" r="1" fill="currentColor" />
-							<circle cx="12" cy="8" r="1" fill="currentColor" />
+							<!-- Antenna -->
 							<path
-								d="M6 11c.5 1 1.5 1.5 3 1.5s2.5-.5 3-1.5"
+								d="M9 4V2"
+								stroke="currentColor"
+								stroke-width="1.5"
+								stroke-linecap="round"
+							/>
+							<circle cx="9" cy="2" r="1.5" fill="currentColor" />
+							<!-- Eyes -->
+							<circle
+								cx="6.5"
+								cy="9.5"
+								r="1"
+								fill="currentColor"
+							/>
+							<circle
+								cx="11.5"
+								cy="9.5"
+								r="1"
+								fill="currentColor"
+							/>
+							<!-- Smile -->
+							<path
+								d="M6.5 12c.5.8 1.2 1.2 2.5 1.2s2-.4 2.5-1.2"
 								stroke="currentColor"
 								stroke-width="1.5"
 								stroke-linecap="round"
