@@ -4798,6 +4798,47 @@
 			padding: 60px 20px;
 			font-size: 16px;
 		}
+
+		/* Hide article summaries on mobile for cleaner look */
+		.article-summary {
+			display: none;
+		}
+
+		/* Hide author on mobile */
+		.article-meta span:nth-child(3),
+		.article-meta span:nth-child(4) {
+			display: none;
+		}
+
+		/* Simplify article metadata */
+		.article-meta {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			font-size: 13px;
+			color: var(--muted);
+		}
+
+		.feed-favicon {
+			width: 16px;
+			height: 16px;
+			border-radius: 4px;
+		}
+
+		/* Clean article header layout */
+		.article-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+			gap: 12px;
+			margin-bottom: 8px;
+		}
+
+		.article-actions {
+			display: flex;
+			gap: 8px;
+			flex-shrink: 0;
+		}
 	}
 
 	/* Modal Styles */
