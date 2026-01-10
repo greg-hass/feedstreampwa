@@ -19,9 +19,9 @@ export async function fetchItems(params: FetchItemsParams = {}): Promise<{
 }> {
     const searchParams = new URLSearchParams();
 
-    if (params.feedUrl) searchParams.set('feed_url', params.feedUrl);
-    if (params.folderId) searchParams.set('folder_id', params.folderId);
-    if (params.smartFolder) searchParams.set('smart_folder', params.smartFolder);
+    if (params.feedUrl) searchParams.set('feed', params.feedUrl);
+    if (params.folderId) searchParams.set('folderId', params.folderId);
+    if (params.smartFolder) searchParams.set('smartFolder', params.smartFolder);
     if (params.unreadOnly) searchParams.set('unreadOnly', 'true');
     if (params.starredOnly) searchParams.set('starredOnly', '1');
     if (params.limit) searchParams.set('limit', params.limit.toString());

@@ -3659,12 +3659,14 @@
 	/* Articles Container */
 	.articles-container {
 		flex: 1;
+		min-height: 0; /* Critical for flex scrolling */
 		overflow-y: auto;
-		padding: 0 var(--page-padding) var(--page-padding);
 		display: flex;
 		flex-direction: column;
 		gap: var(--gap);
-		padding: var(--page-padding) var(--page-padding); /* Ensure padding isn't weird */
+		padding: var(--page-padding) var(--page-padding);
+		border: 2px solid red; /* DEBUG: Verify container visibility */
+		/* transform: translateZ(0); */ /* Ensure GPU layer */
 	}
 
 	/* Premium Article Card */
@@ -3677,6 +3679,7 @@
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
+		min-height: 120px; /* Prevent collapse if empty */
 	}
 
 	.article-card:hover {
@@ -4543,6 +4546,26 @@
 			opacity: 1;
 			transform: scale(1);
 		}
+	}
+
+	/* App Layout */
+	.app-container {
+		display: flex;
+		height: 100vh; /* Force full viewport height */
+		width: 100vw;
+		overflow: hidden; /* Prevent body scroll */
+		background: var(--bg0);
+	}
+
+	.articles-container {
+		flex: 1; /* Allow articles to take available space */
+		min-height: 0; /* Enable scrolling within flex container */
+		overflow-y: auto; /* Enable vertical scrolling */
+		padding-bottom: 100px; /* Add some padding at the bottom */
+	}
+
+	.article-card {
+		min-height: 120px; /* Ensure a minimum height for cards */
 	}
 
 	/* Reader View Styles */

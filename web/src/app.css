@@ -165,7 +165,7 @@ button {
   -webkit-transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  contain: content;
+  -webkit-backface-visibility: hidden;
 }
 
 /* Blur-up optimization */
