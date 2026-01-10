@@ -125,6 +125,7 @@
   let feedSearchLoading = false;
   let feedSearchError: string | null = null;
   let feedSearchType: "all" | "rss" | "youtube" | "reddit" = "all";
+  const feedSearchTypes = ["all", "rss", "youtube", "reddit"] as const;
   let feedSearchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Refresh toast state
@@ -223,7 +224,8 @@
   }
 
   onMount(() => {
-    isSettingsModalOpen.subscribe(v => showSettings = v); isAddFeedModalOpen.subscribe(v => showAddFeedModal = v);
+    isSettingsModalOpen.subscribe((v) => (showSettings = v));
+    isAddFeedModalOpen.subscribe((v) => (showAddFeedModal = v));
     (async () => {
       await Promise.all([
         loadFeeds(),
@@ -391,7 +393,7 @@
       }
 
       if ($selectedFeedUrl === url) {
-        selectedFeedUrl = null;
+        selectedFeedUrl.set(null);
       }
 
       await loadFeeds();
@@ -595,7 +597,7 @@
   }
 
   function selectFeed(url: string | null) {
-    selectedFeedUrl = url;
+    selectedFeedUrl.set(url);
     loadItems();
   }
 
@@ -946,6 +948,11 @@
     }
   }
 
+  // Wrapper for FeedGrid component
+  function openArticle(item: any) {
+    openReader(item);
+  }
+
   // Add Feed modal functions
   function openAddFeedModal() {
     showAddFeedModal = true;
@@ -1244,7 +1251,12 @@
   }
 
   // Reactive: reload items when view mode changes
-  $: if ($viewMode || $activeSmartFolder || $activeFolderId || $selectedFeedUrl !== undefined) {
+  $: if (
+    $viewMode ||
+    $activeSmartFolder ||
+    $activeFolderId ||
+    $selectedFeedUrl !== undefined
+  ) {
     loadItems();
   }
 
@@ -1897,7 +1909,14 @@
       >
     </div>
     <!-- Articles List -->
-    <FeedGrid items={items} on:open={(e) => handleArticleClick({target: {}}, e.detail.item)} on:toggleStar={(e) => toggleStar(e.detail.item)} on:toggleRead={(e) => toggleRead(e.detail.item)} on:play={(e) => playMedia(e.detail.item)} /> <div class="articles-container" style="display:none">
+    <FeedGrid
+      {items}
+      on:open={(e) => openArticle(e.detail.item)}
+      on:toggleStar={(e) => toggleStar(e.detail.item)}
+      on:toggleRead={(e) => toggleRead(e.detail.item)}
+      on:play={(e) => playMedia(e.detail.item)}
+    />
+    <div class="articles-container" style="display:none">
       {#if itemsLoading}
         <div class="empty-state">Loading articles...</div>
       {:else if itemsError}
@@ -2016,7 +2035,8 @@
   <!-- Mobile Drawer Overlay -->
   {#if isMobile && mobileMenuOpen}
     <div
-      class="mobile-drawer-overlay" style="display:none"
+      class="mobile-drawer-overlay"
+      style="display:none"
       on:click={() => (mobileMenuOpen = false)}
     >
       <aside class="mobile-drawer sidebar" on:click|stopPropagation>
@@ -2147,7 +2167,8 @@
           {#each feeds as feed}
             <button
               class="feed-item"
-              class:active={$viewMode === "feed" && $selectedFeedUrl === feed.url}
+              class:active={$viewMode === "feed" &&
+                $selectedFeedUrl === feed.url}
               on:click={() => {
                 setViewFeed(feed.url);
                 mobileMenuOpen = false;
@@ -2266,28 +2287,36 @@
   <!-- Settings Modal -->
   <!-- Settings Modal -->
   {#if showSettings}
-    <div 
+    <div
       class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
       on:click={() => (showSettings = false)}
     >
-      <div 
+      <div
         class="w-full max-w-lg overflow-hidden glass rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200"
         on:click|stopPropagation
       >
         <!-- Header -->
-        <div class="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/5">
+        <div
+          class="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/5"
+        >
           <h2 class="text-lg font-semibold text-white">Settings</h2>
-          <button class="text-white/40 hover:text-white transition-colors" on:click={() => (showSettings = false)}>
+          <button
+            class="text-white/40 hover:text-white transition-colors"
+            on:click={() => (showSettings = false)}
+          >
             <X size={20} />
           </button>
         </div>
 
         <!-- Body -->
         <div class="p-6 space-y-6">
-          
           <!-- Sync Section -->
           <div class="space-y-3">
-            <h3 class="text-sm font-medium text-white/60 uppercase tracking-wider">Automatic Sync</h3>
+            <h3
+              class="text-sm font-medium text-white/60 uppercase tracking-wider"
+            >
+              Automatic Sync
+            </h3>
             <div class="relative">
               <select
                 class="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white appearance-none focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all"
@@ -2295,25 +2324,53 @@
                 on:change={handleSyncIntervalChange}
               >
                 <option value="off" class="bg-surface text-white">Off</option>
-                <option value="15m" class="bg-surface text-white">Every 15 minutes</option>
-                <option value="30m" class="bg-surface text-white">Every 30 minutes</option>
-                <option value="1h" class="bg-surface text-white">Every hour</option>
-                <option value="4h" class="bg-surface text-white">Every 4 hours</option>
-                <option value="8h" class="bg-surface text-white">Every 8 hours</option>
-                <option value="12h" class="bg-surface text-white">Every 12 hours</option>
-                <option value="24h" class="bg-surface text-white">Every 24 hours</option>
+                <option value="15m" class="bg-surface text-white"
+                  >Every 15 minutes</option
+                >
+                <option value="30m" class="bg-surface text-white"
+                  >Every 30 minutes</option
+                >
+                <option value="1h" class="bg-surface text-white"
+                  >Every hour</option
+                >
+                <option value="4h" class="bg-surface text-white"
+                  >Every 4 hours</option
+                >
+                <option value="8h" class="bg-surface text-white"
+                  >Every 8 hours</option
+                >
+                <option value="12h" class="bg-surface text-white"
+                  >Every 12 hours</option
+                >
+                <option value="24h" class="bg-surface text-white"
+                  >Every 24 hours</option
+                >
               </select>
-              <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/40">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div
+                class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/40"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"
+                  ><path
+                    d="M2 4L6 8L10 4"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  /></svg
+                >
               </div>
             </div>
           </div>
 
           <!-- OPML Section -->
           <div class="space-y-3">
-            <h3 class="text-sm font-medium text-white/60 uppercase tracking-wider">OPML Management</h3>
+            <h3
+              class="text-sm font-medium text-white/60 uppercase tracking-wider"
+            >
+              OPML Management
+            </h3>
             <div class="grid grid-cols-2 gap-3">
-              <button 
+              <button
                 class="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-white transition-all hover:scale-[1.02]"
                 on:click={exportOpml}
               >
@@ -2321,7 +2378,9 @@
                 <span>Export</span>
               </button>
 
-              <label class="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-white transition-all hover:scale-[1.02] cursor-pointer">
+              <label
+                class="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-white transition-all hover:scale-[1.02] cursor-pointer"
+              >
                 <Upload size={18} />
                 <span>{importingOpml ? "Importing..." : "Import"}</span>
                 <input
@@ -2336,12 +2395,20 @@
 
             <!-- Import Results -->
             {#if importResults}
-              <div class="mt-4 p-4 rounded-xl bg-black/20 border border-white/10 text-sm">
+              <div
+                class="mt-4 p-4 rounded-xl bg-black/20 border border-white/10 text-sm"
+              >
                 <div class="flex gap-4 mb-2">
-                  <span class="text-green-400">✓ Added: {importResults.added}</span>
-                  <span class="text-yellow-400">⊘ Skipped: {importResults.skipped}</span>
+                  <span class="text-green-400"
+                    >✓ Added: {importResults.added}</span
+                  >
+                  <span class="text-yellow-400"
+                    >⊘ Skipped: {importResults.skipped}</span
+                  >
                   {#if importResults.failed.length > 0}
-                    <span class="text-red-400">✗ Failed: {importResults.failed.length}</span>
+                    <span class="text-red-400"
+                      >✗ Failed: {importResults.failed.length}</span
+                    >
                   {/if}
                 </div>
                 {#if importResults.failed.length > 0}
@@ -2356,7 +2423,6 @@
               </div>
             {/if}
           </div>
-
         </div>
       </div>
     </div>
@@ -2452,179 +2518,239 @@
 
   <!-- Add Feed Modal -->
   {#if showAddFeedModal}
-    <div 
+    <div
       class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
       on:click={closeAddFeedModal}
     >
-      <div 
+      <div
         class="w-full max-w-lg overflow-hidden glass rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200"
         on:click|stopPropagation
       >
         <!-- Header -->
-        <div class="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/5">
+        <div
+          class="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/5"
+        >
           <h2 class="text-lg font-semibold text-white">Add Feed</h2>
-          <button class="text-white/40 hover:text-white transition-colors" on:click={closeAddFeedModal}>
+          <button
+            class="text-white/40 hover:text-white transition-colors"
+            on:click={closeAddFeedModal}
+          >
             <X size={20} />
           </button>
         </div>
 
         <!-- Custom Tabs -->
-        <div class="flex p-1 mx-6 mt-6 bg-black/20 rounded-xl border border-white/5">
-           <button 
-             class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all {addFeedTab === 'url' ? 'bg-white/10 text-white shadow-sm' : 'text-white/40 hover:text-white'}"
-             on:click={() => (addFeedTab = 'url')}
-           >
-             <Link size={14} /> URL
-           </button>
-           <button 
-             class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all {addFeedTab === 'search' ? 'bg-white/10 text-white shadow-sm' : 'text-white/40 hover:text-white'}"
-             on:click={() => (addFeedTab = 'search')}
-           >
-             <Search size={14} /> Search
-           </button>
-           <button 
-             class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all {addFeedTab === 'bulk' ? 'bg-white/10 text-white shadow-sm' : 'text-white/40 hover:text-white'}"
-             on:click={() => (addFeedTab = 'bulk')}
-           >
-             <List size={14} /> Bulk
-           </button>
+        <div
+          class="flex p-1 mx-6 mt-6 bg-black/20 rounded-xl border border-white/5"
+        >
+          <button
+            class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all {addFeedTab ===
+            'url'
+              ? 'bg-white/10 text-white shadow-sm'
+              : 'text-white/40 hover:text-white'}"
+            on:click={() => (addFeedTab = "url")}
+          >
+            <Link size={14} /> URL
+          </button>
+          <button
+            class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all {addFeedTab ===
+            'search'
+              ? 'bg-white/10 text-white shadow-sm'
+              : 'text-white/40 hover:text-white'}"
+            on:click={() => (addFeedTab = "search")}
+          >
+            <Search size={14} /> Search
+          </button>
+          <button
+            class="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all {addFeedTab ===
+            'bulk'
+              ? 'bg-white/10 text-white shadow-sm'
+              : 'text-white/40 hover:text-white'}"
+            on:click={() => (addFeedTab = "bulk")}
+          >
+            <List size={14} /> Bulk
+          </button>
         </div>
 
         <!-- Body -->
         <div class="p-6">
-          
           <!-- URL Tab -->
-          {#if addFeedTab === 'url'}
+          {#if addFeedTab === "url"}
             <div class="space-y-4">
-               <div class="relative">
-                 <div class="absolute left-4 top-1/2 -translate-y-1/2 text-white/40"><Link size={18} /></div>
-                 <input 
-                   type="text" 
-                   bind:value={addFeedUrl}
-                   placeholder="Paste URL (RSS, YouTube, Reddit)..."
-                   class="w-full pl-11 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all"
-                   on:keydown={(e) => e.key === "Enter" && submitAddFeed()}
-                 />
-               </div>
+              <div class="relative">
+                <div
+                  class="absolute left-4 top-1/2 -translate-y-1/2 text-white/40"
+                >
+                  <Link size={18} />
+                </div>
+                <input
+                  type="text"
+                  bind:value={addFeedUrl}
+                  placeholder="Paste URL (RSS, YouTube, Reddit)..."
+                  class="w-full pl-11 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all"
+                  on:keydown={(e) => e.key === "Enter" && submitAddFeed()}
+                />
+              </div>
 
-               {#if folders.length > 0}
-                 <div class="space-y-2">
-                    <div class="text-xs font-medium text-white/40 uppercase tracking-wider">Add to Folders</div>
-                    <div class="grid grid-cols-2 gap-2">
-                       {#each folders as folder}
-                         <label class="flex items-center gap-2 p-2 rounded-lg bg-black/10 border border-white/5 hover:bg-white/5 cursor-pointer transition-colors">
-                           <input 
-                              type="checkbox" 
-                              class="w-4 h-4 rounded border-white/20 bg-black/40 text-accent focus:ring-accent"
-                              checked={selectedFolderIdsForNewFeed.includes(folder.id)}
-                              on:change={(e) => {
-                                if (e.currentTarget.checked) selectedFolderIdsForNewFeed = [...selectedFolderIdsForNewFeed, folder.id];
-                                else selectedFolderIdsForNewFeed = selectedFolderIdsForNewFeed.filter(id => id !== folder.id);
-                              }}
-                           />
-                           <span class="text-sm text-white/80">{folder.name}</span>
-                         </label>
-                       {/each}
-                    </div>
-                 </div>
-               {/if}
+              {#if folders.length > 0}
+                <div class="space-y-2">
+                  <div
+                    class="text-xs font-medium text-white/40 uppercase tracking-wider"
+                  >
+                    Add to Folders
+                  </div>
+                  <div class="grid grid-cols-2 gap-2">
+                    {#each folders as folder}
+                      <label
+                        class="flex items-center gap-2 p-2 rounded-lg bg-black/10 border border-white/5 hover:bg-white/5 cursor-pointer transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          class="w-4 h-4 rounded border-white/20 bg-black/40 text-accent focus:ring-accent"
+                          checked={selectedFolderIdsForNewFeed.includes(
+                            folder.id
+                          )}
+                          on:change={(e) => {
+                            if (e.currentTarget.checked)
+                              selectedFolderIdsForNewFeed = [
+                                ...selectedFolderIdsForNewFeed,
+                                folder.id,
+                              ];
+                            else
+                              selectedFolderIdsForNewFeed =
+                                selectedFolderIdsForNewFeed.filter(
+                                  (id) => id !== folder.id
+                                );
+                          }}
+                        />
+                        <span class="text-sm text-white/80">{folder.name}</span>
+                      </label>
+                    {/each}
+                  </div>
+                </div>
+              {/if}
             </div>
 
-          <!-- Search Tab -->
-          {:else if addFeedTab === 'search'}
+            <!-- Search Tab -->
+          {:else if addFeedTab === "search"}
             <div class="space-y-4">
-               <div class="relative">
-                 <div class="absolute left-4 top-1/2 -translate-y-1/2 text-white/40"><Search size={18} /></div>
-                 <input 
-                   type="text" 
-                   bind:value={feedSearchQuery}
-                   placeholder="Search feeds..."
-                   class="w-full pl-11 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all"
-                   on:input={searchFeedsDebounced}
-                 />
-               </div>
-               
-               <!-- Filters -->
-               <div class="flex gap-2">
-                  {#each ['all', 'rss', 'youtube', 'reddit'] as type}
-                    <button 
-                      class="px-3 py-1.5 rounded-lg text-xs font-medium uppercase tracking-wide border border-white/5 transition-all {feedSearchType === type ? 'bg-accent text-black border-accent' : 'bg-black/20 text-white/60 hover:text-white'}"
-                      on:click={() => { feedSearchType = type; searchFeedsNow(); }}
+              <div class="relative">
+                <div
+                  class="absolute left-4 top-1/2 -translate-y-1/2 text-white/40"
+                >
+                  <Search size={18} />
+                </div>
+                <input
+                  type="text"
+                  bind:value={feedSearchQuery}
+                  placeholder="Search feeds..."
+                  class="w-full pl-11 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all"
+                  on:input={searchFeedsDebounced}
+                />
+              </div>
+
+              <!-- Filters -->
+              <div class="flex gap-2">
+                {#each feedSearchTypes as type}
+                  <button
+                    class="px-3 py-1.5 rounded-lg text-xs font-medium uppercase tracking-wide border border-white/5 transition-all {feedSearchType ===
+                    type
+                      ? 'bg-accent text-black border-accent'
+                      : 'bg-black/20 text-white/60 hover:text-white'}"
+                    on:click={() => {
+                      feedSearchType = type;
+                      searchFeedsNow();
+                    }}
+                  >
+                    {type}
+                  </button>
+                {/each}
+              </div>
+
+              <!-- Results -->
+              <div class="space-y-3 h-64 overflow-y-auto pr-2 custom-scrollbar">
+                {#if feedSearchLoading}
+                  <div class="text-center py-8 text-white/40">Searching...</div>
+                {:else if feedSearchError}
+                  <div class="text-center py-8 text-red-400">
+                    {feedSearchError}
+                  </div>
+                {:else if feedSearchResults.length > 0}
+                  {#each feedSearchResults as result}
+                    <div
+                      class="flex flex-col gap-2 p-3 rounded-xl bg-black/20 border border-white/5 hover:border-white/10 transition-all"
                     >
-                      {type}
-                    </button>
+                      <div class="flex justify-between items-start">
+                        <span class="font-medium text-white"
+                          >{result.title}</span
+                        >
+                        <span
+                          class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-white/60 uppercase"
+                          >{result.type}</span
+                        >
+                      </div>
+                      <p class="text-xs text-white/50 line-clamp-2">
+                        {result.description}
+                      </p>
+                      <button
+                        class="mt-2 w-full py-2 bg-white/10 hover:bg-white/20 text-white/90 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                        on:click={() => addFeedFromSearch(result)}
+                        disabled={addFeedLoading}
+                      >
+                        <Plus size={12} /> Add Feed
+                      </button>
+                    </div>
                   {/each}
-               </div>
-
-               <!-- Results -->
-               <div class="space-y-3 h-64 overflow-y-auto pr-2 custom-scrollbar">
-                  {#if feedSearchLoading}
-                     <div class="text-center py-8 text-white/40">Searching...</div>
-                  {:else if feedSearchError}
-                     <div class="text-center py-8 text-red-400">{feedSearchError}</div>
-                  {:else if feedSearchResults.length > 0}
-                     {#each feedSearchResults as result}
-                        <div class="flex flex-col gap-2 p-3 rounded-xl bg-black/20 border border-white/5 hover:border-white/10 transition-all">
-                           <div class="flex justify-between items-start">
-                              <span class="font-medium text-white">{result.title}</span>
-                              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-white/60 uppercase">{result.type}</span>
-                           </div>
-                           <p class="text-xs text-white/50 line-clamp-2">{result.description}</p>
-                           <button 
-                             class="mt-2 w-full py-2 bg-white/10 hover:bg-white/20 text-white/90 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-                             on:click={() => addFeedFromSearch(result)}
-                             disabled={addFeedLoading}
-                           >
-                              <Plus size={12} /> Add Feed
-                           </button>
-                        </div>
-                     {/each}
-                  {:else}
-                     <div class="text-center py-8 text-white/20">No results found</div>
-                  {/if}
-               </div>
+                {:else}
+                  <div class="text-center py-8 text-white/20">
+                    No results found
+                  </div>
+                {/if}
+              </div>
             </div>
 
-          <!-- Bulk Tab -->
-          {:else if addFeedTab === 'bulk'}
+            <!-- Bulk Tab -->
+          {:else if addFeedTab === "bulk"}
             <div class="space-y-4">
-              <textarea 
-                bind:value={addFeedBulkUrls} 
+              <textarea
+                bind:value={addFeedBulkUrls}
                 class="w-full h-48 p-4 bg-black/20 border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all resize-none text-sm font-mono"
                 placeholder="Paste one URL per line..."
               ></textarea>
             </div>
           {/if}
-          
+
           <!-- Error Display -->
           {#if addFeedError}
-            <div class="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+            <div
+              class="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm"
+            >
               {addFeedError}
             </div>
           {/if}
-
         </div>
 
         <!-- Footer -->
-        <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/5 bg-white/5">
-          <button 
+        <div
+          class="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/5 bg-white/5"
+        >
+          <button
             class="px-5 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:text-white hover:bg-white/5 transition-colors"
             on:click={closeAddFeedModal}
           >
             Cancel
           </button>
-          
-          {#if addFeedTab !== 'search'}
-            <button 
+
+          {#if addFeedTab !== "search"}
+            <button
               class="px-5 py-2.5 rounded-xl text-sm font-medium bg-accent text-black hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-accent/20"
               on:click={submitAddFeed}
               disabled={addFeedLoading}
             >
-              {addFeedLoading ? 'Adding...' : 'Add Feed'}
+              {addFeedLoading ? "Adding..." : "Add Feed"}
             </button>
           {/if}
         </div>
-
       </div>
     </div>
   {/if}
