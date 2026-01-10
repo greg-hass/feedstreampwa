@@ -2906,31 +2906,46 @@
 
 			<button
 				class="mobile-tab"
-				class:active={mobileActiveTab === "feeds"}
+				class:active={showSettings}
 				on:click={() => {
-					mobileActiveTab = "feeds";
-					mobileMenuOpen = true;
+					showSettings = true;
 				}}
 			>
 				<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-					<circle cx="5" cy="19" r="2" fill="currentColor" />
-					<path
-						d="M5 12a7 7 0 017 7M5 5a14 14 0 0114 14"
+					<circle
+						cx="12"
+						cy="12"
+						r="3"
 						stroke="currentColor"
 						stroke-width="2"
 						fill="none"
 					/>
+					<path
+						d="M12 1v6m0 10v6M4.22 4.22l4.24 4.24m7.08 7.08l4.24 4.24M1 12h6m10 0h6M4.22 19.78l4.24-4.24m7.08-7.08l4.24-4.24"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+					/>
 				</svg>
-				<span>Feeds</span>
+				<span>Settings</span>
 			</button>
 		</div>
 	{/if}
 
 	<!-- Mobile Floating Add Button -->
 	{#if isMobile}
-		<button class="mobile-fab" on:click={openAddFeedModal} title="Add Feeds">
+		<button
+			class="mobile-fab"
+			on:click={openAddFeedModal}
+			title="Add Feeds"
+		>
 			<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-				<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+				<path
+					d="M12 5v14M5 12h14"
+					stroke="currentColor"
+					stroke-width="2.5"
+					stroke-linecap="round"
+				/>
 			</svg>
 		</button>
 	{/if}
@@ -4869,7 +4884,9 @@
 			justify-content: center;
 			cursor: pointer;
 			z-index: 90;
-			transition: transform 0.2s, box-shadow 0.2s;
+			transition:
+				transform 0.2s,
+				box-shadow 0.2s;
 		}
 
 		.mobile-fab:hover {
@@ -4886,7 +4903,7 @@
 			position: absolute;
 			top: 4px;
 			right: 8px;
-			background: #FF9500;
+			background: #ff9500;
 			color: white;
 			font-size: 11px;
 			font-weight: 600;
