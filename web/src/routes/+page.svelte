@@ -2159,20 +2159,7 @@
 							mobileMenuOpen = false;
 						}}
 					>
-						<svg
-							width="18"
-							height="18"
-							viewBox="0 0 18 18"
-							fill="none"
-						>
-							<circle cx="3" cy="15" r="2" fill="currentColor" />
-							<path
-								d="M3 9a6 6 0 016 6M3 3a12 12 0 0112 12"
-								stroke="currentColor"
-								stroke-width="2"
-								fill="none"
-							/>
-						</svg>
+						<Rss size={24} />
 						<span>RSS</span>
 						{#if rssUnread > 0}
 							<span class="badge">{rssUnread}</span>
@@ -2188,20 +2175,7 @@
 							mobileMenuOpen = false;
 						}}
 					>
-						<svg
-							width="18"
-							height="18"
-							viewBox="0 0 18 18"
-							fill="none"
-						>
-							<path
-								d="M17 6s0-2-2-2H3c-2 0-2 2-2 2v6s0 2 2 2h12c2 0 2-2 2-2V6z"
-								stroke="currentColor"
-								stroke-width="1.5"
-								fill="none"
-							/>
-							<path d="M7 5l5 4-5 4V5z" fill="currentColor" />
-						</svg>
+						<Youtube size={24} />
 						<span>YouTube</span>
 						{#if youtubeUnread > 0}
 							<span class="badge">{youtubeUnread}</span>
@@ -2217,50 +2191,7 @@
 							mobileMenuOpen = false;
 						}}
 					>
-						<svg
-							width="18"
-							height="18"
-							viewBox="0 0 18 18"
-							fill="none"
-						>
-							<!-- Reddit alien head -->
-							<circle
-								cx="9"
-								cy="10"
-								r="6"
-								stroke="currentColor"
-								stroke-width="1.5"
-								fill="none"
-							/>
-							<!-- Antenna -->
-							<path
-								d="M9 4V2"
-								stroke="currentColor"
-								stroke-width="1.5"
-								stroke-linecap="round"
-							/>
-							<circle cx="9" cy="2" r="1.5" fill="currentColor" />
-							<!-- Eyes -->
-							<circle
-								cx="6.5"
-								cy="9.5"
-								r="1"
-								fill="currentColor"
-							/>
-							<circle
-								cx="11.5"
-								cy="9.5"
-								r="1"
-								fill="currentColor"
-							/>
-							<!-- Smile -->
-							<path
-								d="M6.5 12c.5.8 1.2 1.2 2.5 1.2s2-.4 2.5-1.2"
-								stroke="currentColor"
-								stroke-width="1.5"
-								stroke-linecap="round"
-							/>
-						</svg>
+						<MessageCircle size={24} />
 						<span>Reddit</span>
 						{#if redditUnread > 0}
 							<span class="badge">{redditUnread}</span>
@@ -2276,28 +2207,7 @@
 							mobileMenuOpen = false;
 						}}
 					>
-						<svg
-							width="18"
-							height="18"
-							viewBox="0 0 18 18"
-							fill="none"
-						>
-							<circle
-								cx="9"
-								cy="9"
-								r="8"
-								stroke="currentColor"
-								stroke-width="1.5"
-								fill="none"
-							/>
-							<circle cx="9" cy="9" r="2" fill="currentColor" />
-							<path
-								d="M9 13v2M5 9a4 4 0 018 0M3 9a6 6 0 0112 0"
-								stroke="currentColor"
-								stroke-width="1.5"
-								stroke-linecap="round"
-							/>
-						</svg>
+						<Mic size={24} />
 						<span>Podcasts</span>
 						{#if podcastUnread > 0}
 							<span class="badge">{podcastUnread}</span>
@@ -2317,19 +2227,7 @@
 							}}
 							title="New folder"
 						>
-							<svg
-								width="14"
-								height="14"
-								viewBox="0 0 14 14"
-								fill="none"
-							>
-								<path
-									d="M7 3v8M3 7h8"
-									stroke="currentColor"
-									stroke-width="1.5"
-									stroke-linecap="round"
-								/>
-							</svg>
+							<Plus size={14} />
 						</button>
 					</div>
 
@@ -2344,20 +2242,7 @@
 									mobileMenuOpen = false;
 								}}
 							>
-								<svg
-									width="18"
-									height="18"
-									viewBox="0 0 18 18"
-									fill="none"
-								>
-									<path
-										d="M2 4h5l1 2h8v10H2V4z"
-										stroke="currentColor"
-										stroke-width="1.5"
-										stroke-linejoin="round"
-										fill="none"
-									/>
-								</svg>
+								<FolderOpen size={24} />
 								<span class="folder-name">{folder.name}</span>
 								{#if folderUnreadCounts[folder.id] > 0}
 									<span class="badge"
@@ -2428,34 +2313,7 @@
 						}}
 						style="margin-top: auto;"
 					>
-						<svg
-							width="18"
-							height="18"
-							viewBox="0 0 18 18"
-							fill="none"
-						>
-							<circle
-								cx="9"
-								cy="9"
-								r="7"
-								stroke="currentColor"
-								stroke-width="1.5"
-								fill="none"
-							/>
-							<circle cx="9" cy="9" r="2" fill="currentColor" />
-							<path
-								d="M9 3v1.5M9 13.5V15M15 9h-1.5M4.5 9H3"
-								stroke="currentColor"
-								stroke-width="1.5"
-								stroke-linecap="round"
-							/>
-							<path
-								d="M12.5 5.5l-1 1M6.5 11.5l-1 1M12.5 12.5l-1-1M6.5 6.5l-1-1"
-								stroke="currentColor"
-								stroke-width="1.5"
-								stroke-linecap="round"
-							/>
-						</svg>
+						<Settings size={24} />
 						<span>Settings</span>
 					</button>
 				</nav>
