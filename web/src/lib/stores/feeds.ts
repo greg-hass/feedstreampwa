@@ -1,0 +1,98 @@
+// Feeds store - manages feed state and operations
+import { writable, derived } from 'svelte/store';
+import type { Feed } from '$lib/types';
+import * as feedsApi from '$lib/api/feeds';
+
+// State
+export const feeds = writable<Feed[]>([]);
+export const feedsLoading = writable(false);
+export const feedsError = writable<string | null>(null);
+export const selectedFeedUrl = writable<string | null>(null);
+
+// Derived stores
+export const rssFeeds = derived(feeds, ($feeds) =>
+    $feeds.filter((f) => f.type === 'rss')
+);
+
+export const youtubeFeeds = derived(feeds, ($feeds) =>
+    $feeds.filter((f) => f.type === 'youtube')
+);
+
+export const redditFeeds = derived(feeds, ($feeds) =>
+    $feeds.filter((f) => f.type === 'reddit')
+);
+
+export const podcastFeeds = derived(feeds, ($feeds) =>
+    $feeds.filter((f) => f.type === 'podcast')
+);
+
+export const totalUnread = derived(feeds, ($feeds) =>
+    $feeds.reduce((sum, feed) => sum + (feed.unreadCount || 0), 0)
+);
+
+export const rssUnread = derived(rssFeeds, ($rssFeeds) =>
+    $rssFeeds.reduce((sum, feed) => sum + (feed.unreadCount || 0), 0)
+);
+
+export const youtubeUnread = derived(youtubeFeeds, ($youtubeFeeds) =>
+    $youtubeFeeds.reduce((sum, feed) => sum + (feed.unreadCount || 0), 0)
+);
+
+export const redditUnread = derived(redditFeeds, ($redditFeeds) =>
+    $redditFeeds.reduce((sum, feed) => sum + (feed.unreadCount || 0), 0)
+);
+
+export const podcastUnread = derived(podcastFeeds, ($podcastFeeds) =>
+    $podcastFeeds.reduce((sum, feed) => sum + (feed.unreadCount || 0), 0)
+);
+
+// Actions
+export async function loadFeeds(): Promise<void> {
+    feedsLoading.set(true);
+    feedsError.set(null);
+
+    try {
+        const data = await feedsApi.fetchFeeds();
+        feeds.set(data);
+    } catch (err) {
+        feedsError.set(err instanceof Error ? err.message : 'Unknown error occurred');
+    } finally {
+        feedsLoading.set(false);
+    }
+}
+
+export async function addFeed(url: string, folderIds: string[] = []): Promise<void> {
+    await feedsApi.createFeed(url, folderIds);
+    await loadFeeds();
+}
+
+export async function removeFeed(url: string): Promise<void> {
+    if (!confirm(`Delete feed: ${url}?`)) return;
+
+    await feedsApi.deleteFeed(url);
+    await loadFeeds();
+}
+
+export async function refreshFeed(url: string): Promise<void> {
+    await feedsApi.refreshFeed(url);
+    await loadFeeds();
+}
+
+export async function refreshAll(): Promise<void> {
+    await feedsApi.refreshAllFeeds();
+    await loadFeeds();
+}
+
+export async function addToFolder(feedUrl: string, folderId: string): Promise<void> {
+    await feedsApi.addFeedToFolder(feedUrl, folderId);
+    await loadFeeds();
+}
+
+export async function removeFromFolder(feedUrl: string, folderId: string): Promise<void> {
+    await feedsApi.removeFeedFromFolder(feedUrl, folderId);
+    await loadFeeds();
+}
+
+export function selectFeed(url: string | null): void {
+    selectedFeedUrl.set(url);
+}

@@ -1,0 +1,135 @@
+// API utilities for articles/items
+import type { Article } from '$lib/types';
+
+const API_BASE = '/api';
+
+export interface FetchItemsParams {
+    feedUrl?: string;
+    folderId?: string;
+    smartFolder?: 'rss' | 'youtube' | 'reddit' | 'podcast';
+    unreadOnly?: boolean;
+    starredOnly?: boolean;
+    limit?: number;
+    offset?: number;
+}
+
+export async function fetchItems(params: FetchItemsParams = {}): Promise<{
+    items: Article[];
+    total: number;
+}> {
+    const searchParams = new URLSearchParams();
+
+    if (params.feedUrl) searchParams.set('feed_url', params.feedUrl);
+    if (params.folderId) searchParams.set('folder_id', params.folderId);
+    if (params.smartFolder) searchParams.set('smart_folder', params.smartFolder);
+    if (params.unreadOnly) searchParams.set('unreadOnly', 'true');
+    if (params.starredOnly) searchParams.set('starredOnly', '1');
+    if (params.limit) searchParams.set('limit', params.limit.toString());
+    if (params.offset) searchParams.set('offset', params.offset.toString());
+
+    const response = await fetch(`${API_BASE}/items?${searchParams}`);
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return {
+        items: data.items || [],
+        total: data.total || 0,
+    };
+}
+
+export async function searchItems(query: string, limit = 100): Promise<{
+    items: Article[];
+    total: number;
+}> {
+    const params = new URLSearchParams({
+        q: query.trim(),
+        limit: limit.toString(),
+        offset: '0',
+    });
+
+    const response = await fetch(`${API_BASE}/search?${params}`);
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return {
+        items: data.items || [],
+        total: data.total || 0,
+    };
+}
+
+export async function toggleItemRead(itemId: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/items/${itemId}/read`, {
+        method: 'POST',
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+            errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        );
+    }
+}
+
+export async function toggleItemStar(itemId: string): Promise<void> {
+    const response = await fetch(`${API_BASE}/items/${itemId}/star`, {
+        method: 'POST',
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+            errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        );
+    }
+}
+
+export async function markAllAsRead(feedUrl?: string): Promise<void> {
+    const url = feedUrl
+        ? `${API_BASE}/items/mark-all-read?feed_url=${encodeURIComponent(feedUrl)}`
+        : `${API_BASE}/items/mark-all-read`;
+
+    const response = await fetch(url, { method: 'POST' });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+            errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        );
+    }
+}
+
+export async function fetchReaderContent(url: string): Promise<any> {
+    const response = await fetch(
+        `${API_BASE}/reader?url=${encodeURIComponent(url)}`
+    );
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    return response.json();
+}
+
+export async function updateVideoProgress(
+    itemId: string,
+    progress: number
+): Promise<void> {
+    const response = await fetch(`${API_BASE}/items/${itemId}/progress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ progress }),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+            errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        );
+    }
+}
