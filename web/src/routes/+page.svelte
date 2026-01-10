@@ -1858,13 +1858,13 @@
 	.logo-icon {
 		width: 40px;
 		height: 40px;
-		background: linear-gradient(135deg, var(--accent), #15bd78);
+		background: linear-gradient(135deg, var(--accent), #3fb88a);
 		border-radius: var(--radiusS);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		color: var(--bg0);
-        box-shadow: 0 4px 12px rgba(34, 229, 152, 0.3);
+        box-shadow: 0 4px 12px rgba(63, 184, 138, 0.3);
 	}
 
 	.logo-text {
@@ -1908,7 +1908,7 @@
 	.nav-item.active {
 		background: var(--accent-glow);
 		color: var(--accent);
-        border-color: rgba(34, 229, 153, 0.1);
+        border-color: rgba(63, 184, 138, 0.1);
 	}
     
     .feed-item.active {
@@ -2022,7 +2022,7 @@
     .search-box:focus-within {
         background: var(--panel0);
         border-color: var(--accent);
-        box-shadow: 0 0 0 4px rgba(34, 229, 153, 0.1);
+        box-shadow: 0 0 0 4px rgba(63, 184, 138, 0.1);
         color: var(--text);
     }
 
@@ -2073,12 +2073,12 @@
 		align-items: center;
 		justify-content: center;
 		transition: all 0.2s;
-		box-shadow: 0 4px 12px rgba(34, 229, 152, 0.4);
+		box-shadow: 0 4px 12px rgba(63, 184, 138, 0.4);
 	}
 
 	.add-btn:hover {
 		transform: scale(1.05) rotate(90deg);
-        background: #15bd78;
+        background: #3fb88a;
 	}
 
 	/* Filter Chips */
@@ -2158,7 +2158,7 @@
 
 	.article-card.unread {
 		border-left: 3px solid var(--accent);
-        background: rgba(34, 229, 153, 0.02); /* Very subtle tint */
+        background: rgba(63, 184, 138, 0.02); /* Very subtle tint */
 	}
 
 	.article-header {
@@ -2221,13 +2221,13 @@
 
 	.star-btn.starred {
 		color: var(--accent);
-        background: rgba(34, 229, 153, 0.1);
-        border-color: rgba(34, 229, 153, 0.2);
+        background: rgba(63, 184, 138, 0.1);
+        border-color: rgba(63, 184, 138, 0.2);
 	}
 
 	.star-btn.starred:hover {
-		background: rgba(34, 229, 153, 0.2);
-        box-shadow: 0 0 12px rgba(34, 229, 153, 0.2);
+		background: rgba(63, 184, 138, 0.2);
+        box-shadow: 0 0 12px rgba(63, 184, 138, 0.2);
 	}
 
 	.read-dot {

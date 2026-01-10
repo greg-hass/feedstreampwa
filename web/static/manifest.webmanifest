@@ -4,8 +4,8 @@
     "description": "Private feed reader",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#1a1a2e",
-    "theme_color": "#1a1a2e",
+    "background_color": "#030304",
+    "theme_color": "#030304",
     "icons": [
         {
             "src": "/icons/icon-192.png",
