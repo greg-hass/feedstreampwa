@@ -2231,32 +2231,27 @@
 		</header>
 
 		<!-- Filter Chips -->
-		<div class="content-header">
-			<h1>
-				{isSearching ? `Search Results (${itemsTotal})` : "Articles"}
-			</h1>
-			<div class="filter-chips">
-				<button
-					class="chip"
-					class:active={timeFilter === "today"}
-					on:click={() => (timeFilter = "today")}>Today</button
-				>
-				<button
-					class="chip"
-					class:active={timeFilter === "24h"}
-					on:click={() => (timeFilter = "24h")}>Last 24h</button
-				>
-				<button
-					class="chip"
-					class:active={timeFilter === "week"}
-					on:click={() => (timeFilter = "week")}>Week</button
-				>
-				<button
-					class="chip"
-					class:active={timeFilter === "all"}
-					on:click={() => (timeFilter = "all")}>All</button
-				>
-			</div>
+		<div class="filter-chips">
+			<button
+				class="chip"
+				class:active={timeFilter === "today"}
+				on:click={() => (timeFilter = "today")}>Today</button
+			>
+			<button
+				class="chip"
+				class:active={timeFilter === "24h"}
+				on:click={() => (timeFilter = "24h")}>Last 24h</button
+			>
+			<button
+				class="chip"
+				class:active={timeFilter === "week"}
+				on:click={() => (timeFilter = "week")}>Week</button
+			>
+			<button
+				class="chip"
+				class:active={timeFilter === "all"}
+				on:click={() => (timeFilter = "all")}>All</button
+			>
 		</div>
 		<!-- Articles List -->
 		<div class="articles-container">
