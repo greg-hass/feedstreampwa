@@ -3,9 +3,10 @@
   import Sidebar from "$lib/components/Sidebar.svelte";
   import BottomNav from "$lib/components/BottomNav.svelte";
   import MediaPlayer from "$lib/components/MediaPlayer.svelte";
+  import { currentMedia } from "$lib/stores/media";
 
-  // In a real app, this would be reactive from a store
-  let isMediaVisible = true;
+  // Show player only when there's media loaded
+  $: isMediaVisible = $currentMedia !== null;
 </script>
 
 <div

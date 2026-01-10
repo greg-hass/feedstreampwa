@@ -1,4 +1,7 @@
 import Fastify from 'fastify';
+import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
+import cors from '@fastify/cors';
 import Database from 'better-sqlite3';
 import Parser from 'rss-parser';
 import pLimit from 'p-limit';
@@ -2526,6 +2529,35 @@ fastify.patch('/settings', async (request, reply) => {
 });
 const start = async () => {
     try {
+        // Register security middleware
+        await fastify.register(helmet, {
+            contentSecurityPolicy: {
+                directives: {
+                    defaultSrc: ["'self'"],
+                    styleSrc: ["'self'", "'unsafe-inline'"],
+                    scriptSrc: ["'self'"],
+                    imgSrc: ["'self'", "data:", "https:"],
+                },
+            },
+        });
+
+        await fastify.register(cors, {
+            origin: true, // Allow all origins - configure for production if needed
+            credentials: true,
+        });
+
+        await fastify.register(rateLimit, {
+            max: 100, // 100 requests
+            timeWindow: '1 minute', // per minute
+            errorResponseBuilder: () => ({
+                ok: false,
+                error: 'Rate limit exceeded. Please try again later.',
+                statusCode: 429,
+            }),
+        });
+
+        fastify.log.info('Security middleware registered');
+
         await fastify.listen({ port: PORT, host: '0.0.0.0' });
         fastify.log.info(`Server listening on http://0.0.0.0:${PORT}`);
 

@@ -44,23 +44,11 @@ export async function deleteFeed(url: string): Promise<void> {
     }
 }
 
-export async function refreshFeed(url: string): Promise<void> {
-    const response = await fetch(
-        `${API_BASE}/feeds/refresh?url=${encodeURIComponent(url)}`,
-        { method: 'POST' }
-    );
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-            errorData.error || `HTTP ${response.status}: ${response.statusText}`
-        );
-    }
-}
-
-export async function refreshAllFeeds(): Promise<void> {
-    const response = await fetch(`${API_BASE}/feeds/refresh-all`, {
+export async function refreshFeed(url: string): Promise<{ jobId: string }> {
+    const response = await fetch(`${API_BASE}/refresh/start`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ urls: [url] }),
     });
 
     if (!response.ok) {
@@ -69,16 +57,35 @@ export async function refreshAllFeeds(): Promise<void> {
             errorData.error || `HTTP ${response.status}: ${response.statusText}`
         );
     }
+
+    return response.json();
+}
+
+export async function refreshAllFeeds(): Promise<{ jobId: string }> {
+    const response = await fetch(`${API_BASE}/refresh/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+            errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        );
+    }
+
+    return response.json();
 }
 
 export async function addFeedToFolder(
     feedUrl: string,
     folderId: string
 ): Promise<void> {
-    const response = await fetch(`${API_BASE}/feeds/add-to-folder`, {
+    const response = await fetch(`${API_BASE}/folders/${folderId}/feeds`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ feed_url: feedUrl, folder_id: folderId }),
+        body: JSON.stringify({ feedUrl }),
     });
 
     if (!response.ok) {
@@ -93,10 +100,10 @@ export async function removeFeedFromFolder(
     feedUrl: string,
     folderId: string
 ): Promise<void> {
-    const response = await fetch(`${API_BASE}/feeds/remove-from-folder`, {
-        method: 'POST',
+    const response = await fetch(`${API_BASE}/folders/${folderId}/feeds`, {
+        method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ feed_url: feedUrl, folder_id: folderId }),
+        body: JSON.stringify({ feedUrl }),
     });
 
     if (!response.ok) {

@@ -67,6 +67,18 @@
     e.stopPropagation();
     dispatch("toggleRead", { item });
   }
+
+  function handlePlay(e: MouseEvent) {
+    e.stopPropagation();
+    dispatch("play", { item });
+  }
+
+  // Check if item is playable (podcast or video)
+  $: isPlayable =
+    feedType === "podcast" ||
+    feedType === "youtube" ||
+    item.enclosure ||
+    item.external_id;
 </script>
 
 <article
@@ -174,6 +186,16 @@
       </button>
 
       <div class="flex items-center gap-1">
+        {#if isPlayable}
+          <button
+            class="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-accent transition-colors"
+            title="Play"
+            on:click={handlePlay}
+          >
+            <PlayCircle size={18} />
+          </button>
+        {/if}
+
         <button
           class="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-yellow-400 transition-colors"
           title="Star"

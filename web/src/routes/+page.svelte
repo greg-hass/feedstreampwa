@@ -1,6 +1,20 @@
 <script lang="ts">
   import FeedGrid from "$lib/components/FeedGrid.svelte";
-  import { isAddFeedModalOpen, isSettingsModalOpen } from "$lib/stores/ui";
+  import {
+    isAddFeedModalOpen,
+    isSettingsModalOpen,
+    viewMode,
+    activeSmartFolder,
+    activeFolderId,
+    selectedFeedUrl,
+    setViewAll,
+    setViewUnread,
+    setViewBookmarks,
+    setViewSmartFolder,
+    setViewFolder,
+    setViewFeed,
+  } from "$lib/stores/ui";
+  import { playMedia } from "$lib/stores/media";
   import { onMount } from "svelte";
   import {
     LayoutGrid,
@@ -35,7 +49,6 @@
 
   // Feed subscription state
   let feeds: Feed[] = [];
-  let selectedFeedUrl: string | null = null;
   let feedsLoading = false;
   let feedsError: string | null = null;
 
@@ -126,12 +139,6 @@
   let folders: Folder[] = [];
   let foldersLoading = false;
   let foldersError: string | null = null;
-
-  // View mode state
-  type ViewMode = "all" | "unread" | "bookmarks" | "smart" | "folder" | "feed";
-  let viewMode: ViewMode = "all";
-  let activeSmartFolder: "rss" | "youtube" | "reddit" | "podcast" | null = null;
-  let activeFolderId: string | null = null;
 
   // Folder management modals
   let showCreateFolderModal = false;
@@ -383,7 +390,7 @@
         );
       }
 
-      if (selectedFeedUrl === url) {
+      if ($selectedFeedUrl === url) {
         selectedFeedUrl = null;
       }
 
@@ -471,16 +478,16 @@
       });
 
       // View mode filtering
-      if (viewMode === "feed" && selectedFeedUrl) {
-        params.set("feed", selectedFeedUrl);
-      } else if (viewMode === "smart" && activeSmartFolder) {
-        params.set("smartFolder", activeSmartFolder);
-      } else if (viewMode === "folder" && activeFolderId) {
-        params.set("folderId", activeFolderId);
-      } else if (viewMode === "unread") {
+      if ($viewMode === "feed" && $selectedFeedUrl) {
+        params.set("feed", $selectedFeedUrl);
+      } else if ($viewMode === "smart" && $activeSmartFolder) {
+        params.set("smartFolder", $activeSmartFolder);
+      } else if ($viewMode === "folder" && $activeFolderId) {
+        params.set("folderId", $activeFolderId);
+      } else if ($viewMode === "unread") {
         params.set("unreadOnly", "true");
       }
-      // viewMode === 'all' requires no special params
+      // $viewMode === 'all' requires no special params
 
       // Legacy filters (keep for compatibility)
       if (sourceFilter !== "all") {
@@ -846,7 +853,7 @@
     currentItem.playback_position = currentTime;
 
     try {
-      await fetch(`/api/items/${currentItem.id}/playback-position`, {
+      await fetch(`/api/items/${currentItem.id}/playback`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ position: currentTime }),
@@ -1236,56 +1243,8 @@
     stopRefreshPolling();
   }
 
-  // View switching functions
-  function setViewAll() {
-    viewMode = "all";
-    activeSmartFolder = null;
-    activeFolderId = null;
-    selectedFeedUrl = null;
-    loadItems();
-  }
-
-  function setViewUnread() {
-    viewMode = "unread";
-    activeSmartFolder = null;
-    activeFolderId = null;
-    selectedFeedUrl = null;
-    starredOnly = false;
-    loadItems();
-  }
-
-  function setViewBookmarks() {
-    viewMode = "bookmarks";
-    activeSmartFolder = null;
-    activeFolderId = null;
-    selectedFeedUrl = null;
-    starredOnly = true;
-    loadItems();
-  }
-
-  function setViewSmartFolder(
-    folder: "rss" | "youtube" | "reddit" | "podcast"
-  ) {
-    viewMode = "smart";
-    activeSmartFolder = folder;
-    activeFolderId = null;
-    selectedFeedUrl = null;
-    loadItems();
-  }
-
-  function setViewFolder(folderId: string) {
-    viewMode = "folder";
-    activeSmartFolder = null;
-    activeFolderId = folderId;
-    selectedFeedUrl = null;
-    loadItems();
-  }
-
-  function setViewFeed(feedUrl: string) {
-    viewMode = "feed";
-    activeSmartFolder = null;
-    activeFolderId = null;
-    selectedFeedUrl = feedUrl;
+  // Reactive: reload items when view mode changes
+  $: if ($viewMode || $activeSmartFolder || $activeFolderId || $selectedFeedUrl !== undefined) {
     loadItems();
   }
 
@@ -1385,8 +1344,8 @@
 
       // If we're viewing the deleted folder, switch to All
       if (
-        viewMode === "folder" &&
-        activeFolderId === selectedFolderForAction.id
+        $viewMode === "folder" &&
+        $activeFolderId === selectedFolderForAction.id
       ) {
         setViewAll();
       }
@@ -1603,7 +1562,7 @@
       showDeleteFolderConfirm = false; // Reuse delete confirm
 
       // If we're viewing the deleted feed, switch to All
-      if (viewMode === "feed" && selectedFeedUrl === contextMenuTarget.url) {
+      if ($viewMode === "feed" && $selectedFeedUrl === contextMenuTarget.url) {
         setViewAll();
       }
 
@@ -1638,7 +1597,7 @@
 
       <button
         class="nav-item"
-        class:active={viewMode === "all"}
+        class:active={$viewMode === "all"}
         on:click={setViewAll}
       >
         <LayoutGrid size={24} />
@@ -1650,7 +1609,7 @@
 
       <button
         class="nav-item"
-        class:active={viewMode === "unread"}
+        class:active={$viewMode === "unread"}
         on:click={setViewUnread}
       >
         <Circle size={24} />
@@ -1662,7 +1621,7 @@
 
       <button
         class="nav-item"
-        class:active={viewMode === "bookmarks"}
+        class:active={$viewMode === "bookmarks"}
         on:click={setViewBookmarks}
       >
         <Bookmark size={24} />
@@ -1674,7 +1633,7 @@
 
       <button
         class="nav-item smart-folder"
-        class:active={viewMode === "smart" && activeSmartFolder === "rss"}
+        class:active={$viewMode === "smart" && $activeSmartFolder === "rss"}
         on:click={() => setViewSmartFolder("rss")}
       >
         <Rss size={24} />
@@ -1686,7 +1645,7 @@
 
       <button
         class="nav-item smart-folder"
-        class:active={viewMode === "smart" && activeSmartFolder === "youtube"}
+        class:active={$viewMode === "smart" && $activeSmartFolder === "youtube"}
         on:click={() => setViewSmartFolder("youtube")}
       >
         <Youtube size={24} />
@@ -1698,7 +1657,7 @@
 
       <button
         class="nav-item smart-folder"
-        class:active={viewMode === "smart" && activeSmartFolder === "reddit"}
+        class:active={$viewMode === "smart" && $activeSmartFolder === "reddit"}
         on:click={() => setViewSmartFolder("reddit")}
       >
         <MessageCircle size={24} />
@@ -1710,7 +1669,7 @@
 
       <button
         class="nav-item smart-folder"
-        class:active={viewMode === "smart" && activeSmartFolder === "podcast"}
+        class:active={$viewMode === "smart" && $activeSmartFolder === "podcast"}
         on:click={() => setViewSmartFolder("podcast")}
       >
         <Mic size={24} />
@@ -1745,8 +1704,8 @@
           <div class="folder-item-wrapper">
             <button
               class="nav-item folder-item"
-              class:active={viewMode === "folder" &&
-                activeFolderId === folder.id}
+              class:active={$viewMode === "folder" &&
+                $activeFolderId === folder.id}
               on:click={() => setViewFolder(folder.id)}
             >
               <FolderOpen size={24} />
@@ -1778,7 +1737,7 @@
       {#each feeds as feed}
         <button
           class="feed-item"
-          class:active={viewMode === "feed" && selectedFeedUrl === feed.url}
+          class:active={$viewMode === "feed" && $selectedFeedUrl === feed.url}
           on:click={() => setViewFeed(feed.url)}
         >
           <div class="feed-item-content">
@@ -1938,7 +1897,7 @@
       >
     </div>
     <!-- Articles List -->
-    <FeedGrid items={items} on:open={(e) => handleArticleClick({target: {}}, e.detail.item)} on:toggleStar={(e) => toggleStar(e.detail.item)} on:toggleRead={(e) => toggleRead(e.detail.item)} /> <div class="articles-container" style="display:none">
+    <FeedGrid items={items} on:open={(e) => handleArticleClick({target: {}}, e.detail.item)} on:toggleStar={(e) => toggleStar(e.detail.item)} on:toggleRead={(e) => toggleRead(e.detail.item)} on:play={(e) => playMedia(e.detail.item)} /> <div class="articles-container" style="display:none">
       {#if itemsLoading}
         <div class="empty-state">Loading articles...</div>
       {:else if itemsError}
@@ -2085,7 +2044,7 @@
 
           <button
             class="nav-item smart-folder"
-            class:active={viewMode === "smart" && activeSmartFolder === "rss"}
+            class:active={$viewMode === "smart" && $activeSmartFolder === "rss"}
             on:click={() => {
               setViewSmartFolder("rss");
               mobileMenuOpen = false;
@@ -2100,8 +2059,8 @@
 
           <button
             class="nav-item smart-folder"
-            class:active={viewMode === "smart" &&
-              activeSmartFolder === "youtube"}
+            class:active={$viewMode === "smart" &&
+              $activeSmartFolder === "youtube"}
             on:click={() => {
               setViewSmartFolder("youtube");
               mobileMenuOpen = false;
@@ -2116,8 +2075,8 @@
 
           <button
             class="nav-item smart-folder"
-            class:active={viewMode === "smart" &&
-              activeSmartFolder === "reddit"}
+            class:active={$viewMode === "smart" &&
+              $activeSmartFolder === "reddit"}
             on:click={() => {
               setViewSmartFolder("reddit");
               mobileMenuOpen = false;
@@ -2132,8 +2091,8 @@
 
           <button
             class="nav-item smart-folder"
-            class:active={viewMode === "smart" &&
-              activeSmartFolder === "podcast"}
+            class:active={$viewMode === "smart" &&
+              $activeSmartFolder === "podcast"}
             on:click={() => {
               setViewSmartFolder("podcast");
               mobileMenuOpen = false;
@@ -2167,8 +2126,8 @@
             {#each folders as folder}
               <button
                 class="nav-item folder-item"
-                class:active={viewMode === "folder" &&
-                  activeFolderId === folder.id}
+                class:active={$viewMode === "folder" &&
+                  $activeFolderId === folder.id}
                 on:click={() => {
                   setViewFolder(folder.id);
                   mobileMenuOpen = false;
@@ -2188,7 +2147,7 @@
           {#each feeds as feed}
             <button
               class="feed-item"
-              class:active={viewMode === "feed" && selectedFeedUrl === feed.url}
+              class:active={$viewMode === "feed" && $selectedFeedUrl === feed.url}
               on:click={() => {
                 setViewFeed(feed.url);
                 mobileMenuOpen = false;

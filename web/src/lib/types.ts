@@ -35,6 +35,14 @@ export interface Item {
     published?: string; // alias if needed
     source?: string;
     media_thumbnail?: string;
+    media_duration_seconds?: number | null;
+    external_id?: string | null; // YouTube video ID
+    playback_position?: number; // Current playback position in seconds
+    enclosure?: {
+        url: string;
+        type?: string;
+        length?: string;
+    };
 }
 
 export interface Folder {

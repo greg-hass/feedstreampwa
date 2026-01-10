@@ -33,6 +33,7 @@
       on:open
       on:toggleStar
       on:toggleRead
+      on:play
     />
   {/each}
 </div>

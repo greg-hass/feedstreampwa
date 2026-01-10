@@ -56,20 +56,23 @@ export async function loadItems(params: {
 }
 
 export async function toggleRead(item: Article): Promise<void> {
+    // Calculate new state
+    const newReadState = item.is_read === 0;
+
     // Optimistic update
     items.update(($items) =>
         $items.map((i) =>
-            i.id === item.id ? { ...i, is_read: i.is_read === 0 ? 1 : 0 } : i
+            i.id === item.id ? { ...i, is_read: newReadState ? 1 : 0 } : i
         )
     );
 
     try {
-        await itemsApi.toggleItemRead(item.id);
+        await itemsApi.toggleItemRead(item.id, newReadState);
     } catch (err) {
         // Revert on error
         items.update(($items) =>
             $items.map((i) =>
-                i.id === item.id ? { ...i, is_read: i.is_read === 0 ? 1 : 0 } : i
+                i.id === item.id ? { ...i, is_read: item.is_read } : i
             )
         );
         throw err;
@@ -77,20 +80,23 @@ export async function toggleRead(item: Article): Promise<void> {
 }
 
 export async function toggleStar(item: Article): Promise<void> {
+    // Calculate new state
+    const newStarredState = item.is_starred === 0;
+
     // Optimistic update
     items.update(($items) =>
         $items.map((i) =>
-            i.id === item.id ? { ...i, is_starred: i.is_starred === 0 ? 1 : 0 } : i
+            i.id === item.id ? { ...i, is_starred: newStarredState ? 1 : 0 } : i
         )
     );
 
     try {
-        await itemsApi.toggleItemStar(item.id);
+        await itemsApi.toggleItemStar(item.id, newStarredState);
     } catch (err) {
         // Revert on error
         items.update(($items) =>
             $items.map((i) =>
-                i.id === item.id ? { ...i, is_starred: i.is_starred === 0 ? 1 : 0 } : i
+                i.id === item.id ? { ...i, is_starred: item.is_starred } : i
             )
         );
         throw err;

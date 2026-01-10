@@ -2,20 +2,27 @@
   import { page } from "$app/stores";
   import {
     LayoutDashboard,
-    Rss,
-    Library,
+    Circle,
+    List,
     Settings,
-    Search,
+    Bookmark,
     PlusCircle,
+    Rss,
   } from "lucide-svelte";
-  import { isAddFeedModalOpen, isSettingsModalOpen } from "$lib/stores/ui";
+  import {
+    isAddFeedModalOpen,
+    isSettingsModalOpen,
+    viewMode,
+    activeSmartFolder,
+    setViewSmartFolder,
+  } from "$lib/stores/ui";
 
   // Navigation Items
   const navItems = [
     { label: "Dashboard", icon: LayoutDashboard, href: "/" },
-    { label: "My Feeds", icon: Rss, href: "/feeds" },
-    { label: "Library", icon: Library, href: "/library" },
-    { label: "Explore", icon: Search, href: "/explore" },
+    { label: "My Feeds", icon: Circle, href: "/feeds" },
+    { label: "Library", icon: List, href: "/library" },
+    { label: "Explore", icon: Bookmark, href: "/explore" },
   ];
 
   $: activeUrl = $page.url.pathname;
@@ -71,32 +78,65 @@
       </a>
     {/each}
 
-    <!-- Smart Folders Section (Mock) -->
+    <!-- Smart Folders Section -->
     <div
       class="text-xs font-semibold text-white/40 uppercase tracking-wider px-3 mb-2 mt-8"
     >
       Smart Folders
     </div>
     <button
-      class="w-full flex items-center gap-3 px-3 py-2 text-sm text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+      class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+        {$viewMode === 'smart' && $activeSmartFolder === 'youtube'
+          ? 'bg-white/10 text-white shadow-inner border border-white/5'
+          : 'text-white/60 hover:text-white hover:bg-white/5'}"
+      on:click={() => setViewSmartFolder('youtube')}
     >
       <span
         class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"
-      ></span> YouTube
+      ></span>
+      YouTube
+
+      {#if $viewMode === 'smart' && $activeSmartFolder === 'youtube'}
+        <div
+          class="absolute inset-y-0 left-0 w-1 bg-red-500 rounded-r-full shadow-[0_0_10px_2px_rgba(239,68,68,0.5)]"
+        ></div>
+      {/if}
     </button>
     <button
-      class="w-full flex items-center gap-3 px-3 py-2 text-sm text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+      class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+        {$viewMode === 'smart' && $activeSmartFolder === 'reddit'
+          ? 'bg-white/10 text-white shadow-inner border border-white/5'
+          : 'text-white/60 hover:text-white hover:bg-white/5'}"
+      on:click={() => setViewSmartFolder('reddit')}
     >
       <span
         class="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]"
-      ></span> Reddit
+      ></span>
+      Reddit
+
+      {#if $viewMode === 'smart' && $activeSmartFolder === 'reddit'}
+        <div
+          class="absolute inset-y-0 left-0 w-1 bg-orange-500 rounded-r-full shadow-[0_0_10px_2px_rgba(249,115,22,0.5)]"
+        ></div>
+      {/if}
     </button>
     <button
-      class="w-full flex items-center gap-3 px-3 py-2 text-sm text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+      class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+        {$viewMode === 'smart' && $activeSmartFolder === 'podcast'
+          ? 'bg-white/10 text-white shadow-inner border border-white/5'
+          : 'text-white/60 hover:text-white hover:bg-white/5'}"
+      on:click={() => setViewSmartFolder('podcast')}
     >
       <span
         class="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]"
-      ></span> Podcasts
+      ></span>
+      Podcasts
+
+      {#if $viewMode === 'smart' && $activeSmartFolder === 'podcast'}
+        <div
+          class="absolute inset-y-0 left-0 w-1 bg-purple-500 rounded-r-full shadow-[0_0_10px_2px_rgba(168,85,247,0.5)]"
+        ></div>
+      {/if}
     </button>
 
     <div class="mt-8 px-3">
