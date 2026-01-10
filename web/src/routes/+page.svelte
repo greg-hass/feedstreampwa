@@ -4231,7 +4231,8 @@
 		display: flex;
 		flex-direction: column;
 		gap: 12px;
-		border: 1px solid var(--stroke); /* Ensure border exists */
+		border: 1px solid var(--stroke);
+		border-left: 1px solid var(--stroke); /* Explicitly no green accent */
 	}
 
 	.article-card:hover {
