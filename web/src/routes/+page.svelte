@@ -1,5 +1,28 @@
 <script lang="ts">
 	import { onMount } from "svelte";
+	import {
+		LayoutGrid,
+		Circle,
+		Bookmark,
+		Settings,
+		Plus,
+		RefreshCw,
+		Home,
+		Rss,
+		Youtube,
+		MessageCircle,
+		Mic,
+		FolderOpen,
+		X,
+		Menu,
+		Search,
+		Star,
+		Play,
+		Download,
+		Upload,
+		Link,
+		List,
+	} from "lucide-svelte";
 
 	// Feed subscription state
 	let feeds: any[] = [];
@@ -1660,40 +1683,7 @@
 				class:active={viewMode === "all"}
 				on:click={setViewAll}
 			>
-				<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-					<rect
-						x="2"
-						y="2"
-						width="6"
-						height="6"
-						rx="1"
-						fill="currentColor"
-					/>
-					<rect
-						x="10"
-						y="2"
-						width="6"
-						height="6"
-						rx="1"
-						fill="currentColor"
-					/>
-					<rect
-						x="2"
-						y="10"
-						width="6"
-						height="6"
-						rx="1"
-						fill="currentColor"
-					/>
-					<rect
-						x="10"
-						y="10"
-						width="6"
-						height="6"
-						rx="1"
-						fill="currentColor"
-					/>
-				</svg>
+				<LayoutGrid size={20} />
 				<span>All</span>
 				{#if totalUnread > 0}
 					<span class="badge">{totalUnread}</span>
@@ -1705,17 +1695,7 @@
 				class:active={viewMode === "unread"}
 				on:click={setViewUnread}
 			>
-				<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-					<circle
-						cx="9"
-						cy="9"
-						r="7"
-						stroke="currentColor"
-						stroke-width="2"
-						fill="none"
-					/>
-					<circle cx="9" cy="9" r="3" fill="currentColor" />
-				</svg>
+				<Circle size={20} />
 				<span>Unread</span>
 				{#if totalUnread > 0}
 					<span class="badge">{totalUnread}</span>
@@ -1727,15 +1707,7 @@
 				class:active={viewMode === "bookmarks"}
 				on:click={setViewBookmarks}
 			>
-				<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-					<path
-						d="M4 2h10v14l-5-3-5 3V2z"
-						stroke="currentColor"
-						stroke-width="1.5"
-						stroke-linejoin="round"
-						fill="none"
-					/>
-				</svg>
+				<Bookmark size={20} />
 				<span>Bookmarks</span>
 				{#if bookmarkedCount > 0}
 					<span class="badge">{bookmarkedCount}</span>
@@ -1748,15 +1720,7 @@
 					activeSmartFolder === "rss"}
 				on:click={() => setViewSmartFolder("rss")}
 			>
-				<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-					<circle cx="3" cy="15" r="2" fill="currentColor" />
-					<path
-						d="M3 9a6 6 0 016 6M3 3a12 12 0 0112 12"
-						stroke="currentColor"
-						stroke-width="2"
-						fill="none"
-					/>
-				</svg>
+				<Rss size={20} />
 				<span>RSS</span>
 				{#if rssUnread > 0}
 					<span class="badge">{rssUnread}</span>
@@ -1769,15 +1733,7 @@
 					activeSmartFolder === "youtube"}
 				on:click={() => setViewSmartFolder("youtube")}
 			>
-				<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-					<path
-						d="M17 6s0-2-2-2H3c-2 0-2 2-2 2v6s0 2 2 2h12c2 0 2-2 2-2V6z"
-						stroke="currentColor"
-						stroke-width="1.5"
-						fill="none"
-					/>
-					<path d="M7 5l5 4-5 4V5z" fill="currentColor" />
-				</svg>
+				<Youtube size={20} />
 				<span>YouTube</span>
 				{#if youtubeUnread > 0}
 					<span class="badge">{youtubeUnread}</span>
@@ -1790,35 +1746,7 @@
 					activeSmartFolder === "reddit"}
 				on:click={() => setViewSmartFolder("reddit")}
 			>
-				<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-					<!-- Reddit alien head -->
-					<circle
-						cx="9"
-						cy="10"
-						r="6"
-						stroke="currentColor"
-						stroke-width="1.5"
-						fill="none"
-					/>
-					<!-- Antenna -->
-					<path
-						d="M9 4V2"
-						stroke="currentColor"
-						stroke-width="1.5"
-						stroke-linecap="round"
-					/>
-					<circle cx="9" cy="2" r="1.5" fill="currentColor" />
-					<!-- Eyes -->
-					<circle cx="6.5" cy="9.5" r="1" fill="currentColor" />
-					<circle cx="11.5" cy="9.5" r="1" fill="currentColor" />
-					<!-- Smile -->
-					<path
-						d="M6.5 12c.5.8 1.2 1.2 2.5 1.2s2-.4 2.5-1.2"
-						stroke="currentColor"
-						stroke-width="1.5"
-						stroke-linecap="round"
-					/>
-				</svg>
+				<MessageCircle size={20} />
 				<span>Reddit</span>
 				{#if redditUnread > 0}
 					<span class="badge">{redditUnread}</span>
@@ -1831,23 +1759,7 @@
 					activeSmartFolder === "podcast"}
 				on:click={() => setViewSmartFolder("podcast")}
 			>
-				<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-					<circle
-						cx="9"
-						cy="9"
-						r="8"
-						stroke="currentColor"
-						stroke-width="1.5"
-						fill="none"
-					/>
-					<circle cx="9" cy="9" r="2" fill="currentColor" />
-					<path
-						d="M9 13v2M5 9a4 4 0 018 0M3 9a6 6 0 0112 0"
-						stroke="currentColor"
-						stroke-width="1.5"
-						stroke-linecap="round"
-					/>
-				</svg>
+				<Mic size={20} />
 				<span>Podcasts</span>
 				{#if podcastUnread > 0}
 					<span class="badge">{podcastUnread}</span>
@@ -1866,14 +1778,7 @@
 					}}
 					title="New folder"
 				>
-					<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-						<path
-							d="M7 3v8M3 7h8"
-							stroke="currentColor"
-							stroke-width="1.5"
-							stroke-linecap="round"
-						/>
-					</svg>
+					<Plus size={14} />
 				</button>
 			</div>
 
@@ -1890,20 +1795,7 @@
 								activeFolderId === folder.id}
 							on:click={() => setViewFolder(folder.id)}
 						>
-							<svg
-								width="18"
-								height="18"
-								viewBox="0 0 18 18"
-								fill="none"
-							>
-								<path
-									d="M2 4h5l1 2h8v10H2V4z"
-									stroke="currentColor"
-									stroke-width="1.5"
-									stroke-linejoin="round"
-									fill="none"
-								/>
-							</svg>
+							<FolderOpen size={20} />
 							<span class="folder-name">{folder.name}</span>
 							<div class="folder-meta">
 								{#if folderUnreadCounts[folder.id] > 0}
@@ -2124,22 +2016,7 @@
 
 			<div class="topbar-center">
 				<div class="search-box">
-					<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-						<circle
-							cx="8"
-							cy="8"
-							r="6"
-							stroke="currentColor"
-							stroke-width="1.5"
-							fill="none"
-						/>
-						<path
-							d="M12.5 12.5l3 3"
-							stroke="currentColor"
-							stroke-width="1.5"
-							stroke-linecap="round"
-						/>
-					</svg>
+					<Search size={16} />
 					<input
 						type="text"
 						placeholder="Search articles..."
@@ -2153,19 +2030,7 @@
 							on:click={clearSearch}
 							title="Clear search (ESC)"
 						>
-							<svg
-								width="16"
-								height="16"
-								viewBox="0 0 16 16"
-								fill="none"
-							>
-								<path
-									d="M4 4l8 8M12 4l-8 8"
-									stroke="currentColor"
-									stroke-width="1.5"
-									stroke-linecap="round"
-								/>
-							</svg>
+							<X size={16} />
 						</button>
 					{/if}
 				</div>
@@ -2177,60 +2042,17 @@
 					on:click={startRefresh}
 					title="Refresh all feeds"
 				>
-					<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-						<path
-							d="M17 10c0 3.866-3.134 7-7 7s-7-3.134-7-7 3.134-7 7-7c1.933 0 3.683.783 4.95 2.05"
-							stroke="currentColor"
-							stroke-width="1.5"
-							stroke-linecap="round"
-						/>
-						<path
-							d="M17 6v4h-4"
-							stroke="currentColor"
-							stroke-width="1.5"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						/>
-					</svg>
+					<RefreshCw size={20} />
 				</button>
 				<button
 					class="icon-btn"
 					on:click={() => (showSettings = true)}
 					title="Settings"
 				>
-					<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-						<circle
-							cx="10"
-							cy="10"
-							r="7"
-							stroke="currentColor"
-							stroke-width="1.5"
-							fill="none"
-						/>
-						<circle cx="10" cy="10" r="2" fill="currentColor" />
-						<path
-							d="M10 3v1.5M10 15.5V17M17 10h-1.5M4.5 10H3"
-							stroke="currentColor"
-							stroke-width="1.5"
-							stroke-linecap="round"
-						/>
-						<path
-							d="M14.5 5.5l-1 1M6.5 13.5l-1 1M14.5 14.5l-1-1M6.5 6.5l-1-1"
-							stroke="currentColor"
-							stroke-width="1.5"
-							stroke-linecap="round"
-						/>
-					</svg>
+					<Settings size={20} />
 				</button>
 				<button class="add-btn" on:click={openAddFeedModal}>
-					<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-						<path
-							d="M10 5v10M5 10h10"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-						/>
-					</svg>
+					<Plus size={20} />
 				</button>
 			</div>
 		</header>
@@ -2291,22 +2113,12 @@
 										? "Remove bookmark"
 										: "Bookmark"}
 								>
-									<svg
-										width="16"
-										height="16"
-										viewBox="0 0 16 16"
-										fill="none"
-									>
-										<path
-											d="M3 1h10v13l-5-3-5 3V1z"
-											stroke="currentColor"
-											stroke-width="1.5"
-											stroke-linejoin="round"
-											fill={item.is_starred === 1
-												? "currentColor"
-												: "none"}
-										/>
-									</svg>
+									<Bookmark
+										size={16}
+										fill={item.is_starred === 1
+											? "currentColor"
+											: "none"}
+									/>
 								</button>
 								<button
 									class="read-dot"
@@ -2364,16 +2176,7 @@
 								/>
 								{#if item.source === "youtube"}
 									<div class="play-overlay">
-										<svg
-											viewBox="0 0 24 24"
-											width="32"
-											height="32"
-										>
-											<path
-												fill="currentColor"
-												d="M8 5v14l11-7z"
-											/>
-										</svg>
+										<Play size={32} fill="currentColor" />
 									</div>
 								{/if}
 							</div>
@@ -2395,14 +2198,7 @@
 				<div class="drawer-header">
 					<div class="logo">
 						<div class="logo-icon">
-							<svg
-								width="20"
-								height="20"
-								viewBox="0 0 20 20"
-								fill="none"
-							>
-								<path d="M4 4h12v12H4z" fill="currentColor" />
-							</svg>
+							<Rss size={20} />
 						</div>
 						<span class="logo-text">FeedStream</span>
 					</div>
@@ -2411,19 +2207,7 @@
 						on:click={() => (mobileMenuOpen = false)}
 						title="Close"
 					>
-						<svg
-							width="24"
-							height="24"
-							viewBox="0 0 24 24"
-							fill="none"
-						>
-							<path
-								d="M18 6L6 18M6 6l12 12"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-							/>
-						</svg>
+						<X size={24} />
 					</button>
 				</div>
 
@@ -2822,40 +2606,7 @@
 					setViewAll();
 				}}
 			>
-				<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-					<rect
-						x="3"
-						y="3"
-						width="8"
-						height="8"
-						rx="1"
-						fill="currentColor"
-					/>
-					<rect
-						x="13"
-						y="3"
-						width="8"
-						height="8"
-						rx="1"
-						fill="currentColor"
-					/>
-					<rect
-						x="3"
-						y="13"
-						width="8"
-						height="8"
-						rx="1"
-						fill="currentColor"
-					/>
-					<rect
-						x="13"
-						y="13"
-						width="8"
-						height="8"
-						rx="1"
-						fill="currentColor"
-					/>
-				</svg>
+				<LayoutGrid size={24} />
 				<span>All</span>
 			</button>
 
@@ -2867,17 +2618,7 @@
 					setViewUnread();
 				}}
 			>
-				<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-					<circle
-						cx="12"
-						cy="12"
-						r="9"
-						stroke="currentColor"
-						stroke-width="2"
-						fill="none"
-					/>
-					<circle cx="12" cy="12" r="4" fill="currentColor" />
-				</svg>
+				<Circle size={24} />
 				<span>Unread</span>
 			</button>
 
@@ -2889,15 +2630,7 @@
 					setViewBookmarks();
 				}}
 			>
-				<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-					<path
-						d="M5 3h14v18l-7-4-7 4V3z"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linejoin="round"
-						fill="none"
-					/>
-				</svg>
+				<Bookmark size={24} />
 				<span>Bookmarks</span>
 				{#if bookmarkedCount > 0}
 					<span class="tab-badge">{bookmarkedCount}</span>
@@ -2911,22 +2644,7 @@
 					showSettings = true;
 				}}
 			>
-				<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-					<circle
-						cx="12"
-						cy="12"
-						r="3"
-						stroke="currentColor"
-						stroke-width="2"
-						fill="none"
-					/>
-					<path
-						d="M12 1v6m0 10v6M4.22 4.22l4.24 4.24m7.08 7.08l4.24 4.24M1 12h6m10 0h6M4.22 19.78l4.24-4.24m7.08-7.08l4.24-4.24"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-					/>
-				</svg>
+				<Settings size={24} />
 				<span>Settings</span>
 			</button>
 		</div>
@@ -2939,14 +2657,7 @@
 			on:click={openAddFeedModal}
 			title="Add Feeds"
 		>
-			<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-				<path
-					d="M12 5v14M5 12h14"
-					stroke="currentColor"
-					stroke-width="2.5"
-					stroke-linecap="round"
-				/>
-			</svg>
+			<Plus size={24} />
 		</button>
 	{/if}
 
@@ -2958,7 +2669,8 @@
 					<h2>Settings</h2>
 					<button
 						class="close-btn"
-						on:click={() => (showSettings = false)}>×</button
+						on:click={() => (showSettings = false)}
+						><X size={20} /></button
 					>
 				</div>
 
@@ -2989,50 +2701,12 @@
 						<h3>OPML</h3>
 						<div class="settings-actions">
 							<button class="settings-btn" on:click={exportOpml}>
-								<svg
-									width="16"
-									height="16"
-									viewBox="0 0 16 16"
-									fill="none"
-								>
-									<path
-										d="M8 2v8m0 0l3-3m-3 3L5 7"
-										stroke="currentColor"
-										stroke-width="1.5"
-										stroke-linecap="round"
-										stroke-linejoin="round"
-									/>
-									<path
-										d="M14 10v3a1 1 0 01-1 1H3a1 1 0 01-1-1v-3"
-										stroke="currentColor"
-										stroke-width="1.5"
-										stroke-linecap="round"
-									/>
-								</svg>
+								<Download size={16} />
 								Export OPML
 							</button>
 
 							<label class="settings-btn">
-								<svg
-									width="16"
-									height="16"
-									viewBox="0 0 16 16"
-									fill="none"
-								>
-									<path
-										d="M8 14V6m0 0l3 3m-3-3L5 9"
-										stroke="currentColor"
-										stroke-width="1.5"
-										stroke-linecap="round"
-										stroke-linejoin="round"
-									/>
-									<path
-										d="M14 6V3a1 1 0 00-1-1H3a1 1 0 00-1 1v3"
-										stroke="currentColor"
-										stroke-width="1.5"
-										stroke-linecap="round"
-									/>
-								</svg>
+								<Upload size={16} />
 								{importingOpml ? "Importing..." : "Import OPML"}
 								<input
 									type="file"
@@ -3192,7 +2866,7 @@
 				<div class="modal-header">
 					<h2>Add Feed</h2>
 					<button class="close-btn" on:click={closeAddFeedModal}
-						>×</button
+						><X size={20} /></button
 					>
 				</div>
 
@@ -3202,19 +2876,7 @@
 						class:active={addFeedTab === "url"}
 						on:click={() => (addFeedTab = "url")}
 					>
-						<svg
-							width="16"
-							height="16"
-							viewBox="0 0 16 16"
-							fill="none"
-						>
-							<path
-								d="M6.5 10.5l-3 3a2.121 2.121 0 01-3-3l3-3m9-6l-3 3a2.121 2.121 0 01-3-3l3-3"
-								stroke="currentColor"
-								stroke-width="1.5"
-								stroke-linecap="round"
-							/>
-						</svg>
+						<Link size={16} />
 						URL
 					</button>
 					<button
@@ -3222,27 +2884,7 @@
 						class:active={addFeedTab === "search"}
 						on:click={() => (addFeedTab = "search")}
 					>
-						<svg
-							width="16"
-							height="16"
-							viewBox="0 0 16 16"
-							fill="none"
-						>
-							<circle
-								cx="7"
-								cy="7"
-								r="4"
-								stroke="currentColor"
-								stroke-width="1.5"
-								fill="none"
-							/>
-							<path
-								d="M10 10l3 3"
-								stroke="currentColor"
-								stroke-width="1.5"
-								stroke-linecap="round"
-							/>
-						</svg>
+						<Search size={16} />
 						Search
 					</button>
 					<button
@@ -3250,19 +2892,7 @@
 						class:active={addFeedTab === "bulk"}
 						on:click={() => (addFeedTab = "bulk")}
 					>
-						<svg
-							width="16"
-							height="16"
-							viewBox="0 0 16 16"
-							fill="none"
-						>
-							<path
-								d="M2 4h12M2 8h12M2 12h12"
-								stroke="currentColor"
-								stroke-width="1.5"
-								stroke-linecap="round"
-							/>
-						</svg>
+						<List size={16} />
 						Bulk
 					</button>
 				</div>
@@ -3271,20 +2901,7 @@
 					{#if addFeedTab === "url"}
 						<div class="input-group">
 							<div class="input-with-icon">
-								<svg
-									width="18"
-									height="18"
-									viewBox="0 0 18 18"
-									fill="none"
-									class="input-icon"
-								>
-									<path
-										d="M7 11l-3.5 3.5a2.475 2.475 0 01-3.5-3.5L3.5 7.5m11-4L11 7a2.475 2.475 0 01-3.5-3.5L11 0"
-										stroke="currentColor"
-										stroke-width="1.5"
-										stroke-linecap="round"
-									/>
-								</svg>
+								<Link size={18} />
 								<input
 									type="text"
 									bind:value={addFeedUrl}
@@ -3426,19 +3043,7 @@
 													addFeedFromSearch(result)}
 												disabled={addFeedLoading}
 											>
-												<svg
-													width="16"
-													height="16"
-													viewBox="0 0 16 16"
-													fill="none"
-												>
-													<path
-														d="M8 3v10M3 8h10"
-														stroke="currentColor"
-														stroke-width="2"
-														stroke-linecap="round"
-													/>
-												</svg>
+												<Plus size={16} />
 												Add
 											</button>
 										</div>
