@@ -139,6 +139,45 @@ if (!columnExists('items', 'is_starred')) {
 // Create index on is_starred (safe to run multiple times)
 db.exec(`CREATE INDEX IF NOT EXISTS idx_items_is_starred ON items(is_starred)`);
 
+// Migration: Normalize existing published/updated dates to ISO strings for correct sorting
+db.exec(`
+    CREATE TABLE IF NOT EXISTS _migration_status (
+        name TEXT PRIMARY KEY,
+        completed_at TEXT NOT NULL
+    )
+`);
+
+const migrationCheck = db.prepare('SELECT completed_at FROM _migration_status WHERE name = ?').get('normalize_dates');
+if (!migrationCheck) {
+    fastify.log.info('Running date normalization migration...');
+    const items = db.prepare('SELECT id, published, updated FROM items').all() as any[];
+    const updateStmt = db.prepare('UPDATE items SET published = ?, updated = ? WHERE id = ?');
+
+    let updatedCount = 0;
+    db.transaction(() => {
+        for (const item of items) {
+            let pub = item.published;
+            let upd = item.updated;
+
+            try {
+                if (pub) pub = new Date(pub).toISOString();
+            } catch (e) { /* ignore */ }
+
+            try {
+                if (upd) upd = new Date(upd).toISOString();
+            } catch (e) { /* ignore */ }
+
+            if (pub !== item.published || upd !== item.updated) {
+                updateStmt.run(pub, upd, item.id);
+                updatedCount++;
+            }
+        }
+    })();
+
+    db.prepare('INSERT INTO _migration_status (name, completed_at) VALUES (?, ?)').run('normalize_dates', new Date().toISOString());
+    fastify.log.info(`Date normalization migration complete. Updated ${updatedCount} items.`);
+}
+
 // Safe migration: Add icon_url column to feeds table if it doesn't exist
 if (!columnExists('feeds', 'icon_url')) {
     fastify.log.info('Adding icon_url column to feeds table...');
@@ -473,14 +512,33 @@ function generateItemId(feedUrl: string, item: any, index: number, externalId?: 
 
 // Helper: Normalize parsed item
 function normalizeItem(item: any, kind: 'youtube' | 'reddit' | 'generic'): any {
+    const rawPublished = item.pubDate || item.isoDate || item.date_published || null;
+    const rawUpdated = item.updated || item.date_modified || null;
+
+    let published = null;
+    let updated = null;
+
+    try {
+        if (rawPublished) published = new Date(rawPublished).toISOString();
+    } catch (e) {
+        console.warn(`Failed to parse published date: ${rawPublished}`, e);
+        published = rawPublished; // Fallback
+    }
+
+    try {
+        if (rawUpdated) updated = new Date(rawUpdated).toISOString();
+    } catch (e) {
+        updated = rawUpdated; // Fallback
+    }
+
     const normalized: any = {
         title: item.title || null,
         url: item.link || item.url || null,
         author: item.creator || item.author || null,
         summary: item.contentSnippet || item.summary || null,
         content: item.content || item['content:encoded'] || null,
-        published: item.pubDate || item.isoDate || item.date_published || null,
-        updated: item.updated || item.date_modified || null,
+        published,
+        updated,
         raw_guid: item.guid || item.id || null,
         media_thumbnail: null,
         media_duration_seconds: null,
