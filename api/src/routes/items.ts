@@ -11,8 +11,8 @@ export async function itemRoutes(fastify: FastifyInstance) {
   // GET /api/items - List all items (with optional filters)
   fastify.get('/items', async (request: FastifyRequest<{ Querystring: any }>, reply: FastifyReply) => {
     const db = getDatabase();
-    const queryParams = request.query as { feedUrl?: string; read?: string; starred?: string; limit?: string; offset?: string };
-    const { feedUrl, read, starred, limit = 50, offset = 0 } = queryParams;
+    const queryParams = request.query as { feedUrl?: string; read?: string; starred?: string; smartFolder?: string; limit?: string; offset?: string };
+    const { feedUrl, read, starred, smartFolder, limit = 50, offset = 0 } = queryParams;
 
     let sqlQuery = `
       SELECT i.*, f.title as feed_title, f.kind as feed_kind
@@ -35,6 +35,22 @@ export async function itemRoutes(fastify: FastifyInstance) {
     if (starred !== undefined) {
       sqlQuery += ' AND i.is_starred = ?';
       params.push(starred === 'true' ? 1 : 0);
+    }
+
+    if (smartFolder) {
+      // Map smart folder names to feed kinds
+      // 'rss' smart folder should show 'generic' feeds
+      const kindMapping: Record<string, string> = {
+        'rss': 'generic',
+        'youtube': 'youtube',
+        'reddit': 'reddit',
+        'podcast': 'podcast'
+      };
+      const kind = kindMapping[smartFolder];
+      if (kind) {
+        sqlQuery += ' AND f.kind = ?';
+        params.push(kind);
+      }
     }
 
     sqlQuery += ' ORDER BY i.published DESC LIMIT ? OFFSET ?';

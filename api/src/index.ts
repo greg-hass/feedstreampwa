@@ -1470,20 +1470,44 @@ fastify.get('/feeds/search', async (request, reply) => {
         };
     }
 
-    if (!['all', 'rss', 'youtube', 'reddit'].includes(searchType)) {
-        reply.code(400);
-        return {
-            ok: false,
-            error: 'Invalid type parameter. Must be one of: all, rss, youtube, reddit'
-        };
+    // Handle multiple types (comma-separated)
+    let typesToSearch: ('rss' | 'youtube' | 'reddit' | 'podcast')[] = [];
+
+    if (searchType === 'all' || !searchType) {
+        typesToSearch = ['rss', 'youtube', 'reddit', 'podcast'];
+    } else {
+        // Split comma-separated types
+        const types = searchType.split(',').map((t: string) => t.trim());
+        const validTypes = ['rss', 'youtube', 'reddit', 'podcast'];
+        typesToSearch = types.filter((t: string) => validTypes.includes(t)) as ('rss' | 'youtube' | 'reddit' | 'podcast')[];
+
+        if (typesToSearch.length === 0) {
+            reply.code(400);
+            return {
+                ok: false,
+                error: 'Invalid type parameter. Must be one or more of: rss, youtube, reddit, podcast (comma-separated)'
+            };
+        }
     }
 
     try {
-        const results = await searchFeeds(searchQuery, searchType as any);
+        // Aggregate results from all requested types
+        const allResults: any[] = [];
+
+        for (const type of typesToSearch) {
+            if (type === 'podcast') {
+                // Podcast search - similar to RSS but focus on audio feeds
+                const rssResults = await searchRSS(searchQuery);
+                allResults.push(...rssResults.map(r => ({ ...r, type: 'podcast' })));
+            } else {
+                const results = await searchFeeds(searchQuery, type as 'rss' | 'youtube' | 'reddit');
+                allResults.push(...results);
+            }
+        }
 
         return {
             ok: true,
-            results
+            results: allResults
         };
     } catch (error: any) {
         fastify.log.error(error);

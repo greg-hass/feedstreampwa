@@ -7,6 +7,9 @@
     Settings,
     PlusCircle,
     Rss,
+    Youtube,
+    MessageCircle,
+    Mic,
   } from "lucide-svelte";
   import {
     isAddFeedModalOpen,
@@ -27,7 +30,7 @@
 </script>
 
 <aside
-  class="hidden md:flex flex-col w-[280px] h-screen fixed left-0 top-0 z-40 bg-black/40 backdrop-blur-xl border-r border-white/5"
+  class="hidden md:flex flex-col w-[280px] h-screen fixed left-0 top-0 z-40 bg-black/90 backdrop-blur-sm border-r border-white/5"
 >
   <!-- Brand -->
   <div class="p-6 pt-8">
@@ -61,7 +64,7 @@
       >
         <svelte:component
           this={item.icon}
-          size={20}
+          size={24}
           class={activeUrl === item.href
             ? "text-accent"
             : "text-current group-hover:text-white"}
@@ -84,19 +87,43 @@
     </div>
     <button
       class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+        {$viewMode === 'smart' && $activeSmartFolder === 'rss'
+          ? 'bg-white/10 text-white shadow-inner border border-white/5'
+          : 'text-white/60 hover:text-white hover:bg-white/5'}"
+      on:click={() => setViewSmartFolder('rss')}
+    >
+      <Rss
+        size={24}
+        class={$viewMode === 'smart' && $activeSmartFolder === 'rss'
+          ? 'text-accent'
+          : 'text-current group-hover:text-white'}
+      />
+      RSS
+
+      {#if $viewMode === 'smart' && $activeSmartFolder === 'rss'}
+        <div
+          class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
+        ></div>
+      {/if}
+    </button>
+    <button
+      class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
         {$viewMode === 'smart' && $activeSmartFolder === 'youtube'
           ? 'bg-white/10 text-white shadow-inner border border-white/5'
           : 'text-white/60 hover:text-white hover:bg-white/5'}"
       on:click={() => setViewSmartFolder('youtube')}
     >
-      <span
-        class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"
-      ></span>
+      <Youtube
+        size={24}
+        class={$viewMode === 'smart' && $activeSmartFolder === 'youtube'
+          ? 'text-accent'
+          : 'text-current group-hover:text-white'}
+      />
       YouTube
 
       {#if $viewMode === 'smart' && $activeSmartFolder === 'youtube'}
         <div
-          class="absolute inset-y-0 left-0 w-1 bg-red-500 rounded-r-full shadow-[0_0_10px_2px_rgba(239,68,68,0.5)]"
+          class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
         ></div>
       {/if}
     </button>
@@ -107,14 +134,17 @@
           : 'text-white/60 hover:text-white hover:bg-white/5'}"
       on:click={() => setViewSmartFolder('reddit')}
     >
-      <span
-        class="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]"
-      ></span>
+      <MessageCircle
+        size={24}
+        class={$viewMode === 'smart' && $activeSmartFolder === 'reddit'
+          ? 'text-accent'
+          : 'text-current group-hover:text-white'}
+      />
       Reddit
 
       {#if $viewMode === 'smart' && $activeSmartFolder === 'reddit'}
         <div
-          class="absolute inset-y-0 left-0 w-1 bg-orange-500 rounded-r-full shadow-[0_0_10px_2px_rgba(249,115,22,0.5)]"
+          class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
         ></div>
       {/if}
     </button>
@@ -125,26 +155,20 @@
           : 'text-white/60 hover:text-white hover:bg-white/5'}"
       on:click={() => setViewSmartFolder('podcast')}
     >
-      <span
-        class="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]"
-      ></span>
+      <Mic
+        size={24}
+        class={$viewMode === 'smart' && $activeSmartFolder === 'podcast'
+          ? 'text-accent'
+          : 'text-current group-hover:text-white'}
+      />
       Podcasts
 
       {#if $viewMode === 'smart' && $activeSmartFolder === 'podcast'}
         <div
-          class="absolute inset-y-0 left-0 w-1 bg-purple-500 rounded-r-full shadow-[0_0_10px_2px_rgba(168,85,247,0.5)]"
+          class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
         ></div>
       {/if}
     </button>
-
-    <div class="mt-8 px-3">
-      <button
-        class="flex items-center gap-2 text-xs font-medium text-accent hover:text-accent/80 transition-colors"
-        on:click={() => isAddFeedModalOpen.set(true)}
-      >
-        <PlusCircle size={14} /> New Feed
-      </button>
-    </div>
   </div>
 
   <!-- User / Settings at bottom -->

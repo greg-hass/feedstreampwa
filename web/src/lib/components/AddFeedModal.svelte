@@ -1,7 +1,7 @@
 <script lang="ts">
   import { X, PlusCircle, Rss, Loader2, CheckCircle2, Search, Youtube, Hash, Radio, ExternalLink } from "lucide-svelte";
   import { isAddFeedModalOpen } from "$lib/stores/ui";
-  import { createFeed } from "$lib/api/feeds";
+  import { createFeed, refreshFeed } from "$lib/api/feeds";
   import type { SearchResult } from "$lib/types";
 
   let searchQuery = "";
@@ -90,6 +90,15 @@
   async function handleAddFeed(url: string, title: string) {
     try {
       await createFeed(url);
+
+      // Immediately refresh the feed to fetch title and items
+      try {
+        await refreshFeed(url);
+      } catch (refreshErr) {
+        console.warn("Failed to refresh feed after adding:", refreshErr);
+        // Don't fail the whole operation if refresh fails
+      }
+
       successMessage = `Added "${title}" successfully!`;
 
       // Remove from results
@@ -121,7 +130,7 @@
 {#if $isAddFeedModalOpen}
   <!-- Modal Backdrop -->
   <div
-    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
     on:click={closeModal}
     on:keydown={(e) => e.key === "Enter" && closeModal()}
     role="button"
@@ -129,7 +138,7 @@
   >
     <!-- Modal Content -->
     <div
-      class="glass rounded-2xl border border-white/10 max-w-3xl w-full max-h-[85vh] flex flex-col"
+      class="bg-black/95 backdrop-blur-sm rounded-2xl border border-white/10 max-w-3xl w-full max-h-[85vh] flex flex-col"
       on:click|stopPropagation
       on:keydown|stopPropagation
       role="dialog"
@@ -138,7 +147,7 @@
     >
       <!-- Header -->
       <div
-        class="bg-black/40 backdrop-blur-xl border-b border-white/10 px-6 py-4 flex items-center justify-between flex-shrink-0"
+        class="bg-black/80 backdrop-blur-sm border-b border-white/10 px-6 py-4 flex items-center justify-between flex-shrink-0"
       >
         <div class="flex items-center gap-3">
           <div

@@ -140,7 +140,7 @@
 {#if $isSettingsModalOpen}
   <!-- Modal Backdrop -->
   <div
-    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
     on:click={handleCancel}
     on:keydown={handleBackdropKeydown}
     role="button"
@@ -157,7 +157,7 @@
     >
       <!-- Header -->
       <div
-        class="sticky top-0 bg-black/40 backdrop-blur-xl border-b border-white/10 px-6 py-4 flex items-center justify-between z-10"
+        class="sticky top-0 bg-black/90 backdrop-blur-sm border-b border-white/10 px-6 py-4 flex items-center justify-between z-10"
       >
         <div class="flex items-center gap-3">
           <div
@@ -312,7 +312,7 @@
 
       <!-- Footer -->
       <div
-        class="sticky bottom-0 bg-black/40 backdrop-blur-xl border-t border-white/10 px-6 py-4 flex items-center justify-end gap-3"
+        class="sticky bottom-0 bg-black/90 backdrop-blur-sm border-t border-white/10 px-6 py-4 flex items-center justify-end gap-3"
       >
         <button
           class="px-4 py-2 rounded-xl text-white/60 hover:text-white hover:bg-white/5 transition-colors"

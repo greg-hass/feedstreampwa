@@ -1593,8 +1593,8 @@
         <div class="flex items-center gap-2">
           <button
             class="p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 transition-all shadow-lg shadow-purple-500/20 text-white"
-            on:click={refreshAll}
-            class:spinning={feedsLoading || itemsLoading}
+            on:click={startRefresh}
+            class:spinning={showRefreshToast}
             title="Refresh"
           >
             <RefreshCw size={20} />
