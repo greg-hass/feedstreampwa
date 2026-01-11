@@ -3,7 +3,6 @@
   import Sidebar from "$lib/components/Sidebar.svelte";
   import BottomNav from "$lib/components/BottomNav.svelte";
   import MobileMenu from "$lib/components/MobileMenu.svelte";
-  import MobileHeader from "$lib/components/MobileHeader.svelte";
   import MediaPlayer from "$lib/components/MediaPlayer.svelte";
   import SettingsModal from "$lib/components/SettingsModal.svelte";
   import AddFeedModal from "$lib/components/AddFeedModal.svelte";
