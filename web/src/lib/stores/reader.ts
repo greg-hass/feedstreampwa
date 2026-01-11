@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 import * as itemsApi from '$lib/api/items';
+import { toggleRead } from './items';
 
 export interface ReaderData {
     url: string;
@@ -23,6 +24,11 @@ const readerCache = new Map<string, ReaderData>();
 
 export async function openReader(item: any) {
     if (!item.url) return;
+
+    // Auto-mark as read
+    if (item.is_read === 0) {
+        toggleRead(item);
+    }
 
     currentItem.set(item);
     currentItemUrl.set(item.url);

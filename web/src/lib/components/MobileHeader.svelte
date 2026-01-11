@@ -1,16 +1,12 @@
 <script lang="ts">
-  import { Menu, Search, PlusCircle, RefreshCw, X } from "lucide-svelte";
-  import { isMobileMenuOpen, isAddFeedModalOpen } from "$lib/stores/ui";
+  import { Search, Plus, RefreshCw, X } from "lucide-svelte";
+  import { isAddFeedModalOpen } from "$lib/stores/ui";
 
   export let searchQuery = "";
   export let onSearchInput: () => void = () => {};
   export let onSearchClear: () => void = () => {};
   export let onRefresh: () => void = () => {};
   export let isRefreshing = false;
-
-  function openMenu() {
-    isMobileMenuOpen.set(true);
-  }
 
   function openAddFeed() {
     isAddFeedModalOpen.set(true);
@@ -21,16 +17,7 @@
 <header
   class="md:hidden sticky top-0 z-30 bg-background border-b border-white/5"
 >
-  <div class="flex items-center gap-2 px-3 py-2">
-    <!-- Menu Button -->
-    <button
-      on:click={openMenu}
-      class="p-2 rounded-xl hover:bg-white/10 transition-colors active:scale-95 flex-shrink-0"
-      aria-label="Open menu"
-    >
-      <Menu size={22} class="text-white" />
-    </button>
-
+  <div class="flex items-center gap-2 px-4 py-2">
     <!-- Search Bar -->
     <div class="flex-1 relative">
       <Search size={18} class="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
@@ -51,22 +38,33 @@
       {/if}
     </div>
 
-    <!-- Action Buttons -->
+    <!-- Action Buttons (Matched to Desktop) -->
     <button
       on:click={onRefresh}
-      class="p-2 rounded-xl hover:bg-white/10 transition-colors active:scale-95 flex-shrink-0"
+      class="p-2 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white active:scale-95 transition-all flex-shrink-0"
       class:animate-spin={isRefreshing}
       aria-label="Refresh"
     >
-      <RefreshCw size={20} class="text-white" />
+      <RefreshCw size={20} />
     </button>
 
     <button
       on:click={openAddFeed}
-      class="p-2 rounded-xl hover:bg-white/10 transition-colors active:scale-95 flex-shrink-0"
+      class="p-2 rounded-xl bg-accent text-white active:scale-95 transition-all flex-shrink-0"
       aria-label="Add feed"
     >
-      <PlusCircle size={20} class="text-accent" />
+      <Plus size={20} />
     </button>
   </div>
 </header>
+
+<style>
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+</style>
