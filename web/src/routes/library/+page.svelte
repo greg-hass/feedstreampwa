@@ -278,7 +278,7 @@
 </div>
 
 <style>
-  /* Search Bar Styles - matching Dashboard */
+  /* Search Bar Styles - matching All Articles */
   .search-bar-full {
     margin-bottom: 20px;
   }

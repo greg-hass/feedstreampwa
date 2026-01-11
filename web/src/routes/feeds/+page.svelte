@@ -390,7 +390,7 @@
       <p class="text-white/60">Try adjusting your search or filters</p>
     </div>
   {:else}
-    <!-- Feeds List with horizontal card layout matching Dashboard -->
+    <!-- Feeds List with horizontal card layout matching All Articles -->
     <div class="flex flex-col gap-0 w-full">
       <!-- Select All Header -->
       {#if filteredFeeds.length > 1}

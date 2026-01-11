@@ -17,13 +17,13 @@
     viewMode,
     activeSmartFolder,
     setViewSmartFolder,
+    setViewAll,
   } from "$lib/stores/ui";
 
   $: activeUrl = $page.url.pathname;
 
   // Navigation Items
   const navItems = [
-    { label: "Dashboard", icon: LayoutDashboard, href: "/" },
     { label: "Feeds", icon: List, href: "/feeds" },
     { label: "Library", icon: Bookmark, href: "/library" },
   ];
@@ -131,6 +131,33 @@
       >
         Menu
       </div>
+
+      <!-- All Articles Button -->
+      <a
+        href="/"
+        on:click={() => {
+          setViewAll();
+          handleNavClick();
+        }}
+        class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative overflow-hidden
+        {activeUrl === '/'
+          ? 'bg-white/10 text-white shadow-inner border border-white/5'
+          : 'text-white/60 hover:text-white hover:bg-white/5'}"
+      >
+        <LayoutDashboard
+          size={24}
+          class={activeUrl === '/'
+            ? "text-accent"
+            : "text-current group-hover:text-white"}
+        />
+        All Articles
+
+        {#if activeUrl === '/'}
+          <div
+            class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
+          ></div>
+        {/if}
+      </a>
 
       {#each navItems as item}
         <a

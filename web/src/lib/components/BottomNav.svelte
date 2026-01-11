@@ -1,10 +1,9 @@
 <script lang="ts">
   import { page } from "$app/stores";
   import { LayoutDashboard, Rss, Bookmark, Menu } from "lucide-svelte";
-  import { isMobileMenuOpen } from "$lib/stores/ui";
+  import { isMobileMenuOpen, setViewAll } from "$lib/stores/ui";
 
   const items = [
-    { label: "Home", icon: LayoutDashboard, href: "/" },
     { label: "Feeds", icon: Rss, href: "/feeds" },
     { label: "Library", icon: Bookmark, href: "/library" },
   ];
@@ -13,6 +12,10 @@
 
   function openMenu() {
     isMobileMenuOpen.set(true);
+  }
+
+  function handleAllArticlesClick() {
+    setViewAll();
   }
 </script>
 
@@ -50,6 +53,39 @@
       Menu
     </span>
   </button>
+
+  <!-- All Articles Button -->
+  <a
+    href="/"
+    on:click={handleAllArticlesClick}
+    class="flex flex-col items-center justify-center w-full gap-1 active:scale-95 transition-transform duration-100 py-2"
+  >
+    <div
+      class="relative p-1.5 rounded-xl transition-all duration-300 {activeUrl === '/'
+        ? 'bg-white/10'
+        : ''}"
+    >
+      <LayoutDashboard
+        size={22}
+        class="transition-colors duration-300 {activeUrl === '/'
+          ? 'text-white'
+          : 'text-white/40'}"
+        strokeWidth={activeUrl === '/' ? 2.5 : 2}
+      />
+      {#if activeUrl === '/'}
+        <span
+          class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-accent rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)]"
+        ></span>
+      {/if}
+    </div>
+    <span
+      class="text-[10px] font-medium {activeUrl === '/'
+        ? 'text-white'
+        : 'text-white/40'}"
+    >
+      All Articles
+    </span>
+  </a>
 
   {#each items as item}
     <a

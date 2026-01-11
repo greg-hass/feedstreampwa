@@ -134,7 +134,7 @@
     } else if ($viewMode === "bookmarks") {
       return "Starred";
     }
-    return "Dashboard";
+    return "All Articles";
   })();
 
   // Helper to get feed URLs by smart folder kind
