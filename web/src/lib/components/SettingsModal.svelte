@@ -16,7 +16,8 @@
   import { isSettingsModalOpen, renameModal, feedFolderPopover } from "$lib/stores/ui";
   import { settings, loadSettings } from "$lib/stores/settings";
   import { updateSettings } from "$lib/api/settings";
-  import { feeds, removeFeed } from "$lib/stores/feeds";
+  import { feeds, removeFeed, loadFeeds } from "$lib/stores/feeds";
+  import { loadFolders } from "$lib/stores/folders";
   import { onMount } from "svelte";
   import type { Settings, ImportResult, Feed } from "$lib/types";
 
@@ -97,31 +98,72 @@
     }
   }
 
+  let importJobId: string | null = null;
+  let importStatus: { status: string; current: number; total: number; currentName?: string; result?: ImportResult } | null = null;
+
   async function handleImportOpml(event: Event) {
     const input = event.target as HTMLInputElement;
     if (!input.files?.[0]) return;
 
     importingOpml = true;
     error = null;
+    importStatus = null;
+    importResults = null;
 
     try {
-      const formData = new FormData();
-      formData.append("file", input.files[0]);
+      const text = await input.files[0].text();
 
-      const response = await fetch("/api/feeds/import", {
+      const response = await fetch("/api/opml", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ opml: text }),
       });
 
-      if (!response.ok) throw new Error("Import failed");
+      if (!response.ok) throw new Error("Import failed to start");
 
-      importResults = await response.json();
+      const data = await response.json();
+      importJobId = data.jobId;
+      
+      pollImportStatus();
     } catch (err) {
       error = err instanceof Error ? err.message : "Failed to import OPML";
-    } finally {
       importingOpml = false;
+    } finally {
+      // Reset file input
       input.value = "";
     }
+  }
+
+  async function pollImportStatus() {
+    if (!importJobId) return;
+
+    const timer = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/opml/status/${importJobId}`);
+        const data = await res.json();
+
+        if (data.ok) {
+          importStatus = data.status;
+          
+          if (data.status.status === 'completed' || data.status.status === 'failed') {
+            clearInterval(timer);
+            importingOpml = false;
+            
+            if (data.status.status === 'completed') {
+                importResults = data.status.result;
+                loadFeeds();
+                loadFolders();
+            } else {
+                error = "Import failed: " + (data.status.errors[0] || "Unknown error");
+            }
+          }
+        }
+      } catch (e) {
+        clearInterval(timer);
+        importingOpml = false;
+        error = "Failed to track import status";
+      }
+    }, 500);
   }
 
   function handleRenameFeed(feed: Feed) {
@@ -400,6 +442,25 @@
                   />
                 </label>
               </div>
+
+              <!-- Import Progress -->
+              {#if importingOpml && importStatus}
+                <div class="mt-4 p-4 rounded-xl bg-surface border border-white/5">
+                  <div class="flex justify-between text-xs text-white/60 mb-2">
+                    <span>Importing... {importStatus.current} / {importStatus.total}</span>
+                    <span>{importStatus.total > 0 ? Math.round((importStatus.current / importStatus.total) * 100) : 0}%</span>
+                  </div>
+                  <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                    <div 
+                      class="h-full bg-accent transition-all duration-300 ease-out" 
+                      style="width: {importStatus.total > 0 ? (importStatus.current / importStatus.total) * 100 : 0}%"
+                    ></div>
+                  </div>
+                  <div class="text-[10px] text-white/30 mt-2 truncate font-mono">
+                    {importStatus.currentName || 'Preparing...'}
+                  </div>
+                </div>
+              {/if}
 
               <!-- Import Results -->
               {#if importResults}

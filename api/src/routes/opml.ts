@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { getDatabase } from '../db/connection.js';
 import { validateImportOpmlBody } from '../utils/validators.js';
+import { createImportJob, getJobStatus } from '../services/import-service.js';
 
 const APOS_ENTITY = String.fromCharCode(38) + '#39;';
 
@@ -28,48 +29,29 @@ ${(feeds as any[]).map(feed => `    <outline type="rss" text="${escapeXml(feed.t
     return opml;
   });
 
-  // POST /api/opml - Import feeds from OPML
+  // POST /api/opml - Import feeds from OPML (Async)
   fastify.post('/opml', async (request: FastifyRequest<{ Body: any }>, reply: FastifyReply) => {
     try {
       const validated = validateImportOpmlBody(request.body);
-      const db = getDatabase();
       const { opml } = validated;
 
-      // Parse OPML (simplified parser)
-      const urls = parseOpmlUrls(opml);
+      const jobId = createImportJob(opml);
 
-      if (urls.length === 0) {
-        return reply.code(400).send({ ok: false, error: 'No feeds found in OPML' });
-      }
-
-      // Import feeds
-      let imported = 0;
-      let skipped = 0;
-
-      for (const url of urls) {
-        // Check if feed already exists
-        const existing = db.prepare('SELECT * FROM feeds WHERE url = ?').get(url);
-
-        if (!existing) {
-          db.prepare(`
-            INSERT INTO feeds (url, kind, title, site_url, icon_url, custom_title, last_status)
-            VALUES (?, 'generic', NULL, NULL, NULL, NULL, 0)
-          `).run(url);
-          imported++;
-        } else {
-          skipped++;
-        }
-      }
-
-      return {
-        ok: true,
-        imported,
-        skipped,
-        total: urls.length
-      };
+      return { ok: true, jobId, message: 'Import started' };
     } catch (error) {
       return reply.code(400).send({ ok: false, error: error instanceof Error ? error.message : 'Import failed' });
     }
+  });
+
+  // GET /api/opml/status/:id - Check import status
+  fastify.get('/opml/status/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    const status = getJobStatus(request.params.id);
+    
+    if (!status) {
+      return reply.code(404).send({ ok: false, error: 'Job not found' });
+    }
+
+    return { ok: true, status };
   });
 }
 
@@ -81,22 +63,4 @@ function escapeXml(str: string): string {
     .replace(/>/g, '>')
     .replace(/"/g, '"')
     .replace(/'/g, APOS_ENTITY);
-}
-
-// Helper: Parse OPML and extract feed URLs
-function parseOpmlUrls(opml: string): string[] {
-  const urls: string[] = [];
-
-  // Simple regex-based parser (for production, use a proper XML parser)
-  const urlRegex = /xmlUrl\s*=\s*["']([^"']+)["']/gi;
-  let match;
-
-  while ((match = urlRegex.exec(opml)) !== null) {
-    const url = match[1];
-    if (url && url.startsWith('http')) {
-      urls.push(url);
-    }
-  }
-
-  return [...new Set(urls)]; // Remove duplicates
 }
