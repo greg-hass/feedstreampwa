@@ -3,7 +3,7 @@
   import {
     X,
     LayoutDashboard,
-    Circle,
+    List,
     Bookmark,
     Settings,
     PlusCircle,
@@ -26,7 +26,7 @@
   // Navigation Items
   const navItems = [
     { label: "Dashboard", icon: LayoutDashboard, href: "/" },
-    { label: "Feeds", icon: Circle, href: "/feeds" },
+    { label: "Feeds", icon: List, href: "/feeds" },
     { label: "Library", icon: Bookmark, href: "/library" },
   ];
 
