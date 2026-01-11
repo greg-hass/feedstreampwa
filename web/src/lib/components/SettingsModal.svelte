@@ -148,7 +148,7 @@
   >
     <!-- Modal Content -->
     <div
-      class="bg-[#0a0a0b] rounded-2xl border border-white/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+      class="bg-surface rounded-2xl border border-white/5 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
       on:click|stopPropagation
       on:keydown|stopPropagation
       role="dialog"
@@ -157,7 +157,7 @@
     >
       <!-- Header -->
       <div
-        class="sticky top-0 bg-[#0d0d0e] border-b border-white/10 px-6 py-4 flex items-center justify-between z-10"
+        class="sticky top-0 bg-surface border-b border-white/5 px-6 py-4 flex items-center justify-between z-10"
       >
         <div class="flex items-center gap-3">
           <div
@@ -312,7 +312,7 @@
 
       <!-- Footer -->
       <div
-        class="sticky bottom-0 bg-[#0d0d0e] border-t border-white/10 px-6 py-4 flex items-center justify-end gap-3"
+        class="sticky bottom-0 bg-surface border-t border-white/5 px-6 py-4 flex items-center justify-end gap-3"
       >
         <button
           class="px-4 py-2 rounded-xl text-white/60 hover:text-white hover:bg-white/5 transition-colors"

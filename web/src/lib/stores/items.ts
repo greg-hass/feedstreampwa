@@ -11,6 +11,10 @@ export const itemsTotal = writable(0);
 export const searchQuery = writable('');
 export const timeFilter = writable<TimeFilter>('all');
 
+export const hasMore = writable(true);
+export const currentOffset = writable(0);
+const PAGE_SIZE = 50;
+
 // Derived stores
 export const bookmarkedCount = derived(items, ($items) =>
     $items.filter((i) => i.is_starred === 1).length
@@ -27,26 +31,54 @@ export async function loadItems(params: {
     smartFolder?: 'rss' | 'youtube' | 'reddit' | 'podcast';
     unreadOnly?: boolean;
     starredOnly?: boolean;
+    refresh?: boolean; // New param to force reset
 } = {}): Promise<void> {
+    const isRefresh = params.refresh !== false; // Default to true if not specified, usually we call loadItems() to reset
+    
+    // If not refreshing (appending), check if we are already loading
+    if (!isRefresh && get(itemsLoading)) return;
+
     itemsLoading.set(true);
-    itemsError.set(null);
+    if (isRefresh) {
+        itemsError.set(null);
+        items.set([]);
+        currentOffset.set(0);
+        hasMore.set(true);
+    }
 
     try {
         const query = get(searchQuery);
+        const offset = get(currentOffset);
 
         // If searching, use search endpoint
         if (query.trim()) {
-            const data = await itemsApi.searchItems(query);
-            items.set(data.items);
+            const data = await itemsApi.searchItems(query, PAGE_SIZE, offset);
+            
+            if (isRefresh) {
+                items.set(data.items);
+            } else {
+                items.update(current => [...current, ...data.items]);
+            }
+            
             itemsTotal.set(data.total);
+            hasMore.set(data.items.length === PAGE_SIZE);
+            currentOffset.update(n => n + PAGE_SIZE);
         } else {
             const data = await itemsApi.fetchItems({
                 ...params,
-                limit: 100,
-                offset: 0,
+                limit: PAGE_SIZE,
+                offset: offset,
             });
-            items.set(data.items);
+            
+            if (isRefresh) {
+                items.set(data.items);
+            } else {
+                items.update(current => [...current, ...data.items]);
+            }
+            
             itemsTotal.set(data.total);
+            hasMore.set(data.items.length === PAGE_SIZE);
+            currentOffset.update(n => n + PAGE_SIZE);
         }
     } catch (err) {
         itemsError.set(err instanceof Error ? err.message : 'Unknown error occurred');

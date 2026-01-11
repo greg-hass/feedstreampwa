@@ -249,21 +249,13 @@
   .reader-overlay {
     position: fixed;
     inset: 0;
-    background: var(--bg0);
+    background: #050507;
     z-index: 2000;
     display: flex;
     justify-content: center;
     overflow-y: auto;
+    overflow-x: hidden;
     animation: fadeIn 0.2s ease;
-  }
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
   }
 
   .reader-container {
@@ -272,17 +264,7 @@
     min-height: 100vh;
     padding: 24px var(--page-padding);
     animation: scaleIn 0.25s ease-out;
-  }
-
-  @keyframes scaleIn {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
+    overflow-x: hidden;
   }
 
   .reader-header {
@@ -292,8 +274,8 @@
     margin-bottom: 32px;
     position: sticky;
     top: 0;
-    background: var(--bg0);
-    border-bottom: 1px solid var(--stroke);
+    background: #050507;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     padding: 16px 0;
     z-index: 10;
   }

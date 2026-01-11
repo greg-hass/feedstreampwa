@@ -40,14 +40,14 @@ export async function fetchItems(params: FetchItemsParams = {}): Promise<{
     };
 }
 
-export async function searchItems(query: string, limit = 100): Promise<{
+export async function searchItems(query: string, limit = 100, offset = 0): Promise<{
     items: Article[];
     total: number;
 }> {
     const params = new URLSearchParams({
         q: query.trim(),
         limit: limit.toString(),
-        offset: '0',
+        offset: offset.toString(),
     });
 
     const response = await fetch(`${API_BASE}/search?${params}`);

@@ -132,7 +132,7 @@
 </script>
 
 <article
-  class="group relative flex flex-col w-full overflow-hidden rounded-2xl glass transition-all duration-300 hover:-translate-y-1 hover:bg-white/[0.08] {currentStyle.border} {currentStyle.glow} cursor-pointer"
+  class="group relative flex flex-col w-full overflow-hidden rounded-xl bg-surface border border-white/5 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#16161a] hover:border-white/10 cursor-pointer"
   style="transform: translateX({isSwiping ? touchDiff : 0}px); transition: {isSwiping ? 'none' : 'transform 0.3s'}"
   on:click={handleOpen}
   on:keypress={(e) => e.key === "Enter" && handleOpen()}
@@ -163,7 +163,7 @@
   {/if}
 
   <!-- Image Preview (Conditional) -->
-  <div class="relative z-10 bg-[#0a0a0b]/80 backdrop-blur-md h-full flex flex-col">
+  <div class="relative z-10 bg-surface h-full flex flex-col">
   {#if thumbnailUrl}
     <div class="relative w-full aspect-video overflow-hidden">
       <img

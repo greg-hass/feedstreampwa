@@ -70,7 +70,7 @@
     padding: 14px 16px;
     border-radius: 12px;
     border: 1px solid;
-    backdrop-filter: blur(8px);
+    background: #16161a;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     min-width: 300px;
     max-width: 480px;

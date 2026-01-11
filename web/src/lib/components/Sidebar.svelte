@@ -41,7 +41,7 @@
     formatCount,
   } from "$lib/stores/counts";
   import { folders, folderUnreadCounts } from "$lib/stores/folders";
-  import { feeds } from "$lib/stores/feeds";
+  import { feedsTree } from "$lib/stores/feeds"; // Use feedsTree
 
   // Navigation Items
   const navItems = [
@@ -50,14 +50,6 @@
   ];
 
   $: activeUrl = $page.url.pathname;
-
-  // Tree View Logic
-  $: feedsByFolder = $folders.reduce((acc, folder) => {
-    acc[folder.id] = $feeds.filter(f => f.folders && f.folders.includes(folder.id));
-    return acc;
-  }, {} as Record<string, typeof $feeds>);
-
-  $: uncategorizedFeeds = $feeds.filter(f => !f.folders || f.folders.length === 0);
 
   let openFolders: Record<string, boolean> = {};
 
@@ -68,7 +60,7 @@
 </script>
 
 <aside
-  class="hidden md:flex flex-col w-[280px] h-screen fixed left-0 top-0 z-40 bg-black/90 backdrop-blur-sm border-r border-white/5"
+  class="hidden md:flex flex-col w-[280px] h-screen fixed left-0 top-0 z-40 bg-background border-r border-white/5"
 >
   <!-- Brand -->
   <div class="p-6 pt-8">
@@ -251,7 +243,7 @@
           <!-- Nested Feeds -->
           {#if openFolders[folder.id]}
             <div class="flex flex-col ml-3 pl-3 border-l border-white/5 mt-1 mb-1 gap-1">
-              {#each feedsByFolder[folder.id] || [] as feed}
+              {#each $feedsTree.byFolder[folder.id] || [] as feed}
                 <button
                   class="w-full flex items-center justify-between gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 group relative overflow-hidden
                     {$viewMode === 'feed' && $selectedFeedUrl === feed.url
@@ -286,7 +278,7 @@
                   {/if}
                 </button>
               {/each}
-              {#if (feedsByFolder[folder.id] || []).length === 0}
+              {#if ($feedsTree.byFolder[folder.id] || []).length === 0}
                 <div class="px-3 py-2 text-xs text-white/20 italic">Empty folder</div>
               {/if}
             </div>
@@ -296,11 +288,11 @@
     {/if}
 
     <!-- Uncategorized Feeds -->
-    {#if uncategorizedFeeds.length > 0}
+    {#if $feedsTree.uncategorized.length > 0}
       <div class="mt-4 mb-2 px-3 text-xs font-semibold text-white/30 uppercase tracking-wider">
         Uncategorized
       </div>
-      {#each uncategorizedFeeds as feed}
+      {#each $feedsTree.uncategorized as feed}
         <button
           class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
             {$viewMode === 'feed' && $selectedFeedUrl === feed.url

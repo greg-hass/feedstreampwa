@@ -36,6 +36,7 @@
     setSearchQuery,
     timeFilter,
     setTimeFilter,
+    hasMore,
   } from "$lib/stores/items";
   import { loadFeeds, refreshAll, refreshState } from "$lib/stores/feeds";
   import { loadFolders, folders } from "$lib/stores/folders";
@@ -44,6 +45,7 @@
 
   // Local state
   let isMobile = false;
+  let sentinel: HTMLElement;
 
   // Derived
   $: pageTitle = (() => {
@@ -93,6 +95,20 @@
     });
   })();
 
+  function getLoadParams() {
+    const params: any = {};
+    if ($viewMode === "feed" && $selectedFeedUrl) params.feedUrl = $selectedFeedUrl;
+    if ($viewMode === "smart" && $activeSmartFolder) params.smartFolder = $activeSmartFolder;
+    if ($viewMode === "folder" && $activeFolderId) params.folderId = $activeFolderId;
+    if ($viewMode === "unread") params.unreadOnly = true;
+    if ($viewMode === "bookmarks") params.starredOnly = true;
+    return params;
+  }
+
+  function loadMore() {
+    loadItems({ ...getLoadParams(), refresh: false });
+  }
+
   onMount(() => {
     // Initial load
     Promise.all([loadFeeds(), loadFolders(), loadItems()]);
@@ -102,7 +118,20 @@
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+
+    // Infinite Scroll Observer
+    const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && $hasMore && !$itemsLoading) {
+             loadMore();
+        }
+    }, { rootMargin: '400px' });
+    
+    if (sentinel) observer.observe(sentinel);
+
+    return () => {
+        window.removeEventListener("resize", checkMobile);
+        observer.disconnect();
+    };
   });
 
   // Reactive reload
@@ -112,14 +141,7 @@
     $activeFolderId ||
     $selectedFeedUrl
   ) {
-    const params: any = {};
-    if ($viewMode === "feed" && $selectedFeedUrl) params.feedUrl = $selectedFeedUrl;
-    if ($viewMode === "smart" && $activeSmartFolder) params.smartFolder = $activeSmartFolder;
-    if ($viewMode === "folder" && $activeFolderId) params.folderId = $activeFolderId;
-    if ($viewMode === "unread") params.unreadOnly = true;
-    if ($viewMode === "bookmarks") params.starredOnly = true;
-    
-    loadItems(params);
+    loadItems(getLoadParams());
   }
 </script>
 
@@ -203,6 +225,7 @@
           on:toggleRead={(e) => toggleRead(e.detail.item)}
           on:play={(e) => playMedia(e.detail.item)}
         />
+        <div bind:this={sentinel} class="h-4 w-full"></div>
       {/if}
     </div>
   </main>

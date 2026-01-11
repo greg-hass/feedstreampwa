@@ -4,19 +4,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Premium Dark Backgrounds
-        background: '#050507', // bg0
-        surface: '#0e0e11',    // bg1
+        // Premium Solid Dark Palette
+        background: '#050507', // bg-deep
+        surface: '#0e0e11',    // bg-base
+        raised: '#16161a',     // bg-elevated
+        stroke: '#1f1f23',     // subtle borders
         
-        // Custom Accents
-        accent: '#10B981', // Emerald 500
+        // Custom Accents (Retaining brand colors)
+        accent: '#10B981', 
         youtube: '#FF0000',
         reddit: '#FF4500',
-        podcast: '#8B5CF6', // Violet
-        
-        // Glass/Border colors
-        glass: 'rgba(255, 255, 255, 0.05)',
-        border: 'rgba(255, 255, 255, 0.1)',
+        podcast: '#8B5CF6', 
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],

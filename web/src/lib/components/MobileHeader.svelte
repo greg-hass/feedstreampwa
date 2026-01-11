@@ -19,7 +19,7 @@
 
 <!-- Mobile-only sticky header -->
 <header
-  class="md:hidden sticky top-0 z-30 bg-[#050507]/95 backdrop-blur-sm border-b border-white/10"
+  class="md:hidden sticky top-0 z-30 bg-background border-b border-white/5"
 >
   <div class="flex items-center gap-2 px-3 py-2">
     <!-- Menu Button -->
