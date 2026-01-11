@@ -411,7 +411,7 @@
 
           <!-- Feed Icon -->
           <div class="flex-shrink-0">
-            <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-white/5 border border-white/10 flex items-center justify-center">
+            <div class="w-6 h-6 rounded-lg overflow-hidden bg-white/5 border border-white/10 flex items-center justify-center">
               {#if feed.icon_url}
                 <img
                   src={feed.icon_url}
