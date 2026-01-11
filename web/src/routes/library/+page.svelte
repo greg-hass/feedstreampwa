@@ -111,16 +111,7 @@
 <div class="max-w-7xl mx-auto">
   <!-- Header -->
   <div class="mb-6">
-    <div class="flex items-center gap-3 mb-2">
-      <div
-        class="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/20 flex items-center justify-center"
-      >
-        <Bookmark size={24} class="text-yellow-400" />
-      </div>
-      <div>
-        <h1 class="text-3xl font-bold text-white">Library</h1>
-      </div>
-    </div>
+    <h1 class="text-3xl font-bold text-white mb-2">Library</h1>
     <p class="text-white/60">
       Your saved and starred articles ({filteredItems.length}{filteredItems.length !== items.length ? ` of ${items.length}` : ""} item{filteredItems.length !== 1 ? "s" : ""})
     </p>
