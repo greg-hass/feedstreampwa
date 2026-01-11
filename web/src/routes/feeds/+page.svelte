@@ -32,6 +32,15 @@
   let selectedFeeds = new Set<string>();
   let bulkActionInProgress = false;
 
+  // Type filter options
+  const typeFilters = [
+    { value: "all" as const, label: "All" },
+    { value: "rss" as const, label: "RSS", icon: Rss, color: "text-emerald-500" },
+    { value: "youtube" as const, label: "YouTube", icon: Youtube, color: "text-red-500" },
+    { value: "reddit" as const, label: "Reddit", icon: Hash, color: "text-orange-500" },
+    { value: "podcast" as const, label: "Podcast", icon: Radio, color: "text-purple-500" },
+  ];
+
   onMount(() => {
     loadFeeds();
   });
@@ -258,13 +267,7 @@
         <div class="flex items-center gap-2">
           <Filter size={16} class="text-white/60" />
           <div class="flex gap-1">
-            {#each [
-              { value: "all", label: "All" },
-              { value: "rss", label: "RSS", icon: Rss, color: "text-emerald-500" },
-              { value: "youtube", label: "YouTube", icon: Youtube, color: "text-red-500" },
-              { value: "reddit", label: "Reddit", icon: Hash, color: "text-orange-500" },
-              { value: "podcast", label: "Podcast", icon: Radio, color: "text-purple-500" },
-            ] as filter}
+            {#each typeFilters as filter}
               <button
                 class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {typeFilter === filter.value
                   ? 'bg-accent text-white'
@@ -370,11 +373,11 @@
       <p class="text-white/60">Try adjusting your search or filters</p>
     </div>
   {:else}
-    <!-- Feeds List with Bulk Select -->
-    <div class="space-y-4">
+    <!-- Feeds List with horizontal card layout matching Dashboard -->
+    <div class="flex flex-col gap-0 w-full">
       <!-- Select All Header -->
       {#if filteredFeeds.length > 1}
-        <div class="flex items-center gap-3 px-2">
+        <div class="flex items-center gap-3 px-2 py-3 border-b border-white/5">
           <button
             class="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
             on:click={toggleSelectAll}
@@ -391,26 +394,24 @@
 
       {#each filteredFeeds as feed (feed.url)}
         {@const sourceStyle = getSourceIcon(feed.type || feed.kind)}
-        <div
-          class="glass rounded-2xl p-5 border border-white/5 hover:border-white/10 transition-all hover:-translate-y-0.5"
+        <article
+          class="group flex flex-col sm:flex-row gap-3 sm:gap-4 py-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors"
         >
-          <div class="flex items-start gap-4">
-            <!-- Checkbox -->
-            <button
-              class="mt-1"
-              on:click={() => toggleSelect(feed.url)}
-            >
-              <div class="w-5 h-5 rounded border-2 border-white/20 flex items-center justify-center hover:border-accent transition-colors {selectedFeeds.has(feed.url) ? 'bg-accent border-accent' : ''}">
-                {#if selectedFeeds.has(feed.url)}
-                  <Check size={14} class="text-white" />
-                {/if}
-              </div>
-            </button>
+          <!-- Checkbox -->
+          <button
+            class="flex-shrink-0"
+            on:click|stopPropagation={() => toggleSelect(feed.url)}
+          >
+            <div class="w-5 h-5 rounded border-2 border-white/20 flex items-center justify-center hover:border-accent transition-colors {selectedFeeds.has(feed.url) ? 'bg-accent border-accent' : ''}">
+              {#if selectedFeeds.has(feed.url)}
+                <Check size={14} class="text-white" />
+              {/if}
+            </div>
+          </button>
 
-            <!-- Feed Icon -->
-            <div
-              class="w-6 h-6 rounded-lg bg-white/5 border border-white/10 flex-shrink-0 overflow-hidden"
-            >
+          <!-- Feed Icon -->
+          <div class="flex-shrink-0">
+            <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-white/5 border border-white/10 flex items-center justify-center">
               {#if feed.icon_url}
                 <img
                   src={feed.icon_url}
@@ -418,74 +419,70 @@
                   class="w-full h-full object-cover"
                 />
               {:else}
-                <div
-                  class="w-full h-full flex items-center justify-center bg-gradient-to-br from-white/5 to-white/0"
-                >
-                  <svelte:component this={sourceStyle.icon} size={24} class={sourceStyle.color} />
-                </div>
+                <svelte:component this={sourceStyle.icon} size={24} class={sourceStyle.color} />
               {/if}
-            </div>
-
-            <!-- Feed Info -->
-            <div class="flex-1 min-w-0">
-              <div class="flex items-start justify-between gap-4 mb-2">
-                <div class="flex-1 min-w-0">
-                  <h3 class="text-lg font-semibold text-white truncate">
-                    {feed.title || feed.url}
-                  </h3>
-                  <p class="text-sm text-white/60 truncate">
-                    {feed.url}
-                  </p>
-                </div>
-
-                <!-- Unread Badge -->
-                {#if feed.unreadCount && feed.unreadCount > 0}
-                  <div
-                    class="px-3 py-1 bg-accent/20 text-accent rounded-full text-sm font-medium"
-                  >
-                    {feed.unreadCount} unread
-                  </div>
-                {/if}
-              </div>
-
-              {#if feed.description}
-                <p class="text-sm text-white/40 line-clamp-2 mb-4">
-                  {feed.description}
-                </p>
-              {/if}
-
-              <!-- Actions -->
-              <div class="flex items-center gap-2 flex-wrap">
-                <button
-                  class="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-sm text-white/80"
-                  on:click={() => refreshFeed(feed.url)}
-                >
-                  <RefreshCw size={14} />
-                  Refresh
-                </button>
-
-                <a
-                  href={feed.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-sm text-white/80"
-                  on:click|stopPropagation
-                >
-                  <ExternalLink size={14} />
-                  Visit
-                </a>
-
-                <button
-                  class="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors text-sm ml-auto"
-                  on:click={() => deleteFeed(feed.url)}
-                >
-                  <Trash2 size={14} />
-                  Unsubscribe
-                </button>
-              </div>
             </div>
           </div>
-        </div>
+
+          <!-- Feed Info -->
+          <div class="flex-1 min-w-0 flex flex-col justify-between py-1">
+            <!-- Title Row -->
+            <div class="flex items-start justify-between gap-4 mb-1">
+              <div class="flex-1 min-w-0">
+                <h3 class="text-base sm:text-lg font-medium text-white truncate">
+                  {feed.title || feed.url}
+                </h3>
+                <p class="text-xs sm:text-sm text-white/50 truncate">
+                  {feed.url}
+                </p>
+              </div>
+
+              <!-- Unread Badge -->
+              {#if feed.unreadCount && feed.unreadCount > 0}
+                <div class="px-3 py-1 bg-accent/20 text-accent rounded-full text-sm font-medium flex-shrink-0">
+                  {feed.unreadCount} unread
+                </div>
+              {/if}
+            </div>
+
+            <!-- Description -->
+            {#if feed.description}
+              <p class="text-xs sm:text-sm text-white/40 line-clamp-1 leading-relaxed">
+                {feed.description}
+              </p>
+            {/if}
+
+            <!-- Actions -->
+            <div class="flex items-center gap-1 mt-2">
+              <button
+                class="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-accent transition-colors"
+                title="Refresh"
+                on:click|stopPropagation={() => refreshFeed(feed.url)}
+              >
+                <RefreshCw size={18} />
+              </button>
+
+              <a
+                href={feed.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-blue-400 transition-colors"
+                title="Visit"
+                on:click|stopPropagation
+              >
+                <ExternalLink size={18} />
+              </a>
+
+              <button
+                class="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-red-400 transition-colors"
+                title="Unsubscribe"
+                on:click|stopPropagation={() => deleteFeed(feed.url)}
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
+          </div>
+        </article>
       {/each}
     </div>
   {/if}

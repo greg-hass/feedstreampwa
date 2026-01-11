@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { Star, Bookmark, Filter, ArrowUpDown, Rss, Youtube, Hash, Radio, Search, X, CheckCircle2, Circle } from "lucide-svelte";
+  import { Star, Bookmark, Filter, ArrowUpDown, Search, X } from "lucide-svelte";
   import FeedGrid from "$lib/components/FeedGrid.svelte";
   import { playMedia } from "$lib/stores/media";
   import type { Item } from "$lib/types";
@@ -15,6 +15,21 @@
   let readFilter: "all" | "read" | "unread" = "all";
   let sortBy: "recent" | "oldest" | "title" = "recent";
   let searchQuery = "";
+
+  // Filter options
+  const typeFilters = [
+    { value: "all" as const, label: "All" },
+    { value: "rss" as const, label: "RSS" },
+    { value: "youtube" as const, label: "YouTube" },
+    { value: "reddit" as const, label: "Reddit" },
+    { value: "podcast" as const, label: "Podcast" },
+  ];
+
+  const readFilters = [
+    { value: "all" as const, label: "All" },
+    { value: "unread" as const, label: "Unread" },
+    { value: "read" as const, label: "Read" },
+  ];
 
   onMount(() => {
     loadStarredItems();
@@ -109,93 +124,71 @@
 </svelte:head>
 
 <div class="max-w-7xl mx-auto">
-  <!-- Header -->
-  <div class="mb-6">
-    <h1 class="text-3xl font-bold text-white">Library</h1>
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="flex items-center justify-between">
+      <h1 class="text-3xl font-bold text-white">Library</h1>
+    </div>
   </div>
 
+  <!-- Search Bar -->
   {#if !loading && items.length > 0}
-    <!-- Filters and Controls -->
-    <div class="glass rounded-2xl p-4 mb-6 space-y-4">
-      <!-- Search Bar -->
-      <div class="relative">
-        <Search size={18} class="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+    <div class="search-bar-full">
+      <div class="search-box">
+        <Search size={18} class="search-icon" />
         <input
           type="text"
           placeholder="Search your library..."
           bind:value={searchQuery}
-          class="w-full bg-[rgba(255,255,255,0.03)] pl-11 pr-11 py-3 rounded-full text-white placeholder-white/40 outline-none border border-white/15 focus:border-accent/50 focus:bg-[rgba(255,255,255,0.05)] transition-all"
         />
         {#if searchQuery}
           <button
+            class="search-clear"
             on:click={() => searchQuery = ""}
-            class="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
+            title="Clear search (ESC)"
           >
             <X size={18} />
           </button>
         {/if}
       </div>
+    </div>
 
-      <div class="flex flex-wrap items-center gap-3">
-        <!-- Type Filter -->
-        <div class="flex items-center gap-2">
-          <Filter size={16} class="text-white/60" />
-          <div class="flex gap-1 flex-wrap">
-            {#each [
-              { value: "all", label: "All" },
-              { value: "rss", label: "RSS", icon: Rss, color: "text-emerald-500" },
-              { value: "youtube", label: "YouTube", icon: Youtube, color: "text-red-500" },
-              { value: "reddit", label: "Reddit", icon: Hash, color: "text-orange-500" },
-              { value: "podcast", label: "Podcast", icon: Radio, color: "text-purple-500" },
-            ] as filter}
-              <button
-                class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {typeFilter === filter.value
-                  ? 'bg-accent text-white'
-                  : 'bg-white/5 text-white/60 hover:bg-white/10'}"
-                on:click={() => (typeFilter = filter.value)}
-              >
-                {#if filter.icon}
-                  <svelte:component this={filter.icon} size={14} class="inline mr-1 {filter.color}" />
-                {/if}
-                {filter.label}
-              </button>
-            {/each}
-          </div>
-        </div>
+    <!-- Filter Chips -->
+    <div class="filter-chips">
+      <!-- Type Filter -->
+      {#each typeFilters as filter}
+        <button
+          class="chip"
+          class:active={typeFilter === filter.value}
+          on:click={() => (typeFilter = filter.value)}
+        >{filter.label}</button
+        >
+      {/each}
+    </div>
 
-        <!-- Read Status Filter -->
-        <div class="flex items-center gap-2">
-          <div class="flex gap-1">
-            {#each [
-              { value: "all", label: "All" },
-              { value: "unread", label: "Unread", icon: Circle },
-              { value: "read", label: "Read", icon: CheckCircle2 },
-            ] as filter}
-              <button
-                class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {readFilter === filter.value
-                  ? 'bg-accent text-white'
-                  : 'bg-white/5 text-white/60 hover:bg-white/10'}"
-                on:click={() => (readFilter = filter.value)}
-              >
-                {filter.label}
-              </button>
-            {/each}
-          </div>
-        </div>
+    <!-- Read Status Filter -->
+    <div class="filter-chips">
+      {#each readFilters as filter}
+        <button
+          class="chip"
+          class:active={readFilter === filter.value}
+          on:click={() => (readFilter = filter.value)}
+        >{filter.label}</button
+        >
+      {/each}
+    </div>
 
-        <!-- Sort -->
-        <div class="flex items-center gap-2 ml-auto">
-          <ArrowUpDown size={16} class="text-white/60" />
-          <select
-            bind:value={sortBy}
-            class="bg-white/5 px-3 py-1.5 rounded-lg text-sm text-white border border-white/10 hover:bg-white/10 transition-colors outline-none"
-          >
-            <option value="recent">Recently Added</option>
-            <option value="oldest">Oldest First</option>
-            <option value="title">Title A-Z</option>
-          </select>
-        </div>
-      </div>
+    <!-- Sort -->
+    <div class="flex items-center justify-end gap-2 mb-4">
+      <ArrowUpDown size={16} class="text-white/60" />
+      <select
+        bind:value={sortBy}
+        class="bg-white/5 px-3 py-1.5 rounded-lg text-sm text-white border border-white/10 hover:bg-white/10 transition-colors outline-none"
+      >
+        <option value="recent">Recently Added</option>
+        <option value="oldest">Oldest First</option>
+        <option value="title">Title A-Z</option>
+      </select>
     </div>
   {/if}
 

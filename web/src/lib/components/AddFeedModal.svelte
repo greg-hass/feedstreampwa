@@ -130,7 +130,7 @@
 {#if $isAddFeedModalOpen}
   <!-- Modal Backdrop -->
   <div
-    class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
     on:click={closeModal}
     on:keydown={(e) => e.key === "Enter" && closeModal()}
     role="button"
@@ -138,7 +138,7 @@
   >
     <!-- Modal Content -->
     <div
-      class="bg-black/95 backdrop-blur-sm rounded-2xl border border-white/10 max-w-3xl w-full max-h-[85vh] flex flex-col"
+      class="bg-[#0a0a0b] rounded-2xl border border-white/10 max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl"
       on:click|stopPropagation
       on:keydown|stopPropagation
       role="dialog"
@@ -147,7 +147,7 @@
     >
       <!-- Header -->
       <div
-        class="bg-black/80 backdrop-blur-sm border-b border-white/10 px-6 py-4 flex items-center justify-between flex-shrink-0"
+        class="bg-[#0d0d0e] border-b border-white/10 px-6 py-4 flex items-center justify-between flex-shrink-0"
       >
         <div class="flex items-center gap-3">
           <div

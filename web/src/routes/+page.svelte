@@ -14,6 +14,7 @@
     setViewSmartFolder,
     setViewFolder,
     setViewFeed,
+    type SmartFolder,
   } from "$lib/stores/ui";
   import { playMedia } from "$lib/stores/media";
   import { onMount } from "svelte";
@@ -113,6 +114,44 @@
   let refreshTotal = 0;
   let refreshMessage = "";
   let refreshPollTimer: ReturnType<typeof setInterval> | null = null;
+
+  // Page title based on current view
+  $: pageTitle = (() => {
+    if ($viewMode === "smart" && $activeSmartFolder) {
+      const folderNames: Record<string, string> = {
+        rss: "RSS Feeds",
+        youtube: "YouTube",
+        reddit: "Reddit",
+        podcast: "Podcasts"
+      };
+      return folderNames[$activeSmartFolder] || "Smart Folder";
+    } else if ($viewMode === "folder" && $activeFolderId) {
+      const folder = folders.find(f => f.id === $activeFolderId);
+      return folder?.name || "Folder";
+    } else if ($viewMode === "feed" && $selectedFeedUrl) {
+      const feed = feeds.find(f => f.url === $selectedFeedUrl);
+      return feed?.title || "Feed";
+    } else if ($viewMode === "unread") {
+      return "Unread";
+    } else if ($viewMode === "bookmarks") {
+      return "Starred";
+    }
+    return "Dashboard";
+  })();
+
+  // Helper to get feed URLs by smart folder kind
+  function getFeedUrlsBySmartFolder(folder: SmartFolder): string[] {
+    const kindMapping: Record<string, string> = {
+      rss: 'generic',
+      youtube: 'youtube',
+      reddit: 'reddit',
+      podcast: 'podcast'
+    };
+    const kind = kindMapping[folder];
+    return feeds
+      .filter(f => f.kind === kind)
+      .map(f => f.url);
+  }
 
   // Folder state
   let folders: Folder[] = [];
@@ -956,10 +995,16 @@
   // Refresh toast functions
   async function startRefresh() {
     try {
+      // If in smart folder mode, only refresh feeds in that folder
+      let urls: string[] | undefined = undefined;
+      if ($viewMode === "smart" && $activeSmartFolder) {
+        urls = getFeedUrlsBySmartFolder($activeSmartFolder);
+      }
+
       const response = await fetch("/api/refresh/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify(urls ? { urls } : {}),
       });
 
       const data = await response.json();
@@ -972,7 +1017,7 @@
       showRefreshToast = true;
       refreshCurrent = 0;
       refreshTotal = 0;
-      refreshMessage = "Starting refresh...";
+      refreshMessage = urls ? `Refreshing ${urls.length} feed(s)...` : "Starting refresh...";
 
       // Start polling
       pollRefreshStatus();
@@ -1589,7 +1634,7 @@
     <!-- Page Header -->
     <div class="page-header">
       <div class="flex items-center justify-between">
-        <h1 class="text-3xl font-bold text-white">Dashboard</h1>
+        <h1 class="text-3xl font-bold text-white">{pageTitle}</h1>
         <div class="flex items-center gap-2">
           <button
             class="p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 transition-all shadow-lg shadow-purple-500/20 text-white"
