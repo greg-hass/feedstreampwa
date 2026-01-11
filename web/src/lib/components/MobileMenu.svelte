@@ -100,7 +100,7 @@
 
   <!-- Slide-in Menu -->
   <aside
-    class="fixed left-0 top-0 h-full w-[280px] bg-black/98 backdrop-blur-sm border-r border-white/10 z-[70] md:hidden overflow-y-auto"
+    class="fixed left-0 top-0 h-full w-[280px] bg-[#0a0a0b] border-r border-white/10 z-[70] md:hidden overflow-y-auto shadow-2xl"
     transition:fly={{ x: -280, duration: 300, opacity: 1 }}
   >
     <!-- Header -->
