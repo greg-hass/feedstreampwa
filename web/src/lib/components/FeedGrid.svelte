@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Item } from "$lib/types";
-  import FeedCard from "./FeedCard.svelte";
+  import FeedListItem from "./FeedListItem.svelte";
 
   export let items: Item[] = [];
 
@@ -16,18 +16,10 @@
   }
 </script>
 
-<!-- 
-   Responsive Grid Strategy:
-   Mobile: 1 column
-   Tablet: 2 columns
-   Desktop: 3 columns
-   Large: 4 columns
--->
-<div
-  class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6 w-full pb-32"
->
+<!-- List View - Single column, full width -->
+<div class="flex flex-col gap-0 w-full">
   {#each items as item (item.id)}
-    <FeedCard
+    <FeedListItem
       {item}
       feedType={guessType(item)}
       on:open
