@@ -65,7 +65,7 @@
   let sourceFilter = "all";
   let unreadOnly = false;
   let starredOnly = false;
-  let timeFilter = "all"; // today, 24h, week, all
+  let timeFilter = "today"; // today, 24h, week, all
 
   // Search
   let searchQuery = "";
@@ -3000,10 +3000,10 @@
 
   .chip {
     padding: 10px 20px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--stroke);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 999px;
-    color: var(--muted);
+    color: rgba(255, 255, 255, 0.7);
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
@@ -3013,18 +3013,16 @@
   }
 
   .chip:hover {
-    background: var(--chip-hover);
-    color: var(--text);
-    border-color: var(--stroke-strong);
-    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.3);
   }
 
   .chip.active {
-    background: var(--accent);
-    color: var(--bg0);
-    border-color: var(--accent);
+    background: white;
+    color: black;
+    border-color: white;
     font-weight: 600;
-    box-shadow: 0 4px 12px var(--accent-glow);
   }
 
   /* Articles Container */
