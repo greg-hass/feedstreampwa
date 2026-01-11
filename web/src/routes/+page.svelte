@@ -3760,11 +3760,12 @@
   .reader-overlay {
     position: fixed;
     inset: 0;
-    background: var(--bg0);
+    background: #0a0a0b;
     z-index: 2000;
     display: flex;
     justify-content: center;
     overflow-y: auto;
+    overflow-x: hidden;
     animation: fadeIn 0.2s ease;
   }
 
@@ -3774,6 +3775,7 @@
     min-height: 100vh;
     padding: 24px var(--page-padding);
     animation: scaleIn 0.25s ease-out;
+    overflow-x: hidden;
   }
 
   .reader-header {
@@ -3783,8 +3785,8 @@
     margin-bottom: 32px;
     position: sticky;
     top: 0;
-    background: var(--bg0);
-    border-bottom: 1px solid var(--stroke);
+    background: #0a0a0b;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding: 16px 0;
     z-index: 10;
   }
@@ -3792,37 +3794,38 @@
   .reader-close {
     width: 44px;
     height: 44px;
-    background: var(--panel1);
-    border: 1px solid var(--stroke);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 50%;
-    color: var(--muted);
+    color: rgba(255, 255, 255, 0.6);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
+    flex-shrink: 0;
   }
 
   .reader-close:hover {
-    background: var(--chip-hover);
-    color: var(--text);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
     transform: rotate(90deg);
   }
 
   .reader-source {
-    color: var(--accent);
+    color: #a78bfa;
     text-decoration: none;
     font-size: 14px;
     font-weight: 500;
     padding: 10px 16px;
-    border: 1px solid var(--accent);
+    border: 1px solid #a78bfa;
     border-radius: 99px;
     transition: all 0.2s;
   }
 
   .reader-source:hover {
-    background: var(--accent);
-    color: var(--bg0);
+    background: #a78bfa;
+    color: #0a0a0b;
   }
 
   .reader-loading,
@@ -3834,14 +3837,14 @@
     gap: 20px;
     padding: 80px 20px;
     text-align: center;
-    color: var(--muted);
+    color: rgba(255, 255, 255, 0.6);
   }
 
   .reader-spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid var(--stroke);
-    border-top-color: var(--accent);
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: #a78bfa;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
@@ -3853,37 +3856,37 @@
   }
 
   .reader-error {
-    color: var(--muted2);
+    color: rgba(255, 255, 255, 0.4);
   }
 
   .reader-fallback-btn {
-    color: var(--accent);
+    color: #a78bfa;
     text-decoration: none;
     padding: 12px 24px;
-    border: 1px solid var(--accent);
-    border-radius: var(--radiusM);
+    border: 1px solid #a78bfa;
+    border-radius: 12px;
     transition: all 0.2s;
   }
 
   .reader-fallback-btn:hover {
-    background: var(--accent);
-    color: var(--bg0);
+    background: #a78bfa;
+    color: #0a0a0b;
   }
 
   .reader-content {
-    color: var(--text);
+    color: rgba(255, 255, 255, 0.92);
   }
 
   .reader-hero {
     width: 100%;
     max-height: 400px;
     object-fit: cover;
-    border-radius: var(--radiusM);
+    border-radius: 12px;
     margin-bottom: 32px;
   }
 
   .reader-title {
-    font-family: var(--font-display);
+    font-family: system-ui, -apple-system, sans-serif;
     font-size: 32px;
     font-weight: 700;
     line-height: 1.25;
@@ -3897,10 +3900,10 @@
     align-items: center;
     gap: 12px;
     font-size: 15px;
-    color: var(--muted);
+    color: rgba(255, 255, 255, 0.6);
     margin-bottom: 32px;
     padding-bottom: 24px;
-    border-bottom: 1px solid var(--stroke);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .reader-body {
@@ -3914,7 +3917,7 @@
   }
 
   .reader-body a {
-    color: var(--accent);
+    color: #a78bfa;
     text-decoration: underline;
     text-underline-offset: 2px;
   }
@@ -3926,14 +3929,14 @@
   .reader-body blockquote {
     margin: 1.5em 0;
     padding-left: 20px;
-    border-left: 3px solid var(--accent);
-    color: var(--muted);
+    border-left: 3px solid #a78bfa;
+    color: rgba(255, 255, 255, 0.6);
     font-style: italic;
   }
 
   .reader-body pre,
   .reader-body code {
-    background: var(--panel0);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 6px;
     font-family: "SF Mono", "Monaco", "Consolas", monospace;
     font-size: 0.9em;
@@ -3961,7 +3964,7 @@
 
   .reader-body h2,
   .reader-body h3 {
-    font-family: var(--font-display);
+    font-family: system-ui, -apple-system, sans-serif;
     margin: 2em 0 1em 0;
     color: #fff;
   }
@@ -3976,7 +3979,7 @@
 
   .reader-body hr {
     border: none;
-    border-top: 1px solid var(--stroke);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     margin: 2em 0;
   }
 
