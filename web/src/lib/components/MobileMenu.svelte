@@ -6,15 +6,13 @@
     List,
     Bookmark,
     Settings,
-    PlusCircle,
     Rss,
     Youtube,
-    Hash,
-    Radio,
+    MessageCircle,
+    Mic,
   } from "lucide-svelte";
   import {
     isMobileMenuOpen,
-    isAddFeedModalOpen,
     isSettingsModalOpen,
     viewMode,
     activeSmartFolder,
@@ -33,22 +31,24 @@
   // Smart folders
   const smartFolders = [
     {
+      id: "rss" as const,
+      label: "RSS",
+      icon: Rss
+    },
+    {
       id: "youtube" as const,
       label: "YouTube",
-      color: "red-500",
       icon: Youtube
     },
     {
       id: "reddit" as const,
       label: "Reddit",
-      color: "orange-500",
-      icon: Hash
+      icon: MessageCircle
     },
     {
       id: "podcast" as const,
       label: "Podcasts",
-      color: "purple-500",
-      icon: Radio
+      icon: Mic
     },
   ];
 
@@ -65,11 +65,6 @@
 
   function handleNavClick() {
     closeMenu();
-  }
-
-  function handleAddFeed() {
-    closeMenu();
-    isAddFeedModalOpen.set(true);
   }
 
   function handleSettings() {
@@ -148,7 +143,7 @@
         >
           <svelte:component
             this={item.icon}
-            size={20}
+            size={24}
             class={activeUrl === item.href
               ? "text-accent"
               : "text-current group-hover:text-white"}
@@ -179,28 +174,20 @@
         >
           <svelte:component
             this={folder.icon}
-            size={20}
-            class="text-{folder.color}"
+            size={24}
+            class={$viewMode === 'smart' && $activeSmartFolder === folder.id
+              ? 'text-accent'
+              : 'text-current group-hover:text-white'}
           />
           {folder.label}
 
           {#if $viewMode === 'smart' && $activeSmartFolder === folder.id}
             <div
-              class="absolute inset-y-0 left-0 w-1 bg-{folder.color} rounded-r-full shadow-[0_0_10px_2px_rgba(239,68,68,0.5)]"
+              class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
             ></div>
           {/if}
         </button>
       {/each}
-
-      <!-- Add Feed Button -->
-      <div class="mt-8 px-3">
-        <button
-          class="flex items-center gap-2 text-xs font-medium text-accent hover:text-accent/80 transition-colors"
-          on:click={handleAddFeed}
-        >
-          <PlusCircle size={14} /> New Feed
-        </button>
-      </div>
     </div>
 
     <!-- Settings at bottom -->
