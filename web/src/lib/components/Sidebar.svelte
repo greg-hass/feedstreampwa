@@ -198,20 +198,14 @@
   <!-- User / Settings at bottom -->
   <div class="p-4 border-t border-white/5">
     <div
-      class="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-white/5 cursor-pointer transition-colors"
+      class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 cursor-pointer transition-colors"
       on:click={() => isSettingsModalOpen.set(true)}
       on:keydown={(e) => e.key === "Enter" && isSettingsModalOpen.set(true)}
       tabindex="0"
       role="button"
     >
-      <div
-        class="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-700 to-gray-600 border border-white/10"
-      ></div>
-      <div class="flex flex-col">
-        <span class="text-sm font-medium text-white">User Name</span>
-        <span class="text-xs text-white/40">Pro Plan</span>
-      </div>
-      <Settings size={16} class="ml-auto text-white/40" />
+      <Settings size={24} class="text-white/60" />
+      <span class="text-sm font-medium text-white">Settings</span>
     </div>
   </div>
 

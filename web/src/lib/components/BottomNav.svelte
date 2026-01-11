@@ -1,10 +1,10 @@
 <script lang="ts">
   import { page } from "$app/stores";
-  import { LayoutDashboard, Rss, Bookmark, Menu } from "lucide-svelte";
+  import { LayoutDashboard, List, Bookmark, Menu } from "lucide-svelte";
   import { isMobileMenuOpen, setViewAll } from "$lib/stores/ui";
 
   const items = [
-    { label: "Feeds", icon: Rss, href: "/feeds" },
+    { label: "Feeds", icon: List, href: "/feeds" },
     { label: "Library", icon: Bookmark, href: "/library" },
   ];
 

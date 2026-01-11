@@ -278,6 +278,11 @@
 </div>
 
 <style>
+  /* Page Header - matching All Articles */
+  .page-header {
+    margin-bottom: 20px;
+  }
+
   /* Search Bar Styles - matching All Articles */
   .search-bar-full {
     margin-bottom: 20px;
@@ -285,6 +290,10 @@
 
   /* Mobile responsive */
   @media (max-width: 768px) {
+    .page-header {
+      margin-bottom: 16px;
+    }
+
     .search-bar-full {
       margin-bottom: 16px;
     }
