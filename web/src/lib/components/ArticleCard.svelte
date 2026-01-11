@@ -38,13 +38,30 @@
 
     onOpen(item);
   }
+
+  function handleKeydown(event: KeyboardEvent) {
+    // Support Enter and Space keys for accessibility
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      const target = event.target as HTMLElement;
+      if (
+        target.tagName === "A" ||
+        target.tagName === "BUTTON" ||
+        target.closest("a") ||
+        target.closest("button")
+      ) {
+        return;
+      }
+      onOpen(item);
+    }
+  }
 </script>
 
 <article
   class="article-card"
   class:unread={Boolean(!item.is_read)}
   on:click={handleArticleClick}
-  role="button"
+  on:keydown={handleKeydown}
   tabindex="0"
 >
   <div class="card-content-wrapper">

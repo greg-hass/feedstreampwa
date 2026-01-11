@@ -148,11 +148,32 @@
     }
     onClose();
   }
+
+  function handleOverlayKeydown(event: KeyboardEvent) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      closeReader();
+    }
+  }
 </script>
 
 {#if show}
-  <div class="reader-overlay" on:click={closeReader}>
-    <div class="reader-container" on:click|stopPropagation>
+  <div
+    class="reader-overlay"
+    on:click={closeReader}
+    on:keydown={handleOverlayKeydown}
+    role="button"
+    tabindex="0"
+    aria-label="Close reader view"
+  >
+    <div
+      class="reader-container"
+      on:click|stopPropagation
+      on:keydown|stopPropagation
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reader-title"
+    >
       <div class="reader-header">
         <button
           class="reader-close"
@@ -214,7 +235,7 @@
           {:else if readerData.imageUrl}
             <img src={readerData.imageUrl} alt="" class="reader-hero" />
           {/if}
-          <h1 class="reader-title">
+          <h1 class="reader-title" id="reader-title">
             {readerData.title || "Untitled"}
           </h1>
           {#if readerData.byline || readerData.siteName}

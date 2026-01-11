@@ -103,7 +103,7 @@
   let ytPlayer: any = null;
   let ytProgressInterval: ReturnType<typeof setInterval> | null = null;
   let ytApiLoaded = false;
-  let activeInlineVideoId: number | null = null;
+  let activeInlineVideoId: string | null = null;
 
   // Add Feed modal state
   let showAddFeedModal = false;
@@ -496,7 +496,7 @@
         params.set("source", sourceFilter);
       }
 
-      if (unreadOnly && viewMode !== "unread") {
+      if (unreadOnly && $viewMode !== "unread") {
         params.set("unreadOnly", "true");
       }
 
