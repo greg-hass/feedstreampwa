@@ -10,7 +10,7 @@ import { XMLParser } from 'fast-xml-parser';
 import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
 import sanitizeHtml from 'sanitize-html';
-import { searchFeeds } from './feed-search.js';
+import { searchFeeds, searchRSS, SearchResult } from './feed-search.js';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const DB_PATH = process.env.DB_PATH || '/data/feedstream.sqlite';
@@ -1498,7 +1498,7 @@ fastify.get('/feeds/search', async (request, reply) => {
             if (type === 'podcast') {
                 // Podcast search - similar to RSS but focus on audio feeds
                 const rssResults = await searchRSS(searchQuery);
-                allResults.push(...rssResults.map(r => ({ ...r, type: 'podcast' })));
+                allResults.push(...rssResults.map((r: SearchResult) => ({ ...r, type: 'podcast' })));
             } else {
                 const results = await searchFeeds(searchQuery, type as 'rss' | 'youtube' | 'reddit');
                 allResults.push(...results);
