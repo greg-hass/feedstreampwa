@@ -1,8 +1,7 @@
 <script lang="ts">
   import { toast, type Toast } from '$lib/stores/toast';
   import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-svelte';
-  import { flip } from 'svelte/transition';
-  import { quintOut } from 'svelte/easing';
+  import { fade, fly } from 'svelte/transition';
 
   const icons = {
     success: CheckCircle,
@@ -30,7 +29,7 @@
       {@const colorClass = colors[t.type]}
       <div
         class="toast-item {colorClass}"
-        transition:flip={{ duration: 300, easing: quintOut }}
+        transition:fly|fade="{{ duration: 300, y: -50 }}"
         role="alert"
         aria-live="polite"
       >
