@@ -2,12 +2,12 @@
 import { writable, derived } from 'svelte/store';
 import type { Feed } from '$lib/types';
 import * as feedsApi from '$lib/api/feeds';
+import { confirmDialog } from '$lib/stores/confirm';
 
 // State
 export const feeds = writable<Feed[]>([]);
 export const feedsLoading = writable(false);
 export const feedsError = writable<string | null>(null);
-export const selectedFeedUrl = writable<string | null>(null);
 
 // Derived stores
 export const rssFeeds = derived(feeds, ($feeds) =>
@@ -67,7 +67,15 @@ export async function addFeed(url: string, folderIds: string[] = []): Promise<vo
 }
 
 export async function removeFeed(url: string): Promise<void> {
-    if (!confirm(`Delete feed: ${url}?`)) return;
+    const confirmed = await confirmDialog.confirm({
+        title: 'Delete Feed',
+        message: `Are you sure you want to delete this feed?`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        type: 'danger',
+    });
+
+    if (!confirmed) return;
 
     await feedsApi.deleteFeed(url);
     await loadFeeds();
@@ -93,6 +101,5 @@ export async function removeFromFolder(feedUrl: string, folderId: string): Promi
     await loadFeeds();
 }
 
-export function selectFeed(url: string | null): void {
-    selectedFeedUrl.set(url);
-}
+// Type exports for convenience
+export type { Feed } from '$lib/types';

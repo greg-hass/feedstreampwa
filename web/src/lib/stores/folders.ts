@@ -3,12 +3,12 @@ import { writable, derived, get } from 'svelte/store';
 import type { Folder } from '$lib/types';
 import * as foldersApi from '$lib/api/folders';
 import { feeds } from './feeds';
+import { confirmDialog } from './confirm';
 
 // State
 export const folders = writable<Folder[]>([]);
 export const foldersLoading = writable(false);
 export const foldersError = writable<string | null>(null);
-export const activeFolderId = writable<string | null>(null);
 
 // Derived stores
 export const folderUnreadCounts = derived([folders, feeds], ([$folders, $feeds]) =>
@@ -50,12 +50,19 @@ export async function renameFolder(id: string, name: string): Promise<void> {
 }
 
 export async function deleteFolder(id: string): Promise<void> {
-    if (!confirm('Delete this folder? Feeds will not be deleted.')) return;
+    const confirmed = await confirmDialog.confirm({
+        title: 'Delete Folder',
+        message: 'Delete this folder? Feeds will not be deleted.',
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        type: 'danger',
+    });
+
+    if (!confirmed) return;
 
     await foldersApi.deleteFolder(id);
     await loadFolders();
 }
 
-export function selectFolder(id: string | null): void {
-    activeFolderId.set(id);
-}
+// Type exports for convenience
+export type { Folder } from '$lib/types';

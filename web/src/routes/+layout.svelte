@@ -6,6 +6,9 @@
   import MediaPlayer from "$lib/components/MediaPlayer.svelte";
   import SettingsModal from "$lib/components/SettingsModal.svelte";
   import AddFeedModal from "$lib/components/AddFeedModal.svelte";
+  import Toast from "$lib/components/Toast.svelte";
+  import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
+  import ErrorBoundary from "$lib/components/ErrorBoundary.svelte";
   import { currentMedia } from "$lib/stores/media";
 
   // Show player only when there's media loaded
@@ -38,7 +41,9 @@
     <div
       class="w-full max-w-[1600px] mx-auto p-4 md:p-8 lg:p-10 animate-in fade-in slide-in-from-bottom-2 duration-500"
     >
-      <slot />
+      <ErrorBoundary>
+        <slot />
+      </ErrorBoundary>
     </div>
   </main>
 
@@ -67,6 +72,12 @@
 
   <!-- Add Feed Modal (Global Overlay) -->
   <AddFeedModal />
+
+  <!-- Toast Notifications (Global Overlay) -->
+  <Toast />
+
+  <!-- Confirmation Dialog (Global Overlay) -->
+  <ConfirmDialog />
 </div>
 
 <style>

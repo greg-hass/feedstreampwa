@@ -17,6 +17,9 @@
     FolderPlus,
   } from "lucide-svelte";
   import { isAddFeedModalOpen } from "$lib/stores/ui";
+  import { toast } from "$lib/stores/toast";
+  import { confirmDialog } from "$lib/stores/confirm";
+  import SkeletonCard from "$lib/components/SkeletonCard.svelte";
   import type { Feed } from "$lib/types";
 
   let feeds: Feed[] = [];
@@ -115,9 +118,15 @@
   }
 
   async function deleteFeed(url: string) {
-    if (!confirm("Are you sure you want to unsubscribe from this feed?")) {
-      return;
-    }
+    const confirmed = await confirmDialog.confirm({
+      title: "Unsubscribe from Feed",
+      message: "Are you sure you want to unsubscribe from this feed?",
+      confirmText: "Unsubscribe",
+      cancelText: "Cancel",
+      type: "danger",
+    });
+
+    if (!confirmed) return;
 
     try {
       const response = await fetch(
@@ -132,16 +141,22 @@
       selectedFeeds.delete(url);
       await loadFeeds();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to delete feed");
+      toast.error(err instanceof Error ? err.message : "Failed to delete feed");
     }
   }
 
   async function bulkDelete() {
     if (selectedFeeds.size === 0) return;
 
-    if (!confirm(`Delete ${selectedFeeds.size} selected feed(s)?`)) {
-      return;
-    }
+    const confirmed = await confirmDialog.confirm({
+      title: "Delete Feeds",
+      message: `Delete ${selectedFeeds.size} selected feed(s)?`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      type: "danger",
+    });
+
+    if (!confirmed) return;
 
     bulkActionInProgress = true;
     const urls = Array.from(selectedFeeds);
@@ -175,9 +190,9 @@
         throw new Error("Failed to refresh feeds");
       }
 
-      alert(`Refresh started for ${selectedFeeds.size} feed(s)!`);
+      toast.success(`Refresh started for ${selectedFeeds.size} feed(s)!`);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to refresh feeds");
+      toast.error(err instanceof Error ? err.message : "Failed to refresh feeds");
     } finally {
       bulkActionInProgress = false;
     }
@@ -195,9 +210,9 @@
         throw new Error("Failed to refresh feed");
       }
 
-      alert("Feed refresh started!");
+      toast.success("Feed refresh started!");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to refresh feed");
+      toast.error(err instanceof Error ? err.message : "Failed to refresh feed");
     }
   }
 
@@ -330,8 +345,10 @@
 
   <!-- Loading State -->
   {#if loading}
-    <div class="flex items-center justify-center py-20">
-      <div class="text-white/60">Loading feeds...</div>
+    <div class="flex flex-col gap-0 w-full">
+      {#each Array(5) as _ (Math.random())}
+        <SkeletonCard />
+      {/each}
     </div>
   {:else if error}
     <!-- Error State -->

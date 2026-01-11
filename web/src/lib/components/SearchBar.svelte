@@ -1,23 +1,15 @@
 <script lang="ts">
-  import { X, Search } from "lucide-svelte";
+  import { Search, X } from "lucide-svelte";
 
   export let value = "";
   export let placeholder = "Search articles...";
-  export let onInput: (value: string) => void;
-  export let onClear: () => void;
-  export let onKeydown: (event: KeyboardEvent) => void;
+  export let onInput: (value: string) => void = () => {};
+  export let onClear: () => void = () => {};
+  export let onKeydown: (event: KeyboardEvent) => void = () => {};
 </script>
 
 <div class="search-box">
-  <div class="search-icon-wrapper">
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <circle cx="8" cy="8" r="8" fill="#10b981" />
-      <path
-        d="M4.5 6.5h3v3h-1v-2h-2v-1zm4 0h3v1h-2v2h-1v-3z"
-        fill="white"
-      />
-    </svg>
-  </div>
+  <Search size={18} class="search-icon" />
   <input
     type="text"
     placeholder={placeholder}
@@ -31,7 +23,7 @@
       on:click={onClear}
       title="Clear search (ESC)"
     >
-      <X size={16} />
+      <X size={18} />
     </button>
   {/if}
 </div>
@@ -41,28 +33,24 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 0 20px;
+    padding: 0 16px;
     height: 48px;
-    background: var(--panel1);
-    border: 1px solid var(--stroke);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 999px;
-    color: var(--muted);
+    color: rgba(255, 255, 255, 0.4);
     transition: all 0.2s ease;
     width: 100%;
   }
 
-  .search-icon-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .search-icon {
     flex-shrink: 0;
   }
 
   .search-box:focus-within {
-    background: var(--panel0);
-    border-color: var(--accent);
-    box-shadow: 0 0 0 4px rgba(63, 184, 138, 0.1);
-    color: var(--text);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(16, 185, 129, 0.5);
+    color: rgba(255, 255, 255, 0.6);
   }
 
   .search-box input {
@@ -70,30 +58,38 @@
     background: transparent;
     border: none;
     outline: none;
-    color: var(--text);
+    color: white;
     font-size: 15px;
-    font-weight: 500;
   }
 
   .search-box input::placeholder {
-    color: var(--muted2);
+    color: rgba(255, 255, 255, 0.4);
   }
 
   .search-clear {
     background: none;
     border: none;
-    color: var(--muted);
+    color: rgba(255, 255, 255, 0.4);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 4px;
     border-radius: 50%;
-    transition: all 0.2s;
+    transition: color 0.2s;
+    flex-shrink: 0;
   }
 
   .search-clear:hover {
-    color: var(--text);
-    background: var(--panel0);
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  /* Mobile responsive */
+  @media (max-width: 768px) {
+    .search-box {
+      height: 44px;
+      padding: 0 16px;
+      font-size: 17px;
+    }
   }
 </style>

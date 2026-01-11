@@ -1,5 +1,7 @@
 <script lang="ts">
   import FeedGrid from "$lib/components/FeedGrid.svelte";
+  import SearchBar from "$lib/components/SearchBar.svelte";
+  import SkeletonCard from "$lib/components/SkeletonCard.svelte";
   import {
     isAddFeedModalOpen,
     isSettingsModalOpen,
@@ -17,6 +19,8 @@
     type SmartFolder,
   } from "$lib/stores/ui";
   import { playMedia } from "$lib/stores/media";
+  import { toast } from "$lib/stores/toast";
+  import { confirmDialog } from "$lib/stores/confirm";
   import { onMount } from "svelte";
   import {
     LayoutGrid,
@@ -33,7 +37,6 @@
     FolderOpen,
     X,
     Menu,
-    Search,
     Star,
     Play,
     Download,
@@ -328,14 +331,22 @@
       await loadFeeds();
       await loadItems();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to add feed");
+      toast.error(err instanceof Error ? err.message : "Failed to add feed");
     } finally {
       addingFeed = false;
     }
   }
 
   async function deleteFeed(url: string) {
-    if (!confirm(`Delete feed: ${url}?`)) return;
+    const confirmed = await confirmDialog.confirm({
+      title: "Delete Feed",
+      message: `Are you sure you want to delete this feed?`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      type: "danger",
+    });
+
+    if (!confirmed) return;
 
     try {
       const response = await fetch(
@@ -359,7 +370,7 @@
       await loadFeeds();
       await loadItems();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to delete feed");
+      toast.error(err instanceof Error ? err.message : "Failed to delete feed");
     }
   }
 
@@ -383,7 +394,7 @@
       await loadFeeds();
       await loadItems();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to refresh");
+      toast.error(err instanceof Error ? err.message : "Failed to refresh");
     }
   }
 
@@ -528,7 +539,7 @@
       // Refresh feed list to update unread counts
       await loadFeeds();
     } catch (err) {
-      alert(
+      toast.error(
         err instanceof Error ? err.message : "Failed to update read status"
       );
     }
@@ -558,7 +569,7 @@
       // Rollback on error
       item.is_starred = oldStarredState;
       items = [...items];
-      alert(
+      toast.error(
         err instanceof Error ? err.message : "Failed to update starred status"
       );
     }
@@ -1085,7 +1096,7 @@
       await loadFolders();
       await loadFeeds();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to delete folder");
+      toast.error(err instanceof Error ? err.message : "Failed to delete folder");
     }
   }
 
@@ -1137,7 +1148,7 @@
       // Trigger reactivity
       feeds = [...feeds];
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to update folder");
+      toast.error(err instanceof Error ? err.message : "Failed to update folder");
       // Reload to get correct state
       await loadFeeds();
     }
@@ -1171,7 +1182,7 @@
       showCreateFolderInPopover = false;
       await loadFolders();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to create folder");
+      toast.error(err instanceof Error ? err.message : "Failed to create folder");
     }
   }
 
@@ -1299,7 +1310,7 @@
 
       await loadFeeds();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to delete feed");
+      toast.error(err instanceof Error ? err.message : "Failed to delete feed");
     }
   }
 </script>
@@ -1543,25 +1554,13 @@
 
     <!-- Search Bar -->
     <div class="search-bar-full">
-      <div class="search-box">
-        <Search size={18} class="search-icon" />
-        <input
-          type="text"
-          placeholder="Search articles..."
-          bind:value={searchQuery}
-          on:input={handleSearchInput}
-          on:keydown={handleSearchKeydown}
-        />
-        {#if searchQuery}
-          <button
-            class="search-clear"
-            on:click={clearSearch}
-            title="Clear search (ESC)"
-          >
-            <X size={18} />
-          </button>
-        {/if}
-      </div>
+      <SearchBar
+        value={searchQuery}
+        placeholder="Search articles..."
+        onInput={handleSearchInput}
+        onClear={clearSearch}
+        onKeydown={handleSearchKeydown}
+      />
     </div>
 
     <!-- Filter Chips -->
@@ -1590,7 +1589,11 @@
     <!-- Articles List -->
     <div class="articles-scroll-container">
       {#if itemsLoading}
-        <div class="empty-state">Loading articles...</div>
+        <div class="flex flex-col gap-0 w-full">
+          {#each Array(5) as _ (Math.random())}
+            <SkeletonCard />
+          {/each}
+        </div>
       {:else if itemsError}
         <div class="empty-state error">{itemsError}</div>
       {:else if filteredItems.length === 0}
@@ -1609,7 +1612,11 @@
     </div>
     <div class="articles-container" style="display:none">
       {#if itemsLoading}
-        <div class="empty-state">Loading articles...</div>
+        <div class="flex flex-col gap-0 w-full">
+          {#each Array(5) as _ (Math.random())}
+            <SkeletonCard />
+          {/each}
+        </div>
       {:else if itemsError}
         <div class="empty-state error">{itemsError}</div>
       {:else if filteredItems.length === 0}
@@ -2705,54 +2712,6 @@
   /* Full Width Search Bar */
   .search-bar-full {
     margin-bottom: 20px;
-  }
-
-  .search-box {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0 16px;
-    height: 48px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 999px;
-    color: rgba(255, 255, 255, 0.4);
-    transition: all 0.2s ease;
-    width: 100%;
-  }
-
-  .search-icon {
-    flex-shrink: 0;
-  }
-
-  .search-clear {
-    flex-shrink: 0;
-    color: rgba(255, 255, 255, 0.4);
-    transition: color 0.2s;
-  }
-
-  .search-clear:hover {
-    color: rgba(255, 255, 255, 0.8);
-  }
-
-  .search-box:focus-within {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(16, 185, 129, 0.5);
-    color: rgba(255, 255, 255, 0.6);
-  }
-
-  .search-box input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: white;
-    font-size: 15px;
-    font-weight: 500;
-  }
-
-  .search-box input::placeholder {
-    color: rgba(255, 255, 255, 0.4);
   }
 
   .icon-btn {
