@@ -1630,7 +1630,7 @@
         </button>
         <button
           class="icon-btn desktop-only add-btn-desktop"
-          on:click={openAddFeedModal}
+          on:click={() => isAddFeedModalOpen.set(true)}
           title="Add Feed"
         >
           <Plus size={20} />
@@ -2041,7 +2041,7 @@
 
   <!-- Mobile Floating Add Button -->
   {#if isMobile}
-    <button class="mobile-fab" on:click={openAddFeedModal} title="Add Feeds">
+    <button class="mobile-fab" on:click={() => isAddFeedModalOpen.set(true)} title="Add Feeds">
       <Plus size={24} />
     </button>
   {/if}
