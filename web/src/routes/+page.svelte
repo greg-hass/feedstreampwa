@@ -3,6 +3,7 @@
   import {
     isAddFeedModalOpen,
     isSettingsModalOpen,
+    isMobileMenuOpen,
     viewMode,
     activeSmartFolder,
     activeFolderId,
