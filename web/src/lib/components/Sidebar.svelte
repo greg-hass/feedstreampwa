@@ -43,8 +43,9 @@
     feedsTree,
     folderUnreadCounts,
   } from "$lib/stores/counts";
-  import { folders } from "$lib/stores/folders";
-  import { feeds } from "$lib/stores/feeds";
+  import { folders, folderUnreadCounts, createFolder } from "$lib/stores/folders";
+  import { feeds, feedsTree } from "$lib/stores/feeds";
+  import { toast } from "$lib/stores/toast";
 
   // Navigation Items
   const navItems = [
@@ -55,12 +56,50 @@
   $: activeUrl = $page.url.pathname;
 
   let openFolders: Record<string, boolean> = {};
+  let isCreatingInline = false;
+  let inlineFolderName = "";
+  let isSubmitting = false;
 
   function toggleFolder(e: MouseEvent, id: string) {
     e.stopPropagation();
     openFolders[id] = !openFolders[id];
   }
+
+  async function handleInlineSubmit() {
+    const name = inlineFolderName.trim();
+    if (!name || isSubmitting) return;
+
+    isSubmitting = true;
+    try {
+      await createFolder(name);
+      inlineFolderName = "";
+      isCreatingInline = false;
+      toast.success(`Folder "${name}" created`);
+    } catch (err) {
+      toast.error("Failed to create folder");
+    } finally {
+      isSubmitting = false;
+    }
+  }
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === "Escape" && isCreatingInline) {
+      isCreatingInline = false;
+      inlineFolderName = "";
+    }
+    
+    // Global Shortcut: Shift + N for new folder
+    if (e.shiftKey && e.key === "N" && !isCreatingInline) {
+      const target = e.target as HTMLElement;
+      if (target.tagName !== "INPUT" && target.tagName !== "TEXTAREA") {
+        e.preventDefault();
+        isCreatingInline = true;
+      }
+    }
+  }
 </script>
+
+<svelte:window on:keydown={handleKeydown} />
 
 <aside
   class="hidden md:flex flex-col w-[280px] h-screen fixed left-0 top-0 z-40 bg-background border-r border-white/5"
@@ -224,12 +263,27 @@
       </div>
       <button
         class="text-white/40 hover:text-white transition-colors"
-        on:click={() => isCreateFolderModalOpen.set(true)}
-        title="New folder"
+        on:click={() => isCreatingInline = true}
+        title="New folder (Shift + N)"
       >
         <Plus size={14} />
       </button>
     </div>
+
+    <!-- Inline Quick Create -->
+    {#if isCreatingInline}
+      <div class="px-3 mb-2 animate-in fade-in slide-in-from-top-1 duration-200">
+        <input
+          type="text"
+          bind:value={inlineFolderName}
+          placeholder="Folder name..."
+          class="w-full bg-raised border border-accent/30 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent shadow-[0_0_10px_rgba(16,185,129,0.1)]"
+          on:keydown={(e) => e.key === "Enter" && handleInlineSubmit()}
+          on:blur={() => !inlineFolderName && (isCreatingInline = false)}
+          autofocus
+        />
+      </div>
+    {/if}
 
     <!-- Folders -->
     {#if $folders.length > 0}
