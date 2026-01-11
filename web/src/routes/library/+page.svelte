@@ -111,10 +111,7 @@
 <div class="max-w-7xl mx-auto">
   <!-- Header -->
   <div class="mb-6">
-    <h1 class="text-3xl font-bold text-white mb-2">Library</h1>
-    <p class="text-white/60">
-      Your saved and starred articles ({filteredItems.length}{filteredItems.length !== items.length ? ` of ${items.length}` : ""} item{filteredItems.length !== 1 ? "s" : ""})
-    </p>
+    <h1 class="text-3xl font-bold text-white">Library</h1>
   </div>
 
   {#if !loading && items.length > 0}

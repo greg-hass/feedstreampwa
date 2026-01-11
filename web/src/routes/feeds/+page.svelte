@@ -213,12 +213,7 @@
 <div class="max-w-5xl mx-auto">
   <!-- Header -->
   <div class="flex items-center justify-between mb-6">
-    <div>
-      <h1 class="text-3xl font-bold text-white mb-2">Feed Manager</h1>
-      <p class="text-white/60">
-        Manage your subscriptions ({filteredFeeds.length}{filteredFeeds.length !== feeds.length ? ` of ${feeds.length}` : ""} feed{filteredFeeds.length !== 1 ? "s" : ""})
-      </p>
-    </div>
+    <h1 class="text-3xl font-bold text-white">Feed Manager</h1>
     <div class="flex items-center gap-2">
       <button
         class="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-colors text-white"
