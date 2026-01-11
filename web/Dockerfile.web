@@ -9,6 +9,9 @@ COPY package.json package-lock.json ./
 # Install dependencies
 RUN npm ci
 
+# Install optional rollup native dependency (required for Vite build)
+RUN npm install @rollup/rollup-linux-x64-gnu --save-optional --no-save
+
 # Copy source code
 COPY . .
 
