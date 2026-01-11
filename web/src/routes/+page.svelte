@@ -1575,7 +1575,7 @@
             <RefreshCw size={20} />
           </button>
           <button
-            class="p-2.5 rounded-xl bg-accent hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20 text-white"
+            class="p-2.5 rounded-xl bg-accent hover:bg-accent hover:shadow-xl hover:shadow-accent/30 transition-all shadow-lg shadow-accent/20 text-white"
             on:click={() => isAddFeedModalOpen.set(true)}
             title="Add Feed"
           >
