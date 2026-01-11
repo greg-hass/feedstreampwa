@@ -11,29 +11,29 @@ export async function itemRoutes(fastify: FastifyInstance) {
   // GET /api/items - List all items (with optional filters)
   fastify.get('/items', async (request: FastifyRequest<{ Querystring: any }>, reply: FastifyReply) => {
     const db = getDatabase();
-    const queryParams = request.query as { feedId?: string; read?: string; starred?: string; limit?: string; offset?: string };
-    const { feedId, read, starred, limit = 50, offset = 0 } = queryParams;
+    const queryParams = request.query as { feedUrl?: string; read?: string; starred?: string; limit?: string; offset?: string };
+    const { feedUrl, read, starred, limit = 50, offset = 0 } = queryParams;
 
     let sqlQuery = `
       SELECT i.*, f.title as feed_title, f.kind as feed_kind
       FROM items i
-      JOIN feeds f ON i.feed_id = f.id
+      JOIN feeds f ON i.feed_url = f.url
       WHERE 1=1
     `;
     const params: any[] = [];
 
-    if (feedId) {
-      sqlQuery += ' AND i.feed_id = ?';
-      params.push(feedId);
+    if (feedUrl) {
+      sqlQuery += ' AND i.feed_url = ?';
+      params.push(decodeURIComponent(feedUrl));
     }
 
     if (read !== undefined) {
-      sqlQuery += ' AND i.read = ?';
+      sqlQuery += ' AND i.is_read = ?';
       params.push(read === 'true' ? 1 : 0);
     }
 
     if (starred !== undefined) {
-      sqlQuery += ' AND i.starred = ?';
+      sqlQuery += ' AND i.is_starred = ?';
       params.push(starred === 'true' ? 1 : 0);
     }
 
@@ -55,7 +55,7 @@ export async function itemRoutes(fastify: FastifyInstance) {
     const item = db.prepare(`
       SELECT i.*, f.title as feed_title, f.kind as feed_kind
       FROM items i
-      JOIN feeds f ON i.feed_id = f.id
+      JOIN feeds f ON i.feed_url = f.url
       WHERE i.id = ?
     `).get(request.params.id);
 
@@ -76,7 +76,7 @@ export async function itemRoutes(fastify: FastifyInstance) {
       const validated = validateToggleItemReadBody(request.body);
       const db = getDatabase();
 
-      const result = db.prepare('UPDATE items SET read = ? WHERE id = ?')
+      const result = db.prepare('UPDATE items SET is_read = ? WHERE id = ?')
         .run(validated.read ? 1 : 0, request.params.id);
 
       if (result.changes === 0) {
@@ -99,7 +99,7 @@ export async function itemRoutes(fastify: FastifyInstance) {
       const validated = validateToggleItemStarBody(request.body);
       const db = getDatabase();
 
-      const result = db.prepare('UPDATE items SET starred = ? WHERE id = ?')
+      const result = db.prepare('UPDATE items SET is_starred = ? WHERE id = ?')
         .run(validated.starred ? 1 : 0, request.params.id);
 
       if (result.changes === 0) {
@@ -141,16 +141,16 @@ export async function itemRoutes(fastify: FastifyInstance) {
       const validated = validateMarkAllReadBody(request.body);
       const db = getDatabase();
 
-      let sqlQuery = 'UPDATE items SET read = 1 WHERE read = 0';
+      let sqlQuery = 'UPDATE items SET is_read = 1 WHERE is_read = 0';
       const params: any[] = [];
 
       if (validated.feedUrl) {
-        sqlQuery += ' AND feed_id = (SELECT id FROM feeds WHERE url = ?)';
-        params.push(validated.feedUrl);
+        sqlQuery += ' AND feed_url = ?';
+        params.push(decodeURIComponent(validated.feedUrl));
       }
 
       if (validated.source) {
-        sqlQuery += ' AND feed_id IN (SELECT id FROM feeds WHERE kind = ?)';
+        sqlQuery += ' AND source = ?';
         params.push(validated.source);
       }
 
@@ -172,13 +172,13 @@ export async function itemRoutes(fastify: FastifyInstance) {
     const db = getDatabase();
 
     const totalItems = db.prepare('SELECT COUNT(*) as count FROM items').get() as any;
-    const unreadItems = db.prepare('SELECT COUNT(*) as count FROM items WHERE read = 0').get() as any;
-    const starredItems = db.prepare('SELECT COUNT(*) as count FROM items WHERE starred = 1').get() as any;
+    const unreadItems = db.prepare('SELECT COUNT(*) as count FROM items WHERE is_read = 0').get() as any;
+    const starredItems = db.prepare('SELECT COUNT(*) as count FROM items WHERE is_starred = 1').get() as any;
     const itemsByFeed = db.prepare(`
       SELECT f.title, COUNT(*) as count
       FROM items i
-      JOIN feeds f ON i.feed_id = f.id
-      GROUP BY f.id
+      JOIN feeds f ON i.feed_url = f.url
+      GROUP BY f.url
       ORDER BY count DESC
       LIMIT 10
     `).all();

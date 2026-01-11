@@ -7,9 +7,9 @@ export async function folderRoutes(fastify: FastifyInstance) {
   fastify.get('/folders', async (request: FastifyRequest, reply: FastifyReply) => {
     const db = getDatabase();
     const folders = db.prepare(`
-      SELECT 
+      SELECT
         f.*,
-        COUNT(DISTINCT fm.feed_id) as feedCount
+        COUNT(DISTINCT fm.feed_url) as feedCount
       FROM folders f
       LEFT JOIN folder_feeds fm ON fm.folder_id = f.id
       GROUP BY f.id
@@ -36,7 +36,7 @@ export async function folderRoutes(fastify: FastifyInstance) {
     const feeds = db.prepare(`
       SELECT f.*
       FROM feeds f
-      JOIN folder_feeds fm ON fm.feed_id = f.id
+      JOIN folder_feeds fm ON fm.feed_url = f.url
       WHERE fm.folder_id = ?
     `).all(request.params.id);
 
@@ -120,13 +120,13 @@ export async function folderRoutes(fastify: FastifyInstance) {
     }
 
     // Check if feed exists
-    const feed = db.prepare('SELECT * FROM feeds WHERE id = ?').get(request.params.feedId);
+    const feed = db.prepare('SELECT * FROM feeds WHERE url = ?').get(request.params.feedId);
     if (!feed) {
       return reply.code(404).send({ ok: false, error: 'Feed not found' });
     }
 
     // Add feed to folder (ignore if already exists)
-    db.prepare('INSERT OR IGNORE INTO folder_feeds (folder_id, feed_id) VALUES (?, ?)')
+    db.prepare('INSERT OR IGNORE INTO folder_feeds (folder_id, feed_url) VALUES (?, ?)')
       .run(request.params.id, request.params.feedId);
 
     return { ok: true, message: 'Feed added to folder' };
@@ -143,7 +143,7 @@ export async function folderRoutes(fastify: FastifyInstance) {
 
     const db = getDatabase();
 
-    const result = db.prepare('DELETE FROM folder_feeds WHERE folder_id = ? AND feed_id = ?')
+    const result = db.prepare('DELETE FROM folder_feeds WHERE folder_id = ? AND feed_url = ?')
       .run(request.params.id, request.params.feedId);
 
     if (result.changes === 0) {

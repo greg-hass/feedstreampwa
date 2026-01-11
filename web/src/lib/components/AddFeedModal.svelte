@@ -1,61 +1,119 @@
 <script lang="ts">
-  import { X, PlusCircle, Rss, Loader2, CheckCircle2 } from "lucide-svelte";
+  import { X, PlusCircle, Rss, Loader2, CheckCircle2, Search, Youtube, Hash, Radio, ExternalLink } from "lucide-svelte";
   import { isAddFeedModalOpen } from "$lib/stores/ui";
   import { createFeed } from "$lib/api/feeds";
+  import type { SearchResult } from "$lib/types";
 
-  let feedUrl = "";
-  let adding = false;
+  let searchQuery = "";
+  let searching = false;
+  let searchResults: SearchResult[] = [];
   let error: string | null = null;
-  let successMessage = false;
+  let successMessage: string | null = null;
+  let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Type filters - using Set for multi-select
+  type FeedType = "rss" | "youtube" | "reddit" | "podcast";
+  let selectedTypes = new Set<FeedType>(["rss", "youtube", "reddit", "podcast"]);
+
+  const typeOptions = [
+    { value: "rss" as FeedType, label: "RSS", icon: Rss, color: "text-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
+    { value: "youtube" as FeedType, label: "YouTube", icon: Youtube, color: "text-red-500", bg: "bg-red-500/10", border: "border-red-500/20" },
+    { value: "reddit" as FeedType, label: "Reddit", icon: Hash, color: "text-orange-500", bg: "bg-orange-500/10", border: "border-orange-500/20" },
+    { value: "podcast" as FeedType, label: "Podcast", icon: Radio, color: "text-purple-500", bg: "bg-purple-500/10", border: "border-purple-500/20" },
+  ];
 
   function closeModal() {
     isAddFeedModalOpen.set(false);
-    feedUrl = "";
+    searchQuery = "";
+    searchResults = [];
     error = null;
-    successMessage = false;
+    successMessage = null;
+    selectedTypes = new Set(["rss", "youtube", "reddit", "podcast"]);
   }
 
-  async function handleAddFeed() {
-    if (!feedUrl.trim()) {
-      error = "Please enter a feed URL";
+  function toggleTypeFilter(type: FeedType) {
+    if (selectedTypes.has(type)) {
+      selectedTypes.delete(type);
+    } else {
+      selectedTypes.add(type);
+    }
+    selectedTypes = selectedTypes; // Trigger reactivity
+
+    // Re-search with new filters
+    if (searchQuery.trim()) {
+      searchFeeds();
+    }
+  }
+
+  async function searchFeeds() {
+    if (!searchQuery.trim()) {
+      searchResults = [];
       return;
     }
 
-    adding = true;
+    searching = true;
     error = null;
-    successMessage = false;
 
     try {
-      await createFeed(feedUrl.trim());
-      successMessage = true;
+      // Build type parameter
+      const types = Array.from(selectedTypes).join(",");
+      const params = new URLSearchParams({
+        q: searchQuery.trim(),
+        type: types || "all",
+      });
 
-      // Close modal after short delay
+      const response = await fetch(`/api/feeds/search?${params}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      searchResults = data.results || [];
+    } catch (err) {
+      error = err instanceof Error ? err.message : "Failed to search feeds";
+      searchResults = [];
+    } finally {
+      searching = false;
+    }
+  }
+
+  function handleSearchInput() {
+    if (searchDebounceTimer) {
+      clearTimeout(searchDebounceTimer);
+    }
+
+    searchDebounceTimer = setTimeout(() => {
+      searchFeeds();
+    }, 400);
+  }
+
+  async function handleAddFeed(url: string, title: string) {
+    try {
+      await createFeed(url);
+      successMessage = `Added "${title}" successfully!`;
+
+      // Remove from results
+      searchResults = searchResults.filter(r => r.url !== url);
+
+      // Clear success message after 3 seconds
       setTimeout(() => {
-        closeModal();
-        // Reload the page to show the new feed
-        window.location.reload();
-      }, 1000);
+        successMessage = null;
+      }, 3000);
     } catch (err) {
       error = err instanceof Error ? err.message : "Failed to add feed";
-    } finally {
-      adding = false;
     }
   }
 
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === "Escape") {
       closeModal();
-    } else if (e.key === "Enter" && !adding) {
-      handleAddFeed();
     }
   }
 
-  // Example feed URLs for user guidance
-  const exampleFeeds = [
-    { label: "RSS Blog", url: "https://example.com/feed.xml" },
-    { label: "YouTube Channel", url: "https://www.youtube.com/feeds/videos.xml?channel_id=..." },
-    { label: "Podcast", url: "https://feeds.example.com/podcast.xml" },
-  ];
+  function getSourceStyle(type: string) {
+    const option = typeOptions.find(t => t.value === type);
+    return option || typeOptions[0];
+  }
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -71,7 +129,7 @@
   >
     <!-- Modal Content -->
     <div
-      class="glass rounded-2xl border border-white/10 max-w-lg w-full"
+      class="glass rounded-2xl border border-white/10 max-w-3xl w-full max-h-[85vh] flex flex-col"
       on:click|stopPropagation
       on:keydown|stopPropagation
       role="dialog"
@@ -80,18 +138,18 @@
     >
       <!-- Header -->
       <div
-        class="bg-black/40 backdrop-blur-xl border-b border-white/10 px-6 py-4 flex items-center justify-between"
+        class="bg-black/40 backdrop-blur-xl border-b border-white/10 px-6 py-4 flex items-center justify-between flex-shrink-0"
       >
         <div class="flex items-center gap-3">
           <div
             class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 border border-emerald-500/20 flex items-center justify-center"
           >
-            <Rss size={20} class="text-emerald-400" />
+            <Search size={20} class="text-emerald-400" />
           </div>
           <div>
-            <h2 class="text-xl font-semibold text-white">Add New Feed</h2>
+            <h2 class="text-xl font-semibold text-white">Discover Feeds</h2>
             <p class="text-sm text-white/60">
-              Subscribe to RSS feeds, podcasts, or YouTube channels
+              Search for RSS, YouTube, Reddit, and Podcasts
             </p>
           </div>
         </div>
@@ -104,91 +162,190 @@
         </button>
       </div>
 
-      <!-- Body -->
-      <div class="p-6 space-y-4">
-        <!-- URL Input -->
-        <div class="space-y-2">
-          <label for="feed-url" class="block text-sm font-semibold text-white">
-            Feed URL
-          </label>
+      <!-- Search Bar -->
+      <div class="px-6 pt-6 pb-4 space-y-4 flex-shrink-0">
+        <div class="relative">
+          <Search size={20} class="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
           <input
-            id="feed-url"
-            type="url"
-            placeholder="https://example.com/feed.xml"
-            bind:value={feedUrl}
-            disabled={adding}
-            class="w-full bg-white/5 px-4 py-3 rounded-xl text-white placeholder-white/40 border border-white/10 hover:bg-white/10 focus:border-accent/50 transition-colors outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+            type="text"
+            placeholder="Search: 'omgubuntu', 'tech news', 'cooking podcasts'..."
+            bind:value={searchQuery}
+            on:input={handleSearchInput}
+            class="w-full bg-white/5 pl-12 pr-4 py-3.5 rounded-xl text-white placeholder-white/40 border border-white/10 hover:bg-white/10 focus:border-accent/50 transition-colors outline-none"
             autofocus
           />
-          <p class="text-xs text-white/40">
-            Paste the URL of an RSS feed, podcast feed, or YouTube channel
-          </p>
+          {#if searching}
+            <div class="absolute right-4 top-1/2 -translate-y-1/2">
+              <Loader2 size={18} class="animate-spin text-white/40" />
+            </div>
+          {/if}
         </div>
 
-        <!-- Examples -->
-        <div class="space-y-2">
-          <p class="text-xs font-semibold text-white/60 uppercase tracking-wider">
-            Examples
-          </p>
-          <div class="space-y-1">
-            {#each exampleFeeds as example}
-              <button
-                class="w-full text-left px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-white/60 hover:text-white transition-colors"
-                on:click={() => (feedUrl = example.url)}
-                disabled={adding}
-              >
-                <span class="font-medium">{example.label}:</span>
-                <span class="ml-2 opacity-60">{example.url}</span>
-              </button>
-            {/each}
-          </div>
+        <!-- Type Filters -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-xs font-semibold text-white/60 uppercase tracking-wider">Filter:</span>
+          {#each typeOptions as option}
+            <button
+              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 {selectedTypes.has(option.value)
+                ? `${option.bg} ${option.color} border ${option.border}`
+                : 'bg-white/5 text-white/40 border border-white/10 hover:bg-white/10'}"
+              on:click={() => toggleTypeFilter(option.value)}
+            >
+              <svelte:component this={option.icon} size={14} />
+              {option.label}
+            </button>
+          {/each}
         </div>
-
-        <!-- Error Message -->
-        {#if error}
-          <div
-            class="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm"
-          >
-            {error}
-          </div>
-        {/if}
 
         <!-- Success Message -->
         {#if successMessage}
           <div
-            class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm flex items-center gap-2"
+            class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm flex items-center gap-2"
           >
             <CheckCircle2 size={16} />
-            Feed added successfully!
+            {successMessage}
+          </div>
+        {/if}
+
+        <!-- Error Message -->
+        {#if error}
+          <div
+            class="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm"
+          >
+            {error}
           </div>
         {/if}
       </div>
 
-      <!-- Footer -->
-      <div
-        class="bg-black/40 backdrop-blur-xl border-t border-white/10 px-6 py-4 flex items-center justify-end gap-3"
-      >
-        <button
-          class="px-4 py-2 rounded-xl text-white/60 hover:text-white hover:bg-white/5 transition-colors"
-          on:click={closeModal}
-          disabled={adding}
-        >
-          Cancel
-        </button>
-        <button
-          class="px-6 py-2 rounded-xl bg-accent text-white hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          on:click={handleAddFeed}
-          disabled={adding || !feedUrl.trim()}
-        >
-          {#if adding}
-            <Loader2 size={16} class="animate-spin" />
-            Adding Feed...
-          {:else}
-            <PlusCircle size={16} />
-            Add Feed
-          {/if}
-        </button>
+      <!-- Results -->
+      <div class="flex-1 overflow-y-auto px-6 pb-6 min-h-0">
+        {#if searchQuery && !searching && searchResults.length === 0}
+          <!-- No Results -->
+          <div class="glass rounded-2xl p-12 text-center">
+            <div
+              class="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4"
+            >
+              <Search size={32} class="text-white/40" />
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">No feeds found</h3>
+            <p class="text-white/60 text-sm">
+              Try different keywords or check your filters
+            </p>
+          </div>
+        {:else if searchResults.length > 0}
+          <!-- Results List -->
+          <div class="space-y-3">
+            {#each searchResults as result}
+              {@const sourceStyle = getSourceStyle(result.type)}
+              <div
+                class="glass rounded-xl p-4 border border-white/5 hover:border-white/10 transition-all"
+              >
+                <div class="flex items-start gap-4">
+                  <!-- Thumbnail/Icon -->
+                  <div
+                    class="w-12 h-12 rounded-lg {sourceStyle.bg} border {sourceStyle.border} flex-shrink-0 overflow-hidden"
+                  >
+                    {#if result.thumbnail}
+                      <img
+                        src={result.thumbnail}
+                        alt={result.title}
+                        class="w-full h-full object-cover"
+                      />
+                    {:else}
+                      <div class="w-full h-full flex items-center justify-center">
+                        <svelte:component this={sourceStyle.icon} size={20} class={sourceStyle.color} />
+                      </div>
+                    {/if}
+                  </div>
+
+                  <!-- Info -->
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-start justify-between gap-3 mb-1">
+                      <h4 class="font-semibold text-white truncate">
+                        {result.title}
+                      </h4>
+                      <div
+                        class="{sourceStyle.bg} {sourceStyle.border} px-2 py-0.5 rounded-full text-xs font-medium {sourceStyle.color} uppercase border flex-shrink-0"
+                      >
+                        {result.type}
+                      </div>
+                    </div>
+                    {#if result.description}
+                      <p class="text-sm text-white/60 line-clamp-2 mb-3">
+                        {result.description}
+                      </p>
+                    {/if}
+
+                    <!-- Actions -->
+                    <div class="flex items-center gap-2">
+                      <button
+                        class="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors text-sm shadow-lg shadow-accent/20"
+                        on:click={() => handleAddFeed(result.url, result.title)}
+                      >
+                        <PlusCircle size={14} />
+                        Add
+                      </button>
+                      <a
+                        href={result.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-sm text-white/80"
+                      >
+                        <ExternalLink size={14} />
+                        Visit
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {/each}
+          </div>
+        {:else}
+          <!-- Initial State -->
+          <div class="glass rounded-2xl p-12 text-center">
+            <div
+              class="w-16 h-16 bg-gradient-to-br from-emerald-500/20 to-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-emerald-500/20"
+            >
+              <Search size={32} class="text-emerald-400" />
+            </div>
+            <h3 class="text-xl font-semibold text-white mb-2">
+              Smart Feed Discovery
+            </h3>
+            <p class="text-white/60 mb-6">
+              Search by keywords and we'll find feeds from multiple sources
+            </p>
+            <div class="max-w-md mx-auto text-left space-y-2">
+              <p class="text-sm font-semibold text-white/60">Try searching for:</p>
+              <ul class="text-sm text-white/60 space-y-1">
+                <li>• <span class="text-white/80">"omgubuntu"</span> - Find tech blogs</li>
+                <li>• <span class="text-white/80">"cooking podcasts"</span> - Discover food shows</li>
+                <li>• <span class="text-white/80">"tech news youtube"</span> - YouTube channels</li>
+                <li>• <span class="text-white/80">"r/technology"</span> - Reddit subreddits</li>
+              </ul>
+            </div>
+          </div>
+        {/if}
       </div>
     </div>
   </div>
 {/if}
+
+<style>
+  /* Scrollbar styling */
+  :global(.overflow-y-auto::-webkit-scrollbar) {
+    width: 8px;
+  }
+
+  :global(.overflow-y-auto::-webkit-scrollbar-track) {
+    background: transparent;
+  }
+
+  :global(.overflow-y-auto::-webkit-scrollbar-thumb) {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+
+  :global(.overflow-y-auto::-webkit-scrollbar-thumb:hover) {
+    background: rgba(255, 255, 255, 0.2);
+  }
+</style>

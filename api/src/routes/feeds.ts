@@ -7,26 +7,26 @@ export async function feedRoutes(fastify: FastifyInstance) {
   fastify.get('/feeds', async (request: FastifyRequest, reply: FastifyReply) => {
     const db = getDatabase();
     const feeds = db.prepare(`
-      SELECT 
+      SELECT
         f.*,
         COUNT(DISTINCT i.id) as unreadCount
       FROM feeds f
-      LEFT JOIN items i ON i.feed_id = f.id AND i.read = 0
-      GROUP BY f.id
+      LEFT JOIN items i ON i.feed_url = f.url AND i.is_read = 0
+      GROUP BY f.url
       ORDER BY f.title
     `).all();
 
     return { ok: true, feeds };
   });
 
-  // GET /api/feeds/:id - Get a specific feed
-  fastify.get('/feeds/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    if (!request.params?.id || typeof request.params.id !== 'string' || request.params.id.trim().length === 0) {
-      return reply.code(400).send({ ok: false, error: 'Feed ID is required' });
+  // GET /api/feeds/:url - Get a specific feed
+  fastify.get('/feeds/:url', async (request: FastifyRequest<{ Params: { url: string } }>, reply: FastifyReply) => {
+    if (!request.params?.url || typeof request.params.url !== 'string' || request.params.url.trim().length === 0) {
+      return reply.code(400).send({ ok: false, error: 'Feed URL is required' });
     }
 
     const db = getDatabase();
-    const feed = db.prepare('SELECT * FROM feeds WHERE id = ?').get(request.params.id);
+    const feed = db.prepare('SELECT * FROM feeds WHERE url = ?').get(decodeURIComponent(request.params.url));
 
     if (!feed) {
       return reply.code(404).send({ ok: false, error: 'Feed not found' });
@@ -53,10 +53,10 @@ export async function feedRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // PUT /api/feeds/:id - Update a feed
-  fastify.put('/feeds/:id', async (request: FastifyRequest<{ Params: { id: string }, Body: any }>, reply: FastifyReply) => {
-    if (!request.params?.id || typeof request.params.id !== 'string' || request.params.id.trim().length === 0) {
-      return reply.code(400).send({ ok: false, error: 'Feed ID is required' });
+  // PUT /api/feeds/:url - Update a feed
+  fastify.put('/feeds/:url', async (request: FastifyRequest<{ Params: { url: string }, Body: any }>, reply: FastifyReply) => {
+    if (!request.params?.url || typeof request.params.url !== 'string' || request.params.url.trim().length === 0) {
+      return reply.code(400).send({ ok: false, error: 'Feed URL is required' });
     }
 
     try {
@@ -67,8 +67,8 @@ export async function feedRoutes(fastify: FastifyInstance) {
       const result = db.prepare(`
         UPDATE feeds
         SET url = ?, title = ?
-        WHERE id = ?
-      `).run(url, title || null, request.params.id);
+        WHERE url = ?
+      `).run(url, title || null, decodeURIComponent(request.params.url));
 
       if (result.changes === 0) {
         return reply.code(404).send({ ok: false, error: 'Feed not found' });
@@ -80,19 +80,20 @@ export async function feedRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // DELETE /api/feeds/:id - Delete a feed
-  fastify.delete('/feeds/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    if (!request.params?.id || typeof request.params.id !== 'string' || request.params.id.trim().length === 0) {
-      return reply.code(400).send({ ok: false, error: 'Feed ID is required' });
+  // DELETE /api/feeds - Delete a feed by URL query parameter
+  fastify.delete('/feeds', async (request: FastifyRequest<{ Querystring: { url: string } }>, reply: FastifyReply) => {
+    if (!request.query?.url || typeof request.query.url !== 'string' || request.query.url.trim().length === 0) {
+      return reply.code(400).send({ ok: false, error: 'Feed URL is required' });
     }
 
     const db = getDatabase();
+    const feedUrl = decodeURIComponent(request.query.url);
 
     // Delete items for this feed first
-    db.prepare('DELETE FROM items WHERE feed_id = ?').run(request.params.id);
+    db.prepare('DELETE FROM items WHERE feed_url = ?').run(feedUrl);
 
     // Delete the feed
-    const result = db.prepare('DELETE FROM feeds WHERE id = ?').run(request.params.id);
+    const result = db.prepare('DELETE FROM feeds WHERE url = ?').run(feedUrl);
 
     if (result.changes === 0) {
       return reply.code(404).send({ ok: false, error: 'Feed not found' });
@@ -101,14 +102,14 @@ export async function feedRoutes(fastify: FastifyInstance) {
     return { ok: true, deleted: result.changes };
   });
 
-  // POST /api/feeds/:id/refresh - Trigger a refresh for a specific feed
-  fastify.post('/feeds/:id/refresh', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-    if (!request.params?.id || typeof request.params.id !== 'string' || request.params.id.trim().length === 0) {
-      return reply.code(400).send({ ok: false, error: 'Feed ID is required' });
+  // POST /api/feeds/:url/refresh - Trigger a refresh for a specific feed
+  fastify.post('/feeds/:url/refresh', async (request: FastifyRequest<{ Params: { url: string } }>, reply: FastifyReply) => {
+    if (!request.params?.url || typeof request.params.url !== 'string' || request.params.url.trim().length === 0) {
+      return reply.code(400).send({ ok: false, error: 'Feed URL is required' });
     }
 
     const db = getDatabase();
-    const feed = db.prepare('SELECT * FROM feeds WHERE id = ?').get(request.params.id);
+    const feed = db.prepare('SELECT * FROM feeds WHERE url = ?').get(decodeURIComponent(request.params.url));
 
     if (!feed) {
       return reply.code(404).send({ ok: false, error: 'Feed not found' });

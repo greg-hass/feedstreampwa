@@ -54,6 +54,16 @@
     closeModal();
   }
 
+  function handleBackdropKeydown(event: KeyboardEvent) {
+    if (event.key === "Enter") {
+      handleCancel();
+    }
+  }
+
+  function handleThemeChange(themeValue: string) {
+    localSettings.theme = themeValue as Settings["theme"];
+  }
+
   async function handleExportOpml() {
     try {
       const response = await fetch("/api/feeds/export");
@@ -132,7 +142,7 @@
   <div
     class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
     on:click={handleCancel}
-    on:keydown={(e) => e.key === "Enter" && handleCancel()}
+    on:keydown={handleBackdropKeydown}
     role="button"
     tabindex="-1"
   >
@@ -187,7 +197,7 @@
                   option.value
                     ? 'bg-accent/10 border-accent text-white'
                     : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:border-white/20'}"
-                  on:click={() => (localSettings.theme = option.value)}
+                  on:click={() => handleThemeChange(option.value)}
                 >
                   <div class="font-medium mb-1">{option.label}</div>
                   <div class="text-xs opacity-60">{option.description}</div>

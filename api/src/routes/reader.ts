@@ -12,7 +12,7 @@ export async function readerRoutes(fastify: FastifyInstance) {
     const item = db.prepare(`
       SELECT i.*, f.title as feed_title, f.kind as feed_kind
       FROM items i
-      JOIN feeds f ON i.feed_id = f.id
+      JOIN feeds f ON i.feed_url = f.url
       WHERE i.id = ?
     `).get(request.params.id);
 
@@ -30,14 +30,14 @@ export async function readerRoutes(fastify: FastifyInstance) {
     }
 
     const db = getDatabase();
-    const cache = db.prepare('SELECT * FROM reader_cache WHERE item_id = ?').get(request.params.id);
+    const cache = db.prepare('SELECT * FROM reader_cache WHERE url = ?').get(request.params.id);
 
     if (!cache) {
       return reply.code(404).send({ ok: false, error: 'Cached content not found' });
     }
 
     // Check if cache is expired
-    const cachedAt = new Date((cache as any).cached_at);
+    const cachedAt = new Date((cache as any).updated_at);
     const now = new Date();
     const hoursDiff = (now.getTime() - cachedAt.getTime()) / (1000 * 60 * 60);
 
@@ -45,7 +45,7 @@ export async function readerRoutes(fastify: FastifyInstance) {
       return reply.code(404).send({ ok: false, error: 'Cached content expired' });
     }
 
-    return { ok: true, content: (cache as any).content };
+    return { ok: true, content: (cache as any).content_html };
   });
 
   // PUT /api/reader/:id/cache - Cache article content
@@ -69,10 +69,10 @@ export async function readerRoutes(fastify: FastifyInstance) {
 
     // Insert or update cache
     db.prepare(`
-      INSERT INTO reader_cache (item_id, content, cached_at)
-      VALUES (?, ?, datetime('now'))
-      ON CONFLICT(item_id) DO UPDATE SET content = ?, cached_at = datetime('now')
-    `).run(request.params.id, content, content);
+      INSERT INTO reader_cache (url, title, byline, excerpt, site_name, image_url, content_html, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      ON CONFLICT(url) DO UPDATE SET content_html = ?, updated_at = datetime('now')
+    `).run(request.params.id, null, null, null, null, null, content, content);
 
     return { ok: true, message: 'Content cached' };
   });
@@ -84,7 +84,7 @@ export async function readerRoutes(fastify: FastifyInstance) {
     }
 
     const db = getDatabase();
-    const result = db.prepare('DELETE FROM reader_cache WHERE item_id = ?').run(request.params.id);
+    const result = db.prepare('DELETE FROM reader_cache WHERE url = ?').run(request.params.id);
 
     return { ok: true, deleted: result.changes };
   });

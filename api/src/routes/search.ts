@@ -14,7 +14,7 @@ export async function searchRoutes(fastify: FastifyInstance) {
       const items = db.prepare(`
         SELECT i.*, f.title as feed_title, f.kind as feed_kind, rank
         FROM items i
-        JOIN feeds f ON i.feed_id = f.id
+        JOIN feeds f ON i.feed_url = f.url
         JOIN items_fts ON i.id = items_fts.rowid
         WHERE items_fts MATCH ?
         ORDER BY rank
@@ -45,9 +45,9 @@ export async function searchRoutes(fastify: FastifyInstance) {
       SELECT f.*,
         COUNT(DISTINCT i.id) as unreadCount
       FROM feeds f
-      LEFT JOIN items i ON i.feed_id = f.id AND i.read = 0
+      LEFT JOIN items i ON i.feed_url = f.url AND i.is_read = 0
       WHERE f.title LIKE ? OR f.site_url LIKE ? OR f.url LIKE ?
-      GROUP BY f.id
+      GROUP BY f.url
       ORDER BY f.title
       LIMIT ? OFFSET ?
     `).all(searchTerm, searchTerm, searchTerm, limitNum, offsetNum);
