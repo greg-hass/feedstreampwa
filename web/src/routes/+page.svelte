@@ -1563,15 +1563,6 @@
   <main class="main-content">
     <!-- Top Bar (Mobile & Desktop) -->
     <header class="topbar">
-      <!-- Mobile Menu Button (Hidden on Desktop) -->
-      <button
-        class="header-icon-btn mobile-only"
-        on:click={() => isMobileMenuOpen.set(true)}
-        title="Menu"
-      >
-        <Menu size={20} />
-      </button>
-
       <!-- Search Bar -->
       <div class="topbar-center">
         <div class="search-box">
