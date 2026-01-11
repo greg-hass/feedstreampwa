@@ -216,7 +216,7 @@
     <h1 class="text-3xl font-bold text-white">Feed Manager</h1>
     <div class="flex items-center gap-2">
       <button
-        class="p-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 transition-colors shadow-lg shadow-rose-500/20 text-white"
+        class="p-2.5 rounded-xl bg-amber-400 hover:bg-amber-500 transition-colors shadow-lg shadow-amber-400/20 text-black"
         title="Add Folder"
       >
         <FolderPlus size={20} />
