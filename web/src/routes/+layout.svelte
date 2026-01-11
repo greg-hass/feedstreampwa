@@ -10,9 +10,19 @@
   import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
   import ErrorBoundary from "$lib/components/ErrorBoundary.svelte";
   import { currentMedia } from "$lib/stores/media";
+  import { onMount } from "svelte";
+  import { loadFeeds } from "$lib/stores/feeds";
+  import { loadFolders } from "$lib/stores/folders";
+  import { loadSettings } from "$lib/stores/settings";
 
   // Show player only when there's media loaded
   $: isMediaVisible = $currentMedia !== null;
+
+  onMount(() => {
+    loadFeeds();
+    loadFolders();
+    loadSettings();
+  });
 </script>
 
 <div

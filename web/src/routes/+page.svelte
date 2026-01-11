@@ -111,7 +111,7 @@
 
   onMount(() => {
     // Initial load
-    Promise.all([loadFeeds(), loadFolders(), loadItems()]);
+    loadItems();
 
     const checkMobile = () => {
       isMobile = window.innerWidth <= 768;

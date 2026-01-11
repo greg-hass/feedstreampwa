@@ -31,10 +31,6 @@
   type Tab = "general" | "feeds" | "data";
   let activeTab: Tab = "general";
 
-  onMount(() => {
-    loadSettings();
-  });
-
   // Sync local settings when store updates
   $: if ($isSettingsModalOpen) {
     localSettings = { ...$settings };

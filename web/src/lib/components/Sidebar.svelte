@@ -25,6 +25,7 @@
     selectedFeedUrl,
     setViewSmartFolder,
     setViewAll,
+    setViewBookmarks,
     setViewFolder,
     setViewFeed,
   } from "$lib/stores/ui";
