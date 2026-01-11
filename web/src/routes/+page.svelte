@@ -217,7 +217,10 @@
   {:else}
     <FeedGrid
       items={filteredItems}
-      on:open={(e) => openReader(e.detail.item)}
+      on:open={(e) => {
+        openReader(e.detail.item);
+        if (e.detail.item.is_read === 0) toggleRead(e.detail.item);
+      }}
       on:toggleStar={(e) => toggleStar(e.detail.item)}
       on:toggleRead={(e) => toggleRead(e.detail.item)}
       on:play={(e) => playMedia(e.detail.item)}

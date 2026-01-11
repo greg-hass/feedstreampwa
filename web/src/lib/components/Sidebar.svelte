@@ -4,6 +4,7 @@
     LayoutDashboard,
     List,
     Bookmark,
+    Circle,
     Settings,
     PlusCircle,
     Rss,
@@ -25,6 +26,7 @@
     selectedFeedUrl,
     setViewSmartFolder,
     setViewAll,
+    setViewUnread,
     setViewBookmarks,
     setViewFolder,
     setViewFeed,
@@ -158,6 +160,38 @@
       {/if}
     </a>
 
+    <!-- Unread -->
+    <button
+      class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+        {$viewMode === 'unread'
+          ? 'bg-white/10 text-white shadow-inner border border-white/5'
+          : 'text-white/60 hover:text-white hover:bg-white/5'}"
+      on:click={setViewUnread}
+    >
+      <div class="flex items-center gap-3">
+        <Circle
+          size={24}
+          class={$viewMode === 'unread'
+            ? "text-blue-400"
+            : "text-current group-hover:text-white"}
+          fill={$viewMode === 'unread' ? "currentColor" : "none"}
+        />
+        Unread
+      </div>
+
+      {#if $allArticlesUnread > 0}
+        <span class="text-xs font-medium {$viewMode === 'unread' ? 'text-white/70' : 'text-white/40'}">
+          {$allArticlesUnread}
+        </span>
+      {/if}
+
+      {#if $viewMode === 'unread'}
+        <div
+          class="absolute inset-y-0 left-0 w-1 bg-blue-400 rounded-r-full shadow-[0_0_10px_2px_rgba(96,165,250,0.5)]"
+        ></div>
+      {/if}
+    </button>
+
     <!-- Bookmarks (formerly Library) -->
     <button
       class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
@@ -250,6 +284,66 @@
       {/if}
 
       {#if $viewMode === 'smart' && $activeSmartFolder === 'youtube'}
+        <div
+          class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
+        ></div>
+      {/if}
+    </button>
+
+    <button
+      class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+        {$viewMode === 'smart' && $activeSmartFolder === 'reddit'
+          ? 'bg-white/10 text-white shadow-inner border border-white/5'
+          : 'text-white/60 hover:text-white hover:bg-white/5'}"
+      on:click={() => setViewSmartFolder('reddit')}
+    >
+      <div class="flex items-center gap-3">
+        <MessageCircle
+          size={24}
+          class={$viewMode === 'smart' && $activeSmartFolder === 'reddit'
+            ? 'text-accent'
+            : 'text-current group-hover:text-white'}
+        />
+        Reddit
+      </div>
+
+      {#if $redditCount.total > 0}
+        <span class="text-xs font-medium {$viewMode === 'smart' && $activeSmartFolder === 'reddit' ? 'text-white/70' : 'text-white/40'}">
+          {formatUnreadTotal($redditCount.unread, $redditCount.total)}
+        </span>
+      {/if}
+
+      {#if $viewMode === 'smart' && $activeSmartFolder === 'reddit'}
+        <div
+          class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
+        ></div>
+      {/if}
+    </button>
+
+    <button
+      class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+        {$viewMode === 'smart' && $activeSmartFolder === 'podcast'
+          ? 'bg-white/10 text-white shadow-inner border border-white/5'
+          : 'text-white/60 hover:text-white hover:bg-white/5'}"
+      on:click={() => setViewSmartFolder('podcast')}
+    >
+      <div class="flex items-center gap-3">
+        <Mic
+          size={24}
+          class={$viewMode === 'smart' && $activeSmartFolder === 'podcast'
+            ? 'text-accent'
+            : 'text-current group-hover:text-white'}
+        />
+        Podcasts
+      </div>
+
+      {#if $podcastCount.total > 0}
+        <span class="text-xs font-medium {$viewMode === 'smart' && $activeSmartFolder === 'podcast' ? 'text-white/70' : 'text-white/40'}">
+          {formatUnreadTotal($podcastCount.unread, $podcastCount.total)}
+        </span>
+      {/if}
+
+      {#if $viewMode === 'smart' && $activeSmartFolder === 'podcast'}
         <div
           class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
         ></div>
