@@ -2,7 +2,7 @@
   import { createEventDispatcher } from "svelte";
   import type { Item } from "$lib/types";
   import {
-    Star,
+    Bookmark,
     ExternalLink,
     PlayCircle,
     Radio,
@@ -184,13 +184,13 @@
     {/if}
 
     <button
-      class="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-yellow-400 transition-colors"
-      title="Star"
+      class="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-orange-400 transition-colors"
+      title="Bookmark"
       on:click={handleStar}
     >
-      <Star
+      <Bookmark
         size={18}
-        class={item.is_starred ? "fill-yellow-400 text-yellow-400" : ""}
+        class={item.is_starred ? "fill-orange-400 text-orange-400" : ""}
       />
     </button>
 
