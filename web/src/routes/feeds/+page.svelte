@@ -210,7 +210,7 @@
   <title>Feed Manager - FeedStream</title>
 </svelte:head>
 
-<div class="max-w-5xl mx-auto">
+<div class="max-w-7xl mx-auto">
   <!-- Header -->
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-3xl font-bold text-white">Feed Manager</h1>
@@ -236,17 +236,17 @@
     <div class="glass rounded-2xl p-4 mb-6 space-y-4">
       <!-- Search Bar -->
       <div class="relative">
-        <Search size={18} class="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+        <Search size={18} class="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
         <input
           type="text"
           placeholder="Search feeds..."
           bind:value={searchQuery}
-          class="w-full bg-white/5 pl-10 pr-10 py-2.5 rounded-xl text-white placeholder-white/40 outline-none border border-white/10 focus:border-accent/50 transition-colors"
+          class="w-full bg-white/3 pl-11 pr-11 py-3 rounded-full text-white placeholder-white/40 outline-none border border-white/15 focus:border-accent/50 focus:bg-white/5 transition-all"
         />
         {#if searchQuery}
           <button
             on:click={() => searchQuery = ""}
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+            class="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
           >
             <X size={18} />
           </button>

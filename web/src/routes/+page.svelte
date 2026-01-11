@@ -1566,15 +1566,7 @@
       <!-- Search Bar -->
       <div class="topbar-center">
         <div class="search-box">
-          <div class="search-icon-wrapper">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <circle cx="8" cy="8" r="8" fill="#10b981" />
-              <path
-                d="M4.5 6.5h3v3h-1v-2h-2v-1zm4 0h3v1h-2v2h-1v-3z"
-                fill="white"
-              />
-            </svg>
-          </div>
+          <Search size={18} class="search-icon" />
           <input
             type="text"
             placeholder="Search articles..."
@@ -1588,7 +1580,7 @@
               on:click={clearSearch}
               title="Clear search (ESC)"
             >
-              <X size={16} />
+              <X size={18} />
             </button>
           {/if}
         </div>
@@ -2880,25 +2872,32 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 0 20px;
+    padding: 0 16px;
     height: 48px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 999px;
     color: rgba(255, 255, 255, 0.4);
     transition: all 0.2s ease;
     width: 100%;
   }
 
-  .search-icon-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .search-icon {
     flex-shrink: 0;
   }
 
+  .search-clear {
+    flex-shrink: 0;
+    color: rgba(255, 255, 255, 0.4);
+    transition: color 0.2s;
+  }
+
+  .search-clear:hover {
+    color: rgba(255, 255, 255, 0.8);
+  }
+
   .search-box:focus-within {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.05);
     border-color: rgba(16, 185, 129, 0.5);
     color: rgba(255, 255, 255, 0.6);
   }
