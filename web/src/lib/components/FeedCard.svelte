@@ -97,16 +97,73 @@
     feedType === "youtube" ||
     item.enclosure ||
     item.external_id;
+
+  // Swipe Gestures
+  let touchStartX = 0;
+  let touchDiff = 0;
+  let isSwiping = false;
+  const SWIPE_THRESHOLD = 75;
+
+  function handleTouchStart(e: TouchEvent) {
+    touchStartX = e.touches[0].clientX;
+    isSwiping = true;
+    touchDiff = 0;
+  }
+
+  function handleTouchMove(e: TouchEvent) {
+    if (!isSwiping) return;
+    touchDiff = e.touches[0].clientX - touchStartX;
+  }
+
+  function handleTouchEnd() {
+    if (!isSwiping) return;
+    
+    if (Math.abs(touchDiff) > SWIPE_THRESHOLD) {
+      if (touchDiff > 0) {
+        dispatch("toggleRead", { item });
+      } else {
+        dispatch("toggleStar", { item });
+      }
+    }
+    
+    isSwiping = false;
+    touchDiff = 0;
+  }
 </script>
 
 <article
   class="group relative flex flex-col w-full overflow-hidden rounded-2xl glass transition-all duration-300 hover:-translate-y-1 hover:bg-white/[0.08] {currentStyle.border} {currentStyle.glow} cursor-pointer"
+  style="transform: translateX({isSwiping ? touchDiff : 0}px); transition: {isSwiping ? 'none' : 'transform 0.3s'}"
   on:click={handleOpen}
   on:keypress={(e) => e.key === "Enter" && handleOpen()}
+  on:touchstart={handleTouchStart}
+  on:touchmove={handleTouchMove}
+  on:touchend={handleTouchEnd}
   tabindex="0"
   role="button"
 >
+  <!-- Background Indicators for Swipe -->
+  {#if Math.abs(touchDiff) > 20}
+    <div 
+      class="absolute inset-y-0 w-full flex items-center px-6 z-0 transition-opacity duration-200"
+      style="
+        opacity: {Math.min(Math.abs(touchDiff) / SWIPE_THRESHOLD, 1)};
+        background: {touchDiff > 0 ? '#10B981' : '#FF9500'};
+        justify-content: {touchDiff > 0 ? 'flex-start' : 'flex-end'};
+        left: {touchDiff > 0 ? '-100%' : '100%'};
+        transform: translateX({touchDiff > 0 ? '100%' : '-100%'});
+      "
+    >
+      {#if touchDiff > 0}
+        <CheckCircle2 class="text-white" size={32} />
+      {:else}
+        <Bookmark class="text-white" size={32} fill="currentColor" />
+      {/if}
+    </div>
+  {/if}
+
   <!-- Image Preview (Conditional) -->
+  <div class="relative z-10 bg-[#0a0a0b]/80 backdrop-blur-md h-full flex flex-col">
   {#if thumbnailUrl}
     <div class="relative w-full aspect-video overflow-hidden">
       <img
@@ -238,4 +295,5 @@
       </div>
     </div>
   </div>
+  </div> <!-- Close the wrapper div -->
 </article>
