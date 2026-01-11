@@ -422,6 +422,31 @@
     }
   }
 
+  // Time filtering - reactive filtered items based on timeFilter
+  $: filteredItems = (() => {
+    if (timeFilter === "all") return items;
+
+    const now = new Date();
+    let cutoffDate: Date;
+
+    switch (timeFilter) {
+      case "today":
+      case "24h":
+        cutoffDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case "week":
+        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        return items;
+    }
+
+    return items.filter((item) => {
+      const itemDate = new Date(item.published_at || item.created_at);
+      return itemDate >= cutoffDate;
+    });
+  })();
+
   async function loadItems() {
     itemsLoading = true;
     itemsError = null;
@@ -1633,7 +1658,7 @@
     </div>
     <!-- Articles List -->
     <FeedGrid
-      {items}
+      items={filteredItems}
       on:open={(e) => openArticle(e.detail.item)}
       on:toggleStar={(e) => toggleStar(e.detail.item)}
       on:toggleRead={(e) => toggleRead(e.detail.item)}
@@ -1644,12 +1669,12 @@
         <div class="empty-state">Loading articles...</div>
       {:else if itemsError}
         <div class="empty-state error">{itemsError}</div>
-      {:else if items.length === 0}
+      {:else if filteredItems.length === 0}
         <div class="empty-state">
           No articles found. Add some feeds to get started!
         </div>
       {:else}
-        {#each items as item}
+        {#each filteredItems as item}
           <article
             class="article-card"
             class:unread={Boolean(!item.is_read)}
