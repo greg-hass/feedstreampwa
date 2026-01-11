@@ -1657,13 +1657,25 @@
       >
     </div>
     <!-- Articles List -->
-    <FeedGrid
-      items={filteredItems}
-      on:open={(e) => openArticle(e.detail.item)}
-      on:toggleStar={(e) => toggleStar(e.detail.item)}
-      on:toggleRead={(e) => toggleRead(e.detail.item)}
-      on:play={(e) => playMedia(e.detail.item)}
-    />
+    <div class="articles-scroll-container">
+      {#if itemsLoading}
+        <div class="empty-state">Loading articles...</div>
+      {:else if itemsError}
+        <div class="empty-state error">{itemsError}</div>
+      {:else if filteredItems.length === 0}
+        <div class="empty-state">
+          No articles found. Add some feeds to get started!
+        </div>
+      {:else}
+        <FeedGrid
+          items={filteredItems}
+          on:open={(e) => openArticle(e.detail.item)}
+          on:toggleStar={(e) => toggleStar(e.detail.item)}
+          on:toggleRead={(e) => toggleRead(e.detail.item)}
+          on:play={(e) => playMedia(e.detail.item)}
+        />
+      {/if}
+    </div>
     <div class="articles-container" style="display:none">
       {#if itemsLoading}
         <div class="empty-state">Loading articles...</div>
@@ -3051,6 +3063,16 @@
     font-weight: 600;
   }
 
+  /* Articles Scroll Container */
+  .articles-scroll-container {
+    flex: 1;
+    min-height: 0; /* Critical for flex scrolling */
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+  }
+
   /* Articles Container */
   .articles-container {
     flex: 1;
@@ -3512,6 +3534,12 @@
       min-width: auto;
       white-space: nowrap; /* Prevent text wrapping */
       flex-shrink: 0; /* Prevent pills from squashing */
+    }
+
+    /* Mobile Articles Scroll Container */
+    .articles-scroll-container {
+      padding: 0 8px 8px; /* Further reduced padding */
+      gap: 12px;
     }
 
     /* Mobile Articles Container */
