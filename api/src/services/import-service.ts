@@ -54,8 +54,9 @@ export function createImportJob(opmlContent: string): string {
 }
 
 async function processImport(jobId: string, parsed: any) {
-    const job = jobs.get(jobId);
-    if (!job) return;
+    const jobOrUndefined = jobs.get(jobId);
+    if (!jobOrUndefined) return;
+    const job = jobOrUndefined; // Verified reference
 
     try {
         job.status = 'running';
