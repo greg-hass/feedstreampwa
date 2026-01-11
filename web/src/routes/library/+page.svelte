@@ -284,3 +284,70 @@
     />
   {/if}
 </div>
+
+<style>
+  /* Search Bar Styles - matching Dashboard */
+  .search-bar-full {
+    margin-bottom: 20px;
+  }
+
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.4);
+    transition: all 0.2s ease;
+    width: 100%;
+  }
+
+  .search-icon {
+    flex-shrink: 0;
+  }
+
+  .search-clear {
+    flex-shrink: 0;
+    color: rgba(255, 255, 255, 0.4);
+    transition: color 0.2s;
+  }
+
+  .search-clear:hover {
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .search-box:focus-within {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(16, 185, 129, 0.5);
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .search-box input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: white;
+    font-size: 15px;
+  }
+
+  .search-box input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  /* Mobile responsive */
+  @media (max-width: 768px) {
+    .search-bar-full {
+      margin-bottom: 16px;
+    }
+
+    .search-box {
+      height: 44px;
+      padding: 0 16px;
+      font-size: 17px;
+    }
+  }
+</style>
