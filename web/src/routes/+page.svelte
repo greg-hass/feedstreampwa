@@ -1567,7 +1567,7 @@
         <h1 class="text-3xl font-bold text-white">Dashboard</h1>
         <div class="flex items-center gap-2">
           <button
-            class="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-colors text-white"
+            class="p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 transition-all shadow-lg shadow-purple-500/20 text-white"
             on:click={refreshAll}
             class:spinning={feedsLoading || itemsLoading}
             title="Refresh"
