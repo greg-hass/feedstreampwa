@@ -43,8 +43,8 @@
     feedsTree,
     folderUnreadCounts,
   } from "$lib/stores/counts";
-  import { folders, folderUnreadCounts, createFolder } from "$lib/stores/folders";
-  import { feeds, feedsTree } from "$lib/stores/feeds";
+  import { folders, createFolder } from "$lib/stores/folders";
+  import { feeds } from "$lib/stores/feeds";
   import { toast } from "$lib/stores/toast";
 
   // Navigation Items
