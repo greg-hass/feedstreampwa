@@ -19,7 +19,7 @@
   // Navigation Items
   const navItems = [
     { label: "Dashboard", icon: LayoutDashboard, href: "/" },
-    { label: "My Feeds", icon: Circle, href: "/feeds" },
+    { label: "Feeds", icon: Circle, href: "/feeds" },
     { label: "Library", icon: Bookmark, href: "/library" },
   ];
 
