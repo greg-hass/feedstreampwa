@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { Star, Bookmark, Filter, ArrowUpDown, Rss, Youtube, Hash, Radio, Search, X, CheckCircle2 } from "lucide-svelte";
+  import { Star, Bookmark, Filter, ArrowUpDown, Rss, Youtube, Hash, Radio, Search, X, CheckCircle2, Circle } from "lucide-svelte";
   import FeedGrid from "$lib/components/FeedGrid.svelte";
   import { playMedia } from "$lib/stores/media";
   import type { Item } from "$lib/types";
@@ -98,7 +98,9 @@
 
   function handleArticleClick(item: Item) {
     // Open reader view or navigate to article
-    window.open(item.url, "_blank");
+    if (item.url) {
+      window.open(item.url, "_blank");
+    }
   }
 </script>
 
