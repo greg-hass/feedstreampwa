@@ -1565,7 +1565,7 @@
       <div class="topbar-left">
         <button
           class="md:hidden hamburger-btn"
-          on:click={() => (mobileMenuOpen = true)}
+          on:click={() => isMobileMenuOpen.set(true)}
           title="Menu"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
