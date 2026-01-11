@@ -36,9 +36,6 @@
   <main
     class="relative w-full min-h-screen md:pl-[280px] pb-[140px] md:pb-0 transition-all duration-300 ease-out"
   >
-    <!-- Mobile Header -->
-    <MobileHeader />
-
     <div
       class="w-full max-w-[1600px] mx-auto p-4 md:p-8 lg:p-10 animate-in fade-in slide-in-from-bottom-2 duration-500"
     >

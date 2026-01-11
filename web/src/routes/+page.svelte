@@ -1560,26 +1560,24 @@
 
   <!-- Main Content -->
   <main class="main-content">
-    <!-- Top Bar -->
+    <!-- Top Bar (Mobile & Desktop) -->
     <header class="topbar glass-panel">
       <div class="topbar-left">
-        {#if isMobile}
-          <button
-            class="hamburger-btn"
-            on:click={() => (mobileMenuOpen = true)}
-            title="Menu"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M3 12h18M3 6h18M3 18h18"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-              />
-            </svg>
-          </button>
-        {/if}
-        <div class="logo-small">
+        <button
+          class="md:hidden hamburger-btn"
+          on:click={() => (mobileMenuOpen = true)}
+          title="Menu"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M3 12h18M3 6h18M3 18h18"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+        <div class="logo-small hidden md:flex">
           <div class="logo-icon">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M3 3h10v10H3z" fill="currentColor" />
@@ -1620,22 +1618,6 @@
       </div>
 
       <div class="topbar-right">
-        <!-- Desktop Actions -->
-        <button
-          class="icon-btn desktop-only"
-          on:click={() => (showSettings = true)}
-          title="Settings"
-        >
-          <Settings size={20} />
-        </button>
-        <button
-          class="icon-btn desktop-only add-btn-desktop"
-          on:click={() => isAddFeedModalOpen.set(true)}
-          title="Add Feed"
-        >
-          <Plus size={20} />
-        </button>
-
         <button
           class="icon-btn"
           on:click={refreshAll}
@@ -1643,6 +1625,14 @@
           title="Refresh"
         >
           <RefreshCw size={20} />
+        </button>
+
+        <button
+          class="icon-btn add-btn-desktop"
+          on:click={() => isAddFeedModalOpen.set(true)}
+          title="Add Feed"
+        >
+          <Plus size={20} />
         </button>
       </div>
     </header>
@@ -2037,13 +2027,6 @@
         <span>Settings</span>
       </button>
     </div>
-  {/if}
-
-  <!-- Mobile Floating Add Button -->
-  {#if isMobile}
-    <button class="mobile-fab" on:click={() => isAddFeedModalOpen.set(true)} title="Add Feeds">
-      <Plus size={24} />
-    </button>
   {/if}
 
   <!-- Settings Modal -->
