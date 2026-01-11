@@ -2871,7 +2871,7 @@
 
   /* Page Header */
   .page-header {
-    margin-bottom: 24px;
+    margin-bottom: 20px;
   }
 
   .page-header h1 {
@@ -2881,7 +2881,7 @@
 
   /* Full Width Search Bar */
   .search-bar-full {
-    margin-bottom: 24px;
+    margin-bottom: 20px;
   }
 
   .search-box {
@@ -2996,7 +2996,7 @@
     display: flex;
     gap: 8px;
     padding: 0;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
   }
 
   .chip {
@@ -3439,23 +3439,32 @@
     .main-content {
       margin-top: 0;
       padding-bottom: calc(70px + env(safe-area-inset-bottom));
+      overflow: visible;
     }
 
-    /* Mobile Topbar - iOS Style */
-    .topbar {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      padding: max(env(safe-area-inset-top), 8px) 16px 8px; /* Reduced vertical padding */
-      background: rgba(18, 18, 20, 0.95); /* Slightly more opaque */
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
+    /* Page Header */
+    .page-header {
+      margin-bottom: 16px;
     }
 
-    .topbar-center {
-      margin: 0;
-      flex: 1;
+    /* Search Bar */
+    .search-bar-full {
+      margin-bottom: 16px;
+    }
+
+    /* Mobile Filter Chips */
+    .filter-chips {
+      gap: 8px;
+      padding: 0 var(--mobile-padding);
+      margin-bottom: 16px;
+      overflow-x: auto;
+      overflow-y: visible;
+      flex-wrap: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; /* Hide scrollbar */
+      position: relative;
+      z-index: 1;
+      display: flex !important;
     }
 
     /* Hide desktop actions on mobile */
@@ -3468,51 +3477,12 @@
       padding: 0 16px;
       font-size: 17px;
       min-width: 0; /* Allow search box to shrink */
-      flex: 1;
-      margin-right: 8px; /* Spacing from refresh button */
-    }
-
-    .hamburger-btn,
-    .refresh-btn,
-    .settings-btn {
-      width: 44px;
-      height: 44px;
-      min-width: 44px;
-    }
-
-    /* Mobile Content Header */
-    .content-header {
-      padding: 0 var(--mobile-padding);
-      margin-bottom: 16px;
-    }
-
-    .content-header h1 {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: -0.03em;
-    }
-
-    /* Mobile Filter Chips */
-    .filter-chips {
-      gap: 8px;
-      padding: 0 var(--mobile-padding);
-      margin-bottom: 16px;
-      overflow-x: auto;
-      flex-wrap: nowrap;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none; /* Hide scrollbar */
-      display: flex !important;
-    }
-
-    .filter-chips::-webkit-scrollbar {
-      display: none;
     }
 
     .chip {
       height: 36px;
       padding: 0 16px;
       font-size: 15px;
-      font-weight: 600;
       font-weight: 600;
       min-width: auto;
       white-space: nowrap; /* Prevent text wrapping */
