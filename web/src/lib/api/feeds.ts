@@ -62,7 +62,7 @@ export async function refreshFeed(url: string): Promise<{ jobId: string }> {
 }
 
 export async function refreshAllFeeds(): Promise<{ jobId: string }> {
-    const response = await fetch(`${API_BASE}/refresh/start`, {
+    const response = await fetch(`${API_BASE}/refresh/all`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
@@ -82,10 +82,9 @@ export async function addFeedToFolder(
     feedUrl: string,
     folderId: string
 ): Promise<void> {
-    const response = await fetch(`${API_BASE}/folders/${folderId}/feeds`, {
+    const response = await fetch(`${API_BASE}/folders/${folderId}/feeds/${encodeURIComponent(feedUrl)}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ feedUrl }),
+        headers: { 'Content-Type': 'application/json' }
     });
 
     if (!response.ok) {
@@ -100,10 +99,9 @@ export async function removeFeedFromFolder(
     feedUrl: string,
     folderId: string
 ): Promise<void> {
-    const response = await fetch(`${API_BASE}/folders/${folderId}/feeds`, {
+    const response = await fetch(`${API_BASE}/folders/${folderId}/feeds/${encodeURIComponent(feedUrl)}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ feedUrl }),
+        headers: { 'Content-Type': 'application/json' }
     });
 
     if (!response.ok) {

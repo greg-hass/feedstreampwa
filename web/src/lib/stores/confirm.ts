@@ -8,7 +8,7 @@ export interface ConfirmOptions {
   type?: 'danger' | 'warning' | 'info';
 }
 
-interface ConfirmState extends ConfirmOptions {
+export interface ConfirmState extends ConfirmOptions {
   isOpen: boolean;
   resolve: ((value: boolean) => void) | null;
 }

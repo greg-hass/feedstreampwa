@@ -65,7 +65,7 @@ export async function searchItems(query: string, limit = 100): Promise<{
 
 export async function toggleItemRead(itemId: string | number, newReadState: boolean): Promise<void> {
     const response = await fetch(`${API_BASE}/items/${itemId}/read`, {
-        method: 'POST',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ read: newReadState }),
     });
@@ -80,7 +80,7 @@ export async function toggleItemRead(itemId: string | number, newReadState: bool
 
 export async function toggleItemStar(itemId: string | number, newStarredState: boolean): Promise<void> {
     const response = await fetch(`${API_BASE}/items/${itemId}/star`, {
-        method: 'POST',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ starred: newStarredState }),
     });
@@ -94,11 +94,11 @@ export async function toggleItemStar(itemId: string | number, newStarredState: b
 }
 
 export async function markAllAsRead(feedUrl?: string): Promise<void> {
-    const url = feedUrl
-        ? `${API_BASE}/items/mark-all-read?feed_url=${encodeURIComponent(feedUrl)}`
-        : `${API_BASE}/items/mark-all-read`;
-
-    const response = await fetch(url, { method: 'POST' });
+    const response = await fetch(`${API_BASE}/items/mark-all-read`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feedUrl }),
+    });
 
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -124,7 +124,7 @@ export async function updateVideoProgress(
     itemId: string | number,
     progress: number
 ): Promise<void> {
-    const response = await fetch(`${API_BASE}/items/${itemId}/playback-position`, {
+    const response = await fetch(`${API_BASE}/items/${itemId}/playback`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ position: progress }),

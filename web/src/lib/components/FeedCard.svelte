@@ -215,13 +215,13 @@
         {/if}
 
         <button
-          class="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-orange-400 transition-colors"
+          class="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-[#FF9500] transition-colors"
           title="Bookmark"
           on:click={handleStar}
         >
           <Bookmark
             size={18}
-            class={item.is_starred ? "fill-orange-400 text-orange-400" : ""}
+            class={item.is_starred ? "fill-[#FF9500] text-[#FF9500]" : ""}
           />
         </button>
 

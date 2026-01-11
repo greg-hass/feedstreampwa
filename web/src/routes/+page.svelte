@@ -1,4 +1,5 @@
 <script lang="ts">
+  import MobileHeader from "$lib/components/MobileHeader.svelte";
   import FeedGrid from "$lib/components/FeedGrid.svelte";
   import SearchBar from "$lib/components/SearchBar.svelte";
   import SkeletonCard from "$lib/components/SkeletonCard.svelte";
@@ -1321,7 +1322,7 @@
 
 <div class="app">
   <!-- Sidebar -->
-  <aside class="sidebar glass-panel" style="display:none">
+  <aside class="sidebar glass-panel">
     <div class="sidebar-header">
       <div class="logo">
         <div class="logo-icon">
@@ -1523,45 +1524,65 @@
           </button>
         </button>
       {/each}
+
+      <!-- Settings Button (Desktop) -->
+      <button
+        class="nav-item"
+        on:click={() => isSettingsModalOpen.set(true)}
+        style="margin-top: auto; border-top: 1px solid var(--stroke); padding-top: 14px; border-radius: 0;"
+      >
+        <Settings size={24} />
+        <span>Settings</span>
+      </button>
     </nav>
   </aside>
 
   <!-- Main Content -->
   <main class="main-content">
-    <!-- Page Header -->
-    <div class="page-header">
-      <div class="flex items-center justify-between">
-        <h1 class="text-3xl font-bold text-white">{pageTitle}</h1>
-        <div class="flex items-center gap-2">
-          <button
-            class="p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 transition-all shadow-lg shadow-purple-500/20 text-white"
-            on:click={startRefresh}
-            class:spinning={showRefreshToast}
-            title="Refresh"
-          >
-            <RefreshCw size={20} />
-          </button>
-          <button
-            class="p-2.5 rounded-xl bg-accent hover:bg-accent hover:shadow-xl hover:shadow-accent/30 transition-all shadow-lg shadow-accent/20 text-white"
-            on:click={() => isAddFeedModalOpen.set(true)}
-            title="Add Feed"
-          >
-            <Plus size={20} />
-          </button>
+    {#if isMobile}
+      <MobileHeader
+        bind:searchQuery
+        onSearchInput={handleSearchInput}
+        onSearchClear={clearSearch}
+        onRefresh={startRefresh}
+        isRefreshing={showRefreshToast}
+      />
+    {:else}
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="flex items-center justify-between">
+          <h1 class="text-3xl font-bold text-white">{pageTitle}</h1>
+          <div class="flex items-center gap-2">
+            <button
+              class="p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 transition-all shadow-lg shadow-purple-500/20 text-white"
+              on:click={startRefresh}
+              class:spinning={showRefreshToast}
+              title="Refresh"
+            >
+              <RefreshCw size={20} />
+            </button>
+            <button
+              class="p-2.5 rounded-xl bg-accent hover:bg-accent hover:shadow-xl hover:shadow-accent/30 transition-all shadow-lg shadow-accent/20 text-white"
+              on:click={() => isAddFeedModalOpen.set(true)}
+              title="Add Feed"
+            >
+              <Plus size={20} />
+            </button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Search Bar -->
-    <div class="search-bar-full">
-      <SearchBar
-        value={searchQuery}
-        placeholder="Search articles..."
-        onInput={handleSearchInput}
-        onClear={clearSearch}
-        onKeydown={handleSearchKeydown}
-      />
-    </div>
+      <!-- Search Bar -->
+      <div class="search-bar-full">
+        <SearchBar
+          value={searchQuery}
+          placeholder="Search articles..."
+          onInput={handleSearchInput}
+          onClear={clearSearch}
+          onKeydown={handleSearchKeydown}
+        />
+      </div>
+    {/if}
 
     <!-- Filter Chips -->
     <div class="filter-chips">
@@ -1922,7 +1943,7 @@
 
   <!-- Mobile Bottom Tab Bar -->
   {#if isMobile}
-    <div class="mobile-tab-bar" style="display:none">
+    <div class="mobile-tab-bar">
       <button
         class="mobile-tab"
         class:active={mobileActiveTab === "all"}
@@ -3187,6 +3208,7 @@
   }
 
   .mobile-tab {
+    position: relative;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -3215,6 +3237,26 @@
     width: 24px;
     height: 24px;
     flex-shrink: 0;
+  }
+
+  .tab-badge {
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    margin-left: 6px;
+    background: #FF9500;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 99px;
+    min-width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    box-shadow: 0 0 0 2px rgba(10, 10, 12, 0.9);
   }
 
   /* Responsive - Mobile First iOS Design */
