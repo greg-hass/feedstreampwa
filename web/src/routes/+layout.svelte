@@ -2,7 +2,11 @@
   import "../app.css";
   import Sidebar from "$lib/components/Sidebar.svelte";
   import BottomNav from "$lib/components/BottomNav.svelte";
+  import MobileMenu from "$lib/components/MobileMenu.svelte";
+  import MobileHeader from "$lib/components/MobileHeader.svelte";
   import MediaPlayer from "$lib/components/MediaPlayer.svelte";
+  import SettingsModal from "$lib/components/SettingsModal.svelte";
+  import AddFeedModal from "$lib/components/AddFeedModal.svelte";
   import { currentMedia } from "$lib/stores/media";
 
   // Show player only when there's media loaded
@@ -24,14 +28,17 @@
   </Sidebar>
 
   <!-- Main Content Area -->
-  <!-- 
-    md:pl-[280px]: Offset for sidebar 
-    pb-[140px]: Bottom padding for Mobile (Nav + Player) 
+  <!--
+    md:pl-[280px]: Offset for sidebar
+    pb-[140px]: Bottom padding for Mobile (Nav + Player)
     md:pb-0: No bottom padding needed on desktop (Player in sidebar)
   -->
   <main
     class="relative w-full min-h-screen md:pl-[280px] pb-[140px] md:pb-0 transition-all duration-300 ease-out"
   >
+    <!-- Mobile Header -->
+    <MobileHeader />
+
     <div
       class="w-full max-w-[1600px] mx-auto p-4 md:p-8 lg:p-10 animate-in fade-in slide-in-from-bottom-2 duration-500"
     >
@@ -55,6 +62,15 @@
       <BottomNav />
     </div>
   </div>
+
+  <!-- Mobile Menu (Slide-in Drawer) -->
+  <MobileMenu />
+
+  <!-- Settings Modal (Global Overlay) -->
+  <SettingsModal />
+
+  <!-- Add Feed Modal (Global Overlay) -->
+  <AddFeedModal />
 </div>
 
 <style>

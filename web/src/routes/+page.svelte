@@ -2520,17 +2520,26 @@
   {#if showAddFeedModal}
     <div
       class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+      role="button"
+      tabindex="0"
       on:click={closeAddFeedModal}
+      on:keydown={(e) => e.key === "Escape" && closeAddFeedModal()}
     >
       <div
         class="w-full max-w-lg overflow-hidden glass rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-feed-title"
         on:click|stopPropagation
+        on:keydown|stopPropagation
       >
         <!-- Header -->
         <div
           class="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/5"
         >
-          <h2 class="text-lg font-semibold text-white">Add Feed</h2>
+          <h2 id="add-feed-title" class="text-lg font-semibold text-white">
+            Add Feed
+          </h2>
           <button
             class="text-white/40 hover:text-white transition-colors"
             on:click={closeAddFeedModal}
@@ -2759,15 +2768,29 @@
   {#if showCreateFolderModal}
     <div
       class="modal-overlay"
+      role="button"
+      tabindex="0"
       on:click={() => {
         showCreateFolderModal = false;
         folderModalName = "";
         folderModalError = null;
       }}
+      on:keydown={(e) =>
+        e.key === "Escape" &&
+        ((showCreateFolderModal = false),
+        (folderModalName = ""),
+        (folderModalError = null))}
     >
-      <div class="folder-modal glass-panel" on:click|stopPropagation>
+      <div
+        class="folder-modal glass-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-folder-title"
+        on:click|stopPropagation
+        on:keydown|stopPropagation
+      >
         <div class="modal-header">
-          <h2>Create Folder</h2>
+          <h2 id="create-folder-title">Create Folder</h2>
           <button
             class="close-btn"
             on:click={() => {
@@ -2815,6 +2838,8 @@
   {#if showRenameFolderModal}
     <div
       class="modal-overlay"
+      role="button"
+      tabindex="0"
       on:click={() => {
         showRenameFolderModal = false;
         folderModalName = "";
@@ -2822,10 +2847,17 @@
         contextMenuType = null;
         contextMenuTarget = null;
       }}
+      on:keydown={(e) =>
+        e.key === "Escape" &&
+        ((showRenameFolderModal = false),
+        (folderModalName = ""),
+        (folderModalError = null),
+        (contextMenuType = null),
+        (contextMenuTarget = null))}
     >
       <div class="modal folder-modal glass-panel" on:click|stopPropagation>
         <div class="modal-header">
-          <h2>
+          <h2 id="rename-folder-title">
             Rename {contextMenuType === "feed" ? "Feed" : "Folder"}
           </h2>
           <button
@@ -2879,16 +2911,31 @@
   {#if showDeleteFolderConfirm}
     <div
       class="modal-overlay"
+      role="button"
+      tabindex="0"
       on:click={() => {
         showDeleteFolderConfirm = false;
         selectedFolderForAction = null;
         contextMenuType = null;
         contextMenuTarget = null;
       }}
+      on:keydown={(e) =>
+        e.key === "Escape" &&
+        ((showDeleteFolderConfirm = false),
+        (selectedFolderForAction = null),
+        (contextMenuType = null),
+        (contextMenuTarget = null))}
     >
-      <div class="modal folder-modal glass-panel" on:click|stopPropagation>
+      <div
+        class="modal folder-modal glass-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-confirm-title"
+        on:click|stopPropagation
+        on:keydown|stopPropagation
+      >
         <div class="modal-header">
-          <h2>
+          <h2 id="delete-confirm-title">
             Delete {contextMenuType === "feed" ? "Feed" : "Folder"}
           </h2>
           <button

@@ -3,6 +3,7 @@ import { writable } from 'svelte/store';
 // Modal states
 export const isAddFeedModalOpen = writable(false);
 export const isSettingsModalOpen = writable(false);
+export const isMobileMenuOpen = writable(false);
 
 // View mode types
 export type ViewMode = 'all' | 'unread' | 'bookmarks' | 'smart' | 'folder' | 'feed';

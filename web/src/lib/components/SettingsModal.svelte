@@ -1,138 +1,248 @@
 <script lang="ts">
-  import { Download, Upload } from "lucide-svelte";
-  import type { ImportResult } from "$lib/types";
+  import { X, Save, Settings as SettingsIcon, Download, Upload, Loader2 } from "lucide-svelte";
+  import { isSettingsModalOpen } from "$lib/stores/ui";
+  import { settings, loadSettings } from "$lib/stores/settings";
+  import { updateSettings } from "$lib/api/settings";
+  import { onMount } from "svelte";
+  import type { Settings, ImportResult } from "$lib/types";
 
-  export let show = false;
-  export let syncInterval = "off";
-  export let importResults: ImportResult | null = null;
-  export let importingOpml = false;
+  let localSettings: Settings = { ...$settings };
+  let saving = false;
+  let error: string | null = null;
+  let successMessage = false;
+  let importResults: ImportResult | null = null;
+  let importingOpml = false;
 
-  export let onSyncIntervalChange: (interval: string) => void;
-  export let onExportOpml: () => void;
-  export let onImportOpml: (file: File) => void;
-  export let onClose: () => void;
+  onMount(() => {
+    loadSettings();
+  });
 
-  const validIntervals = [
-    "off",
-    "15m",
-    "30m",
-    "1h",
-    "4h",
-    "8h",
-    "12h",
-    "24h",
-  ] as const;
-
-  function handleSyncIntervalChange(event: Event) {
-    const select = event.target as HTMLSelectElement;
-    onSyncIntervalChange(select.value);
+  // Sync local settings when store updates
+  $: if ($isSettingsModalOpen) {
+    localSettings = { ...$settings };
   }
 
-  function handleFileImport(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (input.files?.[0]) {
-      onImportOpml(input.files[0]);
+  function closeModal() {
+    isSettingsModalOpen.set(false);
+    error = null;
+    successMessage = false;
+    importResults = null;
+  }
+
+  async function handleSave() {
+    saving = true;
+    error = null;
+    successMessage = false;
+
+    try {
+      await updateSettings(localSettings);
+      settings.set(localSettings);
+      successMessage = true;
+
+      setTimeout(() => {
+        successMessage = false;
+      }, 2000);
+    } catch (err) {
+      error = err instanceof Error ? err.message : "Failed to save settings";
+    } finally {
+      saving = false;
     }
   }
+
+  function handleCancel() {
+    localSettings = { ...$settings };
+    closeModal();
+  }
+
+  async function handleExportOpml() {
+    try {
+      const response = await fetch("/api/feeds/export");
+      if (!response.ok) throw new Error("Export failed");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `feedstream-export-${new Date().toISOString().split("T")[0]}.opml`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      error = err instanceof Error ? err.message : "Failed to export OPML";
+    }
+  }
+
+  async function handleImportOpml(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.[0]) return;
+
+    importingOpml = true;
+    error = null;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", input.files[0]);
+
+      const response = await fetch("/api/feeds/import", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Import failed");
+
+      importResults = await response.json();
+    } catch (err) {
+      error = err instanceof Error ? err.message : "Failed to import OPML";
+    } finally {
+      importingOpml = false;
+      // Reset file input
+      input.value = "";
+    }
+  }
+
+  // Close on escape key
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === "Escape") {
+      handleCancel();
+    }
+  }
+
+  // Theme options
+  const themeOptions = [
+    { value: "light", label: "Light", description: "Light theme for daytime use" },
+    { value: "dark", label: "Dark", description: "Dark theme for low-light environments" },
+    { value: "system", label: "System", description: "Match your system preferences" },
+  ] as const;
+
+  // Sync interval options
+  const syncIntervalOptions = [
+    { value: "off", label: "Off", description: "Disable automatic sync" },
+    { value: "5m", label: "5 minutes" },
+    { value: "15m", label: "15 minutes" },
+    { value: "30m", label: "30 minutes" },
+    { value: "1h", label: "1 hour" },
+    { value: "4h", label: "4 hours" },
+    { value: "12h", label: "12 hours" },
+  ];
 </script>
 
-{#if show}
+<svelte:window on:keydown={handleKeydown} />
+
+{#if $isSettingsModalOpen}
+  <!-- Modal Backdrop -->
   <div
-    class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    on:click={handleCancel}
+    on:keydown={(e) => e.key === "Enter" && handleCancel()}
     role="button"
-    tabindex="0"
-    on:click={onClose}
-    on:keydown={(e) => e.key === "Escape" && onClose()}
+    tabindex="-1"
   >
-    u003cdiv
+    <!-- Modal Content -->
+    <div
+      class="glass rounded-2xl border border-white/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+      on:click|stopPropagation
+      on:keydown|stopPropagation
       role="dialog"
       aria-modal="true"
-      aria-labelledby="settings-title"
-      class="w-full max-w-lg overflow-hidden glass rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200"
-      on:click|stopPropagation
+      tabindex="-1"
     >
       <!-- Header -->
       <div
-        class="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/5"
+        class="sticky top-0 bg-black/40 backdrop-blur-xl border-b border-white/10 px-6 py-4 flex items-center justify-between z-10"
       >
-        <h2 id="settings-title" class="text-lg font-semibold text-white">Settings</h2>
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/20 flex items-center justify-center"
+          >
+            <SettingsIcon size={20} class="text-blue-400" />
+          </div>
+          <div>
+            <h2 class="text-xl font-semibold text-white">Settings</h2>
+            <p class="text-sm text-white/60">
+              Customize your FeedStream experience
+            </p>
+          </div>
+        </div>
         <button
-          class="text-white/40 hover:text-white transition-colors"
-          on:click={onClose}
+          class="p-2 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+          on:click={handleCancel}
+          aria-label="Close"
         >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path
-              d="M5 5l10 10M15 5l-10 10"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
-          </svg>
+          <X size={20} />
         </button>
       </div>
 
       <!-- Body -->
       <div class="p-6 space-y-6">
-        <!-- Sync Section -->
+        <!-- Theme Setting -->
         <div class="space-y-3">
-          <h3
-            class="text-sm font-medium text-white/60 uppercase tracking-wider"
-          >
-            Automatic Sync
-          </h3>
-          <div class="relative">
-            <select
-              class="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white appearance-none focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all"
-              value={syncInterval}
-              on:change={handleSyncIntervalChange}
+          <label class="block">
+            <span class="text-sm font-semibold text-white mb-2 block"
+              >Theme</span
             >
-              {#each validIntervals as interval}
-                <option value={interval} class="bg-surface text-white">
-                  {interval === "off" ? "Off" : `Every ${interval}`}
-                </option>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {#each themeOptions as option}
+                <button
+                  type="button"
+                  class="p-4 rounded-xl border transition-all text-left {localSettings.theme ===
+                  option.value
+                    ? 'bg-accent/10 border-accent text-white'
+                    : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:border-white/20'}"
+                  on:click={() => (localSettings.theme = option.value)}
+                >
+                  <div class="font-medium mb-1">{option.label}</div>
+                  <div class="text-xs opacity-60">{option.description}</div>
+                </button>
               {/each}
-            </select>
-            <div
-              class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/40"
-            >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path
-                  d="M2 4L6 8L10 4"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
             </div>
-          </div>
+          </label>
         </div>
 
-        <!-- OPML Section -->
+        <!-- Sync Interval Setting -->
+        <div class="space-y-3">
+          <label class="block">
+            <span class="text-sm font-semibold text-white mb-2 block"
+              >Auto-sync Interval</span
+            >
+            <select
+              bind:value={localSettings.sync_interval}
+              class="w-full bg-white/5 px-4 py-3 rounded-xl text-white border border-white/10 hover:bg-white/10 focus:border-accent/50 transition-colors outline-none"
+            >
+              {#each syncIntervalOptions as option}
+                <option value={option.value}>{option.label}</option>
+              {/each}
+            </select>
+            <p class="text-xs text-white/40 mt-2">
+              {syncIntervalOptions.find((o) => o.value === localSettings.sync_interval)
+                ?.description || "Automatically refresh feeds at regular intervals"}
+            </p>
+          </label>
+        </div>
+
+        <!-- OPML Management -->
         <div class="space-y-3">
           <h3
-            class="text-sm font-medium text-white/60 uppercase tracking-wider"
+            class="text-sm font-semibold text-white uppercase tracking-wider"
           >
             OPML Management
           </h3>
           <div class="grid grid-cols-2 gap-3">
             <button
-              class="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-white transition-all hover:scale-[1.02]"
-              on:click={onExportOpml}
+              class="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white transition-all"
+              on:click={handleExportOpml}
             >
               <Download size={18} />
-              <span>Export</span>
+              <span>Export Feeds</span>
             </button>
 
             <label
-              class="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-white transition-all hover:scale-[1.02] cursor-pointer"
+              class="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white transition-all cursor-pointer {importingOpml ? 'opacity-50 cursor-not-allowed' : ''}"
             >
               <Upload size={18} />
-              <span>{importingOpml ? "Importing..." : "Import"}</span>
+              <span>{importingOpml ? "Importing..." : "Import Feeds"}</span>
               <input
                 type="file"
                 accept=".opml,.xml"
-                on:change={handleFileImport}
+                on:change={handleImportOpml}
                 disabled={importingOpml}
                 class="hidden"
               />
@@ -142,10 +252,10 @@
           <!-- Import Results -->
           {#if importResults}
             <div
-              class="mt-4 p-4 rounded-xl bg-black/20 border border-white/10 text-sm"
+              class="p-4 rounded-xl bg-black/20 border border-white/10 text-sm"
             >
-              <div class="flex gap-4 mb-2">
-                <span class="text-green-400"
+              <div class="flex gap-4 mb-2 flex-wrap">
+                <span class="text-emerald-400"
                   >✓ Added: {importResults.added}</span
                 >
                 <span class="text-yellow-400"
@@ -169,7 +279,72 @@
             </div>
           {/if}
         </div>
+
+        <!-- Error Message -->
+        {#if error}
+          <div
+            class="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm"
+          >
+            {error}
+          </div>
+        {/if}
+
+        <!-- Success Message -->
+        {#if successMessage}
+          <div
+            class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm flex items-center gap-2"
+          >
+            <Save size={16} />
+            Settings saved successfully!
+          </div>
+        {/if}
+      </div>
+
+      <!-- Footer -->
+      <div
+        class="sticky bottom-0 bg-black/40 backdrop-blur-xl border-t border-white/10 px-6 py-4 flex items-center justify-end gap-3"
+      >
+        <button
+          class="px-4 py-2 rounded-xl text-white/60 hover:text-white hover:bg-white/5 transition-colors"
+          on:click={handleCancel}
+          disabled={saving}
+        >
+          Cancel
+        </button>
+        <button
+          class="px-6 py-2 rounded-xl bg-accent text-white hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          on:click={handleSave}
+          disabled={saving}
+        >
+          {#if saving}
+            <Loader2 size={16} class="animate-spin" />
+            Saving...
+          {:else}
+            <Save size={16} />
+            Save Changes
+          {/if}
+        </button>
       </div>
     </div>
   </div>
 {/if}
+
+<style>
+  /* Scrollbar styling */
+  :global(.overflow-y-auto::-webkit-scrollbar) {
+    width: 8px;
+  }
+
+  :global(.overflow-y-auto::-webkit-scrollbar-track) {
+    background: transparent;
+  }
+
+  :global(.overflow-y-auto::-webkit-scrollbar-thumb) {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+
+  :global(.overflow-y-auto::-webkit-scrollbar-thumb:hover) {
+    background: rgba(255, 255, 255, 0.2);
+  }
+</style>
