@@ -17,6 +17,24 @@
 
   const dispatch = createEventDispatcher();
 
+  // Extract YouTube video ID from external_id or URL
+  $: youtubeVideoId = (() => {
+    if (item.external_id) return item.external_id;
+    if (item.url) {
+      const match = item.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+      if (match) return match[1];
+    }
+    return null;
+  })();
+
+  // YouTube thumbnail URL
+  $: youtubeThumbnail = youtubeVideoId
+    ? `https://img.youtube.com/vi/${youtubeVideoId}/mqdefault.jpg`
+    : null;
+
+  // Use YouTube thumbnail if available, otherwise use media_thumbnail
+  $: thumbnailUrl = youtubeThumbnail || item.media_thumbnail;
+
   // Format Date
   const date = new Date(item.published_at || item.created_at);
   const dateStr = new Intl.DateTimeFormat("en-US", {
@@ -86,21 +104,29 @@
     feedType === "youtube" ||
     item.enclosure ||
     item.external_id;
+
+  // Track whether YouTube video should be loaded/played
+  let playYouTubeVideo = false;
+
+  function toggleYouTubePlay(e: MouseEvent) {
+    e.stopPropagation();
+    playYouTubeVideo = !playYouTubeVideo;
+  }
 </script>
 
 <article
-  class="group flex gap-4 py-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer"
+  class="group flex flex-col sm:flex-row gap-3 sm:gap-4 py-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer"
   on:click={handleOpen}
   on:keypress={(e) => e.key === "Enter" && handleOpen()}
   tabindex="0"
   role="button"
 >
-  <!-- Thumbnail (Left) -->
-  {#if item.media_thumbnail}
-    <div class="flex-shrink-0">
+  <!-- Desktop: Thumbnail (Left) -->
+  {#if thumbnailUrl}
+    <div class="hidden sm:flex flex-shrink-0">
       <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-white/5">
         <img
-          src={item.media_thumbnail}
+          src={thumbnailUrl}
           alt={item.title}
           class="w-full h-full object-cover"
           loading="lazy"
@@ -108,7 +134,7 @@
       </div>
     </div>
   {:else}
-    <div class="flex-shrink-0">
+    <div class="hidden sm:flex flex-shrink-0">
       <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-white/5 flex items-center justify-center">
         <svelte:component this={Icon} size={28} class={currentStyle.color} />
       </div>
@@ -152,6 +178,51 @@
         {@html item.summary.replace(/<[^>]*>?/gm, "")}
       </p>
     {/if}
+
+    <!-- Mobile: Thumbnail/Video below title -->
+    <div class="sm:hidden mt-2">
+      {#if youtubeVideoId}
+        <!-- YouTube inline player on mobile -->
+        <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-black">
+          {#if playYouTubeVideo}
+            <iframe
+              src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0`}
+              class="w-full h-full"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+              on:click|stopPropagation
+            ></iframe>
+          {:else}
+            <img
+              src={youtubeThumbnail}
+              alt={item.title}
+              class="w-full h-full object-cover"
+              loading="lazy"
+            />
+            <button
+              on:click={toggleYouTubePlay}
+              class="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors"
+              aria-label="Play video"
+            >
+              <div class="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+                <PlayCircle size={28} class="text-black fill-black" />
+              </div>
+            </button>
+          {/if}
+        </div>
+      {:else if thumbnailUrl}
+        <!-- Regular image thumbnail on mobile -->
+        <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-white/5">
+          <img
+            src={thumbnailUrl}
+            alt={item.title}
+            class="w-full h-full object-cover"
+            loading="lazy"
+          />
+        </div>
+      {/if}
+    </div>
   </div>
 
   <!-- Actions (Right) -->

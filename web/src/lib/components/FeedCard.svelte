@@ -16,6 +16,24 @@
 
   const dispatch = createEventDispatcher();
 
+  // Extract YouTube video ID from external_id or URL
+  $: youtubeVideoId = (() => {
+    if (item.external_id) return item.external_id;
+    if (item.url) {
+      const match = item.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+      if (match) return match[1];
+    }
+    return null;
+  })();
+
+  // YouTube thumbnail URL
+  $: youtubeThumbnail = youtubeVideoId
+    ? `https://img.youtube.com/vi/${youtubeVideoId}/mqdefault.jpg`
+    : null;
+
+  // Use YouTube thumbnail if available, otherwise use media_thumbnail
+  $: thumbnailUrl = youtubeThumbnail || item.media_thumbnail;
+
   // Format Date
   const date = new Date(item.published_at || item.created_at);
   const dateStr = new Intl.DateTimeFormat("en-US", {
@@ -89,10 +107,10 @@
   role="button"
 >
   <!-- Image Preview (Conditional) -->
-  {#if item.media_thumbnail}
+  {#if thumbnailUrl}
     <div class="relative w-full aspect-video overflow-hidden">
       <img
-        src={item.media_thumbnail}
+        src={thumbnailUrl}
         alt={item.title}
         class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         loading="lazy"

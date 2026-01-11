@@ -646,6 +646,46 @@ function extractRedditMetadata(item: any): any {
     return metadata;
 }
 
+// Helper: Extract hero image from HTML content
+function extractHeroImage(item: any): string | null {
+    // Try media:thumbnail first (RSS/Atom standard)
+    if (item.mediaThumbnail) {
+        if (typeof item.mediaThumbnail === 'string') return item.mediaThumbnail;
+        if (item.mediaThumbnail.url) return item.mediaThumbnail.url;
+        if (item.mediaThumbnail['@_url']) return item.mediaThumbnail['@_url'];
+    }
+
+    // Try enclosure with image type
+    if (item.enclosure && item.enclosure.url && item.enclosure.type?.startsWith('image/')) {
+        return item.enclosure.url;
+    }
+
+    // Extract from content HTML
+    const content = item.content || item['content:encoded'] || item.summary || '';
+
+    // Try og:image from HTML
+    const ogImageMatch = content.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
+    if (ogImageMatch) return ogImageMatch[1];
+
+    // Try twitter:image from HTML
+    const twitterImageMatch = content.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i);
+    if (twitterImageMatch) return twitterImageMatch[1];
+
+    // Try first img tag with reasonable size
+    const imgMatch = content.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
+    if (imgMatch) {
+        const imgSrc = imgMatch[1];
+        // Skip small icons, avatars, etc.
+        const lower = imgSrc.toLowerCase();
+        if (!lower.includes('icon') && !lower.includes('logo') && !lower.includes('avatar') &&
+            !lower.includes('favicon') && !lower.includes('button') && !lower.includes('spinner')) {
+            return imgSrc;
+        }
+    }
+
+    return null;
+}
+
 // Helper: Generate stable ID for an item
 function generateItemId(feedUrl: string, item: any, index: number, externalId?: string): string {
     const guid = externalId || item.guid || item.id || item.link || item.title || item.pubDate || index.toString();
@@ -684,7 +724,7 @@ function normalizeItem(item: any, kind: 'youtube' | 'reddit' | 'podcast' | 'gene
         updated,
         raw_guid: item.guid || item.id || null,
         source: kind,
-        media_thumbnail: item.mediaThumbnail || null,
+        media_thumbnail: null,
         media_duration_seconds: null,
         external_id: null
     };
@@ -693,9 +733,16 @@ function normalizeItem(item: any, kind: 'youtube' | 'reddit' | 'podcast' | 'gene
     if (kind === 'youtube') {
         const ytMeta = extractYouTubeMetadata(item);
         Object.assign(normalized, ytMeta);
+        // YouTube thumbnails are already handled by extractYouTubeMetadata
     } else if (kind === 'reddit') {
         const redditMeta = extractRedditMetadata(item);
         Object.assign(normalized, redditMeta);
+    }
+
+    // Extract hero image for all types (including generic RSS)
+    // YouTube and Reddit already have thumbnails from their extractors, so this is a fallback
+    if (!normalized.media_thumbnail) {
+        normalized.media_thumbnail = extractHeroImage(item);
     }
 
     return normalized;
