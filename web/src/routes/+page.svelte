@@ -3495,12 +3495,13 @@
     /* Mobile Filter Chips */
     .filter-chips {
       gap: 8px;
-      gap: 8px;
       padding: 0 var(--mobile-padding);
+      margin-bottom: 16px;
       overflow-x: auto;
       flex-wrap: nowrap;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none; /* Hide scrollbar */
+      display: flex !important;
     }
 
     .filter-chips::-webkit-scrollbar {
