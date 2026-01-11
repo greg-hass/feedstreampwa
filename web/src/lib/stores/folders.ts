@@ -1,28 +1,13 @@
 // Folders store - manages folder state and operations
-import { writable, derived, get } from 'svelte/store';
+import { writable } from 'svelte/store';
 import type { Folder } from '$lib/types';
 import * as foldersApi from '$lib/api/folders';
-import { feeds } from './feeds';
 import { confirmDialog } from './confirm';
 
 // State
 export const folders = writable<Folder[]>([]);
 export const foldersLoading = writable(false);
 export const foldersError = writable<string | null>(null);
-
-// Derived stores
-export const folderUnreadCounts = derived([folders, feeds], ([$folders, $feeds]) =>
-    $folders.reduce(
-        (acc, folder) => {
-            const unread = $feeds
-                .filter((f) => f.folders && f.folders.includes(folder.id))
-                .reduce((sum, feed) => sum + (feed.unreadCount || 0), 0);
-            acc[folder.id] = unread;
-            return acc;
-        },
-        {} as Record<string, number>
-    )
-);
 
 // Actions
 export async function loadFolders(): Promise<void> {

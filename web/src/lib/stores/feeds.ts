@@ -3,7 +3,6 @@ import { writable, derived } from 'svelte/store';
 import type { Feed } from '$lib/types';
 import * as feedsApi from '$lib/api/feeds';
 import { confirmDialog } from '$lib/stores/confirm';
-import { folders } from './folders';
 
 // State
 export const feeds = writable<Feed[]>([]);
@@ -53,18 +52,6 @@ export const redditUnread = derived(redditFeeds, ($redditFeeds) =>
 export const podcastUnread = derived(podcastFeeds, ($podcastFeeds) =>
     $podcastFeeds.reduce((sum, feed) => sum + (feed.unreadCount || 0), 0)
 );
-
-// Grouped Feeds Logic (Optimized)
-export const feedsTree = derived([feeds, folders], ([$feeds, $folders]) => {
-    const byFolder = $folders.reduce((acc, folder) => {
-        acc[folder.id] = $feeds.filter(f => f.folders && f.folders.includes(folder.id));
-        return acc;
-    }, {} as Record<string, Feed[]>);
-
-    const uncategorized = $feeds.filter(f => !f.folders || f.folders.length === 0);
-
-    return { byFolder, uncategorized };
-});
 
 // Actions
 export async function loadFeeds(): Promise<void> {

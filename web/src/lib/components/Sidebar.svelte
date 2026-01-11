@@ -39,9 +39,11 @@
     podcastCount,
     formatUnreadTotal,
     formatCount,
+    feedsTree,
+    folderUnreadCounts,
   } from "$lib/stores/counts";
-  import { folders, folderUnreadCounts } from "$lib/stores/folders";
-  import { feedsTree } from "$lib/stores/feeds"; // Use feedsTree
+  import { folders } from "$lib/stores/folders";
+  import { feeds } from "$lib/stores/feeds";
 
   // Navigation Items
   const navItems = [

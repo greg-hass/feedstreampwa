@@ -2,6 +2,8 @@
 import { derived, get } from 'svelte/store';
 import { feeds, totalUnread, rssUnread, youtubeUnread, redditUnread, podcastUnread } from './feeds';
 import { items, bookmarkedCount } from './items';
+import { folders } from './folders';
+import type { Feed } from '$lib/types';
 
 // Feed type to smart folder mapping
 const feedTypeToSmartFolder: Record<string, 'rss' | 'youtube' | 'reddit' | 'podcast'> = {
@@ -54,6 +56,31 @@ export const podcastCount = derived(smartFolderCounts, ($counts) => $counts.podc
 // Total feeds count
 export const totalFeeds = derived(feeds, ($feeds) => $feeds.length);
 
+// Folder Derived Stores (Moved here to avoid circular dependency)
+export const folderUnreadCounts = derived([folders, feeds], ([$folders, $feeds]) =>
+    $folders.reduce(
+        (acc, folder) => {
+            const unread = $feeds
+                .filter((f) => f.folders && f.folders.includes(folder.id))
+                .reduce((sum, feed) => sum + (feed.unreadCount || 0), 0);
+            acc[folder.id] = unread;
+            return acc;
+        },
+        {} as Record<string, number>
+    )
+);
+
+export const feedsTree = derived([feeds, folders], ([$feeds, $folders]) => {
+    const byFolder = $folders.reduce((acc, folder) => {
+        acc[folder.id] = $feeds.filter(f => f.folders && f.folders.includes(folder.id));
+        return acc;
+    }, {} as Record<string, Feed[]>);
+
+    const uncategorized = $feeds.filter(f => !f.folders || f.folders.length === 0);
+
+    return { byFolder, uncategorized };
+});
+
 // Helper to format count display
 export function formatCount(count: number): string {
   if (count === 0) return '0';
@@ -67,3 +94,4 @@ export function formatUnreadTotal(unread: number, total: number): string {
   if (unread === total) return formatCount(total);
   return `${formatCount(unread)}/${formatCount(total)}`;
 }
+
