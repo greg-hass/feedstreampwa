@@ -5,7 +5,6 @@
     Circle,
     List,
     Settings,
-    Bookmark,
     PlusCircle,
     Rss,
   } from "lucide-svelte";
@@ -22,7 +21,6 @@
     { label: "Dashboard", icon: LayoutDashboard, href: "/" },
     { label: "My Feeds", icon: Circle, href: "/feeds" },
     { label: "Library", icon: List, href: "/library" },
-    { label: "Explore", icon: Bookmark, href: "/explore" },
   ];
 
   $: activeUrl = $page.url.pathname;

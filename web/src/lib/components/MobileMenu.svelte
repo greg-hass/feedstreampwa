@@ -5,7 +5,6 @@
     LayoutDashboard,
     Circle,
     List,
-    Bookmark,
     Settings,
     PlusCircle,
     Rss,
@@ -29,7 +28,6 @@
     { label: "Dashboard", icon: LayoutDashboard, href: "/" },
     { label: "My Feeds", icon: Circle, href: "/feeds" },
     { label: "Library", icon: List, href: "/library" },
-    { label: "Explore", icon: Bookmark, href: "/explore" },
   ];
 
   // Smart folders

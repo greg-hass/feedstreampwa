@@ -27,8 +27,6 @@
         return 'My Feeds';
       case '/library':
         return 'Library';
-      case '/explore':
-        return 'Explore';
       default:
         return 'FeedStream';
     }
@@ -73,9 +71,6 @@
         >
           <PlusCircle size={20} class="text-accent" />
         </button>
-      {:else if currentPath === '/explore'}
-        <!-- Search is the main feature on explore, no extra button needed -->
-        <div class="w-9"></div>
       {:else}
         <!-- Placeholder for alignment -->
         <div class="w-9"></div>
