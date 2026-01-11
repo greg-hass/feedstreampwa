@@ -1562,7 +1562,7 @@
   <!-- Main Content -->
   <main class="main-content">
     <!-- Top Bar (Mobile & Desktop) -->
-    <header class="topbar glass-panel">
+    <header class="topbar">
       <!-- Mobile Menu Button (Hidden on Desktop) -->
       <button
         class="header-icon-btn mobile-only"
@@ -2813,19 +2813,22 @@
     position: relative;
   }
 
-  /* Top Bar */
+  /* Top Bar - Matches Bottom Nav aesthetic */
   .topbar {
+    position: sticky;
+    top: 0;
     height: var(--topbar-height);
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 0 16px;
     margin-bottom: 0;
-    z-index: 10;
-    background: var(--bg0);
-    border-bottom: 1px solid var(--stroke);
-    backdrop-filter: none;
-    box-shadow: none;
+    z-index: 30;
+    background: rgba(5, 5, 7, 0.9);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
   }
 
   .topbar-right {
@@ -2840,12 +2843,12 @@
     min-width: 0;
   }
 
-  /* Header Icon Buttons - Match Feeds page style */
+  /* Header Icon Buttons - Match Bottom Nav aesthetic */
   .header-icon-btn {
     padding: 10px;
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: none;
     color: white;
     cursor: pointer;
     display: flex;
@@ -2857,17 +2860,18 @@
 
   .header-icon-btn:hover {
     background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .header-icon-btn:active {
+    transform: scale(0.95);
   }
 
   .header-icon-btn-accent {
     background: var(--accent);
-    border-color: var(--accent);
   }
 
   .header-icon-btn-accent:hover {
     background: rgba(16, 185, 129, 0.9);
-    border-color: rgba(16, 185, 129, 0.9);
   }
 
   /* Mobile-only button - hidden on desktop */
@@ -2887,10 +2891,10 @@
     gap: 12px;
     padding: 0 20px;
     height: 48px;
-    background: var(--panel1);
-    border: 1px solid var(--stroke);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 999px;
-    color: var(--muted);
+    color: rgba(255, 255, 255, 0.4);
     transition: all 0.2s ease;
     width: 100%;
   }
@@ -2903,10 +2907,9 @@
   }
 
   .search-box:focus-within {
-    background: var(--panel0);
-    border-color: var(--accent);
-    box-shadow: 0 0 0 4px rgba(63, 184, 138, 0.1);
-    color: var(--text);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(16, 185, 129, 0.5);
+    color: rgba(255, 255, 255, 0.6);
   }
 
   .search-box input {
@@ -2914,13 +2917,13 @@
     background: transparent;
     border: none;
     outline: none;
-    color: var(--text);
+    color: white;
     font-size: 15px;
     font-weight: 500;
   }
 
   .search-box input::placeholder {
-    color: var(--muted2);
+    color: rgba(255, 255, 255, 0.4);
   }
 
   .icon-btn {
