@@ -2995,7 +2995,8 @@
   .filter-chips {
     display: flex;
     gap: 8px;
-    padding: 16px var(--page-padding);
+    padding: 0;
+    margin-bottom: 24px;
   }
 
   .chip {
