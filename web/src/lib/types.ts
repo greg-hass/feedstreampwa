@@ -1,43 +1,60 @@
+// Frontend types - aligned with backend API responses
+
+export type FeedKind = 'youtube' | 'reddit' | 'podcast' | 'generic';
+
 export interface Feed {
-    id: number;
+    // Backend fields
     url: string;
-    title: string;
-    description: string | null;
-    icon_url: string | null;
-    folder: string;
-    type: 'rss' | 'youtube' | 'reddit' | 'podcast';
-    error_count: number;
+    kind: FeedKind;
+    title: string | null;
+    site_url: string | null;
+    last_checked: string | null;
+    last_status: number;
     last_error: string | null;
-    unreachable: boolean;
-    created_at: string;
-    updated_at: string;
+    icon_url: string | null;
+    custom_title: string | null;
+    
+    // Frontend-specific fields (added by API or computed)
+    id?: number; // May be added by frontend
+    description?: string | null; // Legacy field
+    folder?: string; // Legacy field
+    type?: 'rss' | 'youtube' | 'reddit' | 'podcast'; // Alias for kind
+    error_count?: number; // Legacy field
+    unreachable?: boolean; // Legacy field
+    created_at?: string;
+    updated_at?: string;
     unreadCount?: number;
-    kind?: string;
-    smartFolder?: string;
+    smartFolder?: 'rss' | 'youtube' | 'reddit' | 'podcast';
     folders?: string[];
 }
 
 export interface Item {
-    id: number;
-    feed_id: number;
-    guid: string;
-    title: string;
-    url: string;
+    // Backend fields (source of truth)
+    id: string; // Changed from number to match backend
+    feed_url: string;
+    source: string; // Added - was missing!
+    title: string | null;
+    url: string | null;
     author: string | null;
     summary: string | null;
     content: string | null;
-    published_at: string;
+    published: string | null; // Changed from published_at to match backend
+    updated: string | null;
+    media_thumbnail: string | null;
+    media_duration_seconds: number | null;
+    external_id: string | null;
+    raw_guid: string | null; // Backend uses raw_guid, not guid
     created_at: string;
-    is_read: number | boolean; // API might return 0/1, frontend uses bool sometimes
-    is_starred: number | boolean;
-    feed_title: string;
-    feed_icon_url: string | null;
-    published?: string; // alias if needed
-    source?: string;
-    media_thumbnail?: string;
-    media_duration_seconds?: number | null;
-    external_id?: string | null; // YouTube video ID
-    playback_position?: number; // Current playback position in seconds
+    is_read: number; // Backend returns 0/1
+    is_starred: number; // Backend returns 0/1
+    playback_position: number; // Required in backend, not optional
+    feed_icon_url?: string;
+    feed_title?: string;
+    
+    // Frontend-specific fields (for compatibility)
+    feed_id?: number; // Legacy field
+    guid?: string; // Alias for raw_guid
+    published_at?: string; // Alias for published
     enclosure?: {
         url: string;
         type?: string;
@@ -46,12 +63,14 @@ export interface Item {
 }
 
 export interface Folder {
-    id: string; // or number depending on DB
+    id: string;
     name: string;
-    feeds: Feed[];
-    unreadCount: number;
-    isOpen: boolean;
+    created_at?: string;
     feedCount?: number;
+    // Frontend-specific fields
+    feeds?: Feed[];
+    unreadCount?: number;
+    isOpen?: boolean;
 }
 
 export interface SearchResult {
@@ -82,11 +101,27 @@ export interface ImportResult {
 }
 
 export interface ReaderData {
-    title: string;
-    byline?: string;
-    content: string;
+    // Backend fields (source of truth)
+    url: string;
+    title: string | null;
+    byline: string | null;
+    excerpt: string | null;
+    siteName: string | null;
+    imageUrl: string | null;
+    contentHtml: string;
+    fromCache: boolean;
+    
+    // Frontend-specific fields (for compatibility)
+    content?: string; // Alias for contentHtml
     textContent?: string;
     length?: number;
-    excerpt?: string;
-    siteName?: string;
+}
+
+export interface RefreshJob {
+    id: string;
+    status: 'running' | 'done' | 'error';
+    current: number;
+    total: number;
+    message?: string;
+    startedAt: number;
 }
