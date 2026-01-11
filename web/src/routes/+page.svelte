@@ -1562,31 +1562,16 @@
   <main class="main-content">
     <!-- Top Bar (Mobile & Desktop) -->
     <header class="topbar glass-panel">
-      <div class="topbar-left">
-        <button
-          class="md:hidden hamburger-btn"
-          on:click={() => isMobileMenuOpen.set(true)}
-          title="Menu"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M3 12h18M3 6h18M3 18h18"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
-          </svg>
-        </button>
-        <div class="logo-small hidden md:flex">
-          <div class="logo-icon">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M3 3h10v10H3z" fill="currentColor" />
-            </svg>
-          </div>
-          <span>FeedStream</span>
-        </div>
-      </div>
+      <!-- Mobile Menu Button (Hidden on Desktop) -->
+      <button
+        class="header-icon-btn mobile-only"
+        on:click={() => isMobileMenuOpen.set(true)}
+        title="Menu"
+      >
+        <Menu size={20} />
+      </button>
 
+      <!-- Search Bar -->
       <div class="topbar-center">
         <div class="search-box">
           <div class="search-icon-wrapper">
@@ -1617,9 +1602,10 @@
         </div>
       </div>
 
+      <!-- Action Buttons -->
       <div class="topbar-right">
         <button
-          class="icon-btn"
+          class="header-icon-btn"
           on:click={refreshAll}
           class:spinning={feedsLoading || itemsLoading}
           title="Refresh"
@@ -1628,7 +1614,7 @@
         </button>
 
         <button
-          class="icon-btn add-btn-desktop"
+          class="header-icon-btn header-icon-btn-accent"
           on:click={() => isAddFeedModalOpen.set(true)}
           title="Add Feed"
         >
@@ -2831,8 +2817,8 @@
     height: var(--topbar-height);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 24px; /* More refined padding */
+    gap: 12px;
+    padding: 0 16px;
     margin-bottom: 0;
     z-index: 10;
     background: var(--bg0);
@@ -2841,32 +2827,57 @@
     box-shadow: none;
   }
 
-  /* Topbar needs to be clean, search bar is the focus */
-
-  .topbar-left,
   .topbar-right {
     display: flex;
     align-items: center;
-    gap: 12px;
-  }
-
-  @media (max-width: 768px) {
-    .desktop-only {
-      display: none !important;
-    }
-  }
-
-  .logo-small {
-    /* Hide logo small on desktop if sidebar is visible, handled by media query usually
-           But here we keep it simple.
-        */
-    display: none;
+    gap: 8px;
+    flex-shrink: 0;
   }
 
   .topbar-center {
     flex: 1;
-    margin: 0 24px;
-    max-width: 600px;
+    min-width: 0;
+  }
+
+  /* Header Icon Buttons - Match Feeds page style */
+  .header-icon-btn {
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .header-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .header-icon-btn-accent {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .header-icon-btn-accent:hover {
+    background: rgba(16, 185, 129, 0.9);
+    border-color: rgba(16, 185, 129, 0.9);
+  }
+
+  /* Mobile-only button - hidden on desktop */
+  .mobile-only {
+    display: flex;
+  }
+
+  @media (min-width: 768px) {
+    .mobile-only {
+      display: none !important;
+    }
   }
 
   .search-box {
