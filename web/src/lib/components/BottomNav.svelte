@@ -9,7 +9,7 @@
 </script>
 
 <nav
-  class="md:hidden fixed bottom-0 left-0 right-0 min-h-[64px] bg-background border-t border-white/5 z-40 flex items-center justify-around px-2 pt-2 pb-safe select-none"
+  class="md:hidden fixed bottom-0 left-0 right-0 min-h-[64px] bg-background border-t border-white/5 z-40 flex items-center justify-around px-2 pt-2 pb-6 select-none safe-bottom"
 >
   <!-- Menu Button -->
   <button
@@ -113,3 +113,9 @@
     </span>
   </button>
 </nav>
+
+<style>
+  .safe-bottom {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 20px));
+  }
+</style>

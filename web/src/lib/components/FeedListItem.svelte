@@ -115,7 +115,7 @@
 </script>
 
 <article
-  class="group flex flex-col sm:flex-row gap-3 sm:gap-4 py-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer"
+  class="group flex flex-col sm:flex-row gap-3 sm:gap-4 px-4 py-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer"
   on:click={handleOpen}
   on:keypress={(e) => e.key === "Enter" && handleOpen()}
   tabindex="0"
