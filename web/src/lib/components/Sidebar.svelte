@@ -118,6 +118,38 @@
       {/if}
     </a>
 
+    <!-- Bookmarks (formerly Library) -->
+    <button
+      class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+        {$viewMode === 'bookmarks'
+          ? 'bg-white/10 text-white shadow-inner border border-white/5'
+          : 'text-white/60 hover:text-white hover:bg-white/5'}"
+      on:click={setViewBookmarks}
+    >
+      <div class="flex items-center gap-3">
+        <Bookmark
+          size={24}
+          class={$viewMode === 'bookmarks'
+            ? "text-[#FF9500]"
+            : "text-current group-hover:text-white"}
+          fill={$viewMode === 'bookmarks' ? "currentColor" : "none"}
+        />
+        Bookmarks
+      </div>
+
+      {#if $libraryTotal > 0}
+        <span class="text-xs font-medium {$viewMode === 'bookmarks' ? 'text-white/70' : 'text-white/40'}">
+          {$libraryTotal}
+        </span>
+      {/if}
+
+      {#if $viewMode === 'bookmarks'}
+        <div
+          class="absolute inset-y-0 left-0 w-1 bg-[#FF9500] rounded-r-full shadow-[0_0_10px_2px_rgba(255,149,0,0.5)]"
+        ></div>
+      {/if}
+    </button>
+
     <!-- Smart Folders Section -->
     <div
       class="text-xs font-semibold text-white/40 uppercase tracking-wider px-3 mb-2 mt-8"
