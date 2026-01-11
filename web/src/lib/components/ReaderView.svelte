@@ -1,27 +1,11 @@
 <script lang="ts">
-  import type { Item } from "$lib/types";
-
-  export let show = false;
-  export let item: Item | null = null;
-  export let readerData: {
-    url: string | null;
-    title: string | null;
-    byline: string | null;
-    excerpt: string | null;
-    siteName: string | null;
-    imageUrl: string | null;
-    contentHtml: string;
-    fromCache: boolean;
-  } | null = null;
-  export let loading = false;
-  export let error: string | null = null;
-  export let onClose: () => void;
+  import { showReader, readerData, readerLoading, readerError, currentItem, closeReader } from "$lib/stores/reader";
 
   let ytPlayer: any = null;
   let ytProgressInterval: ReturnType<typeof setInterval> | null = null;
   let ytApiLoaded = false;
 
-  $: if (show && readerData && typeof document !== "undefined") {
+  $: if ($showReader && $readerData && typeof document !== "undefined") {
     setTimeout(() => {
       const container = document.getElementById("reader-body-content");
       if (container) {
@@ -39,15 +23,15 @@
       return;
     }
 
-    if (!readerData?.url) return;
+    if (!$readerData?.url) return;
 
     let videoId = null;
-    if (readerData.url.includes("v=")) {
-      videoId = readerData.url.split("v=")[1]?.split("&")[0];
-    } else if (readerData.url.includes("youtu.be/")) {
-      videoId = readerData.url.split("youtu.be/")[1]?.split("?")[0];
-    } else if (item?.external_id) {
-      videoId = item.external_id;
+    if ($readerData.url.includes("v=")) {
+      videoId = $readerData.url.split("v=")[1]?.split("&")[0];
+    } else if ($readerData.url.includes("youtu.be/")) {
+      videoId = $readerData.url.split("youtu.be/")[1]?.split("?")[0];
+    } else if ($currentItem?.external_id) {
+      videoId = $currentItem.external_id;
     }
 
     if (!videoId) return;
@@ -62,7 +46,7 @@
         } catch (e) {}
       }
 
-      const startPos = Math.floor(item?.playback_position || 0);
+      const startPos = Math.floor($currentItem?.playback_position || 0);
 
       ytPlayer = new (window as any).YT.Player("yt-player-container", {
         height: "100%",
@@ -122,13 +106,16 @@
   }
 
   async function syncPlaybackPosition() {
-    if (!ytPlayer || !ytPlayer.getCurrentTime || !item) return;
+    if (!ytPlayer || !ytPlayer.getCurrentTime || !$currentItem) return;
     
     const currentTime = ytPlayer.getCurrentTime();
-    item.playback_position = currentTime;
+    // Optimistic update in local item state if we had access to items store action
+    // But currentItem is a copy in the reader store. 
+    // Ideally we call an action from items store.
+    // For now let's just do the fetch.
 
     try {
-      await fetch(`/api/items/${item.id}/playback`, {
+      await fetch(`/api/items/${$currentItem.id}/playback`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ position: currentTime }),
@@ -138,7 +125,7 @@
     }
   }
 
-  function closeReader() {
+  function handleClose() {
     stopProgressSync();
     if (ytPlayer) {
       try {
@@ -146,21 +133,21 @@
       } catch (e) {}
       ytPlayer = null;
     }
-    onClose();
+    closeReader();
   }
 
   function handleOverlayKeydown(event: KeyboardEvent) {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      closeReader();
+      handleClose();
     }
   }
 </script>
 
-{#if show}
+{#if $showReader}
   <div
     class="reader-overlay"
-    on:click={closeReader}
+    on:click={handleClose}
     on:keydown={handleOverlayKeydown}
     role="button"
     tabindex="0"
@@ -177,7 +164,7 @@
       <div class="reader-header">
         <button
           class="reader-close"
-          on:click={closeReader}
+          on:click={handleClose}
           title="Close (ESC)"
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -189,9 +176,9 @@
               />
           </svg>
         </button>
-        {#if readerData?.url}
+        {#if $readerData?.url}
           <a
-            href={readerData.url}
+            href={$readerData.url}
             target="_blank"
             rel="noopener noreferrer"
             class="reader-source"
@@ -201,17 +188,17 @@
         {/if}
       </div>
       
-      {#if loading}
+      {#if $readerLoading}
         <div class="reader-loading">
           <div class="reader-spinner"></div>
           <span>Loading article...</span>
         </div>
-      {:else if error}
+      {:else if $readerError}
         <div class="reader-error">
-          <p>{error}</p>
-          {#if readerData?.url}
+          <p>{$readerError}</p>
+          {#if $readerData?.url}
             <a
-              href={readerData.url}
+              href={$readerData.url}
               target="_blank"
               rel="noopener noreferrer"
               class="reader-fallback-btn"
@@ -220,9 +207,9 @@
             </a>
           {/if}
         </div>
-      {:else if readerData}
+      {:else if $readerData}
         <article class="reader-content">
-          {#if readerData.url && (readerData.url.includes("youtube.com/watch") || readerData.url.includes("youtu.be/"))}
+          {#if $readerData.url && ($readerData.url.includes("youtube.com/watch") || $readerData.url.includes("youtu.be/"))}
             <div
               class="video-wrapper"
               style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 12px; margin-bottom: 24px; background: #000;"
@@ -232,24 +219,24 @@
                 style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
               ></div>
             </div>
-          {:else if readerData.imageUrl}
-            <img src={readerData.imageUrl} alt="" class="reader-hero" />
+          {:else if $readerData.imageUrl}
+            <img src={$readerData.imageUrl} alt="" class="reader-hero" />
           {/if}
           <h1 class="reader-title" id="reader-title">
-            {readerData.title || "Untitled"}
+            {$readerData.title || "Untitled"}
           </h1>
-          {#if readerData.byline || readerData.siteName}
+          {#if $readerData.byline || $readerData.siteName}
             <div class="reader-meta">
-              {#if readerData.byline}<span>{readerData.byline}</span>{/if}
-              {#if readerData.byline && readerData.siteName}<span
+              {#if $readerData.byline}<span>{$readerData.byline}</span>{/if}
+              {#if $readerData.byline && $readerData.siteName}<span
                   class="meta-sep">•</span
                 >{/if}
-              {#if readerData.siteName}<span>{readerData.siteName}</span>{/if}
+              {#if $readerData.siteName}<span>{$readerData.siteName}</span>{/if}
             </div>
           {/if}
           <div class="reader-body" id="reader-body-content">
-            {#if !(readerData.url && (readerData.url.includes("youtube.com/watch") || readerData.url.includes("youtu.be/")))}
-              {@html readerData.contentHtml}
+            {#if !($readerData.url && ($readerData.url.includes("youtube.com/watch") || $readerData.url.includes("youtu.be/")))}
+              {@html $readerData.contentHtml}
             {/if}
           </div>
         </article>

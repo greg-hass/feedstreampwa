@@ -89,7 +89,7 @@ export interface Settings {
     sync_interval: string;
 }
 
-export type TimeFilter = 'all' | '24h' | '7d' | '30d';
+export type TimeFilter = 'all' | 'today' | '24h' | 'week';
 
 export type ViewMode = 'all' | 'unread' | 'bookmarks' | 'smart' | 'folder' | 'feed';
 export type SmartFolder = 'rss' | 'youtube' | 'reddit' | 'podcast';

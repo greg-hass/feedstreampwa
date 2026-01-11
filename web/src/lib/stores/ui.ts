@@ -1,9 +1,45 @@
 import { writable } from 'svelte/store';
+import type { Feed } from '$lib/types';
 
 // Modal states
 export const isAddFeedModalOpen = writable(false);
 export const isSettingsModalOpen = writable(false);
 export const isMobileMenuOpen = writable(false);
+export const isCreateFolderModalOpen = writable(false);
+
+export const renameModal = writable<{
+    isOpen: boolean;
+    type: 'folder' | 'feed';
+    targetId: string;
+    currentName: string;
+}>({
+    isOpen: false,
+    type: 'folder',
+    targetId: '',
+    currentName: ''
+});
+
+export const feedFolderPopover = writable<{
+    isOpen: boolean;
+    feed: Feed | null;
+    position: { x: number; y: number };
+}>({
+    isOpen: false,
+    feed: null,
+    position: { x: 0, y: 0 }
+});
+
+export const contextMenu = writable<{
+    isOpen: boolean;
+    type: 'folder' | 'feed';
+    target: any;
+    position: { x: number; y: number };
+}>({
+    isOpen: false,
+    type: 'folder',
+    target: null,
+    position: { x: 0, y: 0 }
+});
 
 // View mode types
 export type ViewMode = 'all' | 'unread' | 'bookmarks' | 'smart' | 'folder' | 'feed';

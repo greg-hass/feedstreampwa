@@ -9,21 +9,28 @@ export const feeds = writable<Feed[]>([]);
 export const feedsLoading = writable(false);
 export const feedsError = writable<string | null>(null);
 
+export const refreshState = writable({
+    isRefreshing: false,
+    current: 0,
+    total: 0,
+    message: ''
+});
+
 // Derived stores
 export const rssFeeds = derived(feeds, ($feeds) =>
-    $feeds.filter((f) => f.type === 'rss')
+    $feeds.filter((f) => f.kind === 'generic')
 );
 
 export const youtubeFeeds = derived(feeds, ($feeds) =>
-    $feeds.filter((f) => f.type === 'youtube')
+    $feeds.filter((f) => f.kind === 'youtube')
 );
 
 export const redditFeeds = derived(feeds, ($feeds) =>
-    $feeds.filter((f) => f.type === 'reddit')
+    $feeds.filter((f) => f.kind === 'reddit')
 );
 
 export const podcastFeeds = derived(feeds, ($feeds) =>
-    $feeds.filter((f) => f.type === 'podcast')
+    $feeds.filter((f) => f.kind === 'podcast')
 );
 
 export const totalUnread = derived(feeds, ($feeds) =>
@@ -81,14 +88,47 @@ export async function removeFeed(url: string): Promise<void> {
     await loadFeeds();
 }
 
+// Refresh logic
+let refreshPollTimer: ReturnType<typeof setInterval> | null = null;
+
+async function pollRefreshStatus(jobId: string) {
+    if (refreshPollTimer) clearInterval(refreshPollTimer);
+
+    refreshState.update(s => ({ ...s, isRefreshing: true }));
+
+    refreshPollTimer = setInterval(async () => {
+        try {
+            const response = await fetch(`/api/refresh/status?jobId=${encodeURIComponent(jobId)}`);
+            const data = await response.json();
+
+            if (!response.ok || data.status === 'done' || data.status === 'error') {
+                if (refreshPollTimer) clearInterval(refreshPollTimer);
+                refreshState.update(s => ({ ...s, isRefreshing: false }));
+                await loadFeeds();
+                return;
+            }
+
+            refreshState.update(s => ({
+                ...s,
+                current: data.current,
+                total: data.total,
+                message: data.message
+            }));
+        } catch (e) {
+            if (refreshPollTimer) clearInterval(refreshPollTimer);
+            refreshState.update(s => ({ ...s, isRefreshing: false }));
+        }
+    }, 500);
+}
+
 export async function refreshFeed(url: string): Promise<void> {
-    await feedsApi.refreshFeed(url);
-    await loadFeeds();
+    const { jobId } = await feedsApi.refreshFeed(url);
+    pollRefreshStatus(jobId);
 }
 
 export async function refreshAll(): Promise<void> {
-    await feedsApi.refreshAllFeeds();
-    await loadFeeds();
+    const { jobId } = await feedsApi.refreshAllFeeds();
+    pollRefreshStatus(jobId);
 }
 
 export async function addToFolder(feedUrl: string, folderId: string): Promise<void> {

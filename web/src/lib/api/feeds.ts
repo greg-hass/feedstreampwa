@@ -30,6 +30,21 @@ export async function createFeed(
     }
 }
 
+export async function update(url: string, data: { title?: string }): Promise<void> {
+    const response = await fetch(`${API_BASE}/feeds/${encodeURIComponent(url)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, ...data }),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+            errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        );
+    }
+}
+
 export async function deleteFeed(url: string): Promise<void> {
     const response = await fetch(
         `${API_BASE}/feeds?url=${encodeURIComponent(url)}`,
