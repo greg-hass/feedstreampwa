@@ -149,116 +149,104 @@
   <title>FeedStream - Private feed reader</title>
 </svelte:head>
 
-<div class="app">
-  <!-- Sidebar is in Layout -->
-
-  <main class="main-content">
-    {#if isMobile}
-      <MobileHeader
-        bind:searchQuery={$searchQuery}
-        onSearchInput={() => loadItems()} 
-        onSearchClear={() => { setSearchQuery(''); loadItems(); }}
-        onRefresh={refreshAll}
-        isRefreshing={$refreshState.isRefreshing}
-      />
-    {:else}
-      <!-- Page Header -->
-      <div class="page-header">
-        <div class="flex items-center justify-between">
-          <h1 class="text-3xl font-bold text-white">{pageTitle}</h1>
-          <div class="flex items-center gap-2">
-            <button
-              class="p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 transition-all shadow-lg shadow-purple-500/20 text-white"
-              on:click={refreshAll}
-              class:spinning={$refreshState.isRefreshing}
-              title="Refresh"
-            >
-              <RefreshCw size={20} />
-            </button>
-            <button
-              class="p-2.5 rounded-xl bg-accent hover:bg-accent hover:shadow-xl hover:shadow-accent/30 transition-all shadow-lg shadow-accent/20 text-white"
-              on:click={() => isAddFeedModalOpen.set(true)}
-              title="Add Feed"
-            >
-              <Plus size={20} />
-            </button>
-          </div>
-        </div>
+<!-- Content -->
+{#if isMobile}
+  <MobileHeader
+    bind:searchQuery={$searchQuery}
+    onSearchInput={() => loadItems()} 
+    onSearchClear={() => { setSearchQuery(''); loadItems(); }}
+    onRefresh={refreshAll}
+    isRefreshing={$refreshState.isRefreshing}
+  />
+{:else}
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="flex items-center justify-between">
+      <h1 class="text-3xl font-bold text-white">{pageTitle}</h1>
+      <div class="flex items-center gap-2">
+        <button
+          class="p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 transition-all shadow-lg shadow-purple-500/20 text-white"
+          on:click={refreshAll}
+          class:spinning={$refreshState.isRefreshing}
+          title="Refresh"
+        >
+          <RefreshCw size={20} />
+        </button>
+        <button
+          class="p-2.5 rounded-xl bg-accent hover:bg-accent hover:shadow-xl hover:shadow-accent/30 transition-all shadow-lg shadow-accent/20 text-white"
+          on:click={() => isAddFeedModalOpen.set(true)}
+          title="Add Feed"
+        >
+          <Plus size={20} />
+        </button>
       </div>
-
-      <!-- Search Bar -->
-      <div class="search-bar-full">
-        <SearchBar
-          bind:value={$searchQuery}
-          placeholder="Search articles..."
-          onInput={() => loadItems()}
-          onClear={() => { setSearchQuery(''); loadItems(); }}
-        />
-      </div>
-    {/if}
-
-    <!-- Filter Chips -->
-    <FilterChips
-      timeFilter={$timeFilter}
-      on:change={(e) => setTimeFilter(e.detail)}
-    />
-
-    <!-- Articles List -->
-    <div class="articles-scroll-container">
-      {#if $itemsLoading}
-        <div class="flex flex-col gap-0 w-full">
-          {#each Array(5) as _ (Math.random())}
-            <SkeletonCard />
-          {/each}
-        </div>
-      {:else if $itemsError}
-        <div class="empty-state error">{$itemsError}</div>
-      {:else if filteredItems.length === 0}
-        <div class="empty-state">
-          No articles found. Add some feeds to get started!
-        </div>
-      {:else}
-        <FeedGrid
-          items={filteredItems}
-          on:open={(e) => openReader(e.detail.item)}
-          on:toggleStar={(e) => toggleStar(e.detail.item)}
-          on:toggleRead={(e) => toggleRead(e.detail.item)}
-          on:play={(e) => playMedia(e.detail.item)}
-        />
-        <div bind:this={sentinel} class="h-4 w-full"></div>
-      {/if}
     </div>
-  </main>
+  </div>
 
-  <!-- Modals & Overlays -->
-  <ReaderView />
-  <CreateFolderModal />
-  <RenameModal />
-  <FeedFolderPopover />
-  <ContextMenu />
-  <RefreshToast />
+  <!-- Search Bar -->
+  <div class="search-bar-full">
+    <SearchBar
+      bind:value={$searchQuery}
+      placeholder="Search articles..."
+      onInput={() => loadItems()}
+      onClear={() => { setSearchQuery(''); loadItems(); }}
+    />
+  </div>
+{/if}
+
+<!-- Filter Chips -->
+<FilterChips
+  timeFilter={$timeFilter}
+  on:change={(e) => setTimeFilter(e.detail)}
+/>
+
+<!-- Articles List -->
+<div class="articles-list">
+  {#if $itemsLoading && $items.length === 0}
+    <div class="flex flex-col gap-0 w-full">
+      {#each Array(5) as _ (Math.random())}
+        <SkeletonCard />
+      {/each}
+    </div>
+  {:else if $itemsError}
+    <div class="empty-state error">{$itemsError}</div>
+  {:else if filteredItems.length === 0}
+    <div class="empty-state">
+      No articles found. Add some feeds to get started!
+    </div>
+  {:else}
+    <FeedGrid
+      items={filteredItems}
+      on:open={(e) => openReader(e.detail.item)}
+      on:toggleStar={(e) => toggleStar(e.detail.item)}
+      on:toggleRead={(e) => toggleRead(e.detail.item)}
+      on:play={(e) => playMedia(e.detail.item)}
+    />
+    
+    <!-- Loading spinner at bottom for infinite scroll -->
+    {#if $itemsLoading}
+       <div class="py-4 flex justify-center">
+         <div class="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+       </div>
+    {/if}
+    
+    <div bind:this={sentinel} class="h-4 w-full"></div>
+  {/if}
 </div>
 
+<!-- Modals & Overlays -->
+<ReaderView />
+<CreateFolderModal />
+<RenameModal />
+<FeedFolderPopover />
+<ContextMenu />
+<RefreshToast />
+
 <style>
-  .app {
-    display: flex;
-    height: 100vh;
-    overflow: hidden;
-  }
-
-  .main-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    position: relative;
-  }
-
   /* Page Header */
   .page-header {
     margin-bottom: 20px;
-    padding: 0 var(--page-padding);
-    padding-top: 24px;
+    /* padding removed - handled by layout */
   }
 
   .page-header h1 {
@@ -268,16 +256,12 @@
 
   .search-bar-full {
     margin-bottom: 20px;
-    padding: 0 var(--page-padding);
   }
 
-  .articles-scroll-container {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
+  .articles-list {
     display: flex;
     flex-direction: column;
-    padding: 0;
+    /* Removed overflow/height constraints to allow window scrolling */
   }
 
   .empty-state {
@@ -301,10 +285,6 @@
   }
 
   @media (max-width: 768px) {
-    .main-content {
-        padding-bottom: calc(70px + env(safe-area-inset-bottom));
-    }
-    
     .page-header, .search-bar-full {
         margin-bottom: 16px;
     }
