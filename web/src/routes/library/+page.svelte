@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { Star, Bookmark, Filter, ArrowUpDown, Search, X } from "lucide-svelte";
+  import { Star, Bookmark, Filter, ArrowUpDown, Search, X, Rss, Youtube, Hash, Radio, CheckCircle2, Circle } from "lucide-svelte";
   import FeedGrid from "$lib/components/FeedGrid.svelte";
   import { playMedia } from "$lib/stores/media";
   import type { Item } from "$lib/types";
@@ -16,20 +16,42 @@
   let sortBy: "recent" | "oldest" | "title" = "recent";
   let searchQuery = "";
 
-  // Filter options
+  // Search state
+  let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Filter options - matching Add Feeds modal style
   const typeFilters = [
     { value: "all" as const, label: "All" },
-    { value: "rss" as const, label: "RSS" },
-    { value: "youtube" as const, label: "YouTube" },
-    { value: "reddit" as const, label: "Reddit" },
-    { value: "podcast" as const, label: "Podcast" },
+    { value: "rss" as const, label: "RSS", icon: Rss, color: "text-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
+    { value: "youtube" as const, label: "YouTube", icon: Youtube, color: "text-red-500", bg: "bg-red-500/10", border: "border-red-500/20" },
+    { value: "reddit" as const, label: "Reddit", icon: Hash, color: "text-orange-500", bg: "bg-orange-500/10", border: "border-orange-500/20" },
+    { value: "podcast" as const, label: "Podcast", icon: Radio, color: "text-purple-500", bg: "bg-purple-500/10", border: "border-purple-500/20" },
   ];
 
   const readFilters = [
-    { value: "all" as const, label: "All" },
-    { value: "unread" as const, label: "Unread" },
-    { value: "read" as const, label: "Read" },
+    { value: "all" as const, label: "All", icon: null, color: "", bg: "bg-accent", border: "border-accent" },
+    { value: "unread" as const, label: "Unread", icon: Circle, color: "text-white/60", bg: "bg-white/5", border: "border-white/10" },
+    { value: "read" as const, label: "Read", icon: CheckCircle2, color: "text-white/60", bg: "bg-white/5", border: "border-white/10" },
   ];
+
+  function handleSearchInput() {
+    if (searchDebounceTimer) {
+      clearTimeout(searchDebounceTimer);
+    }
+    searchDebounceTimer = setTimeout(() => {
+      // Filter items will react to searchQuery change
+    }, 300);
+  }
+
+  function handleSearchKeydown(event: KeyboardEvent) {
+    if (event.key === "Escape") {
+      searchQuery = "";
+    }
+  }
+
+  function clearSearch() {
+    searchQuery = "";
+  }
 
   onMount(() => {
     loadStarredItems();
@@ -140,11 +162,13 @@
           type="text"
           placeholder="Search your library..."
           bind:value={searchQuery}
+          on:input={handleSearchInput}
+          on:keydown={handleSearchKeydown}
         />
         {#if searchQuery}
           <button
             class="search-clear"
-            on:click={() => searchQuery = ""}
+            on:click={clearSearch}
             title="Clear search (ESC)"
           >
             <X size={18} />
@@ -153,28 +177,39 @@
       </div>
     </div>
 
-    <!-- Filter Chips -->
-    <div class="filter-chips">
-      <!-- Type Filter -->
+    <!-- Filter Pills - Type Filter -->
+    <div class="flex items-center gap-2 mb-3 flex-wrap">
+      <span class="text-xs font-semibold text-white/60 uppercase tracking-wider">Type:</span>
       {#each typeFilters as filter}
         <button
-          class="chip"
-          class:active={typeFilter === filter.value}
+          class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 border {typeFilter === filter.value
+            ? `${filter.bg} ${filter.color} ${filter.border}`
+            : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10'}"
           on:click={() => (typeFilter = filter.value)}
-        >{filter.label}</button
         >
+          {#if filter.icon}
+            <svelte:component this={filter.icon} size={14} />
+          {/if}
+          {filter.label}
+        </button>
       {/each}
     </div>
 
-    <!-- Read Status Filter -->
-    <div class="filter-chips">
+    <!-- Filter Pills - Read Status Filter -->
+    <div class="flex items-center gap-2 mb-3 flex-wrap">
+      <span class="text-xs font-semibold text-white/60 uppercase tracking-wider">Status:</span>
       {#each readFilters as filter}
         <button
-          class="chip"
-          class:active={readFilter === filter.value}
+          class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 border {readFilter === filter.value
+            ? `${filter.bg} text-white ${filter.border}`
+            : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10'}"
           on:click={() => (readFilter = filter.value)}
-        >{filter.label}</button
         >
+          {#if filter.icon}
+            <svelte:component this={filter.icon} size={14} />
+          {/if}
+          {filter.label}
+        </button>
       {/each}
     </div>
 

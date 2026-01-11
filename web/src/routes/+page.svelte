@@ -1093,6 +1093,11 @@
     loadItems();
   }
 
+  // Reactive: clear search when switching views
+  $: if ($viewMode !== "all" && searchQuery) {
+    searchQuery = "";
+  }
+
   // Folder management functions
   async function createFolder() {
     const name = folderModalName.trim();
