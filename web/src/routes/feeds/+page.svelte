@@ -236,12 +236,12 @@
     <div class="glass rounded-2xl p-4 mb-6 space-y-4">
       <!-- Search Bar -->
       <div class="relative">
-        <Search size={18} class="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+        <Search size={18} class="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
         <input
           type="text"
           placeholder="Search feeds..."
           bind:value={searchQuery}
-          class="w-full bg-white/3 pl-11 pr-11 py-3 rounded-full text-white placeholder-white/40 outline-none border border-white/15 focus:border-accent/50 focus:bg-white/5 transition-all"
+          class="w-full bg-[rgba(255,255,255,0.03)] pl-11 pr-11 py-3 rounded-full text-white placeholder-white/40 outline-none border border-white/15 focus:border-accent/50 focus:bg-[rgba(255,255,255,0.05)] transition-all"
         />
         {#if searchQuery}
           <button

@@ -1561,51 +1561,52 @@
 
   <!-- Main Content -->
   <main class="main-content">
-    <!-- Top Bar (Mobile & Desktop) -->
-    <header class="topbar">
-      <!-- Search Bar -->
-      <div class="topbar-center">
-        <div class="search-box">
-          <Search size={18} class="search-icon" />
-          <input
-            type="text"
-            placeholder="Search articles..."
-            bind:value={searchQuery}
-            on:input={handleSearchInput}
-            on:keydown={handleSearchKeydown}
-          />
-          {#if searchQuery}
-            <button
-              class="search-clear"
-              on:click={clearSearch}
-              title="Clear search (ESC)"
-            >
-              <X size={18} />
-            </button>
-          {/if}
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="flex items-center justify-between">
+        <h1 class="text-3xl font-bold text-white">Dashboard</h1>
+        <div class="flex items-center gap-2">
+          <button
+            class="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-colors text-white"
+            on:click={refreshAll}
+            class:spinning={feedsLoading || itemsLoading}
+            title="Refresh"
+          >
+            <RefreshCw size={20} />
+          </button>
+          <button
+            class="p-2.5 rounded-xl bg-accent hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20 text-white"
+            on:click={() => isAddFeedModalOpen.set(true)}
+            title="Add Feed"
+          >
+            <Plus size={20} />
+          </button>
         </div>
       </div>
+    </div>
 
-      <!-- Action Buttons -->
-      <div class="topbar-right">
-        <button
-          class="header-icon-btn"
-          on:click={refreshAll}
-          class:spinning={feedsLoading || itemsLoading}
-          title="Refresh"
-        >
-          <RefreshCw size={20} />
-        </button>
-
-        <button
-          class="header-icon-btn header-icon-btn-accent"
-          on:click={() => isAddFeedModalOpen.set(true)}
-          title="Add Feed"
-        >
-          <Plus size={20} />
-        </button>
+    <!-- Search Bar -->
+    <div class="search-bar-full">
+      <div class="search-box">
+        <Search size={18} class="search-icon" />
+        <input
+          type="text"
+          placeholder="Search articles..."
+          bind:value={searchQuery}
+          on:input={handleSearchInput}
+          on:keydown={handleSearchKeydown}
+        />
+        {#if searchQuery}
+          <button
+            class="search-clear"
+            on:click={clearSearch}
+            title="Clear search (ESC)"
+          >
+            <X size={18} />
+          </button>
+        {/if}
       </div>
-    </header>
+    </div>
 
     <!-- Filter Chips -->
     <div class="filter-chips">
@@ -2866,6 +2867,21 @@
     .mobile-only {
       display: none !important;
     }
+  }
+
+  /* Page Header */
+  .page-header {
+    margin-bottom: 24px;
+  }
+
+  .page-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+  }
+
+  /* Full Width Search Bar */
+  .search-bar-full {
+    margin-bottom: 24px;
   }
 
   .search-box {
