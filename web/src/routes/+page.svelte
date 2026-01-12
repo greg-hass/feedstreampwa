@@ -8,14 +8,6 @@
   import SearchBar from "$lib/components/SearchBar.svelte";
   import SkeletonCard from "$lib/components/SkeletonCard.svelte";
   import FilterChips from "$lib/components/FilterChips.svelte";
-  import ReaderView from "$lib/components/ReaderView.svelte";
-  import RefreshToast from "$lib/components/RefreshToast.svelte";
-  import ContextMenu from "$lib/components/ContextMenu.svelte";
-
-  // Modals
-  import CreateFolderModal from "$lib/components/modals/CreateFolderModal.svelte";
-  import RenameModal from "$lib/components/modals/RenameModal.svelte";
-  import FeedFolderPopover from "$lib/components/modals/FeedFolderPopover.svelte";
 
   // Stores
   import {
@@ -282,14 +274,6 @@
     <div bind:this={sentinel} class="h-4 w-full"></div>
   {/if}
 </div>
-
-<!-- Modals & Overlays -->
-<ReaderView />
-<CreateFolderModal />
-<RenameModal />
-<FeedFolderPopover />
-<ContextMenu />
-<RefreshToast />
 
 <style>
   /* Prevent horizontal scroll */
