@@ -261,7 +261,7 @@
   >
     <!-- Modal Content -->
     <div
-      class="bg-surface rounded-2xl border border-white/5 max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl"
+      class="bg-[#18181b] rounded-2xl border border-white/10 max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl"
       on:click|stopPropagation
       on:keydown|stopPropagation
       role="dialog"
@@ -270,7 +270,7 @@
     >
       <!-- Header with Tabs -->
       <div
-        class="bg-surface border-b border-white/5 px-6 pt-6 pb-0 flex-shrink-0"
+        class="bg-[#18181b] border-b border-white/10 px-6 pt-6 pb-0 flex-shrink-0"
       >
         <div class="flex items-center justify-between mb-6">
           <div class="flex items-center gap-3">
@@ -666,7 +666,7 @@
       <!-- Footer (Only for General Tab) -->
       {#if activeTab === "general"}
         <div
-          class="sticky bottom-0 bg-surface border-t border-white/5 px-6 py-4 flex items-center justify-end gap-3 rounded-b-2xl"
+          class="sticky bottom-0 bg-[#18181b] border-t border-white/10 px-6 py-4 flex items-center justify-end gap-3 rounded-b-2xl"
         >
           <button
             class="px-4 py-2 rounded-xl text-white/60 hover:text-white hover:bg-white/5 transition-colors text-sm font-medium"

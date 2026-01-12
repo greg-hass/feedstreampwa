@@ -59,7 +59,7 @@
     on:keydown={(e) => e.key === "Escape" && close()}
   >
     <div
-      class="folder-modal glass-panel"
+      class="folder-modal"
       role="dialog"
       aria-modal="true"
       aria-labelledby="rename-title"
@@ -121,8 +121,8 @@
     max-width: 420px;
     padding: 0;
     animation: scaleIn 0.25s ease-out;
-    background: var(--bg0);
-    border: 1px solid var(--stroke);
+    background: #18181b;
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: var(--radiusL);
     box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8);
   }

@@ -3,12 +3,12 @@
   import { slide } from "svelte/transition";
 
   function close() {
-    refreshState.update(s => ({ ...s, isRefreshing: false }));
+    refreshState.update((s) => ({ ...s, isRefreshing: false }));
   }
 </script>
 
 {#if $refreshState.isRefreshing}
-  <div class="refresh-toast glass-panel" transition:slide={{ axis: 'y' }}>
+  <div class="refresh-toast" transition:slide={{ axis: "y" }}>
     <div class="toast-content">
       <div class="toast-header">
         <span class="toast-title">Refreshing Feeds</span>
@@ -24,7 +24,8 @@
         </button>
       </div>
       <div class="toast-progress-text">
-        {$refreshState.current} / {$refreshState.total} • {$refreshState.message || "Starting..."}
+        {$refreshState.current} / {$refreshState.total} • {$refreshState.message ||
+          "Starting..."}
       </div>
       <div class="progress-bar">
         <div
@@ -48,6 +49,12 @@
     max-width: 400px;
     padding: 16px 20px;
     z-index: 1500;
+
+    /* Improved visibility */
+    background: #18181b;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
   }
 
   .toast-content {

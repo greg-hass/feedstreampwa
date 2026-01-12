@@ -56,7 +56,7 @@
     transition:fade={{ duration: 150 }}
   >
     <div
-      class="confirm-dialog bg-[#0a0a0b] rounded-2xl border border-white/10 max-w-md w-full shadow-2xl"
+      class="confirm-dialog bg-[#18181b] rounded-2xl border border-white/10 max-w-md w-full shadow-2xl"
       on:click|stopPropagation
       transition:fly={{ duration: 250, y: 50 }}
       role="document"

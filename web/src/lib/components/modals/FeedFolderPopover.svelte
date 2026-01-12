@@ -146,8 +146,8 @@
     padding: 0;
     z-index: 2001;
     animation: scaleIn 0.2s ease-out;
-    background: #0f0f10;
-    border: 1px solid var(--stroke);
+    background: #18181b;
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: var(--radiusM);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   }

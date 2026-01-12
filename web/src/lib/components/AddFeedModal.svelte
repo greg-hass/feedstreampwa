@@ -1,5 +1,17 @@
 <script lang="ts">
-  import { X, PlusCircle, Rss, Loader2, CheckCircle2, Search, Youtube, Hash, Radio, ExternalLink, ChevronDown } from "lucide-svelte";
+  import {
+    X,
+    PlusCircle,
+    Rss,
+    Loader2,
+    CheckCircle2,
+    Search,
+    Youtube,
+    Hash,
+    Radio,
+    ExternalLink,
+    ChevronDown,
+  } from "lucide-svelte";
   import { isAddFeedModalOpen } from "$lib/stores/ui";
   import { createFeed, refreshFeed } from "$lib/api/feeds";
   import { loadFeeds } from "$lib/stores/feeds";
@@ -22,13 +34,50 @@
 
   // Type filters - using Set for multi-select
   type FeedType = "rss" | "youtube" | "reddit" | "podcast";
-  let selectedTypes = new Set<FeedType>(["rss", "youtube", "reddit", "podcast"]);
+  let selectedTypes = new Set<FeedType>([
+    "rss",
+    "youtube",
+    "reddit",
+    "podcast",
+  ]);
 
   const typeOptions = [
-    { value: "rss" as FeedType, label: "RSS Feeds", icon: Rss, color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20", hover: "hover:bg-emerald-500/20" },
-    { value: "youtube" as FeedType, label: "YouTube", icon: Youtube, color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/20", hover: "hover:bg-red-500/20" },
-    { value: "reddit" as FeedType, label: "Reddit", icon: Hash, color: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/20", hover: "hover:bg-orange-500/20" },
-    { value: "podcast" as FeedType, label: "Podcasts", icon: Radio, color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20", hover: "hover:bg-purple-500/20" },
+    {
+      value: "rss" as FeedType,
+      label: "RSS Feeds",
+      icon: Rss,
+      color: "text-emerald-400",
+      bg: "bg-emerald-500/10",
+      border: "border-emerald-500/20",
+      hover: "hover:bg-emerald-500/20",
+    },
+    {
+      value: "youtube" as FeedType,
+      label: "YouTube",
+      icon: Youtube,
+      color: "text-red-400",
+      bg: "bg-red-500/10",
+      border: "border-red-500/20",
+      hover: "hover:bg-red-500/20",
+    },
+    {
+      value: "reddit" as FeedType,
+      label: "Reddit",
+      icon: Hash,
+      color: "text-orange-400",
+      bg: "bg-orange-500/10",
+      border: "border-orange-500/20",
+      hover: "hover:bg-orange-500/20",
+    },
+    {
+      value: "podcast" as FeedType,
+      label: "Podcasts",
+      icon: Radio,
+      color: "text-purple-400",
+      bg: "bg-purple-500/10",
+      border: "border-purple-500/20",
+      hover: "hover:bg-purple-500/20",
+    },
   ];
 
   function closeModal() {
@@ -121,7 +170,9 @@
     return new Promise<void>((resolve, reject) => {
       refreshPollTimer = setInterval(async () => {
         try {
-          const response = await fetch(`/api/refresh/status?jobId=${encodeURIComponent(jobId)}`);
+          const response = await fetch(
+            `/api/refresh/status?jobId=${encodeURIComponent(jobId)}`
+          );
           const data = await response.json();
 
           if (!response.ok || data.status === "error") {
@@ -143,7 +194,10 @@
           }
 
           refreshMessage = data?.message || "Refreshing feed...";
-          if (typeof data?.current === "number" && typeof data?.total === "number") {
+          if (
+            typeof data?.current === "number" &&
+            typeof data?.total === "number"
+          ) {
             refreshProgress = { current: data.current, total: data.total };
           }
         } catch (err) {
@@ -178,14 +232,17 @@
         console.warn("Failed to refresh feed after adding:", refreshErr);
         // Don't fail the whole operation if refresh fails
         refreshing = false;
-        refreshError = refreshErr instanceof Error ? refreshErr.message : "Failed to refresh feed";
+        refreshError =
+          refreshErr instanceof Error
+            ? refreshErr.message
+            : "Failed to refresh feed";
         refreshProgress = null;
       }
 
       successMessage = `Added "${title}" successfully!`;
 
       // Remove from results
-      searchResults = searchResults.filter(r => r.url !== url);
+      searchResults = searchResults.filter((r) => r.url !== url);
 
       // Clear success message after 3 seconds
       setTimeout(() => {
@@ -219,13 +276,16 @@
     } catch (refreshErr) {
       console.warn("Failed to refresh feed after retry:", refreshErr);
       refreshing = false;
-      refreshError = refreshErr instanceof Error ? refreshErr.message : "Failed to refresh feed";
+      refreshError =
+        refreshErr instanceof Error
+          ? refreshErr.message
+          : "Failed to refresh feed";
       refreshProgress = null;
     }
   }
 
   function getSourceStyle(type: string) {
-    const option = typeOptions.find(t => t.value === type);
+    const option = typeOptions.find((t) => t.value === type);
     return option || typeOptions[0];
   }
 </script>
@@ -243,7 +303,7 @@
   >
     <!-- Modal Content -->
     <div
-      class="bg-surface rounded-2xl border border-white/5 max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl"
+      class="bg-[#18181b] rounded-2xl border border-white/10 max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl"
       on:click|stopPropagation
       on:keydown|stopPropagation
       role="dialog"
@@ -252,7 +312,7 @@
     >
       <!-- Header -->
       <div
-        class="bg-surface border-b border-white/5 px-6 py-4 flex items-center justify-between flex-shrink-0"
+        class="bg-[#18181b] border-b border-white/10 px-6 py-4 flex items-center justify-between flex-shrink-0"
       >
         <div class="flex items-center gap-3">
           <div
@@ -282,28 +342,41 @@
               on:click={focusSearch}
             >
               <span class="flex items-center gap-3">
-                <Search size={20} class="text-white/30 group-hover:text-white/50" />
+                <Search
+                  size={20}
+                  class="text-white/30 group-hover:text-white/50"
+                />
                 <span class="text-sm">Search for feeds...</span>
               </span>
-              <ChevronDown size={18} class="text-white/30 group-hover:text-white/50 transition-transform duration-200" />
+              <ChevronDown
+                size={18}
+                class="text-white/30 group-hover:text-white/50 transition-transform duration-200"
+              />
             </button>
           {:else}
             <!-- Expanded State -->
             <div class="relative">
-              <Search size={20} class="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+              <Search
+                size={20}
+                class="absolute left-4 top-1/2 -translate-y-1/2 text-white/40"
+              />
               <input
                 bind:this={searchInput}
                 type="text"
                 placeholder="Search: 'omgubuntu', 'tech news', 'cooking podcasts'..."
                 bind:value={searchQuery}
                 on:input={handleSearchInput}
-                on:focus={() => searchFocused = true}
+                on:focus={() => (searchFocused = true)}
                 on:blur={blurSearch}
                 class="w-full bg-white/5 pl-12 pr-12 py-3.5 rounded-xl text-white placeholder-white/40 border border-emerald-500/30 focus:border-emerald-500/50 transition-colors outline-none"
               />
               <button
                 class="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-lg hover:bg-white/10 transition-colors text-white/30 hover:text-white/50"
-                on:click={() => { searchQuery = ''; searchResults = []; searchFocused = false; }}
+                on:click={() => {
+                  searchQuery = "";
+                  searchResults = [];
+                  searchFocused = false;
+                }}
                 aria-label="Clear search"
               >
                 <X size={16} />
@@ -321,7 +394,9 @@
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {#each typeOptions as option}
             <button
-              class="px-3 py-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 {selectedTypes.has(option.value)
+              class="px-3 py-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 {selectedTypes.has(
+                option.value
+              )
                 ? `${option.bg} ${option.color} border ${option.border}`
                 : 'bg-white/5 text-white/40 border border-white/10 hover:bg-white/10 hover:border-white/20'}"
               on:click={() => toggleTypeFilter(option.value)}
@@ -399,7 +474,9 @@
             >
               <Search size={32} class="text-white/40" />
             </div>
-            <h3 class="text-lg font-semibold text-white mb-2">No feeds found</h3>
+            <h3 class="text-lg font-semibold text-white mb-2">
+              No feeds found
+            </h3>
             <p class="text-white/60 text-sm">
               Try different keywords or adjust your filters
             </p>
@@ -424,8 +501,14 @@
                         class="w-full h-full object-cover"
                       />
                     {:else}
-                      <div class="w-full h-full flex items-center justify-center">
-                        <svelte:component this={sourceStyle.icon} size={20} class={sourceStyle.color} />
+                      <div
+                        class="w-full h-full flex items-center justify-center"
+                      >
+                        <svelte:component
+                          this={sourceStyle.icon}
+                          size={20}
+                          class={sourceStyle.color}
+                        />
                       </div>
                     {/if}
                   </div>
@@ -484,7 +567,8 @@
               Start discovering feeds
             </h3>
             <p class="text-white/50 text-sm">
-              Click the search bar above to find RSS feeds, YouTube channels, Reddit communities, and podcasts
+              Click the search bar above to find RSS feeds, YouTube channels,
+              Reddit communities, and podcasts
             </p>
           </div>
         {/if}
