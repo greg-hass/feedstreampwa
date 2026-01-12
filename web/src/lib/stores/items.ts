@@ -55,9 +55,9 @@ export async function loadItems(params: {
             const data = await itemsApi.searchItems(query, PAGE_SIZE, offset);
             
             if (isRefresh) {
-                items.set(data.items);
+                items.set(data.items.sort((a, b) => new Date(b.published || 0).getTime() - new Date(a.published || 0).getTime()));
             } else {
-                items.update(current => [...current, ...data.items]);
+                items.update(current => [...current, ...data.items].sort((a, b) => new Date(b.published || 0).getTime() - new Date(a.published || 0).getTime()));
             }
             
             itemsTotal.set(data.total);
@@ -71,9 +71,9 @@ export async function loadItems(params: {
             });
             
             if (isRefresh) {
-                items.set(data.items);
+                items.set(data.items.sort((a, b) => new Date(b.published || 0).getTime() - new Date(a.published || 0).getTime()));
             } else {
-                items.update(current => [...current, ...data.items]);
+                items.update(current => [...current, ...data.items].sort((a, b) => new Date(b.published || 0).getTime() - new Date(a.published || 0).getTime()));
             }
             
             itemsTotal.set(data.total);
