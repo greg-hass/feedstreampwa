@@ -12,12 +12,20 @@
     Edit2,
     Folder as FolderIcon,
     Rss,
+    ChevronRight,
+    ChevronDown,
+    FolderOpen,
   } from "lucide-svelte";
-  import { isSettingsModalOpen, renameModal, feedFolderPopover } from "$lib/stores/ui";
+  import {
+    isSettingsModalOpen,
+    renameModal,
+    feedFolderPopover,
+  } from "$lib/stores/ui";
   import { settings, loadSettings } from "$lib/stores/settings";
   import { updateSettings } from "$lib/api/settings";
   import { feeds, removeFeed, loadFeeds } from "$lib/stores/feeds";
-  import { loadFolders } from "$lib/stores/folders";
+  import { feedsTree } from "$lib/stores/counts";
+  import { loadFolders, folders } from "$lib/stores/folders";
   import { onMount } from "svelte";
   import type { Settings, ImportResult, Feed } from "$lib/types";
 
@@ -27,6 +35,18 @@
   let successMessage = false;
   let importResults: ImportResult | null = null;
   let importingOpml = false;
+
+  let openFolders: Record<string, boolean> = {};
+
+  function toggleFolder(id: string) {
+    if (openFolders[id]) {
+      const newFolders = { ...openFolders };
+      delete newFolders[id];
+      openFolders = newFolders;
+    } else {
+      openFolders = { ...openFolders, [id]: true };
+    }
+  }
 
   // Tabs
   type Tab = "general" | "feeds" | "data";
@@ -99,7 +119,13 @@
   }
 
   let importJobId: string | null = null;
-  let importStatus: { status: string; current: number; total: number; currentName?: string; result?: ImportResult } | null = null;
+  let importStatus: {
+    status: string;
+    current: number;
+    total: number;
+    currentName?: string;
+    result?: ImportResult;
+  } | null = null;
 
   async function handleImportOpml(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -123,7 +149,7 @@
 
       const data = await response.json();
       importJobId = data.jobId;
-      
+
       pollImportStatus();
     } catch (err) {
       error = err instanceof Error ? err.message : "Failed to import OPML";
@@ -144,17 +170,21 @@
 
         if (data.ok) {
           importStatus = data.status;
-          
-          if (data.status.status === 'completed' || data.status.status === 'failed') {
+
+          if (
+            data.status.status === "completed" ||
+            data.status.status === "failed"
+          ) {
             clearInterval(timer);
             importingOpml = false;
-            
-            if (data.status.status === 'completed') {
-                importResults = data.status.result;
-                loadFeeds();
-                loadFolders();
+
+            if (data.status.status === "completed") {
+              importResults = data.status.result;
+              loadFeeds();
+              loadFolders();
             } else {
-                error = "Import failed: " + (data.status.errors[0] || "Unknown error");
+              error =
+                "Import failed: " + (data.status.errors[0] || "Unknown error");
             }
           }
         }
@@ -239,7 +269,9 @@
       tabindex="-1"
     >
       <!-- Header with Tabs -->
-      <div class="bg-surface border-b border-white/5 px-6 pt-6 pb-0 flex-shrink-0">
+      <div
+        class="bg-surface border-b border-white/5 px-6 pt-6 pb-0 flex-shrink-0"
+      >
         <div class="flex items-center justify-between mb-6">
           <div class="flex items-center gap-3">
             <div
@@ -348,63 +380,166 @@
                 <p>No feeds found.</p>
               </div>
             {:else}
-              <div class="space-y-2">
-                {#each $feeds as feed}
-                  <div
-                    class="flex items-center gap-3 p-3 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-colors group"
-                  >
-                    <!-- Icon -->
-                    <div
-                      class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0"
+              <div class="space-y-4">
+                <!-- Folders -->
+                {#each $folders as folder}
+                  <div class="space-y-1">
+                    <button
+                      class="flex items-center gap-2 w-full p-2 hover:bg-white/5 rounded-lg text-left transition-colors"
+                      on:click={() => toggleFolder(folder.id)}
                     >
-                      {#if feed.icon_url}
-                        <img
-                          src={feed.icon_url}
-                          alt=""
-                          class="w-full h-full object-cover rounded-lg"
-                          on:error={handleImageError}
-                        />
+                      {#if openFolders[folder.id]}
+                        <ChevronDown size={16} class="text-white/40" />
                       {:else}
-                        <Rss size={14} class="text-white/40" />
+                        <ChevronRight size={16} class="text-white/40" />
                       {/if}
-                    </div>
+                      <FolderOpen size={18} class="text-accent" />
+                      <span class="text-sm font-medium text-white"
+                        >{folder.name}</span
+                      >
+                      <span class="text-xs text-white/40 ml-auto">
+                        {($feedsTree.byFolder[folder.id] || []).length} feeds
+                      </span>
+                    </button>
 
-                    <!-- Info -->
-                    <div class="flex-1 min-w-0">
-                      <div class="text-sm font-medium text-white truncate">
-                        {feed.title || feed.url}
-                      </div>
-                      <div class="text-xs text-white/40 truncate">
-                        {feed.url}
-                      </div>
-                    </div>
+                    {#if openFolders[folder.id]}
+                      <div class="ml-6 pl-2 border-l border-white/5 space-y-2">
+                        {#each $feedsTree.byFolder[folder.id] || [] as feed}
+                          <div
+                            class="flex items-center gap-3 p-3 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-colors group"
+                          >
+                            <!-- Icon -->
+                            <div
+                              class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0"
+                            >
+                              {#if feed.icon_url}
+                                <img
+                                  src={feed.icon_url}
+                                  alt=""
+                                  class="w-full h-full object-cover rounded-lg"
+                                  on:error={handleImageError}
+                                />
+                              {:else}
+                                <Rss size={14} class="text-white/40" />
+                              {/if}
+                            </div>
 
-                    <!-- Actions -->
-                    <div class="flex items-center gap-1">
-                      <button
-                        class="p-2 text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                        title="Move to folder"
-                        on:click={(e) => handleMoveFeed(feed, e)}
-                      >
-                        <FolderIcon size={16} />
-                      </button>
-                      <button
-                        class="p-2 text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                        title="Rename"
-                        on:click={() => handleRenameFeed(feed)}
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button
-                        class="p-2 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                        title="Delete"
-                        on:click={() => handleDeleteFeed(feed)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                            <!-- Info -->
+                            <div class="flex-1 min-w-0">
+                              <div
+                                class="text-sm font-medium text-white truncate"
+                              >
+                                {feed.title || feed.url}
+                              </div>
+                              <div class="text-xs text-white/40 truncate">
+                                {feed.url}
+                              </div>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="flex items-center gap-1">
+                              <button
+                                class="p-2 text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                title="Move to folder"
+                                on:click={(e) => handleMoveFeed(feed, e)}
+                              >
+                                <FolderIcon size={16} />
+                              </button>
+                              <button
+                                class="p-2 text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                title="Rename"
+                                on:click={() => handleRenameFeed(feed)}
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                              <button
+                                class="p-2 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                title="Delete"
+                                on:click={() => handleDeleteFeed(feed)}
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        {/each}
+                        {#if ($feedsTree.byFolder[folder.id] || []).length === 0}
+                          <div class="text-xs text-white/20 italic px-3 py-2">
+                            Empty folder
+                          </div>
+                        {/if}
+                      </div>
+                    {/if}
                   </div>
                 {/each}
+
+                <!-- Uncategorized -->
+                {#if $feedsTree.uncategorized.length > 0}
+                  <div class="space-y-2">
+                    {#if $folders.length > 0}
+                      <div
+                        class="text-xs font-semibold text-white/30 uppercase tracking-wider px-2 pt-2"
+                      >
+                        Uncategorized
+                      </div>
+                    {/if}
+                    {#each $feedsTree.uncategorized as feed}
+                      <div
+                        class="flex items-center gap-3 p-3 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-colors group"
+                      >
+                        <!-- Icon -->
+                        <div
+                          class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0"
+                        >
+                          {#if feed.icon_url}
+                            <img
+                              src={feed.icon_url}
+                              alt=""
+                              class="w-full h-full object-cover rounded-lg"
+                              on:error={handleImageError}
+                            />
+                          {:else}
+                            <Rss size={14} class="text-white/40" />
+                          {/if}
+                        </div>
+
+                        <!-- Info -->
+                        <div class="flex-1 min-w-0">
+                          <div class="text-sm font-medium text-white truncate">
+                            {feed.title || feed.url}
+                          </div>
+                          <div class="text-xs text-white/40 truncate">
+                            {feed.url}
+                          </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="flex items-center gap-1">
+                          <button
+                            class="p-2 text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                            title="Move to folder"
+                            on:click={(e) => handleMoveFeed(feed, e)}
+                          >
+                            <FolderIcon size={16} />
+                          </button>
+                          <button
+                            class="p-2 text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                            title="Rename"
+                            on:click={() => handleRenameFeed(feed)}
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            class="p-2 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                            title="Delete"
+                            on:click={() => handleDeleteFeed(feed)}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    {/each}
+                  </div>
+                {/if}
               </div>
             {/if}
           </div>
@@ -445,19 +580,33 @@
 
               <!-- Import Progress -->
               {#if importingOpml && importStatus}
-                <div class="mt-4 p-4 rounded-xl bg-surface border border-white/5">
+                <div
+                  class="mt-4 p-4 rounded-xl bg-surface border border-white/5"
+                >
                   <div class="flex justify-between text-xs text-white/60 mb-2">
-                    <span>Importing... {importStatus.current} / {importStatus.total}</span>
-                    <span>{importStatus.total > 0 ? Math.round((importStatus.current / importStatus.total) * 100) : 0}%</span>
+                    <span
+                      >Importing... {importStatus.current} / {importStatus.total}</span
+                    >
+                    <span
+                      >{importStatus.total > 0
+                        ? Math.round(
+                            (importStatus.current / importStatus.total) * 100
+                          )
+                        : 0}%</span
+                    >
                   </div>
                   <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                    <div 
-                      class="h-full bg-accent transition-all duration-300 ease-out" 
-                      style="width: {importStatus.total > 0 ? (importStatus.current / importStatus.total) * 100 : 0}%"
+                    <div
+                      class="h-full bg-accent transition-all duration-300 ease-out"
+                      style="width: {importStatus.total > 0
+                        ? (importStatus.current / importStatus.total) * 100
+                        : 0}%"
                     ></div>
                   </div>
-                  <div class="text-[10px] text-white/30 mt-2 truncate font-mono">
-                    {importStatus.currentName || 'Preparing...'}
+                  <div
+                    class="text-[10px] text-white/30 mt-2 truncate font-mono"
+                  >
+                    {importStatus.currentName || "Preparing..."}
                   </div>
                 </div>
               {/if}
