@@ -11,6 +11,7 @@ import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
 import sanitizeHtml from 'sanitize-html';
 import { searchFeeds, searchRSS, SearchResult } from './feed-search.js';
+import { createImportJob, getJobStatus } from './services/import-service.js';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const DB_PATH = process.env.DB_PATH || '/data/feedstream.sqlite';
@@ -1784,6 +1785,28 @@ fastify.get('/opml/export', async (request, reply) => {
             error: 'Failed to generate OPML'
         };
     }
+});
+
+// New OPML Import (Async)
+fastify.post('/opml', async (request, reply) => {
+    const body = request.body as any;
+    if (!body || typeof body.opml !== 'string') {
+        reply.code(400);
+        return { ok: false, error: 'Body must contain "opml" string' };
+    }
+    const jobId = createImportJob(body.opml);
+    return { ok: true, jobId, message: 'Import started' };
+});
+
+// OPML Import Status
+fastify.get('/opml/status/:id', async (request, reply) => {
+    const { id } = request.params as any;
+    const status = getJobStatus(id);
+    if (!status) {
+        reply.code(404);
+        return { ok: false, error: 'Job not found' };
+    }
+    return { ok: true, status };
 });
 
 // Import feeds from OPML
