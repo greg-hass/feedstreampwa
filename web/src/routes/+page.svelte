@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { RefreshCw, Plus } from "lucide-svelte";
+  import { RefreshCw, Plus, FolderPlus } from "lucide-svelte";
 
   // Components
   import MobileHeader from "$lib/components/MobileHeader.svelte";
@@ -20,6 +20,7 @@
   // Stores
   import {
     isAddFeedModalOpen,
+    isCreateFolderModalOpen,
     viewMode,
     activeSmartFolder,
     activeFolderId,
@@ -186,6 +187,13 @@
             title="Refresh"
           >
             <RefreshCw size={20} />
+          </button>
+          <button
+            class="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 transition-all shadow-lg shadow-blue-500/20 text-white"
+            on:click={() => isCreateFolderModalOpen.set(true)}
+            title="Add Folder"
+          >
+            <FolderPlus size={20} />
           </button>
           <button
             class="p-2.5 rounded-xl bg-accent hover:bg-accent hover:shadow-xl hover:shadow-accent/30 transition-all shadow-lg shadow-accent/20 text-white"

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Search, Plus, RefreshCw, X } from "lucide-svelte";
-  import { isAddFeedModalOpen } from "$lib/stores/ui";
+  import { Search, Plus, RefreshCw, X, FolderPlus } from "lucide-svelte";
+  import { isAddFeedModalOpen, isCreateFolderModalOpen } from "$lib/stores/ui";
 
   export let searchQuery = "";
   export let onSearchInput: () => void = () => {};
@@ -49,6 +49,14 @@
       aria-label="Refresh"
     >
       <RefreshCw size={20} />
+    </button>
+
+    <button
+      on:click={() => isCreateFolderModalOpen.set(true)}
+      class="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 text-white active:scale-95 transition-all flex-shrink-0"
+      aria-label="Add folder"
+    >
+      <FolderPlus size={20} />
     </button>
 
     <button

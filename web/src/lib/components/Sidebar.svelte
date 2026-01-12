@@ -15,6 +15,7 @@
     Plus,
     ChevronRight,
     ChevronDown,
+    MoreVertical,
   } from "lucide-svelte";
   import RedditIcon from "$lib/components/icons/RedditIcon.svelte";
   import {
@@ -31,6 +32,7 @@
     setViewBookmarks,
     setViewFolder,
     setViewFeed,
+    contextMenu,
   } from "$lib/stores/ui";
   import {
     allArticlesUnread,
@@ -104,6 +106,22 @@
         isCreatingInline = true;
       }
     }
+  }
+
+  function handleContextMenu(
+    e: MouseEvent,
+    type: "folder" | "feed",
+    target: any
+  ) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    contextMenu.set({
+      isOpen: true,
+      type,
+      target,
+      position: { x: e.clientX, y: e.clientY },
+    });
   }
 </script>
 
@@ -453,13 +471,23 @@
               <span class="truncate">{folder.name}</span>
             </div>
 
-            {#if ($folderUnreadCounts[folder.id] || 0) > 0}
-              <span
-                class="text-xs font-medium bg-accent text-bg0 px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+            <div class="flex items-center gap-2">
+              <button
+                class="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-white/10 text-white/40 hover:text-white transition-all"
+                on:click={(e) => handleContextMenu(e, "folder", folder)}
+                title="Folder Options"
               >
-                {$folderUnreadCounts[folder.id]}
-              </span>
-            {/if}
+                <MoreVertical size={14} />
+              </button>
+
+              {#if ($folderUnreadCounts[folder.id] || 0) > 0}
+                <span
+                  class="text-xs font-medium bg-accent text-bg0 px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+                >
+                  {$folderUnreadCounts[folder.id]}
+                </span>
+              {/if}
+            </div>
 
             {#if $viewMode === "folder" && $activeFolderId === folder.id}
               <div
@@ -505,11 +533,21 @@
                     >
                   </div>
 
-                  {#if (feed.unreadCount || 0) > 0}
-                    <span class="text-[10px] font-medium text-white/40">
-                      {feed.unreadCount}
-                    </span>
-                  {/if}
+                  <div class="flex items-center gap-1">
+                    <button
+                      class="p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-white/10 text-white/40 hover:text-white transition-all"
+                      on:click={(e) => handleContextMenu(e, "feed", feed)}
+                      title="Feed Options"
+                    >
+                      <MoreVertical size={12} />
+                    </button>
+
+                    {#if (feed.unreadCount || 0) > 0}
+                      <span class="text-[10px] font-medium text-white/40">
+                        {feed.unreadCount}
+                      </span>
+                    {/if}
+                  </div>
                 </button>
               {/each}
               {#if ($feedsTree.byFolder[folder.id] || []).length === 0}
@@ -560,13 +598,23 @@
             <span class="truncate">{feed.title || feed.url}</span>
           </div>
 
-          {#if (feed.unreadCount || 0) > 0}
-            <span
-              class="text-xs font-medium bg-white/10 text-white/70 px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+          <div class="flex items-center gap-1">
+            <button
+              class="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-white/10 text-white/40 hover:text-white transition-all"
+              on:click={(e) => handleContextMenu(e, "feed", feed)}
+              title="Feed Options"
             >
-              {feed.unreadCount}
-            </span>
-          {/if}
+              <MoreVertical size={14} />
+            </button>
+
+            {#if (feed.unreadCount || 0) > 0}
+              <span
+                class="text-xs font-medium bg-white/10 text-white/70 px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+              >
+                {feed.unreadCount}
+              </span>
+            {/if}
+          </div>
 
           {#if $viewMode === "feed" && $selectedFeedUrl === feed.url}
             <div
