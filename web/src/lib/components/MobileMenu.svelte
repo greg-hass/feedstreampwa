@@ -13,12 +13,12 @@
     Settings,
     Rss,
     Youtube,
-    MessageCircle,
     Mic,
     FolderOpen,
     ChevronRight,
     ChevronDown,
   } from "lucide-svelte";
+  import RedditIcon from "./icons/RedditIcon.svelte";
   import {
     isMobileMenuOpen,
     isSettingsModalOpen,
@@ -305,7 +305,7 @@
         }}
       >
         <div class="flex items-center gap-3">
-          <MessageCircle
+          <RedditIcon
             size={24}
             class={$viewMode === "smart" && $activeSmartFolder === "reddit"
               ? "text-accent"
