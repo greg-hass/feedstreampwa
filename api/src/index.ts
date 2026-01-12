@@ -12,6 +12,7 @@ import { Readability } from '@mozilla/readability';
 import sanitizeHtml from 'sanitize-html';
 import { searchFeeds, searchRSS, SearchResult } from './feed-search.js';
 import { createImportJob, getJobStatus } from './services/import-service.js';
+import { detectFeedKind } from './utils/feed-utils.js';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const DB_PATH = process.env.DB_PATH || '/data/feedstream.sqlite';
@@ -562,33 +563,7 @@ async function fetchFeedIcon(feedUrl: string, kind: string, siteUrl?: string | n
     return null;
 }
 
-function detectFeedKind(url: string): 'youtube' | 'reddit' | 'podcast' | 'generic' {
-    const lower = url.toLowerCase();
 
-    // YouTube detection
-    if (lower.includes('youtube.com') ||
-        lower.includes('youtu.be') ||
-        lower.includes('feeds/videos.xml')) {
-        return 'youtube';
-    }
-
-    // Reddit detection
-    if (lower.includes('reddit.com') ||
-        lower.includes('/.rss') ||
-        lower.includes('/r/')) {
-        return 'reddit';
-    }
-
-    // Podcast detection
-    if (lower.includes('podcast') ||
-        lower.includes('.mp3') ||
-        lower.includes('itunes.apple.com') ||
-        lower.includes('anchor.fm')) {
-        return 'podcast';
-    }
-
-    return 'generic';
-}
 
 function extractItemUrl(item: any): string | null {
     const rawLink = item?.link || item?.url || item?.links || null;

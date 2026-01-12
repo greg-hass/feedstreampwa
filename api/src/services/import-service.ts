@@ -1,5 +1,6 @@
 import { XMLParser } from 'fast-xml-parser';
 import { getDatabase } from '../db/connection.js';
+import { detectFeedKind } from '../utils/feed-utils.js';
 import { randomUUID } from 'crypto';
 
 interface ImportJob {
@@ -107,8 +108,8 @@ async function processImport(jobId: string, parsed: any) {
                         if (!existing) {
                             db.prepare(`
                                 INSERT INTO feeds (url, kind, title, site_url, icon_url, custom_title, last_status, retry_count)
-                                VALUES (?, 'generic', ?, ?, NULL, NULL, 0, 0)
-                            `).run(xmlUrl, text, node.htmlUrl || null);
+                                VALUES (?, ?, ?, ?, NULL, NULL, 0, 0)
+                            `).run(xmlUrl, detectFeedKind(xmlUrl), text, node.htmlUrl || null);
                             job.result.added++;
                         } else {
                             feedUrl = (existing as any).url;

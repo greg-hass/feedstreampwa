@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { getDatabase } from '../db/connection.js';
 import { validateCreateFeedBody, validateUpdateFeedBody } from '../utils/validators.js';
+import { detectFeedKind } from '../utils/feed-utils.js';
 
 export async function feedRoutes(fastify: FastifyInstance) {
   // GET /api/feeds - List all feeds
@@ -41,11 +42,12 @@ export async function feedRoutes(fastify: FastifyInstance) {
       const validated = validateCreateFeedBody(request.body);
       const db = getDatabase();
       const { url } = validated;
+      const kind = detectFeedKind(url);
 
       const result = db.prepare(`
         INSERT INTO feeds (url, kind, title, site_url, icon_url, custom_title, last_status)
         VALUES (?, ?, ?, ?, ?, ?, 0)
-      `).run(url, 'generic', null, null, null, null);
+      `).run(url, kind, null, null, null, null);
 
       return { ok: true, id: result.lastInsertRowid };
     } catch (error) {
