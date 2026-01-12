@@ -18,6 +18,7 @@
     duration,
     volume,
     isMuted,
+    playbackSpeed,
     progress,
     formattedCurrentTime,
     formattedDuration,
@@ -29,6 +30,8 @@
     toggleMute,
     updateProgress,
     stop,
+    skip,
+    setPlaybackSpeed,
   } from "$lib/stores/media";
 
   let audioElement: HTMLAudioElement | null = null;
@@ -47,8 +50,15 @@
     audioElement.volume = $isMuted ? 0 : $volume;
   }
 
-  $: if (audioElement && Math.abs(audioElement.currentTime - $currentTime) > 1) {
+  $: if (
+    audioElement &&
+    Math.abs(audioElement.currentTime - $currentTime) > 1
+  ) {
     audioElement.currentTime = $currentTime;
+  }
+
+  $: if (audioElement) {
+    audioElement.playbackRate = $playbackSpeed;
   }
 
   // Audio event handlers
@@ -121,7 +131,7 @@
 </script>
 
 <!-- Hidden audio element for podcast playback -->
-{#if $currentMedia && $mediaType === 'audio' && $mediaUrl}
+{#if $currentMedia && $mediaType === "audio" && $mediaUrl}
   <audio
     bind:this={audioElement}
     src={$mediaUrl}
@@ -133,9 +143,9 @@
   />
 {/if}
 
-{#if $currentMedia}
+{#if $currentMedia && $mediaType !== "video"}
   <div
-    class="glass border-t border-white/10 p-3 flex items-center gap-3 md:gap-4 w-full relative z-50"
+    class="glass border-t border-white/10 p-3 flex items-center gap-3 md:gap-4 w-full relative z-50 transition-all duration-300"
   >
     <!-- Progress Bar (Top Edge) -->
     <div
@@ -191,33 +201,48 @@
     <!-- Controls (Center) -->
     <div class="flex-1 flex justify-center items-center gap-4 md:gap-6">
       <button
-        class="text-white/40 hover:text-white transition-colors hidden sm:block"
-        disabled
-        title="Previous (not implemented)"
+        class="text-white/40 hover:text-white transition-colors"
+        on:click={() => skip(-10)}
+        title="Skip back 10s"
       >
         <SkipBack size={20} />
       </button>
 
       <button
-        class="h-9 w-9 md:h-10 md:w-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 hover:bg-gray-200 transition-all shadow-lg shadow-white/10 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+        class="h-10 w-10 md:h-12 md:w-12 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 hover:bg-gray-200 transition-all shadow-lg shadow-white/10 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
         on:click={togglePlayPause}
         disabled={!$mediaUrl}
         title={$isPlaying ? "Pause" : "Play"}
       >
         {#if $isPlaying}
-          <Pause size={18} class="fill-current" />
+          <Pause size={20} class="fill-current" />
         {:else}
-          <Play size={18} class="ml-0.5 fill-current" />
+          <Play size={20} class="ml-0.5 fill-current" />
         {/if}
       </button>
 
       <button
-        class="text-white/40 hover:text-white transition-colors hidden sm:block"
-        disabled
-        title="Next (not implemented)"
+        class="text-white/40 hover:text-white transition-colors"
+        on:click={() => skip(30)}
+        title="Skip forward 30s"
       >
         <SkipForward size={20} />
       </button>
+    </div>
+
+    <!-- Speed Selector -->
+    <div class="hidden sm:flex items-center gap-1 bg-white/5 rounded-lg p-1">
+      {#each [1, 1.25, 1.5, 2] as speed}
+        <button
+          class="px-2 py-1 text-[10px] font-bold rounded-md transition-colors {$playbackSpeed ===
+          speed
+            ? 'bg-accent text-bg0'
+            : 'text-white/40 hover:text-white hover:bg-white/5'}"
+          on:click={() => setPlaybackSpeed(speed)}
+        >
+          {speed}x
+        </button>
+      {/each}
     </div>
 
     <!-- Time Display (Hidden on small screens) -->
@@ -259,24 +284,14 @@
         </div>
       </div>
 
-      <!-- Open in YouTube button for videos -->
-      {#if $currentMedia.external_id}
-        <button
-          class="text-white/40 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-full"
-          on:click={openYouTube}
-          title="Open in YouTube"
-        >
-          <ExternalLink size={18} />
-        </button>
-      {:else}
-        <button
-          class="text-white/40 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-full"
-          on:click={stop}
-          title="Close player"
-        >
-          <X size={18} />
-        </button>
-      {/if}
+      <!-- Close Button -->
+      <button
+        class="text-white/40 hover:text-red-400 transition-colors p-2 hover:bg-red-500/10 rounded-full"
+        on:click={stop}
+        title="Stop & Close"
+      >
+        <X size={20} />
+      </button>
     </div>
   </div>
 {:else}

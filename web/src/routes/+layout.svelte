@@ -15,14 +15,14 @@
   import FeedFolderPopover from "$lib/components/modals/FeedFolderPopover.svelte";
   import ContextMenu from "$lib/components/ContextMenu.svelte";
   import RefreshToast from "$lib/components/RefreshToast.svelte";
-  import { currentMedia } from "$lib/stores/media";
+  import { currentMedia, mediaType } from "$lib/stores/media";
   import { onMount } from "svelte";
   import { loadFeeds } from "$lib/stores/feeds";
   import { loadFolders } from "$lib/stores/folders";
   import { loadSettings } from "$lib/stores/settings";
 
-  // Show player only when there's media loaded
-  $: isMediaVisible = $currentMedia !== null;
+  // Show player only when there's media loaded and it's not a video
+  $: isMediaVisible = $currentMedia !== null && $mediaType !== "video";
 
   onMount(() => {
     loadFeeds();

@@ -259,7 +259,18 @@
       on:open={(e) => openReader(e.detail.item)}
       on:toggleStar={(e) => toggleStar(e.detail.item)}
       on:toggleRead={(e) => toggleRead(e.detail.item)}
-      on:play={(e) => playMedia(e.detail.item)}
+      on:play={(e) => {
+        const item = e.detail.item;
+        if (
+          item.source === "youtube" ||
+          (item.url &&
+            (item.url.includes("youtube.com") || item.url.includes("youtu.be")))
+        ) {
+          openReader(item);
+        } else {
+          playMedia(item);
+        }
+      }}
     />
 
     <!-- Loading spinner at bottom for infinite scroll -->

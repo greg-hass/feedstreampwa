@@ -12,6 +12,7 @@ export const currentTime = writable(0); // Current playback position in seconds
 export const duration = writable(0); // Total duration in seconds
 export const volume = writable(0.7); // Volume 0-1
 export const isMuted = writable(false);
+export const playbackSpeed = writable(1.0);
 
 // Derived stores
 export const progress = derived([currentTime, duration], ([$currentTime, $duration]) => {
@@ -88,6 +89,17 @@ export function setVolume(vol: number) {
 
 export function toggleMute() {
     isMuted.update(muted => !muted);
+}
+
+export function skip(seconds: number) {
+    currentTime.update(t => {
+        const newTime = Math.max(0, Math.min(get(duration), t + seconds));
+        return newTime;
+    });
+}
+
+export function setPlaybackSpeed(speed: number) {
+    playbackSpeed.set(speed);
 }
 
 // Save progress to backend (debounced)
