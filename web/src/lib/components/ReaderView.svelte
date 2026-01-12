@@ -191,59 +191,62 @@
         {/if}
       </div>
 
-      {#if $readerLoading}
-        <div class="reader-loading">
-          <div class="reader-spinner"></div>
-          <span>Loading article...</span>
-        </div>
-      {:else if $readerError}
-        <div class="reader-error">
-          <p>{$readerError}</p>
-          {#if $readerData?.url}
-            <a
-              href={$readerData.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="reader-fallback-btn"
-            >
-              Open Original Article
-            </a>
-          {/if}
-        </div>
-      {:else if $readerData}
-        <article class="reader-content">
-          {#if $readerData.url && ($readerData.url.includes("youtube.com/watch") || $readerData.url.includes("youtu.be/"))}
-            <div
-              class="video-wrapper"
-              style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 12px; margin-bottom: 24px; background: #000;"
-            >
-              <div
-                id="yt-player-container"
-                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
-              ></div>
-            </div>
-          {:else if $readerData.imageUrl}
-            <img src={$readerData.imageUrl} alt="" class="reader-hero" />
-          {/if}
-          <h1 class="reader-title" id="reader-title">
-            {$readerData.title || "Untitled"}
-          </h1>
-          {#if $readerData.byline || $readerData.siteName}
-            <div class="reader-meta">
-              {#if $readerData.byline}<span>{$readerData.byline}</span>{/if}
-              {#if $readerData.byline && $readerData.siteName}<span
-                  class="meta-sep">•</span
-                >{/if}
-              {#if $readerData.siteName}<span>{$readerData.siteName}</span>{/if}
-            </div>
-          {/if}
-          <div class="reader-body" id="reader-body-content">
-            {#if !($readerData.url && ($readerData.url.includes("youtube.com/watch") || $readerData.url.includes("youtu.be/")))}
-              {@html $readerData.contentHtml}
+      <div class="reader-scroll-container">
+        {#if $readerLoading}
+          <div class="reader-loading">
+            <div class="reader-spinner"></div>
+            <span>Loading article...</span>
+          </div>
+        {:else if $readerError}
+          <div class="reader-error">
+            <p>{$readerError}</p>
+            {#if $readerData?.url}
+              <a
+                href={$readerData.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="reader-fallback-btn"
+              >
+                Open Original Article
+              </a>
             {/if}
           </div>
-        </article>
-      {/if}
+        {:else if $readerData}
+          <article class="reader-content">
+            {#if $readerData.url && ($readerData.url.includes("youtube.com/watch") || $readerData.url.includes("youtu.be/"))}
+              <div
+                class="video-wrapper"
+                style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 12px; margin-bottom: 24px; background: #000;"
+              >
+                <div
+                  id="yt-player-container"
+                  style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+                ></div>
+              </div>
+            {:else if $readerData.imageUrl}
+              <img src={$readerData.imageUrl} alt="" class="reader-hero" />
+            {/if}
+            <h1 class="reader-title" id="reader-title">
+              {$readerData.title || "Untitled"}
+            </h1>
+            {#if $readerData.byline || $readerData.siteName}
+              <div class="reader-meta">
+                {#if $readerData.byline}<span>{$readerData.byline}</span>{/if}
+                {#if $readerData.byline && $readerData.siteName}<span
+                    class="meta-sep">•</span
+                  >{/if}
+                {#if $readerData.siteName}<span>{$readerData.siteName}</span
+                  >{/if}
+              </div>
+            {/if}
+            <div class="reader-body" id="reader-body-content">
+              {#if !($readerData.url && ($readerData.url.includes("youtube.com/watch") || $readerData.url.includes("youtu.be/")))}
+                {@html $readerData.contentHtml}
+              {/if}
+            </div>
+          </article>
+        {/if}
+      </div>
     </div>
   </div>
 {/if}
@@ -256,45 +259,53 @@
     z-index: 2000;
     display: flex;
     justify-content: center;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden; /* No scroll on overlay */
     animation: fadeIn 0.2s ease;
   }
 
   .reader-container {
     width: 100%;
     max-width: 720px;
-    min-height: 100vh;
-    padding: 24px 16px;
+    height: 100vh; /* Full viewport height */
+    display: flex;
+    flex-direction: column;
+    padding: 0;
     animation: scaleIn 0.25s ease-out;
-    overflow-x: hidden;
+    background: #050507;
+  }
+
+  .reader-scroll-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 16px;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   @media (min-width: 769px) {
-    .reader-container {
-      padding: 24px 32px;
+    .reader-scroll-container {
+      padding: 32px 40px;
     }
+
+    /* On desktop, maybe give it some breathing room if desired, 
+       but user requested fixing scroll bleed, so full height column is safest.
+       We can keep it centered 720px max-width though. */
   }
 
   .reader-header {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 32px;
-    position: sticky;
-    top: 0;
-    background: rgba(5, 5, 7, 0.98); /* Almost solid to prevent text bleed */
-    backdrop-filter: blur(24px);
+    background: #050507; /* Solid background */
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 16px 0;
+    padding: 16px 20px;
     z-index: 50;
-    margin-top: -24px; /* Pull up to cover padding */
-    padding-top: 40px; /* Compensate + extra space */
   }
 
   .reader-close {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     background: var(--panel1);
     border: 1px solid var(--stroke);
     border-radius: 50%;
@@ -315,9 +326,9 @@
   .reader-source {
     color: var(--accent);
     text-decoration: none;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
-    padding: 10px 16px;
+    padding: 8px 14px;
     border: 1px solid var(--accent);
     border-radius: 99px;
     transition: all 0.2s;
@@ -375,6 +386,7 @@
 
   .reader-content {
     color: var(--text);
+    padding-bottom: 40px; /* Extra bottom padding */
   }
 
   .reader-hero {
