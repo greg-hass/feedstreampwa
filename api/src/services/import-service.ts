@@ -89,12 +89,20 @@ async function processImport(jobId: string, parsed: any) {
             if (xmlUrl) {
                 // It's a feed
                 actions.push(() => {
-                    job.currentName = text || xmlUrl;
+                    let feedUrl = xmlUrl;
+                    
+                    // Prevent re-converting YouTube RSS URLs
+                    if (feedUrl.includes('youtube.com/') && !feedUrl.includes('youtube.com/feeds/videos.xml')) {
+                        // If it's a channel URL in OPML, we could try to convert it here, 
+                        // but for now let's just use it as is if it matches RSS.
+                        // Actually, search tool already gives us RSS.
+                    }
+
+                    job.currentName = text || feedUrl;
                     
                     try {
                         // Check if feed exists
-                        const existing = db.prepare('SELECT url FROM feeds WHERE url = ?').get(xmlUrl);
-                        let feedUrl = xmlUrl;
+                        const existing = db.prepare('SELECT url FROM feeds WHERE url = ?').get(feedUrl);
 
                         if (!existing) {
                             db.prepare(`

@@ -13,13 +13,9 @@ import { initializeDatabase } from './db/connection.js';
 
 // Initialize Fastify
 const fastify = Fastify({
-  logger: {
-    level: isDevelopment ? 'debug' : 'info',
-    transport: {
-      target: 'pino-pretty',
-      options: { colorize: true }
-    }
-  }
+  logger: isDevelopment ? {
+    level: 'debug'
+  } : true
 });
 
 // Register global error handlers

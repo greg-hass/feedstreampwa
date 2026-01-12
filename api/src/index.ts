@@ -1538,7 +1538,9 @@ fastify.post('/feeds', async (request, reply) => {
 
     // YouTube URL conversion: handle/channel to RSS
     let extractedTitle: string | null = null;
-    if (url.includes('youtube.com/')) {
+    const isAlreadyYoutubeRSS = url.includes('youtube.com/feeds/videos.xml');
+
+    if (url.includes('youtube.com/') && !isAlreadyYoutubeRSS) {
         // Handle @usernames
         const handleMatch = url.match(/youtube\.com\/(@[a-zA-Z0-9_-]+)/);
         if (handleMatch) {
@@ -1607,8 +1609,8 @@ fastify.post('/feeds', async (request, reply) => {
 
         // Insert feed if not exists
         const stmt = db.prepare(`
-            INSERT INTO feeds (url, kind, title, site_url, etag, last_modified, last_checked, last_status, last_error, icon_url)
-            VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, ?)
+            INSERT INTO feeds (url, kind, title, site_url, etag, last_modified, last_checked, last_status, last_error, icon_url, retry_count)
+            VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, ?, 0)
             ON CONFLICT(url) DO UPDATE SET 
                 title = CASE WHEN excluded.title IS NOT NULL THEN excluded.title ELSE feeds.title END,
                 icon_url = excluded.icon_url
