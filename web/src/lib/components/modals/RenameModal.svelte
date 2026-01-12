@@ -73,7 +73,14 @@
         <button class="close-btn" on:click={close}>×</button>
       </div>
       <div class="modal-body">
+        <label
+          for="rename-input"
+          class="block text-xs font-semibold text-white/40 uppercase tracking-wider mb-2"
+        >
+          New Name
+        </label>
         <input
+          id="rename-input"
           type="text"
           bind:value={newName}
           placeholder="Enter new name..."
@@ -169,11 +176,11 @@
 
   .folder-input {
     width: 100%;
-    padding: 12px 14px;
-    background: var(--panel0);
-    border: 1px solid var(--stroke);
+    padding: 14px 16px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radiusM);
-    color: var(--text);
+    color: white;
     font-size: 15px;
     font-family: var(--font-ui);
     transition: all 0.2s;
@@ -181,8 +188,9 @@
 
   .folder-input:focus {
     outline: none;
+    background: rgba(0, 0, 0, 0.4);
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-glow);
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
   }
 
   .folder-error {

@@ -152,6 +152,16 @@
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   }
 
+  @media (max-width: 768px) {
+    .feed-folder-popover {
+      left: 50% !important;
+      top: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      max-width: 90%;
+      width: 300px;
+    }
+  }
+
   .popover-header {
     display: flex;
     align-items: center;
