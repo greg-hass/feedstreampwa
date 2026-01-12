@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { confirmDialog, type ConfirmState } from '$lib/stores/confirm';
-  import { AlertTriangle, Info, X } from 'lucide-svelte';
-  import { fade, fly } from 'svelte/transition';
+  import { confirmDialog, type ConfirmState } from "$lib/stores/confirm";
+  import { AlertTriangle, Info, X } from "lucide-svelte";
+  import { fade, fly } from "svelte/transition";
 
   function handleConfirm() {
     confirmDialog.close(true);
@@ -17,7 +17,7 @@
   }
 
   function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       handleCancel();
     }
   }
@@ -29,22 +29,22 @@
   };
 
   const colors = {
-    danger: 'text-red-400',
-    warning: 'text-yellow-400',
-    info: 'text-blue-400',
+    danger: "text-red-400",
+    warning: "text-yellow-400",
+    info: "text-blue-400",
   };
 
   const bgs = {
-    danger: 'bg-red-500/10 border-red-500/20',
-    warning: 'bg-yellow-500/10 border-yellow-500/20',
-    info: 'bg-blue-500/10 border-blue-500/20',
+    danger: "bg-red-500/10 border-red-500/20",
+    warning: "bg-yellow-500/10 border-yellow-500/20",
+    info: "bg-blue-500/10 border-blue-500/20",
   };
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
 
 {#if $confirmDialog.isOpen}
-  {@const type = $confirmDialog.type || 'info'}
+  {@const type = $confirmDialog.type || "info"}
   {@const Icon = icons[type]}
   {@const iconColor = colors[type]}
   {@const iconBg = bgs[type]}
@@ -90,20 +90,23 @@
       </div>
 
       <!-- Footer -->
-      <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/10">
+      <div
+        class="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/10"
+      >
         <button
           class="px-4 py-2 rounded-xl text-white/60 hover:text-white hover:bg-white/5 transition-colors text-sm font-medium"
           on:click={handleCancel}
         >
-          {$confirmDialog.cancelText || 'Cancel'}
+          {$confirmDialog.cancelText || "Cancel"}
         </button>
         <button
-          class="px-4 py-2 rounded-xl text-white transition-colors text-sm font-medium {type === 'danger'
+          class="px-4 py-2 rounded-xl text-white transition-colors text-sm font-medium {type ===
+          'danger'
             ? 'bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/20'
             : 'bg-accent hover:bg-accent/90 shadow-lg shadow-accent/20'}"
           on:click={handleConfirm}
         >
-          {$confirmDialog.confirmText || 'Confirm'}
+          {$confirmDialog.confirmText || "Confirm"}
         </button>
       </div>
     </div>

@@ -12,8 +12,8 @@
     renameModal.set({
       isOpen: true,
       type,
-      targetId: type === 'folder' ? target.id : target.url,
-      currentName: type === 'folder' ? target.name : (target.title || '')
+      targetId: type === "folder" ? target.id : target.url,
+      currentName: type === "folder" ? target.name : target.title || "",
     });
     close();
   }
@@ -23,9 +23,9 @@
     // Open popover
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     feedFolderPopover.set({
-        isOpen: true,
-        feed: target,
-        position: { x: rect.right + 10, y: rect.top } // Adjust as needed, usually simple logic
+      isOpen: true,
+      feed: target,
+      position: { x: rect.right + 10, y: rect.top }, // Adjust as needed, usually simple logic
     });
     // Wait, Sidebar implementation of openFeedFolderPopover used event.currentTarget.
     // Here we are inside context menu.
@@ -33,19 +33,19 @@
     // const button = event.currentTarget as HTMLElement;
     // const rect = button.getBoundingClientRect();
     // feedFolderPopoverPosition = { x: rect.left, y: rect.bottom + 4 };
-    
+
     // Here we want to open it relative to context menu item? Or mouse?
     // Let's just use simple positioning for now.
-    
+
     close();
   }
 
   function handleDelete() {
     const { type, target } = $contextMenu;
-    if (type === 'folder') {
-        deleteFolder(target.id);
+    if (type === "folder") {
+      deleteFolder(target.id);
     } else {
-        removeFeed(target.url);
+      removeFeed(target.url);
     }
     close();
   }
@@ -55,13 +55,14 @@
   <div
     class="modal-overlay"
     on:click={close}
-    on:keydown={(e) => e.key === 'Escape' && close()}
+    on:keydown={(e) => e.key === "Escape" && close()}
     role="button"
     tabindex="0"
   >
     <div
       class="context-menu glass-panel"
-      style="left: {$contextMenu.position.x}px; top: {$contextMenu.position.y}px;"
+      style="left: {$contextMenu.position.x}px; top: {$contextMenu.position
+        .y}px;"
       on:click|stopPropagation
       role="menu"
       tabindex="0"
@@ -82,14 +83,14 @@
         <button
           class="menu-item"
           on:click|stopPropagation={(e) => {
-             // For popover positioning we need the button rect
-             const rect = e.currentTarget.getBoundingClientRect();
-             feedFolderPopover.set({
-                isOpen: true,
-                feed: $contextMenu.target,
-                position: { x: rect.right + 5, y: rect.top }
-             });
-             close();
+            // For popover positioning we need the button rect
+            const rect = e.currentTarget.getBoundingClientRect();
+            feedFolderPopover.set({
+              isOpen: true,
+              feed: $contextMenu.target,
+              position: { x: rect.right + 5, y: rect.top },
+            });
+            close();
           }}
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -130,7 +131,7 @@
   .context-menu {
     position: fixed;
     min-width: 180px;
-    background: var(--panel1);
+    background: #16161a;
     border: 1px solid var(--stroke);
     border-radius: var(--radiusM);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);

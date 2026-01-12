@@ -20,7 +20,9 @@
       }
       // Optimistic update or reload happens in stores
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to update folder");
+      toast.error(
+        err instanceof Error ? err.message : "Failed to update folder"
+      );
     }
   }
 
@@ -37,20 +39,22 @@
       // Actually, let's update the store later to return ID.
       // For now, I'll just reload everything.
       // Wait, createFolder API returns { ok: true, id: number }.
-      
-      // I'll assume createFolder works and just adds it. 
+
+      // I'll assume createFolder works and just adds it.
       // But I need to add the feed to it immediately.
       // I'll skip the immediate add for now and just create it, user can check it.
       // OR better: Update store to return ID. I will do that in next step.
       await createFolder(name);
-      
+
       // Ideally we would add the feed here, but we need the new folder ID.
       // Let's just reset the form for now.
       newFolderName = "";
       showCreateFolder = false;
       toast.success("Folder created. Check the box to add feed.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to create folder");
+      toast.error(
+        err instanceof Error ? err.message : "Failed to create folder"
+      );
     }
   }
 
@@ -64,8 +68,9 @@
 {#if $feedFolderPopover.isOpen && $feedFolderPopover.feed}
   <div class="popover-overlay" on:click={close}>
     <div
-      class="feed-folder-popover glass-panel"
-      style="left: {$feedFolderPopover.position.x}px; top: {$feedFolderPopover.position.y}px;"
+      class="feed-folder-popover"
+      style="left: {$feedFolderPopover.position.x}px; top: {$feedFolderPopover
+        .position.y}px;"
       on:click|stopPropagation
     >
       <div class="popover-header">
@@ -83,10 +88,7 @@
                 checked={$feedFolderPopover.feed.folders &&
                   $feedFolderPopover.feed.folders.includes(folder.id)}
                 on:change={(e) =>
-                  handleToggle(
-                    folder.id,
-                    e.currentTarget.checked
-                  )}
+                  handleToggle(folder.id, e.currentTarget.checked)}
               />
               <span>{folder.name}</span>
             </label>
@@ -144,7 +146,7 @@
     padding: 0;
     z-index: 2001;
     animation: scaleIn 0.2s ease-out;
-    background: var(--bg0);
+    background: #0f0f10;
     border: 1px solid var(--stroke);
     border-radius: var(--radiusM);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);

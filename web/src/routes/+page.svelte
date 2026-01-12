@@ -305,7 +305,6 @@
     z-index: 20;
     background: theme("colors.background");
     padding: 12px 16px;
-    backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     /* Negative margin to span parent padding if desired, or keep contained. 
        Keeping contained is safer for preventing overflow. */
@@ -320,7 +319,6 @@
     z-index: 25;
     background: theme("colors.background");
     padding: 12px 0;
-    backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   }
 
@@ -369,7 +367,7 @@
 
   @media (min-width: 769px) {
     .articles-list {
-      padding-top: 132px; /* Space for fixed desktop header */
+      padding-top: 20px; /* Reduced from 132px since header is sticky */
     }
   }
 
