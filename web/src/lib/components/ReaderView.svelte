@@ -1,5 +1,12 @@
 <script lang="ts">
-  import { showReader, readerData, readerLoading, readerError, currentItem, closeReader } from "$lib/stores/reader";
+  import {
+    showReader,
+    readerData,
+    readerLoading,
+    readerError,
+    currentItem,
+    closeReader,
+  } from "$lib/stores/reader";
 
   let ytPlayer: any = null;
   let ytProgressInterval: ReturnType<typeof setInterval> | null = null;
@@ -107,10 +114,10 @@
 
   async function syncPlaybackPosition() {
     if (!ytPlayer || !ytPlayer.getCurrentTime || !$currentItem) return;
-    
+
     const currentTime = ytPlayer.getCurrentTime();
     // Optimistic update in local item state if we had access to items store action
-    // But currentItem is a copy in the reader store. 
+    // But currentItem is a copy in the reader store.
     // Ideally we call an action from items store.
     // For now let's just do the fetch.
 
@@ -162,18 +169,14 @@
       aria-labelledby="reader-title"
     >
       <div class="reader-header">
-        <button
-          class="reader-close"
-          on:click={handleClose}
-          title="Close (ESC)"
-        >
+        <button class="reader-close" on:click={handleClose} title="Close (ESC)">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path
               d="M5 5l10 10M15 5l-10 10"
               stroke="currentColor"
               stroke-width="2"
               stroke-linecap="round"
-              />
+            />
           </svg>
         </button>
         {#if $readerData?.url}
@@ -187,7 +190,7 @@
           </a>
         {/if}
       </div>
-      
+
       {#if $readerLoading}
         <div class="reader-loading">
           <div class="reader-spinner"></div>
@@ -280,10 +283,13 @@
     margin-bottom: 32px;
     position: sticky;
     top: 0;
-    background: #050507;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(5, 5, 7, 0.98); /* Almost solid to prevent text bleed */
+    backdrop-filter: blur(24px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     padding: 16px 0;
-    z-index: 10;
+    z-index: 50;
+    margin-top: -24px; /* Pull up to cover padding */
+    padding-top: 40px; /* Compensate + extra space */
   }
 
   .reader-close {

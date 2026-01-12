@@ -21,7 +21,9 @@
   $: youtubeVideoId = (() => {
     if (item.external_id) return item.external_id;
     if (item.url) {
-      const match = item.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+      const match = item.url.match(
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/
+      );
       if (match) return match[1];
     }
     return null;
@@ -124,7 +126,9 @@
   <!-- Desktop: Thumbnail (Left) -->
   {#if thumbnailUrl}
     <div class="hidden sm:flex flex-shrink-0">
-      <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-white/5">
+      <div
+        class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-white/5"
+      >
         <img
           src={thumbnailUrl}
           alt={item.title}
@@ -135,7 +139,9 @@
     </div>
   {:else}
     <div class="hidden sm:flex flex-shrink-0">
-      <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-white/5 flex items-center justify-center">
+      <div
+        class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-white/5 flex items-center justify-center"
+      >
         <svelte:component this={Icon} size={28} class={currentStyle.color} />
       </div>
     </div>
@@ -144,17 +150,20 @@
   <!-- Content (Middle) -->
   <div class="flex-1 min-w-0 flex flex-col justify-between py-1">
     <!-- Top Row: Source + Date -->
-    <div class="flex items-center gap-2 mb-1.5 text-xs text-white/50">
-      <svelte:component this={Icon} size={12} class={currentStyle.color} />
-      <span class="font-medium">{item.feed_title}</span>
+    <!-- Top Row: Source + Date -->
+    <div class="flex items-center gap-2 mb-1.5 text-sm">
+      <div class="flex items-center gap-2 text-emerald-400">
+        <svelte:component this={Icon} size={14} class={currentStyle.color} />
+        <span class="font-medium">{item.feed_title}</span>
+      </div>
       <span class="text-white/30">•</span>
-      <div class="flex items-center gap-1">
-        <Clock size={10} />
+      <div class="flex items-center gap-1 text-purple-400">
+        <Clock size={12} />
         <span>{timeAgo}</span>
       </div>
       {#if item.is_read}
-        <span class="text-white/30 flex items-center gap-1">
-          <CheckCircle2 size={10} /> Read
+        <span class="text-white/30 flex items-center gap-1 text-xs">
+          <CheckCircle2 size={12} /> Read
         </span>
       {/if}
     </div>
@@ -183,7 +192,9 @@
     <div class="sm:hidden mt-2">
       {#if youtubeVideoId}
         <!-- YouTube inline player on mobile -->
-        <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-black">
+        <div
+          class="relative w-full aspect-video rounded-xl overflow-hidden bg-black"
+        >
           {#if playYouTubeVideo}
             <iframe
               src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0`}
@@ -205,7 +216,9 @@
               class="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors"
               aria-label="Play video"
             >
-              <div class="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+              <div
+                class="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg"
+              >
                 <PlayCircle size={28} class="text-black fill-black" />
               </div>
             </button>
@@ -213,7 +226,9 @@
         </div>
       {:else if thumbnailUrl}
         <!-- Regular image thumbnail on mobile -->
-        <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-white/5">
+        <div
+          class="relative w-full aspect-video rounded-xl overflow-hidden bg-white/5"
+        >
           <img
             src={thumbnailUrl}
             alt={item.title}

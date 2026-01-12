@@ -52,7 +52,8 @@ export async function openReader(item: any) {
         // Map API response to ReaderData interface
         const formattedData: ReaderData = {
             url: data.url,
-            title: data.title,
+            // Prefer the original item title as scrapers often pick up site titles for Reddit
+            title: item.title || data.title,
             byline: data.byline,
             excerpt: data.excerpt,
             siteName: data.siteName,

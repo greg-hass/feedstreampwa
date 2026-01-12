@@ -683,11 +683,23 @@ function extractRedditMetadata(item: any): any {
         media_thumbnail: null
     };
 
+    const content = item.content || item.summary || '';
+    
+    // Check if it's a video post
+    const isVideo = content.includes('v.redd.it') || content.includes('player') || content.includes('video');
+
     // Try to extract thumbnail from content
-    if (item.content) {
-        const imgMatch = item.content.match(/<img[^>]+src="([^"]+)"/i);
+    if (content) {
+        const imgMatch = content.match(/<img[^>]+src="([^"]+)"/i);
         if (imgMatch) {
-            metadata.media_thumbnail = imgMatch[1];
+            const src = imgMatch[1];
+            // If it's a video, we might want to skip the thumbnail if it's just a placeholder
+            // But usually we do want a thumbnail. The user specifically said it shows a placeholder.
+            // Let's filter out common placeholder patterns if we can, or just trust the user wants it hidden for videos.
+            // Given the specific request: "If a reddit feed has a video in it, hide the thumbnail"
+            if (!isVideo) {
+                metadata.media_thumbnail = src;
+            }
         }
     }
 
@@ -1081,11 +1093,11 @@ fastify.post('/refresh/start', async (request, reply) => {
     }
 
     // Validate URL count
-    if (urls.length > 50) {
+    if (urls.length > 5000) {
         reply.code(400);
         return {
             ok: false,
-            error: 'Maximum 50 URLs per request'
+            error: 'Maximum 5000 URLs per request'
         };
     }
 
@@ -1195,11 +1207,11 @@ fastify.post('/refresh', async (request, reply) => {
     }
 
     // Validate URL count
-    if (urls.length > 50) {
+    if (urls.length > 5000) {
         reply.code(400);
         return {
             ok: false,
-            error: 'Maximum 50 URLs per request'
+            error: 'Maximum 5000 URLs per request'
         };
     }
 
