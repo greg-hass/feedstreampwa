@@ -38,10 +38,15 @@
     setTimeFilter,
     hasMore,
   } from "$lib/stores/items";
-  import { loadFeeds, refreshAll as refreshAllFeeds, refreshState } from "$lib/stores/feeds";
+  import {
+    loadFeeds,
+    refreshAll as refreshAllFeeds,
+    refreshState,
+  } from "$lib/stores/feeds";
   import { loadFolders, folders } from "$lib/stores/folders";
   import { openReader } from "$lib/stores/reader";
   import { playMedia } from "$lib/stores/media";
+  import { toast } from "$lib/stores/toast";
 
   // Local state
   let isMobile = false;
@@ -97,9 +102,12 @@
 
   function getLoadParams() {
     const params: any = {};
-    if ($viewMode === "feed" && $selectedFeedUrl) params.feedUrl = $selectedFeedUrl;
-    if ($viewMode === "smart" && $activeSmartFolder) params.smartFolder = $activeSmartFolder;
-    if ($viewMode === "folder" && $activeFolderId) params.folderId = $activeFolderId;
+    if ($viewMode === "feed" && $selectedFeedUrl)
+      params.feedUrl = $selectedFeedUrl;
+    if ($viewMode === "smart" && $activeSmartFolder)
+      params.smartFolder = $activeSmartFolder;
+    if ($viewMode === "folder" && $activeFolderId)
+      params.folderId = $activeFolderId;
     if ($viewMode === "unread") params.unreadOnly = true;
     if ($viewMode === "bookmarks") params.starredOnly = true;
     return params;
@@ -113,7 +121,10 @@
     try {
       await refreshAllFeeds();
     } catch (err) {
-      console.error('Failed to refresh feeds:', err);
+      console.error("Failed to refresh feeds:", err);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to refresh feeds"
+      );
     }
   }
 
@@ -128,17 +139,20 @@
     window.addEventListener("resize", checkMobile);
 
     // Infinite Scroll Observer
-    const observer = new IntersectionObserver((entries) => {
+    const observer = new IntersectionObserver(
+      (entries) => {
         if (entries[0].isIntersecting && $hasMore && !$itemsLoading) {
-             loadMore();
+          loadMore();
         }
-    }, { rootMargin: '400px' });
+      },
+      { rootMargin: "400px" }
+    );
 
     if (sentinel) observer.observe(sentinel);
 
     return () => {
-        window.removeEventListener("resize", checkMobile);
-        observer.disconnect();
+      window.removeEventListener("resize", checkMobile);
+      observer.disconnect();
     };
   });
 
@@ -190,7 +204,10 @@
         bind:value={$searchQuery}
         placeholder="Search articles..."
         onInput={() => loadItems()}
-        onClear={() => { setSearchQuery(''); loadItems(); }}
+        onClear={() => {
+          setSearchQuery("");
+          loadItems();
+        }}
       />
     </div>
 
@@ -205,7 +222,10 @@
   <MobileHeader
     bind:searchQuery={$searchQuery}
     onSearchInput={() => loadItems()}
-    onSearchClear={() => { setSearchQuery(''); loadItems(); }}
+    onSearchClear={() => {
+      setSearchQuery("");
+      loadItems();
+    }}
     onRefresh={refreshAll}
     isRefreshing={$refreshState.isRefreshing}
   />
@@ -244,9 +264,11 @@
 
     <!-- Loading spinner at bottom for infinite scroll -->
     {#if $itemsLoading}
-       <div class="py-4 flex justify-center">
-         <div class="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
-       </div>
+      <div class="py-4 flex justify-center">
+        <div
+          class="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"
+        ></div>
+      </div>
     {/if}
 
     <div bind:this={sentinel} class="h-4 w-full"></div>
@@ -270,17 +292,15 @@
 
   /* Fixed Header Container (Desktop) */
   .sticky-header {
-    position: fixed;
+    position: sticky;
     top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    max-width: 1600px;
     z-index: 20;
     background: theme("colors.background");
     padding: 12px 16px;
     backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    /* Negative margin to span parent padding if desired, or keep contained. 
+       Keeping contained is safer for preventing overflow. */
   }
 
   /* Mobile Fixed Filter Chips */
@@ -331,8 +351,12 @@
   }
 
   @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   @media (min-width: 769px) {
@@ -342,7 +366,8 @@
   }
 
   @media (max-width: 768px) {
-    .page-header, .search-bar-full {
+    .page-header,
+    .search-bar-full {
       margin-bottom: 12px;
     }
 

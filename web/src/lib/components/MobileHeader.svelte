@@ -15,12 +15,15 @@
 
 <!-- Mobile-only sticky header -->
 <header
-  class="md:hidden sticky top-0 z-30 bg-background border-b border-white/5"
+  class="md:hidden fixed top-0 left-0 right-0 w-full z-30 bg-background border-b border-white/5"
 >
   <div class="flex items-center gap-2 px-2 py-2">
     <!-- Search Bar -->
     <div class="flex-1 relative">
-      <Search size={18} class="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+      <Search
+        size={18}
+        class="absolute left-3 top-1/2 -translate-y-1/2 text-white/40"
+      />
       <input
         type="text"
         placeholder="Search..."
@@ -64,7 +67,11 @@
   }
 
   @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>

@@ -25,5 +25,8 @@
   "type": "module",
   "dependencies": {
     "lucide-svelte": "^0.562.0"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-darwin-arm64": "^4.55.1"
   }
 }
