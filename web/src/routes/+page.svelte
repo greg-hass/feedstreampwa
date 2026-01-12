@@ -38,7 +38,7 @@
     setTimeFilter,
     hasMore,
   } from "$lib/stores/items";
-  import { loadFeeds, refreshAll, refreshState } from "$lib/stores/feeds";
+  import { loadFeeds, refreshAll as refreshAllFeeds, refreshState } from "$lib/stores/feeds";
   import { loadFolders, folders } from "$lib/stores/folders";
   import { openReader } from "$lib/stores/reader";
   import { playMedia } from "$lib/stores/media";
@@ -107,6 +107,14 @@
 
   function loadMore() {
     loadItems({ ...getLoadParams(), refresh: false });
+  }
+
+  async function refreshAll() {
+    try {
+      await refreshAllFeeds();
+    } catch (err) {
+      console.error('Failed to refresh feeds:', err);
+    }
   }
 
   onMount(() => {
@@ -264,11 +272,13 @@
   .sticky-header {
     position: fixed;
     top: 0;
-    left: 0;
-    right: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 1600px;
     z-index: 20;
     background: theme("colors.background");
-    padding: 12px 0;
+    padding: 12px 16px;
     backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   }
@@ -327,7 +337,7 @@
 
   @media (min-width: 769px) {
     .articles-list {
-      padding-top: 180px; /* Space for fixed desktop header */
+      padding-top: 140px; /* Space for fixed desktop header */
     }
   }
 
