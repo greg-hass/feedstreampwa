@@ -35,14 +35,15 @@
 
 <style>
   .filter-chips {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
     gap: 8px;
     padding: 0;
-    margin-bottom: 20px;
+    margin-bottom: 0;
   }
 
   .chip {
-    padding: 10px 20px;
+    padding: 10px 16px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 999px;
@@ -51,6 +52,8 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    text-align: center;
+    white-space: nowrap;
   }
 
   .chip:hover {
@@ -69,27 +72,22 @@
   /* Mobile Filter Chips */
   @media (max-width: 768px) {
     .filter-chips {
-      gap: 8px;
-      padding: 0 16px; /* Match mobile padding var */
-      margin-bottom: 16px;
+      gap: 6px;
+      padding: 0 8px; /* Match reduced mobile padding */
+      margin-bottom: 0; /* No bottom margin when sticky */
       overflow-x: auto;
       overflow-y: visible;
-      flex-wrap: nowrap;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none; /* Hide scrollbar */
       position: relative;
       z-index: 1;
-      display: flex !important;
     }
 
     .chip {
       height: 36px;
-      padding: 0 16px;
-      font-size: 15px;
+      padding: 0 8px;
+      font-size: 13px;
       font-weight: 600;
-      min-width: auto;
-      white-space: nowrap; /* Prevent text wrapping */
-      flex-shrink: 0; /* Prevent pills from squashing */
     }
   }
 </style>

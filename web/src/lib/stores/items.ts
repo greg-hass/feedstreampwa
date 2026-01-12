@@ -140,20 +140,6 @@ export async function markAllRead(feedUrl?: string): Promise<void> {
     await loadItems();
 }
 
-export async function updateProgress(itemId: string | number, progress: number): Promise<void> {
-    // Optimistic update
-    items.update(($items) =>
-        $items.map((i) => (i.id === itemId ? { ...i, progress } : i))
-    );
-
-    try {
-        await itemsApi.updateVideoProgress(itemId, progress);
-    } catch (err) {
-        console.error('Failed to update progress:', err);
-        // Don't revert - progress updates are non-critical
-    }
-}
-
 export function setSearchQuery(query: string): void {
     searchQuery.set(query);
 }

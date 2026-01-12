@@ -61,7 +61,7 @@
       const folder = $folders.find((f) => f.id === $activeFolderId);
       return folder?.name || "Folder";
     } else if ($viewMode === "feed" && $selectedFeedUrl) {
-      return "Feed"; 
+      return "Feed";
     } else if ($viewMode === "unread") {
       return "Unread";
     } else if ($viewMode === "bookmarks") {
@@ -73,7 +73,7 @@
   // Filter items based on time
   $: filteredItems = (() => {
     if ($timeFilter === "all") return $items;
-    
+
     const now = new Date();
     let cutoffDate: Date;
 
@@ -125,7 +125,7 @@
              loadMore();
         }
     }, { rootMargin: '400px' });
-    
+
     if (sentinel) observer.observe(sentinel);
 
     return () => {
@@ -149,56 +149,67 @@
   <title>FeedStream - Private feed reader</title>
 </svelte:head>
 
-<!-- Content -->
-{#if isMobile}
+<!-- Sticky Header Container (Desktop Search + Filter) -->
+{#if !isMobile}
+  <div class="sticky-header">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="flex items-center justify-between">
+        <h1 class="text-3xl font-bold text-white">{pageTitle}</h1>
+        <div class="flex items-center gap-2">
+          <button
+            class="p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 transition-all shadow-lg shadow-purple-500/20 text-white"
+            on:click={refreshAll}
+            class:spinning={$refreshState.isRefreshing}
+            title="Refresh"
+          >
+            <RefreshCw size={20} />
+          </button>
+          <button
+            class="p-2.5 rounded-xl bg-accent hover:bg-accent hover:shadow-xl hover:shadow-accent/30 transition-all shadow-lg shadow-accent/20 text-white"
+            on:click={() => isAddFeedModalOpen.set(true)}
+            title="Add Feed"
+          >
+            <Plus size={20} />
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-bar-full">
+      <SearchBar
+        bind:value={$searchQuery}
+        placeholder="Search articles..."
+        onInput={() => loadItems()}
+        onClear={() => { setSearchQuery(''); loadItems(); }}
+      />
+    </div>
+
+    <!-- Filter Chips -->
+    <FilterChips
+      timeFilter={$timeFilter}
+      on:change={(e) => setTimeFilter(e.detail)}
+    />
+  </div>
+{:else}
+  <!-- Mobile Header (Already Sticky) -->
   <MobileHeader
     bind:searchQuery={$searchQuery}
-    onSearchInput={() => loadItems()} 
+    onSearchInput={() => loadItems()}
     onSearchClear={() => { setSearchQuery(''); loadItems(); }}
     onRefresh={refreshAll}
     isRefreshing={$refreshState.isRefreshing}
   />
-{:else}
-  <!-- Page Header -->
-  <div class="page-header">
-    <div class="flex items-center justify-between">
-      <h1 class="text-3xl font-bold text-white">{pageTitle}</h1>
-      <div class="flex items-center gap-2">
-        <button
-          class="p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 transition-all shadow-lg shadow-purple-500/20 text-white"
-          on:click={refreshAll}
-          class:spinning={$refreshState.isRefreshing}
-          title="Refresh"
-        >
-          <RefreshCw size={20} />
-        </button>
-        <button
-          class="p-2.5 rounded-xl bg-accent hover:bg-accent hover:shadow-xl hover:shadow-accent/30 transition-all shadow-lg shadow-accent/20 text-white"
-          on:click={() => isAddFeedModalOpen.set(true)}
-          title="Add Feed"
-        >
-          <Plus size={20} />
-        </button>
-      </div>
-    </div>
-  </div>
 
-  <!-- Search Bar -->
-  <div class="search-bar-full">
-    <SearchBar
-      bind:value={$searchQuery}
-      placeholder="Search articles..."
-      onInput={() => loadItems()}
-      onClear={() => { setSearchQuery(''); loadItems(); }}
+  <!-- Sticky Filter Chips for Mobile -->
+  <div class="mobile-sticky-filters">
+    <FilterChips
+      timeFilter={$timeFilter}
+      on:change={(e) => setTimeFilter(e.detail)}
     />
   </div>
 {/if}
-
-<!-- Filter Chips -->
-<FilterChips
-  timeFilter={$timeFilter}
-  on:change={(e) => setTimeFilter(e.detail)}
-/>
 
 <!-- Articles List -->
 <div class="articles-list">
@@ -222,14 +233,14 @@
       on:toggleRead={(e) => toggleRead(e.detail.item)}
       on:play={(e) => playMedia(e.detail.item)}
     />
-    
+
     <!-- Loading spinner at bottom for infinite scroll -->
     {#if $itemsLoading}
        <div class="py-4 flex justify-center">
          <div class="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
        </div>
     {/if}
-    
+
     <div bind:this={sentinel} class="h-4 w-full"></div>
   {/if}
 </div>
@@ -243,10 +254,37 @@
 <RefreshToast />
 
 <style>
+  /* Prevent horizontal scroll */
+  :global(body) {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  /* Sticky Header Container (Desktop) */
+  .sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: theme("colors.background");
+    padding: 12px 0;
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  /* Mobile Sticky Filter Chips */
+  .mobile-sticky-filters {
+    position: sticky;
+    top: 52px; /* Height of MobileHeader */
+    z-index: 20;
+    background: theme("colors.background");
+    padding: 12px 0;
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
   /* Page Header */
   .page-header {
-    margin-bottom: 20px;
-    /* padding removed - handled by layout */
+    margin-bottom: 12px;
   }
 
   .page-header h1 {
@@ -255,13 +293,13 @@
   }
 
   .search-bar-full {
-    margin-bottom: 20px;
+    margin-bottom: 12px;
   }
 
   .articles-list {
     display: flex;
     flex-direction: column;
-    /* Removed overflow/height constraints to allow window scrolling */
+    padding-top: 12px;
   }
 
   .empty-state {
@@ -286,7 +324,11 @@
 
   @media (max-width: 768px) {
     .page-header, .search-bar-full {
-        margin-bottom: 16px;
+        margin-bottom: 12px;
+    }
+
+    .articles-list {
+      padding-top: 12px;
     }
   }
 </style>

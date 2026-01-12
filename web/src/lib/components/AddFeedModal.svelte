@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { X, PlusCircle, Rss, Loader2, CheckCircle2, Search, Youtube, Hash, Radio, ExternalLink } from "lucide-svelte";
+  import { X, PlusCircle, Rss, Loader2, CheckCircle2, Search, Youtube, Hash, Radio, ExternalLink, ChevronDown } from "lucide-svelte";
   import { isAddFeedModalOpen } from "$lib/stores/ui";
   import { createFeed, refreshFeed } from "$lib/api/feeds";
   import { loadFeeds } from "$lib/stores/feeds";
@@ -17,16 +17,18 @@
   let refreshProgress: { current: number; total: number } | null = null;
   let refreshError: string | null = null;
   let lastRefreshUrl: string | null = null;
+  let searchFocused = false;
+  let searchInput: HTMLInputElement;
 
   // Type filters - using Set for multi-select
   type FeedType = "rss" | "youtube" | "reddit" | "podcast";
   let selectedTypes = new Set<FeedType>(["rss", "youtube", "reddit", "podcast"]);
 
   const typeOptions = [
-    { value: "rss" as FeedType, label: "RSS", icon: Rss, color: "text-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
-    { value: "youtube" as FeedType, label: "YouTube", icon: Youtube, color: "text-red-500", bg: "bg-red-500/10", border: "border-red-500/20" },
-    { value: "reddit" as FeedType, label: "Reddit", icon: Hash, color: "text-orange-500", bg: "bg-orange-500/10", border: "border-orange-500/20" },
-    { value: "podcast" as FeedType, label: "Podcast", icon: Radio, color: "text-purple-500", bg: "bg-purple-500/10", border: "border-purple-500/20" },
+    { value: "rss" as FeedType, label: "RSS Feeds", icon: Rss, color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20", hover: "hover:bg-emerald-500/20" },
+    { value: "youtube" as FeedType, label: "YouTube", icon: Youtube, color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/20", hover: "hover:bg-red-500/20" },
+    { value: "reddit" as FeedType, label: "Reddit", icon: Hash, color: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/20", hover: "hover:bg-orange-500/20" },
+    { value: "podcast" as FeedType, label: "Podcasts", icon: Radio, color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20", hover: "hover:bg-purple-500/20" },
   ];
 
   function closeModal() {
@@ -41,6 +43,7 @@
     refreshError = null;
     lastRefreshUrl = null;
     refreshProgress = null;
+    searchFocused = false;
   }
 
   function toggleTypeFilter(type: FeedType) {
@@ -97,6 +100,19 @@
     searchDebounceTimer = setTimeout(() => {
       searchFeeds();
     }, 400);
+  }
+
+  function focusSearch() {
+    searchFocused = true;
+    if (searchInput) {
+      searchInput.focus();
+    }
+  }
+
+  function blurSearch() {
+    if (!searchQuery) {
+      searchFocused = false;
+    }
   }
 
   async function pollRefreshStatus(jobId: string) {
@@ -244,12 +260,7 @@
           >
             <Search size={20} class="text-emerald-400" />
           </div>
-          <div>
-            <h2 class="text-xl font-semibold text-white">Discover Feeds</h2>
-            <p class="text-sm text-white/60">
-              Search for RSS, YouTube, Reddit, and Podcasts
-            </p>
-          </div>
+          <h2 class="text-xl font-semibold text-white">Smart Feed Discovery</h2>
         </div>
         <button
           class="p-2 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
@@ -260,37 +271,63 @@
         </button>
       </div>
 
-      <!-- Search Bar -->
-      <div class="px-6 pt-6 pb-4 space-y-4 flex-shrink-0">
+      <!-- Search & Filters Section -->
+      <div class="px-6 pt-5 pb-4 space-y-4 flex-shrink-0">
+        <!-- Collapsible Search Bar -->
         <div class="relative">
-          <Search size={20} class="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
-          <input
-            type="text"
-            placeholder="Search: 'omgubuntu', 'tech news', 'cooking podcasts'..."
-            bind:value={searchQuery}
-            on:input={handleSearchInput}
-            class="w-full bg-white/5 pl-12 pr-4 py-3.5 rounded-xl text-white placeholder-white/40 border border-white/10 hover:bg-white/10 focus:border-accent/50 transition-colors outline-none"
-            autofocus
-          />
-          {#if searching}
-            <div class="absolute right-4 top-1/2 -translate-y-1/2">
-              <Loader2 size={18} class="animate-spin text-white/40" />
+          {#if !searchFocused && !searchQuery}
+            <!-- Collapsed State -->
+            <button
+              class="w-full bg-white/5 px-4 py-4 rounded-xl text-white/50 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all outline-none flex items-center justify-between group"
+              on:click={focusSearch}
+            >
+              <span class="flex items-center gap-3">
+                <Search size={20} class="text-white/30 group-hover:text-white/50" />
+                <span class="text-sm">Search for feeds...</span>
+              </span>
+              <ChevronDown size={18} class="text-white/30 group-hover:text-white/50 transition-transform duration-200" />
+            </button>
+          {:else}
+            <!-- Expanded State -->
+            <div class="relative">
+              <Search size={20} class="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+              <input
+                bind:this={searchInput}
+                type="text"
+                placeholder="Search: 'omgubuntu', 'tech news', 'cooking podcasts'..."
+                bind:value={searchQuery}
+                on:input={handleSearchInput}
+                on:focus={() => searchFocused = true}
+                on:blur={blurSearch}
+                class="w-full bg-white/5 pl-12 pr-12 py-3.5 rounded-xl text-white placeholder-white/40 border border-emerald-500/30 focus:border-emerald-500/50 transition-colors outline-none"
+              />
+              <button
+                class="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-lg hover:bg-white/10 transition-colors text-white/30 hover:text-white/50"
+                on:click={() => { searchQuery = ''; searchResults = []; searchFocused = false; }}
+                aria-label="Clear search"
+              >
+                <X size={16} />
+              </button>
+              {#if searching}
+                <div class="absolute right-10 top-1/2 -translate-y-1/2">
+                  <Loader2 size={16} class="animate-spin text-white/40" />
+                </div>
+              {/if}
             </div>
           {/if}
         </div>
 
-        <!-- Type Filters -->
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-xs font-semibold text-white/60 uppercase tracking-wider">Filter:</span>
+        <!-- Type Filters - Grid Layout -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {#each typeOptions as option}
             <button
-              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 {selectedTypes.has(option.value)
+              class="px-3 py-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 {selectedTypes.has(option.value)
                 ? `${option.bg} ${option.color} border ${option.border}`
-                : 'bg-white/5 text-white/40 border border-white/10 hover:bg-white/10'}"
+                : 'bg-white/5 text-white/40 border border-white/10 hover:bg-white/10 hover:border-white/20'}"
               on:click={() => toggleTypeFilter(option.value)}
             >
-              <svelte:component this={option.icon} size={14} />
-              {option.label}
+              <svelte:component this={option.icon} size={16} />
+              <span>{option.label}</span>
             </button>
           {/each}
         </div>
@@ -364,7 +401,7 @@
             </div>
             <h3 class="text-lg font-semibold text-white mb-2">No feeds found</h3>
             <p class="text-white/60 text-sm">
-              Try different keywords or check your filters
+              Try different keywords or adjust your filters
             </p>
           </div>
         {:else if searchResults.length > 0}
@@ -436,28 +473,19 @@
             {/each}
           </div>
         {:else}
-          <!-- Initial State -->
-          <div class="glass rounded-2xl p-12 text-center">
+          <!-- Initial State - Simplified -->
+          <div class="glass rounded-2xl p-8 text-center">
             <div
-              class="w-16 h-16 bg-gradient-to-br from-emerald-500/20 to-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-emerald-500/20"
+              class="w-14 h-14 bg-gradient-to-br from-emerald-500/20 to-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-emerald-500/20"
             >
-              <Search size={32} class="text-emerald-400" />
+              <Search size={28} class="text-emerald-400" />
             </div>
-            <h3 class="text-xl font-semibold text-white mb-2">
-              Smart Feed Discovery
+            <h3 class="text-lg font-semibold text-white mb-2">
+              Start discovering feeds
             </h3>
-            <p class="text-white/60 mb-6">
-              Search by keywords and we'll find feeds from multiple sources
+            <p class="text-white/50 text-sm">
+              Click the search bar above to find RSS feeds, YouTube channels, Reddit communities, and podcasts
             </p>
-            <div class="max-w-md mx-auto text-left space-y-2">
-              <p class="text-sm font-semibold text-white/60">Try searching for:</p>
-              <ul class="text-sm text-white/60 space-y-1">
-                <li>• <span class="text-white/80">"omgubuntu"</span> - Find tech blogs</li>
-                <li>• <span class="text-white/80">"cooking podcasts"</span> - Discover food shows</li>
-                <li>• <span class="text-white/80">"tech news youtube"</span> - YouTube channels</li>
-                <li>• <span class="text-white/80">"r/technology"</span> - Reddit subreddits</li>
-              </ul>
-            </div>
           </div>
         {/if}
       </div>

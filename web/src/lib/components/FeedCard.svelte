@@ -191,7 +191,7 @@
     </div>
   {:else}
     <!-- No Image: Header strip -->
-    <div class="px-5 pt-5 pb-2 flex items-center gap-2">
+    <div class="px-3 md:px-5 pt-3 md:pt-5 pb-2 flex items-center gap-2">
       <div
         class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/5 border border-white/5"
       >
@@ -205,7 +205,7 @@
   {/if}
 
   <!-- Content Body -->
-  <div class="flex flex-col flex-1 p-5 pt-3">
+  <div class="flex flex-col flex-1 p-3 md:p-5 pt-2 md:pt-3">
     <!-- Meta -->
     <div class="flex items-center justify-between mb-2 text-xs text-white/40">
       <span>{dateStr}</span>
