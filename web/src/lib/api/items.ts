@@ -65,7 +65,7 @@ export async function searchItems(query: string, limit = 100, offset = 0): Promi
 
 export async function toggleItemRead(itemId: string | number, newReadState: boolean): Promise<void> {
     const response = await fetch(`${API_BASE}/items/${itemId}/read`, {
-        method: 'PATCH',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ read: newReadState }),
     });
@@ -80,7 +80,7 @@ export async function toggleItemRead(itemId: string | number, newReadState: bool
 
 export async function toggleItemStar(itemId: string | number, newStarredState: boolean): Promise<void> {
     const response = await fetch(`${API_BASE}/items/${itemId}/star`, {
-        method: 'PATCH',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ starred: newStarredState }),
     });
@@ -124,7 +124,7 @@ export async function updateVideoProgress(
     itemId: string | number,
     progress: number
 ): Promise<void> {
-    const response = await fetch(`${API_BASE}/items/${itemId}/playback`, {
+    const response = await fetch(`${API_BASE}/items/${itemId}/playback-position`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ position: progress }),

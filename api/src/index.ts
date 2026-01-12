@@ -18,6 +18,7 @@ const DB_PATH = process.env.DB_PATH || '/data/feedstream.sqlite';
 const FETCH_TIMEOUT_MS = parseInt(process.env.FETCH_TIMEOUT_MS || '12000', 10);
 const MAX_CONCURRENCY = parseInt(process.env.MAX_CONCURRENCY || '6', 10);
 const READER_CACHE_TTL_HOURS = 168; // 7 days
+const BROWSER_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 // Helper: Check if reader cache entry is fresh
 function isCacheFresh(updatedAtIso: string): boolean {
@@ -589,6 +590,77 @@ function detectFeedKind(url: string): 'youtube' | 'reddit' | 'podcast' | 'generi
     return 'generic';
 }
 
+function extractItemUrl(item: any): string | null {
+    const rawLink = item?.link || item?.url || item?.links || null;
+
+    if (typeof rawLink === 'string') return rawLink;
+
+    if (Array.isArray(rawLink)) {
+        const preferred = rawLink.find((entry) => {
+            if (!entry || typeof entry !== 'object') return false;
+            return entry.rel === 'alternate' || entry['@_rel'] === 'alternate';
+        });
+
+        const candidates = preferred ? [preferred, ...rawLink] : rawLink;
+
+        for (const entry of candidates) {
+            if (typeof entry === 'string') return entry;
+            if (entry && typeof entry === 'object') {
+                if (typeof entry.href === 'string') return entry.href;
+                if (typeof entry['@_href'] === 'string') return entry['@_href'];
+                if (typeof entry.url === 'string') return entry.url;
+            }
+        }
+        return null;
+    }
+
+    if (rawLink && typeof rawLink === 'object') {
+        if (typeof rawLink.href === 'string') return rawLink.href;
+        if (typeof rawLink['@_href'] === 'string') return rawLink['@_href'];
+        if (typeof rawLink.url === 'string') return rawLink.url;
+    }
+
+    return null;
+}
+
+function parseYouTubeFeed(text: string): { title: string | null; link: string | null; items: any[] } | null {
+    try {
+        const parsed = xmlParser.parse(text);
+        const feed = parsed?.feed;
+        if (!feed) return null;
+
+        const title = typeof feed.title === 'string' ? feed.title : feed.title?.['#text'] || null;
+        const link = extractItemUrl(feed) || null;
+        const entries = feed.entry ? (Array.isArray(feed.entry) ? feed.entry : [feed.entry]) : [];
+
+        const items = entries.map((entry: any) => {
+            const mediaGroup = entry['media:group'] || {};
+            const thumbnail = mediaGroup['media:thumbnail'] || null;
+            const thumbnailUrl = Array.isArray(thumbnail)
+                ? thumbnail[0]?.['@_url'] || thumbnail[0]?.url
+                : thumbnail?.['@_url'] || thumbnail?.url;
+
+            return {
+                title: entry.title || null,
+                link: extractItemUrl(entry) || null,
+                author: entry.author?.name || entry.author || null,
+                summary: mediaGroup['media:description'] || entry.summary || null,
+                content: mediaGroup['media:description'] || entry.content || null,
+                pubDate: entry.published || null,
+                updated: entry.updated || null,
+                guid: entry.id || null,
+                ytVideoId: entry['yt:videoId'] || null,
+                ytChannelId: entry['yt:channelId'] || null,
+                mediaThumbnail: thumbnailUrl ? { url: thumbnailUrl } : null
+            };
+        });
+
+        return { title, link, items };
+    } catch {
+        return null;
+    }
+}
+
 // Helper: Extract YouTube metadata from parsed item
 function extractYouTubeMetadata(item: any, rawXml?: any): any {
     const metadata: any = {
@@ -717,8 +789,8 @@ function normalizeItem(item: any, kind: 'youtube' | 'reddit' | 'podcast' | 'gene
 
     const normalized: any = {
         title: item.title || null,
-        url: item.link || item.url || null,
-        author: item.creator || item.author || null,
+        url: extractItemUrl(item),
+        author: item.creator || item.author?.name || item.author || null,
         summary: item.contentSnippet || item.summary || null,
         content: item.content || item['content:encoded'] || null,
         published,
@@ -782,8 +854,13 @@ async function fetchFeed(url: string, force: boolean): Promise<any> {
     }
 
     const headers: Record<string, string> = {
-        'User-Agent': 'FeedStreamPWA/1.0'
+        'User-Agent': kind === 'youtube' ? BROWSER_USER_AGENT : 'FeedStreamPWA/1.0'
     };
+
+    if (kind === 'youtube') {
+        headers['Accept'] = 'application/atom+xml, application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.1';
+        headers['Accept-Language'] = 'en-US,en;q=0.9';
+    }
 
     // Add conditional request headers if available
     if (!force && feedRecord) {
@@ -836,7 +913,37 @@ async function fetchFeed(url: string, force: boolean): Promise<any> {
 
         // Parse the feed
         const text = await response.text();
-        const feed = await rssParser.parseString(text);
+        let feed: any = null;
+
+        try {
+            feed = await rssParser.parseString(text);
+        } catch (err) {
+            if (kind === 'youtube') {
+                const fallback = parseYouTubeFeed(text);
+                if (fallback) {
+                    feed = {
+                        title: fallback.title,
+                        link: fallback.link,
+                        items: fallback.items
+                    };
+                }
+            }
+
+            if (!feed) {
+                throw err;
+            }
+        }
+
+        if (kind === 'youtube' && (!feed.items || feed.items.length === 0)) {
+            const fallback = parseYouTubeFeed(text);
+            if (fallback && fallback.items.length > 0) {
+                feed = {
+                    title: fallback.title || feed.title,
+                    link: fallback.link || feed.link,
+                    items: fallback.items
+                };
+            }
+        }
 
         // Extract feed metadata
         let title = feed.title || null;
@@ -1535,9 +1642,10 @@ fastify.post('/feeds', async (request, reply) => {
     let url = body.url.trim();
     const refresh = body.refresh === true;
     const folderIds = Array.isArray(body.folderIds) ? body.folderIds : [];
+    const providedTitle = typeof body.title === 'string' ? body.title.trim() : null;
 
     // YouTube URL conversion: handle/channel to RSS
-    let extractedTitle: string | null = null;
+    let extractedTitle: string | null = providedTitle || null;
     const isAlreadyYoutubeRSS = url.includes('youtube.com/feeds/videos.xml');
 
     if (url.includes('youtube.com/') && !isAlreadyYoutubeRSS) {
@@ -1559,7 +1667,7 @@ fastify.post('/feeds', async (request, reply) => {
 
                     // Try to extract channel name
                     const titleMatch = text.match(/<title>([^<]+) - YouTube<\/title>/i) || text.match(/"title":"([^"]+)"/);
-                    if (titleMatch) {
+                    if (titleMatch && !extractedTitle) {
                         extractedTitle = titleMatch[1];
                     }
                 }
@@ -1581,7 +1689,7 @@ fastify.post('/feeds', async (request, reply) => {
                     if (response.ok) {
                         const text = await response.text();
                         const titleMatch = text.match(/<title>([^<]+) - YouTube<\/title>/i) || text.match(/"title":"([^"]+)"/);
-                        if (titleMatch) extractedTitle = titleMatch[1];
+                        if (titleMatch && !extractedTitle) extractedTitle = titleMatch[1];
                     }
                 } catch (e) { }
             }

@@ -115,7 +115,7 @@
     // For now let's just do the fetch.
 
     try {
-      await fetch(`/api/items/${$currentItem.id}/playback`, {
+      await fetch(`/api/items/${$currentItem.id}/playback-position`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ position: currentTime }),

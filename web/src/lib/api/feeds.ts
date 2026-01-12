@@ -14,12 +14,13 @@ export async function fetchFeeds(): Promise<Feed[]> {
 
 export async function createFeed(
     url: string,
-    folderIds: string[] = []
+    folderIds: string[] = [],
+    title?: string
 ): Promise<void> {
     const response = await fetch(`${API_BASE}/feeds`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, folder_ids: folderIds }),
+        body: JSON.stringify({ url, folderIds, title }),
     });
 
     if (!response.ok) {
@@ -31,8 +32,8 @@ export async function createFeed(
 }
 
 export async function update(url: string, data: { title?: string }): Promise<void> {
-    const response = await fetch(`${API_BASE}/feeds/${encodeURIComponent(url)}`, {
-        method: 'PUT',
+    const response = await fetch(`${API_BASE}/feeds`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url, ...data }),
     });
@@ -77,7 +78,7 @@ export async function refreshFeed(url: string): Promise<{ jobId: string }> {
 }
 
 export async function refreshAllFeeds(): Promise<{ jobId: string }> {
-    const response = await fetch(`${API_BASE}/refresh/all`, {
+    const response = await fetch(`${API_BASE}/refresh/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
@@ -97,9 +98,10 @@ export async function addFeedToFolder(
     feedUrl: string,
     folderId: string
 ): Promise<void> {
-    const response = await fetch(`${API_BASE}/folders/${folderId}/feeds/${encodeURIComponent(feedUrl)}`, {
+    const response = await fetch(`${API_BASE}/folders/${folderId}/feeds`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feedUrl })
     });
 
     if (!response.ok) {
@@ -114,9 +116,10 @@ export async function removeFeedFromFolder(
     feedUrl: string,
     folderId: string
 ): Promise<void> {
-    const response = await fetch(`${API_BASE}/folders/${folderId}/feeds/${encodeURIComponent(feedUrl)}`, {
+    const response = await fetch(`${API_BASE}/folders/${folderId}/feeds`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feedUrl })
     });
 
     if (!response.ok) {

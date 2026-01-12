@@ -2,6 +2,7 @@
   import { X, PlusCircle, Rss, Loader2, CheckCircle2, Search, Youtube, Hash, Radio, ExternalLink } from "lucide-svelte";
   import { isAddFeedModalOpen } from "$lib/stores/ui";
   import { createFeed, refreshFeed } from "$lib/api/feeds";
+  import { loadFeeds } from "$lib/stores/feeds";
   import type { SearchResult } from "$lib/types";
 
   let searchQuery = "";
@@ -10,6 +11,12 @@
   let error: string | null = null;
   let successMessage: string | null = null;
   let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let refreshPollTimer: ReturnType<typeof setInterval> | null = null;
+  let refreshing = false;
+  let refreshMessage: string | null = null;
+  let refreshProgress: { current: number; total: number } | null = null;
+  let refreshError: string | null = null;
+  let lastRefreshUrl: string | null = null;
 
   // Type filters - using Set for multi-select
   type FeedType = "rss" | "youtube" | "reddit" | "podcast";
@@ -29,6 +36,11 @@
     error = null;
     successMessage = null;
     selectedTypes = new Set(["rss", "youtube", "reddit", "podcast"]);
+    refreshing = false;
+    refreshMessage = null;
+    refreshError = null;
+    lastRefreshUrl = null;
+    refreshProgress = null;
   }
 
   function toggleTypeFilter(type: FeedType) {
@@ -87,16 +99,71 @@
     }, 400);
   }
 
+  async function pollRefreshStatus(jobId: string) {
+    if (refreshPollTimer) clearInterval(refreshPollTimer);
+
+    return new Promise<void>((resolve, reject) => {
+      refreshPollTimer = setInterval(async () => {
+        try {
+          const response = await fetch(`/api/refresh/status?jobId=${encodeURIComponent(jobId)}`);
+          const data = await response.json();
+
+          if (!response.ok || data.status === "error") {
+            if (refreshPollTimer) clearInterval(refreshPollTimer);
+            refreshPollTimer = null;
+            refreshMessage = null;
+            refreshProgress = null;
+            reject(new Error(data?.message || "Feed refresh failed"));
+            return;
+          }
+
+          if (data.status === "done") {
+            if (refreshPollTimer) clearInterval(refreshPollTimer);
+            refreshPollTimer = null;
+            refreshMessage = null;
+            refreshProgress = null;
+            resolve();
+            return;
+          }
+
+          refreshMessage = data?.message || "Refreshing feed...";
+          if (typeof data?.current === "number" && typeof data?.total === "number") {
+            refreshProgress = { current: data.current, total: data.total };
+          }
+        } catch (err) {
+          if (refreshPollTimer) clearInterval(refreshPollTimer);
+          refreshPollTimer = null;
+          refreshMessage = null;
+          refreshProgress = null;
+          reject(err);
+        }
+      }, 1200);
+    });
+  }
+
   async function handleAddFeed(url: string, title: string) {
     try {
-      await createFeed(url);
+      await createFeed(url, [], title);
 
       // Immediately refresh the feed to fetch title and items
       try {
-        await refreshFeed(url);
+        refreshError = null;
+        lastRefreshUrl = url;
+        const refreshResult = await refreshFeed(url);
+        if (refreshResult?.jobId) {
+          refreshing = true;
+          await pollRefreshStatus(refreshResult.jobId);
+          await loadFeeds();
+          refreshing = false;
+          refreshError = null;
+          refreshProgress = null;
+        }
       } catch (refreshErr) {
         console.warn("Failed to refresh feed after adding:", refreshErr);
         // Don't fail the whole operation if refresh fails
+        refreshing = false;
+        refreshError = refreshErr instanceof Error ? refreshErr.message : "Failed to refresh feed";
+        refreshProgress = null;
       }
 
       successMessage = `Added "${title}" successfully!`;
@@ -116,6 +183,28 @@
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === "Escape") {
       closeModal();
+    }
+  }
+
+  async function retryRefresh() {
+    if (!lastRefreshUrl || refreshing) return;
+
+    try {
+      refreshError = null;
+      const refreshResult = await refreshFeed(lastRefreshUrl);
+      if (refreshResult?.jobId) {
+        refreshing = true;
+        await pollRefreshStatus(refreshResult.jobId);
+        await loadFeeds();
+        refreshing = false;
+        refreshError = null;
+        refreshProgress = null;
+      }
+    } catch (refreshErr) {
+      console.warn("Failed to refresh feed after retry:", refreshErr);
+      refreshing = false;
+      refreshError = refreshErr instanceof Error ? refreshErr.message : "Failed to refresh feed";
+      refreshProgress = null;
     }
   }
 
@@ -213,6 +302,43 @@
           >
             <CheckCircle2 size={16} />
             {successMessage}
+          </div>
+        {/if}
+
+        <!-- Refresh Status -->
+        {#if refreshing}
+          <div
+            class="p-3 rounded-xl bg-white/5 border border-white/10 text-white/70 text-sm flex items-center gap-2"
+          >
+            <Loader2 size={16} class="animate-spin text-white/50" />
+            <span class="flex-1">{refreshMessage || "Refreshing feed..."}</span>
+            {#if refreshProgress}
+              <span class="text-xs text-white/50 tabular-nums">
+                {refreshProgress.current}/{refreshProgress.total}
+              </span>
+            {/if}
+          </div>
+        {/if}
+
+        {#if refreshError}
+          <div
+            class="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center justify-between gap-3"
+          >
+            <span class="flex-1">{refreshError}</span>
+            <button
+              class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/90 text-xs font-medium transition-colors disabled:opacity-50"
+              on:click={retryRefresh}
+              disabled={refreshing || !lastRefreshUrl}
+            >
+              {#if refreshing}
+                <span class="flex items-center gap-1.5">
+                  <Loader2 size={12} class="animate-spin text-white/70" />
+                  Refreshing
+                </span>
+              {:else}
+                Retry
+              {/if}
+            </button>
           </div>
         {/if}
 

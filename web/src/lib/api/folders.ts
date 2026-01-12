@@ -31,7 +31,7 @@ export async function createFolder(name: string): Promise<void> {
 
 export async function renameFolder(id: string, name: string): Promise<void> {
     const response = await fetch(`${API_BASE}/folders/${id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name }),
     });
@@ -61,9 +61,10 @@ export async function addFeedToFolder(
     feedUrl: string,
     folderId: string
 ): Promise<void> {
-    const response = await fetch(`${API_BASE}/folders/${folderId}/feeds/${encodeURIComponent(feedUrl)}`, {
+    const response = await fetch(`${API_BASE}/folders/${folderId}/feeds`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feedUrl })
     });
 
     if (!response.ok) {
@@ -78,9 +79,10 @@ export async function removeFeedFromFolder(
     feedUrl: string,
     folderId: string
 ): Promise<void> {
-    const response = await fetch(`${API_BASE}/folders/${folderId}/feeds/${encodeURIComponent(feedUrl)}`, {
+    const response = await fetch(`${API_BASE}/folders/${folderId}/feeds`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feedUrl })
     });
 
     if (!response.ok) {
