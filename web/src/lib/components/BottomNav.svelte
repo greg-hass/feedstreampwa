@@ -1,10 +1,16 @@
 <script lang="ts">
   import { LayoutDashboard, List, Bookmark, Menu, Eye } from "lucide-svelte";
-  import { isMobileMenuOpen, setViewAll, setViewBookmarks, setViewUnread, viewMode } from "$lib/stores/ui";
+  import {
+    isMobileMenuOpen,
+    setViewAll,
+    setViewBookmarks,
+    setViewUnread,
+    viewMode,
+  } from "$lib/stores/ui";
   import { libraryTotal } from "$lib/stores/counts";
 
   function toggleMenu() {
-    isMobileMenuOpen.update(v => !v);
+    isMobileMenuOpen.update((v) => !v);
   }
 </script>
 
@@ -49,7 +55,8 @@
     class="flex flex-col items-center justify-center w-full gap-1 active:scale-95 transition-transform duration-100 py-2"
   >
     <div
-      class="relative p-1.5 rounded-xl transition-all duration-300 {$viewMode === 'all'
+      class="relative p-1.5 rounded-xl transition-all duration-300 {$viewMode ===
+      'all'
         ? 'bg-white/10'
         : ''}"
     >
@@ -58,9 +65,9 @@
         class="transition-colors duration-300 {$viewMode === 'all'
           ? 'text-emerald-400'
           : 'text-white/40'}"
-        strokeWidth={$viewMode === 'all' ? 2.5 : 2}
+        strokeWidth={$viewMode === "all" ? 2.5 : 2}
       />
-      {#if $viewMode === 'all'}
+      {#if $viewMode === "all"}
         <span
           class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]"
         ></span>
@@ -81,7 +88,8 @@
     class="flex flex-col items-center justify-center w-full gap-1 active:scale-95 transition-transform duration-100 py-2"
   >
     <div
-      class="relative p-1.5 rounded-xl transition-all duration-300 {$viewMode === 'unread'
+      class="relative p-1.5 rounded-xl transition-all duration-300 {$viewMode ===
+      'unread'
         ? 'bg-white/10'
         : ''}"
     >
@@ -90,9 +98,9 @@
         class="transition-colors duration-300 {$viewMode === 'unread'
           ? 'text-emerald-400'
           : 'text-white/40'}"
-        strokeWidth={$viewMode === 'unread' ? 2.5 : 2}
+        strokeWidth={$viewMode === "unread" ? 2.5 : 2}
       />
-      {#if $viewMode === 'unread'}
+      {#if $viewMode === "unread"}
         <span
           class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]"
         ></span>
@@ -113,7 +121,8 @@
     class="flex flex-col items-center justify-center w-full gap-1 active:scale-95 transition-transform duration-100 py-2"
   >
     <div
-      class="relative p-1.5 rounded-xl transition-all duration-300 {$viewMode === 'bookmarks'
+      class="relative p-1.5 rounded-xl transition-all duration-300 {$viewMode ===
+      'bookmarks'
         ? 'bg-white/10'
         : ''}"
     >
@@ -122,15 +131,17 @@
         class="transition-colors duration-300 {$viewMode === 'bookmarks'
           ? 'text-[#FF9500]'
           : 'text-white/40'}"
-        fill={$viewMode === 'bookmarks' ? "currentColor" : "none"}
-        strokeWidth={$viewMode === 'bookmarks' ? 2.5 : 2}
+        fill={$viewMode === "bookmarks" ? "currentColor" : "none"}
+        strokeWidth={$viewMode === "bookmarks" ? 2.5 : 2}
       />
       {#if $libraryTotal > 0}
-        <span class="absolute -top-1 -right-1 bg-[#FF9500] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border border-background">
+        <span
+          class="absolute -top-1 -right-1 bg-[#FF9500] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border border-background"
+        >
           {$libraryTotal}
         </span>
       {/if}
-      {#if $viewMode === 'bookmarks'}
+      {#if $viewMode === "bookmarks"}
         <span
           class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#FF9500] rounded-full shadow-[0_0_8px_rgba(255,149,0,0.8)]"
         ></span>
@@ -148,6 +159,6 @@
 
 <style>
   .safe-bottom {
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 20px));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 20px));
   }
 </style>

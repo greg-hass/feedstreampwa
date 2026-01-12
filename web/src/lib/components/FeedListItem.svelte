@@ -11,6 +11,7 @@
     CheckCircle2,
     Clock,
   } from "lucide-svelte";
+  import RedditIcon from "$lib/components/icons/RedditIcon.svelte";
 
   export let item: Item;
   export let feedType: "rss" | "youtube" | "reddit" | "podcast" = "rss";
@@ -66,7 +67,7 @@
     },
     reddit: {
       color: "text-orange-400",
-      icon: Hash,
+      icon: RedditIcon,
     },
     podcast: {
       color: "text-purple-400",
@@ -197,7 +198,7 @@
         >
           {#if playYouTubeVideo}
             <iframe
-              src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0`}
+              src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0&vq=hd1080`}
               class="w-full h-full"
               frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -213,13 +214,13 @@
             />
             <button
               on:click={toggleYouTubePlay}
-              class="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors"
+              class="absolute inset-0 flex items-center justify-center bg-black/10 hover:bg-black/20 transition-colors"
               aria-label="Play video"
             >
               <div
-                class="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg"
+                class="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform"
               >
-                <PlayCircle size={28} class="text-black fill-black" />
+                <PlayCircle size={32} class="text-white fill-white/20" />
               </div>
             </button>
           {/if}
