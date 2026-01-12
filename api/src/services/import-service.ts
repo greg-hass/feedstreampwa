@@ -73,7 +73,6 @@ async function processImport(jobId: string, parsed: any) {
         const actions: Array<() => void> = [];
 
         // Recursive function to traverse and build actions
-        // We do this to count 'total' accurately first
         function traverse(node: any, folderId: string | null = null) {
             // Handle array of outlines
             if (Array.isArray(node)) {
@@ -84,7 +83,6 @@ async function processImport(jobId: string, parsed: any) {
             }
 
             // Single node
-            const type = node.type || '';
             const text = node.text || node.title || '';
             const xmlUrl = node.xmlUrl || '';
 
@@ -95,13 +93,13 @@ async function processImport(jobId: string, parsed: any) {
                     
                     try {
                         // Check if feed exists
-                        const existing = db.prepare('SELECT id, url FROM feeds WHERE url = ?').get(xmlUrl);
+                        const existing = db.prepare('SELECT url FROM feeds WHERE url = ?').get(xmlUrl);
                         let feedUrl = xmlUrl;
 
                         if (!existing) {
                             db.prepare(`
-                                INSERT INTO feeds (url, kind, title, site_url, icon_url, custom_title, last_status)
-                                VALUES (?, 'generic', ?, ?, NULL, NULL, 0)
+                                INSERT INTO feeds (url, kind, title, site_url, icon_url, custom_title, last_status, retry_count)
+                                VALUES (?, 'generic', ?, ?, NULL, NULL, 0, 0)
                             `).run(xmlUrl, text, node.htmlUrl || null);
                             job.result.added++;
                         } else {
@@ -111,45 +109,34 @@ async function processImport(jobId: string, parsed: any) {
 
                         // Add to folder if applicable
                         if (folderId) {
-                            db.prepare('INSERT OR IGNORE INTO folder_feeds (folder_id, feed_url) VALUES (?, ?)')
-                                .run(folderId, feedUrl);
+                            db.prepare('INSERT OR IGNORE INTO folder_feeds (folder_id, feed_url, created_at) VALUES (?, ?, ?)')
+                                .run(folderId, feedUrl, new Date().toISOString());
                         }
                     } catch (e) {
                         job.result.failed++;
                         job.errors.push(`Failed to import ${xmlUrl}: ${e instanceof Error ? e.message : String(e)}`);
                     }
                 });
-            } else if (node.outline) {
+            }
+            
+            // Check for nested outlines (folders)
+            if (node.outline) {
                 // It's a folder (has children)
-                // In standard OPML, a folder is an outline with no xmlUrl but has children
+                const folderName = text || 'Unnamed Folder';
                 
-                // 1. Create Folder
-                const folderName = text;
-                let currentFolderId = folderId;
-
-                // Create folder action (immediate, not deferred, to get ID for children)
-                // Actually, we can defer it if we maintain state, but simpler to run logic now?
-                // No, we want to count total actions.
-                // We'll wrap the *creation* in an action too? 
-                // Or just assume folders are cheap and fast.
-                // Let's create folders immediately during traversal? 
-                // No, "processImport" is async. traverse is sync.
-                // We need to queue the folder creation to track progress properly?
-                // Actually, folder creation is fast. Feed import is fast (DB only).
-                // The main issue with the old one was it wasn't reporting *progress*.
-                
-                // Let's create the folder immediately to get the ID for children.
-                const existingFolder = db.prepare('SELECT id FROM folders WHERE name = ?').get(folderName);
-                let newFolderId;
+                // Get or create folder
+                let currentFolderId: string;
+                const existingFolder = db.prepare('SELECT id FROM folders WHERE name = ?').get(folderName) as any;
                 
                 if (existingFolder) {
-                    newFolderId = (existingFolder as any).id;
+                    currentFolderId = existingFolder.id;
                 } else {
-                    const res = db.prepare('INSERT INTO folders (name) VALUES (?)').run(folderName);
-                    newFolderId = res.lastInsertRowid.toString();
+                    currentFolderId = `folder_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                    db.prepare('INSERT INTO folders (id, name, created_at) VALUES (?, ?, ?)')
+                        .run(currentFolderId, folderName, new Date().toISOString());
                 }
 
-                traverse(node.outline, newFolderId);
+                traverse(node.outline, currentFolderId);
             }
         }
 

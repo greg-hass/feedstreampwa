@@ -27,14 +27,14 @@ fastify.setErrorHandler(errorHandler);
 fastify.setNotFoundHandler(notFoundHandler);
 
 // Register routes
-fastify.register(feedRoutes, { prefix: '/api' });
-fastify.register(itemRoutes, { prefix: '/api' });
-fastify.register(folderRoutes, { prefix: '/api' });
-fastify.register(settingsRoutes, { prefix: '/api' });
-fastify.register(readerRoutes, { prefix: '/api' });
-fastify.register(searchRoutes, { prefix: '/api' });
-fastify.register(refreshRoutes, { prefix: '/api' });
-fastify.register(opmlRoutes, { prefix: '/api' });
+fastify.register(feedRoutes);
+fastify.register(itemRoutes);
+fastify.register(folderRoutes);
+fastify.register(settingsRoutes);
+fastify.register(readerRoutes);
+fastify.register(searchRoutes);
+fastify.register(refreshRoutes);
+fastify.register(opmlRoutes, { prefix: '/opml' });
 
 // Health check endpoint
 fastify.get('/health', async (request, reply) => {

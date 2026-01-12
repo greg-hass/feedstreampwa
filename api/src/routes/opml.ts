@@ -6,8 +6,8 @@ import { createImportJob, getJobStatus } from '../services/import-service.js';
 const APOS_ENTITY = String.fromCharCode(38) + '#39;';
 
 export async function opmlRoutes(fastify: FastifyInstance) {
-  // GET /api/opml - Export feeds as OPML
-  fastify.get('/opml', async (request: FastifyRequest, reply: FastifyReply) => {
+  // GET /export - Export feeds as OPML
+  fastify.get('/export', async (request: FastifyRequest, reply: FastifyReply) => {
     const db = getDatabase();
 
     // Get all feeds
@@ -26,11 +26,12 @@ ${(feeds as any[]).map(feed => `    <outline type="rss" text="${escapeXml(feed.t
 </opml>`;
 
     reply.type('application/xml; charset=utf-8');
+    reply.header('Content-Disposition', `attachment; filename="feedstream-export-${new Date().toISOString().split('T')[0]}.opml"`);
     return opml;
   });
 
-  // POST /api/opml - Import feeds from OPML (Async)
-  fastify.post('/opml', async (request: FastifyRequest<{ Body: any }>, reply: FastifyReply) => {
+  // POST / - Import feeds from OPML (Async)
+  fastify.post('/', async (request: FastifyRequest<{ Body: any }>, reply: FastifyReply) => {
     try {
       const validated = validateImportOpmlBody(request.body);
       const { opml } = validated;
@@ -43,8 +44,8 @@ ${(feeds as any[]).map(feed => `    <outline type="rss" text="${escapeXml(feed.t
     }
   });
 
-  // GET /api/opml/status/:id - Check import status
-  fastify.get('/opml/status/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+  // GET /status/:id - Check import status
+  fastify.get('/status/:id', async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
     const status = getJobStatus(request.params.id);
     
     if (!status) {
@@ -57,10 +58,11 @@ ${(feeds as any[]).map(feed => `    <outline type="rss" text="${escapeXml(feed.t
 
 // Helper: Escape XML special characters
 function escapeXml(str: string): string {
+  if (!str) return '';
   return str
-    .replace(/&/g, '&')
-    .replace(/</g, '<')
-    .replace(/>/g, '>')
-    .replace(/"/g, '"')
-    .replace(/'/g, APOS_ENTITY);
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }

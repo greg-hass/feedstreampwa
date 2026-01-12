@@ -5,6 +5,7 @@
     LayoutDashboard,
     List,
     Bookmark,
+    Circle,
     Settings,
     Rss,
     Youtube,
@@ -23,6 +24,7 @@
     selectedFeedUrl,
     setViewSmartFolder,
     setViewAll,
+    setViewUnread,
     setViewBookmarks,
     setViewFolder,
     setViewFeed,
@@ -36,6 +38,7 @@
     podcastCount,
     formatUnreadTotal,
     libraryTotal,
+    allArticlesUnread,
   } from "$lib/stores/counts";
   import { folders } from "$lib/stores/folders";
 
@@ -140,6 +143,39 @@
         {#if $viewMode === 'all'}
           <div
             class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
+          ></div>
+        {/if}
+      </button>
+
+      <!-- Unread Button -->
+      <button
+        on:click={() => {
+          setViewUnread();
+          closeMenu();
+        }}
+        class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative overflow-hidden
+        {$viewMode === 'unread'
+          ? 'bg-white/10 text-white shadow-inner border border-white/5'
+          : 'text-white/60 hover:text-white hover:bg-white/5'}"
+      >
+        <div class="flex items-center gap-3">
+          <Circle
+            size={24}
+            class={$viewMode === 'unread'
+              ? "text-blue-400"
+              : "text-current group-hover:text-white"}
+            fill={$viewMode === 'unread' ? "currentColor" : "none"}
+          />
+          Unread
+        </div>
+        {#if $allArticlesUnread > 0}
+          <span class="text-xs font-medium {$viewMode === 'unread' ? 'text-white/70' : 'text-white/40'}">
+            {$allArticlesUnread}
+          </span>
+        {/if}
+        {#if $viewMode === 'unread'}
+          <div
+            class="absolute inset-y-0 left-0 w-1 bg-blue-400 rounded-r-full shadow-[0_0_10px_2px_rgba(96,165,250,0.5)]"
           ></div>
         {/if}
       </button>

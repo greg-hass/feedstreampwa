@@ -83,7 +83,7 @@
 
   async function handleExportOpml() {
     try {
-      const response = await fetch("/api/feeds/export");
+      const response = await fetch("/api/opml/export");
       if (!response.ok) throw new Error("Export failed");
 
       const blob = await response.blob();

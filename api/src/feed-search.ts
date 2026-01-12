@@ -6,6 +6,66 @@ export interface SearchResult {
     description: string;
     type: 'rss' | 'youtube' | 'reddit';
     thumbnail?: string;
+    site_url?: string;
+}
+
+const TIMEOUT_MS = 3000;
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+async function fetchWithTimeout(url: string, options: RequestInit = {}) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal,
+            headers: {
+                'User-Agent': USER_AGENT,
+                ...options.headers
+            }
+        });
+        clearTimeout(id);
+        return response;
+    } catch (error) {
+        clearTimeout(id);
+        throw error;
+    }
+}
+
+async function checkFeedUrl(url: string): Promise<boolean> {
+    try {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), TIMEOUT_MS);
+        
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: { 
+                    'User-Agent': USER_AGENT,
+                    'Accept': 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*'
+                },
+                signal: controller.signal
+            });
+            
+            clearTimeout(id);
+            if (!response.ok) return false;
+
+            const type = response.headers.get('content-type')?.toLowerCase() || '';
+            
+            // Check for XML/RSS/Atom content types
+            if (type.includes('xml') || type.includes('rss') || type.includes('atom')) {
+                return true;
+            }
+
+            // If text/plain, it might still be a feed, but we'll skip for now to avoid false positives
+            return false;
+        } catch (e) {
+            clearTimeout(id);
+            return false;
+        }
+    } catch {
+        return false;
+    }
 }
 
 /**
@@ -13,33 +73,63 @@ export interface SearchResult {
  */
 export async function searchYouTube(query: string): Promise<SearchResult[]> {
     const results: SearchResult[] = [];
+    const cleanQuery = query.trim();
 
-    // Try common YouTube channel URL patterns
-    const cleanQuery = query.trim().toLowerCase().replace(/\s+/g, '');
+    // Determine the channel URL to scrape
+    let channelUrl = '';
+    let handle = '';
 
-    // Pattern 1: Direct channel name (e.g., @mkbhd)
-    if (cleanQuery.startsWith('@') || !cleanQuery.includes(' ')) {
-        const channelHandle = cleanQuery.startsWith('@') ? cleanQuery : `@${cleanQuery}`;
-        results.push({
-            title: `YouTube: ${channelHandle}`,
-            url: `https://www.youtube.com/${channelHandle}`,
-            description: `Subscribe to ${channelHandle}'s channel`,
-            type: 'youtube'
-        });
+    if (cleanQuery.startsWith('http')) {
+        channelUrl = cleanQuery;
+    } else if (cleanQuery.startsWith('@')) {
+        handle = cleanQuery;
+        channelUrl = `https://www.youtube.com/${handle}`;
+    } else {
+        // Assume it's a handle or search query. 
+        // Since we can't easily search YT without an API key, we'll assume it's a handle if it has no spaces, 
+        // or try to construct a handle.
+        handle = cleanQuery.includes(' ') ? `@${cleanQuery.replace(/\s+/g, '')}` : `@${cleanQuery}`;
+        channelUrl = `https://www.youtube.com/${handle}`;
     }
 
-    // Pattern 2: Try as channel name with spaces replaced
-    const channelName = query.trim().replace(/\s+/g, '').toLowerCase();
-    if (channelName !== cleanQuery) {
-        results.push({
-            title: `YouTube: @${channelName}`,
-            url: `https://www.youtube.com/@${channelName}`,
-            description: `Subscribe to @${channelName}'s channel`,
-            type: 'youtube'
-        });
+    try {
+        const response = await fetchWithTimeout(channelUrl);
+        if (response.ok) {
+            const text = await response.text();
+            
+            // Extract Channel ID
+            const channelIdMatch = text.match(/"channelId":"(UC[a-zA-Z0-9_-]+)"/);
+            const channelId = channelIdMatch ? channelIdMatch[1] : null;
+
+            // Extract Title
+            const titleMatch = text.match(/<title>([^<]+) - YouTube<\/title>/i) || text.match(/"title":"([^"]+)"/);
+            const title = titleMatch ? titleMatch[1] : cleanQuery;
+
+            // Extract Avatar (Thumbnail)
+            // Look for og:image or similar
+            const imageMatch = text.match(/<meta property="og:image" content="([^"]+)"/);
+            const thumbnail = imageMatch ? imageMatch[1] : undefined;
+
+            if (channelId) {
+                results.push({
+                    title: title,
+                    url: `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`,
+                    description: `YouTube Channel: ${title}`,
+                    type: 'youtube',
+                    thumbnail: thumbnail,
+                    site_url: channelUrl
+                });
+            }
+        }
+    } catch (e) {
+        // Fallback if scrape fails (e.g. timeout): Return a result if it looked like a handle, 
+        // but warn it's unverified or just return the handle-based URL if we can't get the ID.
+        // Actually, without the ID, we can't make a valid RSS feed. 
+        // So we might return nothing or a "best effort" that might fail later.
+        // Let's return nothing to avoid "Possible" spam that doesn't work.
     }
 
-    return results.slice(0, 3); // Limit to top 3
+    return results;
 }
 
 /**
@@ -47,33 +137,33 @@ export async function searchYouTube(query: string): Promise<SearchResult[]> {
  */
 export async function searchReddit(query: string): Promise<SearchResult[]> {
     const results: SearchResult[] = [];
-
-    // Clean the query
-    const cleanQuery = query.trim().toLowerCase().replace(/^r\//, '').replace(/\s+/g, '');
+    
+    // Clean the query: remove r/ prefix, keep spaces but valid subreddits usually don't have spaces (except older ones that redirect?)
+    // Actually subreddits don't have spaces.
+    const cleanQuery = query.trim().replace(/^r\//i, '').replace(/\s+/g, '');
 
     if (!cleanQuery) return results;
 
-    // Direct subreddit match
     const subredditUrl = `https://www.reddit.com/r/${cleanQuery}/.rss`;
-    results.push({
-        title: `r/${cleanQuery}`,
-        url: subredditUrl,
-        description: `Subscribe to r/${cleanQuery} subreddit`,
-        type: 'reddit'
-    });
-
-    // Try with underscores if query has spaces
-    if (query.includes(' ')) {
-        const withUnderscores = query.trim().replace(/\s+/g, '_').toLowerCase();
-        results.push({
-            title: `r/${withUnderscores}`,
-            url: `https://www.reddit.com/r/${withUnderscores}/.rss`,
-            description: `Subscribe to r/${withUnderscores} subreddit`,
-            type: 'reddit'
-        });
+    
+    // Quick verify
+    try {
+        const isValid = await checkFeedUrl(subredditUrl);
+        if (isValid) {
+            results.push({
+                title: `r/${cleanQuery}`,
+                url: subredditUrl,
+                description: `Reddit Subreddit`,
+                type: 'reddit',
+                thumbnail: 'https://www.redditstatic.com/desktop2x/img/favicon/favicon-96x96.png',
+                site_url: `https://www.reddit.com/r/${cleanQuery}`
+            });
+        }
+    } catch {
+        // Ignore check failures, maybe just push it if we want to be lenient
     }
 
-    return results.slice(0, 2); // Limit to top 2
+    return results;
 }
 
 /**
@@ -81,57 +171,87 @@ export async function searchReddit(query: string): Promise<SearchResult[]> {
  */
 export async function searchRSS(query: string): Promise<SearchResult[]> {
     const results: SearchResult[] = [];
+    const cleanQuery = query.trim().toLowerCase();
+    
+    // If it looks like a URL, check it directly
+    if (cleanQuery.includes('.') && !cleanQuery.includes(' ')) {
+        let url = cleanQuery;
+        if (!url.startsWith('http')) {
+            url = `https://${url}`;
+        }
 
-    // Clean the query
-    const cleanQuery = query.trim().toLowerCase().replace(/\s+/g, '');
+        // Potential paths to check
+        const candidates = [
+            url,
+            url.endsWith('/') ? `${url}feed` : `${url}/feed`,
+            url.endsWith('/') ? `${url}rss` : `${url}/rss`,
+            url.endsWith('/') ? `${url}rss.xml` : `${url}/rss.xml`,
+        ];
 
-    if (!cleanQuery) return results;
+        const checks = await Promise.allSettled(candidates.map(async (u) => {
+            const isFeed = await checkFeedUrl(u);
+            return isFeed ? u : null;
+        }));
 
-    // Common RSS feed patterns
+        for (const check of checks) {
+            if (check.status === 'fulfilled' && check.value) {
+                const domain = new URL(check.value).hostname;
+                results.push({
+                    title: domain,
+                    url: check.value,
+                    description: `Feed from ${domain}`,
+                    type: 'rss',
+                    thumbnail: `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
+                    site_url: `https://${domain}`
+                });
+                return results; // Return early if we found a direct match
+            }
+        }
+    }
+
+    // Keyword search - check common domains
     const commonDomains = [
-        { pattern: 'omgubuntu', url: 'https://www.omgubuntu.co.uk/feed', title: 'OMG! Ubuntu!' },
         { pattern: 'techcrunch', url: 'https://techcrunch.com/feed/', title: 'TechCrunch' },
-        { pattern: 'arstechnica', url: 'https://feeds.arstechnica.com/arstechnica/index', title: 'Ars Technica' },
-        { pattern: 'theverge', url: 'https://www.theverge.com/rss/index.xml', title: 'The Verge' },
+        { pattern: 'verge', url: 'https://www.theverge.com/rss/index.xml', title: 'The Verge' },
         { pattern: 'wired', url: 'https://www.wired.com/feed/rss', title: 'Wired' },
         { pattern: 'engadget', url: 'https://www.engadget.com/rss.xml', title: 'Engadget' },
         { pattern: 'hackernews', url: 'https://news.ycombinator.com/rss', title: 'Hacker News' },
-        { pattern: 'slashdot', url: 'http://rss.slashdot.org/Slashdot/slashdotMain', title: 'Slashdot' },
-        { pattern: 'reddit', url: 'https://www.reddit.com/.rss', title: 'Reddit Frontpage' },
     ];
 
-    // Check for exact matches
     for (const domain of commonDomains) {
         if (cleanQuery.includes(domain.pattern)) {
+            const d = new URL(domain.url).hostname;
             results.push({
                 title: domain.title,
                 url: domain.url,
-                description: `Subscribe to ${domain.title} RSS feed`,
-                type: 'rss'
+                description: `Verified Feed`,
+                type: 'rss',
+                thumbnail: `https://www.google.com/s2/favicons?domain=${d}&sz=64`,
+                site_url: `https://${d}`
             });
         }
     }
 
-    // Try common URL patterns
-    if (results.length === 0) {
-        const possibleUrls = [
-            `https://${cleanQuery}.com/feed`,
-            `https://${cleanQuery}.com/rss`,
-            `https://www.${cleanQuery}.com/feed`,
-            `https://www.${cleanQuery}.com/rss`,
-        ];
-
-        for (const url of possibleUrls.slice(0, 2)) {
+    // Heuristic: try domain.com/feed
+    // Only if the query is a simple word or domain-like string
+    const domainGuess = cleanQuery.replace(/\s+/g, '');
+    if (domainGuess.length > 3 && /^[a-z0-9.-]+$/.test(domainGuess)) {
+        const possibleUrl = `https://${domainGuess}.com/feed`;
+        const isValid = await checkFeedUrl(possibleUrl);
+        
+        if (isValid) {
             results.push({
-                title: `${query} RSS Feed`,
-                url: url,
-                description: `Possible RSS feed for ${query}`,
-                type: 'rss'
+                title: `${query} Feed`,
+                url: possibleUrl,
+                description: `Detected Feed`,
+                type: 'rss',
+                thumbnail: `https://www.google.com/s2/favicons?domain=${domainGuess}.com&sz=64`,
+                site_url: `https://${domainGuess}.com`
             });
         }
     }
 
-    return results.slice(0, 3); // Limit to top 3
+    return results;
 }
 
 /**
@@ -139,20 +259,28 @@ export async function searchRSS(query: string): Promise<SearchResult[]> {
  */
 export async function searchFeeds(query: string, type: 'all' | 'rss' | 'youtube' | 'reddit' = 'all'): Promise<SearchResult[]> {
     const allResults: SearchResult[] = [];
+    
+    // Execute searches in parallel
+    const promises: Promise<SearchResult[]>[] = [];
 
     if (type === 'all' || type === 'rss') {
-        const rssResults = await searchRSS(query);
-        allResults.push(...rssResults);
+        promises.push(searchRSS(query));
     }
 
     if (type === 'all' || type === 'youtube') {
-        const youtubeResults = await searchYouTube(query);
-        allResults.push(...youtubeResults);
+        promises.push(searchYouTube(query));
     }
 
     if (type === 'all' || type === 'reddit') {
-        const redditResults = await searchReddit(query);
-        allResults.push(...redditResults);
+        promises.push(searchReddit(query));
+    }
+
+    const results = await Promise.allSettled(promises);
+    
+    for (const result of results) {
+        if (result.status === 'fulfilled') {
+            allResults.push(...result.value);
+        }
     }
 
     return allResults;
