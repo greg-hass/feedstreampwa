@@ -262,9 +262,15 @@
     width: 100%;
     max-width: 720px;
     min-height: 100vh;
-    padding: 24px var(--page-padding);
+    padding: 24px 16px;
     animation: scaleIn 0.25s ease-out;
     overflow-x: hidden;
+  }
+
+  @media (min-width: 769px) {
+    .reader-container {
+      padding: 24px 32px;
+    }
   }
 
   .reader-header {

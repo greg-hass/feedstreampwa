@@ -260,10 +260,12 @@
     max-width: 100vw;
   }
 
-  /* Sticky Header Container (Desktop) */
+  /* Fixed Header Container (Desktop) */
   .sticky-header {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 20;
     background: theme("colors.background");
     padding: 12px 0;
@@ -271,11 +273,13 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   }
 
-  /* Mobile Sticky Filter Chips */
+  /* Mobile Fixed Filter Chips */
   .mobile-sticky-filters {
-    position: sticky;
+    position: fixed;
     top: 52px; /* Height of MobileHeader */
-    z-index: 20;
+    left: 0;
+    right: 0;
+    z-index: 25;
     background: theme("colors.background");
     padding: 12px 0;
     backdrop-filter: blur(12px);
@@ -299,7 +303,6 @@
   .articles-list {
     display: flex;
     flex-direction: column;
-    padding-top: 12px;
   }
 
   .empty-state {
@@ -322,13 +325,19 @@
     to { transform: rotate(360deg); }
   }
 
+  @media (min-width: 769px) {
+    .articles-list {
+      padding-top: 180px; /* Space for fixed desktop header */
+    }
+  }
+
   @media (max-width: 768px) {
     .page-header, .search-bar-full {
-        margin-bottom: 12px;
+      margin-bottom: 12px;
     }
 
     .articles-list {
-      padding-top: 12px;
+      padding-top: 110px; /* Space for fixed mobile header + filters */
     }
   }
 </style>

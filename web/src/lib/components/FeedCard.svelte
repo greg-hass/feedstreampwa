@@ -31,8 +31,14 @@
     ? `https://img.youtube.com/vi/${youtubeVideoId}/mqdefault.jpg`
     : null;
 
-  // Use YouTube thumbnail if available, otherwise use media_thumbnail
-  $: thumbnailUrl = youtubeThumbnail || item.media_thumbnail;
+  // Check if Reddit post contains video (Reddit video posts have media_thumbnail but can't be played)
+  $: isRedditVideo = feedType === 'reddit' && item.url && (
+    item.url.includes('v.redd.it') ||
+    item.url.includes('/comments/') && item.media_thumbnail
+  );
+
+  // Use YouTube thumbnail if available, otherwise use media_thumbnail (but skip Reddit videos)
+  $: thumbnailUrl = youtubeThumbnail || (isRedditVideo ? null : item.media_thumbnail);
 
   // Format Date
   const date = new Date(item.published_at || item.created_at);
@@ -207,7 +213,7 @@
   <!-- Content Body -->
   <div class="flex flex-col flex-1 p-3 md:p-5 pt-2 md:pt-3">
     <!-- Meta -->
-    <div class="flex items-center justify-between mb-2 text-xs text-white/40">
+    <div class="flex items-center justify-between mb-2 text-xs text-indigo-400">
       <span>{dateStr}</span>
       {#if item.is_read}
         <span class="text-white/20 flex items-center gap-1"
@@ -218,7 +224,7 @@
 
     <!-- Title -->
     <h3
-      class="text-base font-semibold text-gray-100 leading-tight line-clamp-2 md:line-clamp-3 mb-2 group-hover:text-white transition-colors {item.is_read
+      class="text-base font-semibold text-emerald-400 leading-tight line-clamp-2 md:line-clamp-3 mb-2 group-hover:text-emerald-300 transition-colors {item.is_read
         ? 'text-white/50'
         : ''}"
     >
