@@ -109,8 +109,14 @@
 
   .progress-fill {
     height: 100%;
-    background: var(--accent);
+    background: rgb(16 185 129); /* Emerald 500 */
     border-radius: 99px;
     transition: width 0.3s ease;
+  }
+
+  @media (max-width: 768px) {
+    .refresh-toast {
+      bottom: 96px; /* Above bottom nav on mobile */
+    }
   }
 </style>
