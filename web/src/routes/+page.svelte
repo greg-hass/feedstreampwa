@@ -369,7 +369,7 @@
 
   @media (min-width: 769px) {
     .articles-list {
-      padding-top: 140px; /* Space for fixed desktop header */
+      padding-top: 132px; /* Space for fixed desktop header */
     }
   }
 
@@ -380,7 +380,7 @@
     }
 
     .articles-list {
-      padding-top: 110px; /* Space for fixed mobile header + filters */
+      padding-top: 96px; /* Space for fixed mobile header + filters */
     }
   }
 </style>
