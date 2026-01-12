@@ -213,19 +213,6 @@
           </div>
         {:else if $readerData}
           <article class="reader-content">
-            {#if $readerData.url && ($readerData.url.includes("youtube.com/watch") || $readerData.url.includes("youtu.be/"))}
-              <div
-                class="video-wrapper"
-                style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 12px; margin-bottom: 24px; background: #000;"
-              >
-                <div
-                  id="yt-player-container"
-                  style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
-                ></div>
-              </div>
-            {:else if $readerData.imageUrl}
-              <img src={$readerData.imageUrl} alt="" class="reader-hero" />
-            {/if}
             <h1 class="reader-title" id="reader-title">
               {$readerData.title || "Untitled"}
             </h1>
@@ -238,6 +225,22 @@
                 {#if $readerData.siteName}<span>{$readerData.siteName}</span
                   >{/if}
               </div>
+            {/if}
+
+            {#if $readerData.url && ($readerData.url.includes("youtube.com/watch") || $readerData.url.includes("youtu.be/"))}
+              <div
+                class="video-wrapper"
+                style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 12px; margin-bottom: 24px; background: #000;"
+              >
+                <div
+                  id="yt-player-container"
+                  style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+                ></div>
+              </div>
+            {/if}
+
+            {#if $readerData.imageUrl && !($readerData.url && ($readerData.url.includes("youtube.com/watch") || $readerData.url.includes("youtu.be/")))}
+              <img src={$readerData.imageUrl} alt="" class="reader-hero" />
             {/if}
             <div class="reader-body" id="reader-body-content">
               {#if !($readerData.url && ($readerData.url.includes("youtube.com/watch") || $readerData.url.includes("youtu.be/")))}

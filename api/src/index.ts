@@ -706,6 +706,37 @@ function extractRedditMetadata(item: any): any {
     return metadata;
 }
 
+// Helper: Clean Reddit-specific junk from RSS content
+function cleanRedditContent(html: string): string {
+    if (!html) return html;
+
+    let cleaned = html;
+
+    // Remove the "submitted by /u/user to /r/subreddit" line
+    cleaned = cleaned.replace(/<span[^>]*>.*?submitted by.*?to.*?<\/span>/gi, '');
+    cleaned = cleaned.replace(/submitted by.*?to.*?<br\s*\/?>/gi, '');
+
+    // Remove the [link] and [comments] links
+    cleaned = cleaned.replace(/<a[^>]*>\[link\]<\/a>/gi, '');
+    cleaned = cleaned.replace(/<a[^>]*>\[comments\]<\/a>/gi, '');
+
+    // Remove common Reddit RSS table structure noise but keep images if they are content
+    // Reddit RSS often wraps everything in a table.
+    // Use JSDOM to clean it up more safely if needed, but regex for simple patterns is faster here.
+    
+    // Remove "v.redd.it" or other placeholder links that aren't useful in text
+    cleaned = cleaned.replace(/<a[^>]*>https?:\/\/v\.redd\.it\/[^<]*<\/a>/gi, '');
+
+    // Remove redundant line breaks
+    cleaned = cleaned.replace(/(<br\s*\/?>\s*){2,}/gi, '<br/>');
+
+    // Remove any remaining empty links or spans
+    cleaned = cleaned.replace(/<a[^>]*><\/a>/gi, '');
+    cleaned = cleaned.replace(/<span[^>]*><\/span>/gi, '');
+
+    return cleaned.trim();
+}
+
 // Helper: Extract hero image from HTML content
 function extractHeroImage(item: any): string | null {
     // Try media:thumbnail first (RSS/Atom standard)
@@ -797,6 +828,10 @@ function normalizeItem(item: any, kind: 'youtube' | 'reddit' | 'podcast' | 'gene
     } else if (kind === 'reddit') {
         const redditMeta = extractRedditMetadata(item);
         Object.assign(normalized, redditMeta);
+        
+        // Clean Reddit content/summary junk
+        if (normalized.content) normalized.content = cleanRedditContent(normalized.content);
+        if (normalized.summary) normalized.summary = cleanRedditContent(normalized.summary);
     }
 
     // Extract hero image for all types (including generic RSS)
@@ -2488,6 +2523,20 @@ fastify.get('/reader', async (request, reply) => {
         noiseSelectors.forEach(selector => {
             document.querySelectorAll(selector).forEach((el: Element) => el.remove());
         });
+
+        // Reddit specific cleaning in reader view
+        if (targetUrl.includes('reddit.com')) {
+            // Remove Reddit specific noise like "Go to Reddit", "Login", etc. if they leak in
+            const redditNoise = [
+                '.reddit-link', '.subreddit-link', '.author-link', 
+                '#header', '#footer', '.comment-count', '.share-button',
+                'div[data-click-id="background"] > div:first-child', // Sidebar/Prompt noise
+                'button' // Most buttons are noise
+            ];
+            redditNoise.forEach(sel => {
+                document.querySelectorAll(sel).forEach((el: Element) => el.remove());
+            });
+        }
 
         // Run Readability
         const reader = new Readability(document);
