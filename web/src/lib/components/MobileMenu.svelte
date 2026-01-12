@@ -1,3 +1,7 @@
+<script context="module">
+  import { fade, fly } from "svelte/transition";
+</script>
+
 <script lang="ts">
   import { page } from "$app/stores";
   import {
@@ -88,7 +92,7 @@
 
   <!-- Slide-in Menu -->
   <aside
-    class="fixed left-0 top-0 h-full w-[280px] bg-background border-r border-white/10 z-[70] md:hidden overflow-y-auto shadow-2xl"
+    class="fixed left-0 top-0 h-full w-[280px] bg-[#121212] border-r border-white/10 z-[70] md:hidden overflow-y-auto shadow-2xl"
     transition:fly={{ x: -280, duration: 300, opacity: 1 }}
   >
     <!-- Header -->
@@ -134,13 +138,13 @@
         <div class="flex items-center gap-3">
           <LayoutDashboard
             size={24}
-            class={$viewMode === 'all'
+            class={$viewMode === "all"
               ? "text-accent"
               : "text-current group-hover:text-white"}
           />
           All Articles
         </div>
-        {#if $viewMode === 'all'}
+        {#if $viewMode === "all"}
           <div
             class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
           ></div>
@@ -161,19 +165,23 @@
         <div class="flex items-center gap-3">
           <Circle
             size={24}
-            class={$viewMode === 'unread'
+            class={$viewMode === "unread"
               ? "text-blue-400"
               : "text-current group-hover:text-white"}
-            fill={$viewMode === 'unread' ? "currentColor" : "none"}
+            fill={$viewMode === "unread" ? "currentColor" : "none"}
           />
           Unread
         </div>
         {#if $allArticlesUnread > 0}
-          <span class="text-xs font-medium {$viewMode === 'unread' ? 'text-white/70' : 'text-white/40'}">
+          <span
+            class="text-xs font-medium {$viewMode === 'unread'
+              ? 'text-white/70'
+              : 'text-white/40'}"
+          >
             {$allArticlesUnread}
           </span>
         {/if}
-        {#if $viewMode === 'unread'}
+        {#if $viewMode === "unread"}
           <div
             class="absolute inset-y-0 left-0 w-1 bg-blue-400 rounded-r-full shadow-[0_0_10px_2px_rgba(96,165,250,0.5)]"
           ></div>
@@ -194,19 +202,23 @@
         <div class="flex items-center gap-3">
           <Bookmark
             size={24}
-            class={$viewMode === 'bookmarks'
+            class={$viewMode === "bookmarks"
               ? "text-[#FF9500]"
               : "text-current group-hover:text-white"}
-            fill={$viewMode === 'bookmarks' ? "currentColor" : "none"}
+            fill={$viewMode === "bookmarks" ? "currentColor" : "none"}
           />
           Bookmarks
         </div>
         {#if $libraryTotal > 0}
-          <span class="text-xs font-medium {$viewMode === 'bookmarks' ? 'text-white/70' : 'text-white/40'}">
+          <span
+            class="text-xs font-medium {$viewMode === 'bookmarks'
+              ? 'text-white/70'
+              : 'text-white/40'}"
+          >
             {$libraryTotal}
           </span>
         {/if}
-        {#if $viewMode === 'bookmarks'}
+        {#if $viewMode === "bookmarks"}
           <div
             class="absolute inset-y-0 left-0 w-1 bg-[#FF9500] rounded-r-full shadow-[0_0_10px_2px_rgba(255,149,0,0.5)]"
           ></div>
@@ -219,20 +231,33 @@
       >
         Smart Folders
       </div>
-      
+
       <button
         class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
           {$viewMode === 'smart' && $activeSmartFolder === 'rss'
-            ? 'bg-white/10 text-white shadow-inner border border-white/5'
-            : 'text-white/60 hover:text-white hover:bg-white/5'}"
-        on:click={() => { setViewSmartFolder('rss'); closeMenu(); }}
+          ? 'bg-white/10 text-white shadow-inner border border-white/5'
+          : 'text-white/60 hover:text-white hover:bg-white/5'}"
+        on:click={() => {
+          setViewSmartFolder("rss");
+          closeMenu();
+        }}
       >
         <div class="flex items-center gap-3">
-          <Rss size={24} class={$viewMode === 'smart' && $activeSmartFolder === 'rss' ? 'text-accent' : 'text-current group-hover:text-white'} />
+          <Rss
+            size={24}
+            class={$viewMode === "smart" && $activeSmartFolder === "rss"
+              ? "text-accent"
+              : "text-current group-hover:text-white"}
+          />
           RSS
         </div>
         {#if $rssCount.total > 0}
-          <span class="text-xs font-medium {$viewMode === 'smart' && $activeSmartFolder === 'rss' ? 'text-white/70' : 'text-white/40'}">
+          <span
+            class="text-xs font-medium {$viewMode === 'smart' &&
+            $activeSmartFolder === 'rss'
+              ? 'text-white/70'
+              : 'text-white/40'}"
+          >
             {formatUnreadTotal($rssCount.unread, $rssCount.total)}
           </span>
         {/if}
@@ -241,16 +266,29 @@
       <button
         class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
           {$viewMode === 'smart' && $activeSmartFolder === 'youtube'
-            ? 'bg-white/10 text-white shadow-inner border border-white/5'
-            : 'text-white/60 hover:text-white hover:bg-white/5'}"
-        on:click={() => { setViewSmartFolder('youtube'); closeMenu(); }}
+          ? 'bg-white/10 text-white shadow-inner border border-white/5'
+          : 'text-white/60 hover:text-white hover:bg-white/5'}"
+        on:click={() => {
+          setViewSmartFolder("youtube");
+          closeMenu();
+        }}
       >
         <div class="flex items-center gap-3">
-          <Youtube size={24} class={$viewMode === 'smart' && $activeSmartFolder === 'youtube' ? 'text-accent' : 'text-current group-hover:text-white'} />
+          <Youtube
+            size={24}
+            class={$viewMode === "smart" && $activeSmartFolder === "youtube"
+              ? "text-accent"
+              : "text-current group-hover:text-white"}
+          />
           YouTube
         </div>
         {#if $youtubeCount.total > 0}
-          <span class="text-xs font-medium {$viewMode === 'smart' && $activeSmartFolder === 'youtube' ? 'text-white/70' : 'text-white/40'}">
+          <span
+            class="text-xs font-medium {$viewMode === 'smart' &&
+            $activeSmartFolder === 'youtube'
+              ? 'text-white/70'
+              : 'text-white/40'}"
+          >
             {formatUnreadTotal($youtubeCount.unread, $youtubeCount.total)}
           </span>
         {/if}
@@ -259,16 +297,29 @@
       <button
         class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
           {$viewMode === 'smart' && $activeSmartFolder === 'reddit'
-            ? 'bg-white/10 text-white shadow-inner border border-white/5'
-            : 'text-white/60 hover:text-white hover:bg-white/5'}"
-        on:click={() => { setViewSmartFolder('reddit'); closeMenu(); }}
+          ? 'bg-white/10 text-white shadow-inner border border-white/5'
+          : 'text-white/60 hover:text-white hover:bg-white/5'}"
+        on:click={() => {
+          setViewSmartFolder("reddit");
+          closeMenu();
+        }}
       >
         <div class="flex items-center gap-3">
-          <MessageCircle size={24} class={$viewMode === 'smart' && $activeSmartFolder === 'reddit' ? 'text-accent' : 'text-current group-hover:text-white'} />
+          <MessageCircle
+            size={24}
+            class={$viewMode === "smart" && $activeSmartFolder === "reddit"
+              ? "text-accent"
+              : "text-current group-hover:text-white"}
+          />
           Reddit
         </div>
         {#if $redditCount.total > 0}
-          <span class="text-xs font-medium {$viewMode === 'smart' && $activeSmartFolder === 'reddit' ? 'text-white/70' : 'text-white/40'}">
+          <span
+            class="text-xs font-medium {$viewMode === 'smart' &&
+            $activeSmartFolder === 'reddit'
+              ? 'text-white/70'
+              : 'text-white/40'}"
+          >
             {formatUnreadTotal($redditCount.unread, $redditCount.total)}
           </span>
         {/if}
@@ -277,23 +328,38 @@
       <button
         class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
           {$viewMode === 'smart' && $activeSmartFolder === 'podcast'
-            ? 'bg-white/10 text-white shadow-inner border border-white/5'
-            : 'text-white/60 hover:text-white hover:bg-white/5'}"
-        on:click={() => { setViewSmartFolder('podcast'); closeMenu(); }}
+          ? 'bg-white/10 text-white shadow-inner border border-white/5'
+          : 'text-white/60 hover:text-white hover:bg-white/5'}"
+        on:click={() => {
+          setViewSmartFolder("podcast");
+          closeMenu();
+        }}
       >
         <div class="flex items-center gap-3">
-          <Mic size={24} class={$viewMode === 'smart' && $activeSmartFolder === 'podcast' ? 'text-accent' : 'text-current group-hover:text-white'} />
+          <Mic
+            size={24}
+            class={$viewMode === "smart" && $activeSmartFolder === "podcast"
+              ? "text-accent"
+              : "text-current group-hover:text-white"}
+          />
           Podcasts
         </div>
         {#if $podcastCount.total > 0}
-          <span class="text-xs font-medium {$viewMode === 'smart' && $activeSmartFolder === 'podcast' ? 'text-white/70' : 'text-white/40'}">
+          <span
+            class="text-xs font-medium {$viewMode === 'smart' &&
+            $activeSmartFolder === 'podcast'
+              ? 'text-white/70'
+              : 'text-white/40'}"
+          >
             {formatUnreadTotal($podcastCount.unread, $podcastCount.total)}
           </span>
         {/if}
       </button>
 
       <!-- Feeds & Folders Tree -->
-      <div class="text-xs font-semibold text-white/40 uppercase tracking-wider px-3 mb-2 mt-8">
+      <div
+        class="text-xs font-semibold text-white/40 uppercase tracking-wider px-3 mb-2 mt-8"
+      >
         Feeds & Folders
       </div>
 
@@ -303,12 +369,15 @@
             <button
               class="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
                 {$viewMode === 'folder' && $activeFolderId === folder.id
-                  ? 'bg-white/10 text-white shadow-inner border border-white/5'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'}"
-              on:click={() => { setViewFolder(folder.id); closeMenu(); }}
+                ? 'bg-white/10 text-white shadow-inner border border-white/5'
+                : 'text-white/60 hover:text-white hover:bg-white/5'}"
+              on:click={() => {
+                setViewFolder(folder.id);
+                closeMenu();
+              }}
             >
               <div class="flex items-center gap-2 overflow-hidden flex-1">
-                <button 
+                <button
                   class="p-1 -ml-1 rounded-md hover:bg-white/10 text-white/40 hover:text-white"
                   on:click={(e) => toggleFolder(e, folder.id)}
                 >
@@ -320,14 +389,16 @@
                 </button>
                 <FolderOpen
                   size={20}
-                  class={$viewMode === 'folder' && $activeFolderId === folder.id
-                    ? 'text-accent'
-                    : 'text-current group-hover:text-white'}
+                  class={$viewMode === "folder" && $activeFolderId === folder.id
+                    ? "text-accent"
+                    : "text-current group-hover:text-white"}
                 />
                 <span class="truncate">{folder.name}</span>
               </div>
               {#if ($folderUnreadCounts[folder.id] || 0) > 0}
-                <span class="text-xs font-medium bg-accent text-bg0 px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                <span
+                  class="text-xs font-medium bg-accent text-bg0 px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+                >
                   {$folderUnreadCounts[folder.id]}
                 </span>
               {/if}
@@ -335,14 +406,19 @@
 
             <!-- Nested Feeds -->
             {#if openFolders[folder.id]}
-              <div class="flex flex-col ml-3 pl-3 border-l border-white/5 mt-1 mb-1 gap-1">
+              <div
+                class="flex flex-col ml-3 pl-3 border-l border-white/5 mt-1 mb-1 gap-1"
+              >
                 {#each $feedsTree.byFolder[folder.id] || [] as feed}
                   <button
                     class="w-full flex items-center justify-between gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 group relative overflow-hidden
                       {$viewMode === 'feed' && $selectedFeedUrl === feed.url
-                        ? 'bg-white/10 text-white'
-                        : 'text-white/50 hover:text-white hover:bg-white/5'}"
-                    on:click={() => { setViewFeed(feed.url); closeMenu(); }}
+                      ? 'bg-white/10 text-white'
+                      : 'text-white/50 hover:text-white hover:bg-white/5'}"
+                    on:click={() => {
+                      setViewFeed(feed.url);
+                      closeMenu();
+                    }}
                   >
                     <div class="flex items-center gap-3 overflow-hidden">
                       {#if feed.icon_url}
@@ -357,11 +433,15 @@
                           }}
                         />
                       {:else}
-                        <div class="w-4 h-4 rounded flex items-center justify-center flex-shrink-0 bg-white/5 border border-white/5">
+                        <div
+                          class="w-4 h-4 rounded flex items-center justify-center flex-shrink-0 bg-white/5 border border-white/5"
+                        >
                           <Rss size={10} class="text-white/40" />
                         </div>
                       {/if}
-                      <span class="truncate text-xs">{feed.title || feed.url}</span>
+                      <span class="truncate text-xs"
+                        >{feed.title || feed.url}</span
+                      >
                     </div>
                     {#if (feed.unreadCount || 0) > 0}
                       <span class="text-[10px] font-medium text-white/40">
@@ -378,16 +458,21 @@
 
       <!-- Uncategorized Feeds -->
       {#if $feedsTree.uncategorized.length > 0}
-        <div class="mt-4 mb-2 px-3 text-xs font-semibold text-white/30 uppercase tracking-wider">
+        <div
+          class="mt-4 mb-2 px-3 text-xs font-semibold text-white/30 uppercase tracking-wider"
+        >
           Uncategorized
         </div>
         {#each $feedsTree.uncategorized as feed}
           <button
             class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
               {$viewMode === 'feed' && $selectedFeedUrl === feed.url
-                ? 'bg-white/10 text-white shadow-inner border border-white/5'
-                : 'text-white/60 hover:text-white hover:bg-white/5'}"
-            on:click={() => { setViewFeed(feed.url); closeMenu(); }}
+              ? 'bg-white/10 text-white shadow-inner border border-white/5'
+              : 'text-white/60 hover:text-white hover:bg-white/5'}"
+            on:click={() => {
+              setViewFeed(feed.url);
+              closeMenu();
+            }}
           >
             <div class="flex items-center gap-3 overflow-hidden">
               {#if feed.icon_url}
@@ -402,14 +487,18 @@
                   }}
                 />
               {:else}
-                <div class="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 bg-white/5 border border-white/5">
+                <div
+                  class="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 bg-white/5 border border-white/5"
+                >
                   <Rss size={14} class="text-white/40" />
                 </div>
               {/if}
               <span class="truncate">{feed.title || feed.url}</span>
             </div>
             {#if (feed.unreadCount || 0) > 0}
-              <span class="text-xs font-medium bg-white/10 text-white/70 px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+              <span
+                class="text-xs font-medium bg-white/10 text-white/70 px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+              >
                 {feed.unreadCount}
               </span>
             {/if}
@@ -430,7 +519,3 @@
     </div>
   </aside>
 {/if}
-
-<script context="module">
-  import { fade, fly } from "svelte/transition";
-</script>

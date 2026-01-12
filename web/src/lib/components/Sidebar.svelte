@@ -128,7 +128,7 @@
 <svelte:window on:keydown={handleKeydown} />
 
 <aside
-  class="hidden md:flex flex-col w-[280px] h-screen fixed left-0 top-0 z-40 bg-background border-r border-white/5"
+  class="hidden md:flex flex-col w-[280px] h-screen fixed left-0 top-0 z-40 bg-[#121212] border-r border-white/5"
 >
   <!-- Brand -->
   <div class="p-6 pt-8">
