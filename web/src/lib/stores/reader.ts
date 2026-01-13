@@ -24,7 +24,10 @@ export const currentItem = writable<any>(null);
 const readerCache = new Map<string, ReaderData>();
 
 export async function openReader(item: any) {
-    if (!item.url) return;
+    if (!item.url) {
+        console.error('No URL for item, opening nothing');
+        return;
+    }
 
     // Auto-mark as read
     if (item.is_read === 0) {
@@ -75,6 +78,11 @@ export async function openReader(item: any) {
     try {
         const data = await itemsApi.fetchReaderContent(item.url);
 
+        // Check if we got valid content
+        if (!data || !data.contentHtml) {
+            throw new Error('No content returned from reader API');
+        }
+
         // Map API response to ReaderData interface
         const formattedData: ReaderData = {
             url: data.url,
@@ -99,17 +107,19 @@ export async function openReader(item: any) {
         const errorMessage = err instanceof Error ? err.message : "Failed to load reader";
         console.error('Reader error:', errorMessage, 'for URL:', item.url);
         
-        // If reader fails (403, 500, etc.), fall back to opening the original URL in a new tab
-        if (errorMessage.includes('HTTP 403') || errorMessage.includes('HTTP 500') || errorMessage.includes('HTTP 404')) {
-            console.log('Opening original URL due to reader error');
-            window.open(item.url, '_blank');
-            closeReader(); // Close the reader modal
-        } else {
-            readerError.set(errorMessage);
-        }
+        // For ANY error, fall back to opening the original URL in a new tab
+        // This ensures the user can always access the article
+        console.log('Opening original URL due to reader error:', errorMessage);
+        openOriginalUrl(item.url);
     } finally {
         readerLoading.set(false);
     }
+}
+
+// Helper function to open the original URL and close reader
+function openOriginalUrl(url: string) {
+    window.open(url, '_blank');
+    closeReader();
 }
 
 export function closeReader() {
