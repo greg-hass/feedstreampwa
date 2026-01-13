@@ -15,6 +15,10 @@
     ChevronRight,
     ChevronDown,
     FolderOpen,
+    Palette,
+    Sun,
+    Moon,
+    Monitor,
   } from "lucide-svelte";
   import {
     isSettingsModalOpen,
@@ -26,6 +30,7 @@
   import { feeds, removeFeed, loadFeeds } from "$lib/stores/feeds";
   import { feedsTree } from "$lib/stores/counts";
   import { loadFolders, folders } from "$lib/stores/folders";
+  import { theme, colorSchemes, type ColorScheme, type ThemeMode } from "$lib/stores/theme";
   import { onMount } from "svelte";
   import type { Settings, ImportResult, Feed } from "$lib/types";
 
@@ -170,8 +175,25 @@
     }
   }
 
-  function handleThemeChange(themeValue: string) {
-    localSettings.theme = themeValue as Settings["theme"];
+  function handleThemeChange(mode: ThemeMode) {
+    theme.setMode(mode);
+  }
+
+  function handleColorSchemeChange(scheme: ColorScheme) {
+    theme.setColorScheme(scheme);
+  }
+
+  // Custom color inputs
+  let showCustomColors = false;
+  let customColors = {
+    primary: '#10B981',
+    background: '#050507',
+    surface: '#0e0e11',
+    raised: '#16161a',
+  };
+
+  function applyCustomColors() {
+    theme.setCustomColors(customColors);
   }
 
   async function handleExportOpml() {
@@ -305,13 +327,6 @@
     }
   }
 
-  // Theme options
-  const themeOptions = [
-    { value: "light", label: "Light", description: "Light theme" },
-    { value: "dark", label: "Dark", description: "Dark theme" },
-    { value: "system", label: "System", description: "System preference" },
-  ] as const;
-
   // Sync interval options
   const syncIntervalOptions = [
     { value: "off", label: "Off" },
@@ -412,29 +427,149 @@
         {#if activeTab === "general"}
           <!-- General Settings -->
           <div class="space-y-8">
+            <!-- Theme Mode -->
             <div class="space-y-3">
-              <label class="block">
-                <span class="text-sm font-semibold text-white mb-3 block"
-                  >Theme</span
-                >
-                <div class="grid grid-cols-3 gap-3">
-                  {#each themeOptions as option}
+              <span class="text-sm font-semibold text-white flex items-center gap-2">
+                <Palette size={16} />
+                Appearance
+              </span>
+
+              <!-- Light/Dark/System -->
+              <div class="grid grid-cols-3 gap-3">
+                {#each ['light', 'dark', 'system'] as mode}
+                  {@const isActive = $theme.mode === mode}
+                  {@const icon = mode === 'light' ? Sun : mode === 'dark' ? Moon : Monitor}
+                  <button
+                    type="button"
+                    class="p-3 rounded-xl border transition-all text-left flex items-center gap-2 {isActive
+                      ? 'bg-accent/10 border-accent text-white'
+                      : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:border-white/20'}"
+                    on:click={() => handleThemeChange(mode)}
+                  >
+                    <svelte:component this={icon} size={18} />
+                    <div>
+                      <div class="font-medium text-sm capitalize">{mode}</div>
+                      <div class="text-[11px] opacity-60">
+                        {mode === 'system' ? 'Follow system' : `${mode} mode`}
+                      </div>
+                    </div>
+                  </button>
+                {/each}
+              </div>
+            </div>
+
+            <!-- Color Schemes -->
+            <div class="space-y-3">
+              <span class="text-sm font-semibold text-white">Color Scheme</span>
+              <div class="grid grid-cols-3 gap-3">
+                {#each Object.entries(colorSchemes) as [key, scheme]}
+                  {@const isActive = $theme.colorScheme === key}
+                  <button
+                    type="button"
+                    class="p-3 rounded-xl border transition-all text-left {isActive
+                      ? 'bg-white/10 border-white/20 text-white'
+                      : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:border-white/20'}"
+                    on:click={() => handleColorSchemeChange(key)}
+                  >
+                    <div class="flex items-center gap-2 mb-1">
+                      <div
+                        class="w-4 h-4 rounded-full shadow-lg"
+                        style="background-color: {scheme.accent}"
+                      ></div>
+                      <div class="font-medium text-sm">{scheme.name}</div>
+                    </div>
+                    <div class="text-[11px] opacity-60">{scheme.description}</div>
+                  </button>
+                {/each}
+              </div>
+            </div>
+
+            <!-- Custom Colors (Advanced) -->
+            <div class="space-y-3">
+              {#if $theme.colorScheme === 'custom' || showCustomColors}
+                <div class="space-y-3 p-4 rounded-xl bg-white/5 border border-white/10">
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm font-semibold text-white">Custom Colors</span>
                     <button
                       type="button"
-                      class="p-3 rounded-xl border transition-all text-left {localSettings.theme ===
-                      option.value
-                        ? 'bg-accent/10 border-accent text-white'
-                        : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:border-white/20'}"
-                      on:click={() => handleThemeChange(option.value)}
+                      class="text-xs px-3 py-1 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
+                      on:click={applyCustomColors}
                     >
-                      <div class="font-medium text-sm">{option.label}</div>
-                      <div class="text-[11px] opacity-60">
-                        {option.description}
-                      </div>
+                      Apply Colors
                     </button>
-                  {/each}
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                      <label class="text-xs text-white/60">Primary Accent</label>
+                      <div class="flex items-center gap-2">
+                        <input
+                          type="color"
+                          bind:value={customColors.primary}
+                          class="w-8 h-8 rounded cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          bind:value={customColors.primary}
+                          class="flex-1 bg-white/5 px-2 py-1 rounded text-sm text-white border border-white/10"
+                        />
+                      </div>
+                    </div>
+                    <div class="space-y-1">
+                      <label class="text-xs text-white/60">Background</label>
+                      <div class="flex items-center gap-2">
+                        <input
+                          type="color"
+                          bind:value={customColors.background}
+                          class="w-8 h-8 rounded cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          bind:value={customColors.background}
+                          class="flex-1 bg-white/5 px-2 py-1 rounded text-sm text-white border border-white/10"
+                        />
+                      </div>
+                    </div>
+                    <div class="space-y-1">
+                      <label class="text-xs text-white/60">Surface</label>
+                      <div class="flex items-center gap-2">
+                        <input
+                          type="color"
+                          bind:value={customColors.surface}
+                          class="w-8 h-8 rounded cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          bind:value={customColors.surface}
+                          class="flex-1 bg-white/5 px-2 py-1 rounded text-sm text-white border border-white/10"
+                        />
+                      </div>
+                    </div>
+                    <div class="space-y-1">
+                      <label class="text-xs text-white/60">Raised</label>
+                      <div class="flex items-center gap-2">
+                        <input
+                          type="color"
+                          bind:value={customColors.raised}
+                          class="w-8 h-8 rounded cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          bind:value={customColors.raised}
+                          class="flex-1 bg-white/5 px-2 py-1 rounded text-sm text-white border border-white/10"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </label>
+              {:else}
+                <button
+                  type="button"
+                  class="text-xs px-3 py-2 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-colors"
+                  on:click={() => (showCustomColors = true)}
+                >
+                  + Custom Colors
+                </button>
+              {/if}
             </div>
 
             <div class="space-y-3">

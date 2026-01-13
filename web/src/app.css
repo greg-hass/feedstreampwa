@@ -4,6 +4,65 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme CSS Variables */
+:root {
+  /* Default dark theme colors */
+  --tw-colors-background: #050507;
+  --tw-colors-surface: #0e0e11;
+  --tw-colors-raised: #16161a;
+  --tw-colors-stroke: #1f1f23;
+  --tw-colors-accent: #10B981;
+
+  /* Light theme (overridden when .light class is applied) */
+}
+
+/* Light theme */
+:root.light {
+  --tw-colors-background: #f8fafc;
+  --tw-colors-surface: #ffffff;
+  --tw-colors-raised: #f1f5f9;
+  --tw-colors-stroke: #e2e8f0;
+  --tw-colors-accent: #10B981;
+}
+
+/* Dark theme (explicit) */
+:root.dark {
+  --tw-colors-background: #050507;
+  --tw-colors-surface: #0e0e11;
+  --tw-colors-raised: #16161a;
+  --tw-colors-stroke: #1f1f23;
+  --tw-colors-accent: #10B981;
+}
+
+/* Custom theme colors (when user sets custom colors) */
+:root {
+  --custom-background: initial;
+  --custom-surface: initial;
+  --custom-raised: initial;
+}
+
+:root[style*="--custom-background"] {
+  --tw-colors-background: var(--custom-background);
+}
+
+:root[style*="--custom-surface"] {
+  --tw-colors-surface: var(--custom-surface);
+}
+
+:root[style*="--custom-raised"] {
+  --tw-colors-raised: var(--custom-raised);
+}
+
+/* Accent color (dynamically set by theme store) */
+:root {
+  --accent-color: #10B981;
+  --accent-color-rgb: 16, 185, 129;
+}
+
+:root[style*="--accent-color"] {
+  --tw-colors-accent: var(--accent-color);
+}
+
 @layer base {
   body {
     @apply bg-background text-gray-200 antialiased font-sans overflow-x-hidden min-h-screen;

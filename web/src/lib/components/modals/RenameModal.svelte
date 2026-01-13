@@ -112,7 +112,7 @@
             type="text"
             bind:value={newName}
             placeholder="Enter new name..."
-            class="w-full bg-white/5 px-4 py-3 rounded-xl text-white placeholder-white/40 border border-white/10 hover:bg-white/10 focus:border-purple-500/50 transition-colors outline-none text-sm"
+            class="w-full bg-white/5 px-4 py-3.5 rounded-xl text-white placeholder-white/40 border border-white/10 hover:bg-white/10 focus:border-purple-500/50 transition-colors outline-none"
             maxlength="100"
             on:keydown={(e) => e.key === "Enter" && handleSubmit()}
             autofocus

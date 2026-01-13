@@ -59,14 +59,15 @@
 
 {#if $feedFolderPopover.isOpen && $feedFolderPopover.feed}
   <div
-    class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 md:bg-transparent md:z-[2000]"
+    <div
+    class="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4 md:bg-transparent md:z-[2000]"
     on:click={close}
     on:keydown={(e) => e.key === "Enter" && close()}
     role="button"
     tabindex="-1"
   >
     <div
-      class="bg-[#18181b] rounded-2xl border border-white/10 w-full max-w-sm flex flex-col shadow-2xl overflow-hidden md:fixed md:max-w-xs"
+      class="bg-[#18181b] rounded-2xl border border-white/10 w-full max-w-sm flex flex-col shadow-2xl overflow-hidden fixed"
       style="left: {$feedFolderPopover.position.x}px; top: {$feedFolderPopover
         .position.y}px;"
       on:click|stopPropagation

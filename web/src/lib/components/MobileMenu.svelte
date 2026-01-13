@@ -247,7 +247,7 @@
             size={24}
             class={$viewMode === "smart" && $activeSmartFolder === "rss"
               ? "text-accent"
-              : "text-current group-hover:text-white"}
+              : "text-accent/70 group-hover:text-accent"}
           />
           RSS
         </div>
@@ -277,8 +277,8 @@
           <Youtube
             size={24}
             class={$viewMode === "smart" && $activeSmartFolder === "youtube"
-              ? "text-accent"
-              : "text-current group-hover:text-white"}
+              ? "text-red-500"
+              : "text-red-500/70 group-hover:text-red-500"}
           />
           YouTube
         </div>
@@ -308,8 +308,8 @@
           <RedditIcon
             size={24}
             class={$viewMode === "smart" && $activeSmartFolder === "reddit"
-              ? "text-accent"
-              : "text-current group-hover:text-white"}
+              ? "text-orange-400"
+              : "text-orange-400/70 group-hover:text-orange-400"}
           />
           Reddit
         </div>
@@ -339,8 +339,8 @@
           <Mic
             size={24}
             class={$viewMode === "smart" && $activeSmartFolder === "podcast"
-              ? "text-accent"
-              : "text-current group-hover:text-white"}
+              ? "text-indigo-400"
+              : "text-indigo-400/70 group-hover:text-indigo-400"}
           />
           Podcasts
         </div>

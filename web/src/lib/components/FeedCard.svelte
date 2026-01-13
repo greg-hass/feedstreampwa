@@ -9,12 +9,24 @@
     Rss,
     Hash,
     CheckCircle2,
+    Share2,
   } from "lucide-svelte";
+  import OfflineBadge from "$lib/components/OfflineBadge.svelte";
+  import { offlineArticles } from "$lib/stores/offlineArticles";
+  import { diversitySettings } from "$lib/stores/diversity";
+  import type { ItemWithDiversity } from "$lib/stores/diversity";
 
   export let item: Item;
   export let feedType: "rss" | "youtube" | "reddit" | "podcast" = "rss";
 
   const dispatch = createEventDispatcher();
+
+  // Cast to diversity-aware item
+  $: diversityItem = item as ItemWithDiversity;
+  $: showDiversityBadge = $diversitySettings.enabled && diversityItem._isDiverseSource;
+
+  // Check if this article is cached for offline
+  $: isCached = $offlineArticles.has(item.id);
 
   // Extract YouTube video ID from external_id or URL
   $: youtubeVideoId = (() => {
@@ -95,6 +107,28 @@
   function handlePlay(e: MouseEvent) {
     e.stopPropagation();
     dispatch("play", { item });
+  }
+
+  async function handleShare(e: MouseEvent) {
+    e.stopPropagation();
+
+    const shareData = {
+      title: item.title || "Article from FeedStream",
+      text: item.summary ? item.summary.replace(/<[^>]*>?/gm, "").substring(0, 200) : undefined,
+      url: item.url || undefined,
+    };
+
+    try {
+      if (navigator.share && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(item.url || "");
+        alert("Link copied to clipboard!");
+      }
+    } catch (e) {
+      console.error("Failed to share:", e);
+    }
   }
 
   // Check if item is playable (podcast or video)
@@ -193,6 +227,17 @@
           class="text-[10px] font-medium tracking-wide text-white/90 uppercase"
           >{item.feed_title}</span
         >
+        {#if isCached}
+          <OfflineBadge size="sm" showText={false} />
+        {/if}
+        {#if showDiversityBadge}
+          <div
+            class="px-1.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center gap-1"
+            title="New source - explore diverse content"
+          >
+            <span class="text-[8px] font-semibold text-cyan-400">NEW</span>
+          </div>
+        {/if}
       </div>
     </div>
   {:else}
@@ -206,6 +251,17 @@
           class="text-[10px] font-medium tracking-wide text-white/60 uppercase"
           >{item.feed_title}</span
         >
+        {#if isCached}
+          <OfflineBadge size="sm" showText={false} />
+        {/if}
+        {#if showDiversityBadge}
+          <div
+            class="px-1.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center gap-1"
+            title="New source - explore diverse content"
+          >
+            <span class="text-[8px] font-semibold text-cyan-400">NEW</span>
+          </div>
+        {/if}
       </div>
     </div>
   {/if}
@@ -286,6 +342,14 @@
             size={18}
             class={item.is_starred ? "fill-[#FF9500] text-[#FF9500]" : ""}
           />
+        </button>
+
+        <button
+          class="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-blue-400 transition-colors"
+          title="Share"
+          on:click={handleShare}
+        >
+          <Share2 size={18} />
         </button>
 
         <a

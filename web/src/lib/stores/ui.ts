@@ -6,6 +6,7 @@ export const isAddFeedModalOpen = writable(false);
 export const isSettingsModalOpen = writable(false);
 export const isMobileMenuOpen = writable(false);
 export const isCreateFolderModalOpen = writable(false);
+export const isDuplicatesModalOpen = writable(false);
 
 export const renameModal = writable<{
     isOpen: boolean;

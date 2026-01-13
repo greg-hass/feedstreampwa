@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { RefreshCw, Plus, FolderPlus, LayoutGrid } from "lucide-svelte";
+  import { RefreshCw, Plus, FolderPlus, LayoutGrid, Shuffle } from "lucide-svelte";
 
   // Components
   import MobileHeader from "$lib/components/MobileHeader.svelte";
@@ -51,6 +51,7 @@
     showShortcutsHelp,
     type KeyboardShortcut,
   } from "$lib/stores/keyboard";
+  import { diversitySettings } from "$lib/stores/diversity";
   import KeyboardShortcutsHelp from "$lib/components/KeyboardShortcutsHelp.svelte";
   import ReadingStatsModal from "$lib/components/ReadingStatsModal.svelte";
 
@@ -288,6 +289,15 @@
                   ? "S"
                   : "M"}
             </span>
+          </button>
+          <button
+            class="p-2.5 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-600 hover:from-cyan-600 hover:to-teal-700 transition-all shadow-lg shadow-cyan-500/20 text-white {$diversitySettings.enabled
+              ? 'ring-2 ring-white/50'
+              : ''}"
+            on:click={() => diversitySettings.toggle()}
+            title="Source Diversity: {$diversitySettings.enabled ? 'On' : 'Off'} - Highlight diverse sources"
+          >
+            <Shuffle size={20} />
           </button>
           <button
             class="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 transition-all shadow-lg shadow-blue-500/20 text-white"

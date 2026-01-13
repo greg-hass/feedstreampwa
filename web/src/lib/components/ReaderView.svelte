@@ -16,7 +16,11 @@
     MessageSquare,
     ExternalLink,
     MessageCircle,
+    Database,
+    Share2,
+    PictureInPicture,
   } from "lucide-svelte";
+  import OfflineBadge from "$lib/components/OfflineBadge.svelte";
 
   let summary: string | null = null;
   let summaryLoading = false;
@@ -76,6 +80,73 @@
 
   function toggleDiscussions() {
     showDiscussions = !showDiscussions;
+  }
+
+  // Share functionality
+  async function handleShare() {
+    if (!$currentItem && !$readerData?.url) return;
+
+    const shareData = {
+      title: $readerData?.title || $currentItem?.title || "Article from FeedStream",
+      text: $readerData?.excerpt || $currentItem?.summary || undefined,
+      url: $readerData?.url || $currentItem?.url || window.location.href,
+    };
+
+    try {
+      if (navigator.share && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(shareData.url || "");
+        alert("Link copied to clipboard!");
+      }
+    } catch (e) {
+      console.error("Failed to share:", e);
+    }
+  }
+
+  // Picture-in-Picture functionality
+  let isInPiP = false;
+
+  async function togglePiP() {
+    if (!ytPlayer) return;
+
+    try {
+      const iframe = document.querySelector("#yt-player-container iframe") as HTMLIFrameElement;
+      if (!iframe) return;
+
+      if (isInPiP) {
+        // Exit PiP by exiting document picture-in-picture
+        if (document.pictureInPictureElement) {
+          await document.exitPictureInPicture();
+          isInPiP = false;
+        }
+      } else {
+        // Request PiP for the video element inside iframe
+        // Note: YouTube iframe PiP is tricky due to cross-origin
+        // We'll use a workaround by checking if the video supports it
+        const video = iframe.contentWindow?.document?.querySelector("video");
+        if (video && (video as any).requestPictureInPicture) {
+          await (video as any).requestPictureInPicture();
+          isInPiP = true;
+        } else {
+          // Fallback: Try to open YouTube in PiP via URL parameter
+          // This won't work in embedded players due to YouTube restrictions
+          alert("PiP is not available for this video. Try opening it in the YouTube app.");
+        }
+      }
+    } catch (e) {
+      console.error("PiP error:", e);
+      // Many browsers block iframe PiP due to security
+      alert("Picture-in-Picture is restricted for embedded YouTube videos. Use the YouTube app for PiP.");
+    }
+  }
+
+  // Listen for PiP exit events
+  if (typeof document !== "undefined") {
+    document.addEventListener("leavepictureinpicture", () => {
+      isInPiP = false;
+    });
   }
 
   let ytPlayer: any = null;
@@ -374,6 +445,28 @@
             {/if}
           </button>
 
+          <!-- Share Button -->
+          <button
+            class="p-2 text-white/50 hover:text-accent transition-colors"
+            on:click={handleShare}
+            title="Share article"
+          >
+            <Share2 size={20} />
+          </button>
+
+          <!-- PiP Button (only for YouTube videos) -->
+          {#if $readerData?.url && ($readerData.url.includes("youtube.com/watch") || $readerData.url.includes("youtu.be/"))}
+            <button
+              class="p-2 text-white/50 hover:text-accent transition-colors {isInPiP
+                ? 'text-accent'
+                : ''}"
+              on:click={togglePiP}
+              title={isInPiP ? "Exit Picture-in-Picture" : "Picture-in-Picture"}
+            >
+              <PictureInPicture size={20} />
+            </button>
+          {/if}
+
           <ReaderControls content={$readerData?.contentHtml || ""} {readTime} />
           {#if $readerData?.url}
             <a
@@ -441,7 +534,7 @@
                 </div>
               </div>
             {/if}
-            {#if $readerData.byline || $readerData.siteName}
+            {#if $readerData.byline || $readerData.siteName || $readerData.fromCache}
               <div class="reader-meta">
                 {#if $readerData.byline}<span>{$readerData.byline}</span>{/if}
                 {#if $readerData.byline && $readerData.siteName}<span
@@ -449,6 +542,15 @@
                   >{/if}
                 {#if $readerData.siteName}<span>{$readerData.siteName}</span
                   >{/if}
+                {#if ($readerData.byline || $readerData.siteName) && $readerData.fromCache}<span
+                    class="meta-sep">•</span
+                  >{/if}
+                {#if $readerData.fromCache}
+                  <span class="flex items-center gap-1 text-emerald-400">
+                    <Database size={12} />
+                    Offline
+                  </span>
+                {/if}
               </div>
             {/if}
 

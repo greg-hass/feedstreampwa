@@ -2,6 +2,7 @@
 import { writable, derived, get } from 'svelte/store';
 import type { Article, TimeFilter } from '../types';
 import * as itemsApi from '../api/items';
+import { cacheArticle, removeCachedArticle } from './offlineArticles';
 
 // State
 export const items = writable<Article[]>([]);
@@ -132,6 +133,15 @@ export async function toggleStar(item: Article): Promise<void> {
 
     try {
         await itemsApi.toggleItemStar(item.id, newStarredState);
+
+        // Offline caching: Cache article when starred, remove when unstarred
+        if (newStarredState) {
+            // Cache for offline reading
+            cacheArticle(item).catch(console.error);
+        } else {
+            // Remove from offline cache
+            removeCachedArticle(item.id).catch(console.error);
+        }
     } catch (err) {
         // Revert on error
         items.update(($items) =>

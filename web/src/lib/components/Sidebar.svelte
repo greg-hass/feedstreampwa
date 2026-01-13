@@ -17,6 +17,8 @@
     ChevronDown,
     MoreVertical,
     Sparkles,
+    Activity,
+    Copy,
   } from "lucide-svelte";
   import RedditIcon from "$lib/components/icons/RedditIcon.svelte";
   import {
@@ -52,8 +54,12 @@
   import { loadFolders, folders, createFolder } from "$lib/stores/folders";
   import { loadFeeds, feeds } from "$lib/stores/feeds";
   import AIRecommendationsModal from "$lib/components/modals/AIRecommendationsModal.svelte";
+  import FeedHealthModal from "$lib/components/modals/FeedHealthModal.svelte";
+  import DuplicatesModal from "$lib/components/modals/DuplicatesModal.svelte";
 
   let isAIRecommendationsOpen = false;
+  let isFeedHealthOpen = false;
+  let isDuplicatesOpen = false;
   import { toast } from "$lib/stores/toast";
 
   // Navigation Items
@@ -284,7 +290,7 @@
           size={24}
           class={$viewMode === "smart" && $activeSmartFolder === "rss"
             ? "text-emerald-400"
-            : "text-white/60 group-hover:text-emerald-400"}
+            : "text-emerald-400/70 group-hover:text-emerald-400"}
         />
         RSS
       </div>
@@ -319,7 +325,7 @@
           size={24}
           class={$viewMode === "smart" && $activeSmartFolder === "youtube"
             ? "text-red-500"
-            : "text-white/60 group-hover:text-red-500"}
+            : "text-red-500/70 group-hover:text-red-500"}
         />
         YouTube
       </div>
@@ -357,7 +363,7 @@
             : "currentColor"}
           class={$viewMode === "smart" && $activeSmartFolder === "reddit"
             ? "text-orange-400"
-            : "text-white/60 group-hover:text-orange-400"}
+            : "text-orange-400/70 group-hover:text-orange-400"}
         />
         Reddit
       </div>
@@ -392,7 +398,7 @@
           size={24}
           class={$viewMode === "smart" && $activeSmartFolder === "podcast"
             ? "text-indigo-400"
-            : "text-white/60 group-hover:text-indigo-400"}
+            : "text-indigo-400/70 group-hover:text-indigo-400"}
         />
         Podcasts
       </div>
@@ -643,6 +649,24 @@
       <span class="text-sm font-semibold">AI Recommendations</span>
     </button>
 
+    <!-- Feed Health -->
+    <button
+      class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors text-white/60 hover:text-white"
+      on:click={() => (isFeedHealthOpen = true)}
+    >
+      <Activity size={24} />
+      <span class="text-sm font-medium">Feed Health</span>
+    </button>
+
+    <!-- Duplicates -->
+    <button
+      class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors text-white/60 hover:text-white"
+      on:click={() => (isDuplicatesOpen = true)}
+    >
+      <Copy size={24} class="text-orange-400 group-hover:text-orange-300" />
+      <span class="text-sm font-medium">Duplicates</span>
+    </button>
+
     <!-- Settings -->
     <button
       class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors text-white/60 hover:text-white"
@@ -658,6 +682,12 @@
     bind:isOpen={isAIRecommendationsOpen}
     on:close={() => (isAIRecommendationsOpen = false)}
   />
+
+  <!-- Feed Health Modal -->
+  <FeedHealthModal bind:isOpen={isFeedHealthOpen} />
+
+  <!-- Duplicates Modal -->
+  <DuplicatesModal bind:isOpen={isDuplicatesOpen} />
 
   <!-- Slot for Player if Desktop -->
   <slot name="player" />

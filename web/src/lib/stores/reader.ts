@@ -1,6 +1,7 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import * as itemsApi from '$lib/api/items';
 import { toggleRead } from './items';
+import { cacheArticleContent, getCachedContent, isOffline } from './offlineArticles';
 
 export interface ReaderData {
     url: string;
@@ -35,7 +36,7 @@ export async function openReader(item: any) {
     showReader.set(true);
     readerError.set(null);
 
-    // Check cache
+    // Check in-memory cache first
     const cached = readerCache.get(item.url);
     if (cached) {
         readerData.set(cached);
@@ -43,12 +44,37 @@ export async function openReader(item: any) {
         return;
     }
 
+    // Check offline IndexedDB cache if offline OR if this is a starred article
+    if (get(isOffline) || item.is_starred === 1) {
+        try {
+            const offlineContent = await getCachedContent(item.id);
+            if (offlineContent) {
+                const formattedData: ReaderData = {
+                    url: offlineContent.url,
+                    title: item.title || offlineContent.title,
+                    byline: offlineContent.byline,
+                    excerpt: offlineContent.excerpt,
+                    siteName: offlineContent.siteName,
+                    imageUrl: offlineContent.imageUrl,
+                    contentHtml: offlineContent.contentHtml,
+                    fromCache: true
+                };
+                readerData.set(formattedData);
+                readerCache.set(item.url, formattedData);
+                readerLoading.set(false);
+                return;
+            }
+        } catch (e) {
+            console.error('Failed to load from offline cache:', e);
+        }
+    }
+
     readerLoading.set(true);
     readerData.set(null);
 
     try {
         const data = await itemsApi.fetchReaderContent(item.url);
-        
+
         // Map API response to ReaderData interface
         const formattedData: ReaderData = {
             url: data.url,
@@ -64,6 +90,11 @@ export async function openReader(item: any) {
 
         readerData.set(formattedData);
         readerCache.set(item.url, formattedData);
+
+        // Cache for offline if this is a starred article
+        if (item.is_starred === 1) {
+            cacheArticleContent(item.id, formattedData).catch(console.error);
+        }
     } catch (err) {
         readerError.set(err instanceof Error ? err.message : "Failed to load reader");
     } finally {
