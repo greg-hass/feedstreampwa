@@ -38,16 +38,21 @@ const defaultTheme: Theme = {
 
 // Create the theme store
 function createThemeStore() {
-  // Load from localStorage
-  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-  const initialTheme = savedTheme ? JSON.parse(savedTheme) : defaultTheme;
+  // Load from localStorage (only in browser)
+  let initialTheme = defaultTheme;
+  if (typeof window !== 'undefined') {
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    initialTheme = savedTheme ? JSON.parse(savedTheme) : defaultTheme;
+  }
 
   const { subscribe, set, update } = writable<Theme>(initialTheme);
 
   return {
     subscribe,
     set: (theme: Theme) => {
-      localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(theme));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(theme));
+      }
       set(theme);
       applyTheme(theme);
     },
@@ -55,7 +60,9 @@ function createThemeStore() {
     setMode: (mode: ThemeMode) => {
       update((theme) => {
         const newTheme = { ...theme, mode };
-        localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(newTheme));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(newTheme));
+        }
         applyTheme(newTheme);
         return newTheme;
       });
@@ -63,7 +70,9 @@ function createThemeStore() {
     setColorScheme: (colorScheme: ColorScheme) => {
       update((theme) => {
         const newTheme = { ...theme, colorScheme };
-        localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(newTheme));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(newTheme));
+        }
         applyTheme(newTheme);
         return newTheme;
       });
@@ -71,7 +80,9 @@ function createThemeStore() {
     setCustomColors: (customColors: CustomColors) => {
       update((theme) => {
         const newTheme: Theme = { ...theme, colorScheme: 'custom' as ColorScheme, customColors };
-        localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(newTheme));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(newTheme));
+        }
         applyTheme(newTheme);
         return newTheme;
       });
@@ -91,6 +102,9 @@ export const accentColor = derived(theme, ($theme) => {
 
 // Apply theme to CSS variables
 function applyTheme(theme: Theme) {
+  // Only apply in browser
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  
   const root = document.documentElement;
 
   // Get accent color

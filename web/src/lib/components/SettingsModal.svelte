@@ -1050,10 +1050,10 @@
               </div>
             {:else}
               <!-- Create Rule Form -->
-            <div
-              class="bg-white/5 p-4 rounded-xl space-y-4 border border-white/5"
-            >
-              <h3
+              <div
+                class="bg-white/5 p-4 rounded-xl space-y-4 border border-white/5"
+              >
+                <h3
                 class="text-sm font-medium text-white flex items-center gap-2"
               >
                 <Sparkles size={14} /> Create New Rule
@@ -1094,51 +1094,52 @@
                   >Add Rule</button
                 >
               </div>
-            </div>
+              </div>
 
-            <!-- Rules List -->
-            <div class="space-y-3">
-              <h3
+              <!-- Rules List -->
+              <div class="space-y-3">
+                <h3
                 class="text-xs font-medium text-white/40 uppercase tracking-wider"
               >
-                Active Rules
-              </h3>
-              {#if rules.length === 0}
-                <div
-                  class="text-white/30 text-center py-8 text-sm italic border border-white/5 rounded-xl border-dashed"
-                >
-                  No rules defined. Add one above!
-                </div>
-              {:else}
-                {#each rules as rule}
+                  Active Rules
+                </h3>
+                {#if rules.length === 0}
                   <div
-                    class="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 group hover:border-white/10 transition-colors"
+                    class="text-white/30 text-center py-8 text-sm italic border border-white/5 rounded-xl border-dashed"
                   >
-                    <div class="flex flex-col">
-                      <span class="text-white text-sm font-medium"
-                        >{rule.name || rule.keyword}</span
-                      >
-                      <span class="text-white/40 text-xs mt-0.5">
-                        If <span class="text-white/60">{rule.field}</span>
-                        contains "<span class="text-white/60"
-                          >{rule.keyword}</span
-                        >" →
-                        <span
-                          class="text-accent/80 font-medium uppercase text-[10px]"
-                          >{rule.action.replace("_", " ")}</span
-                        >
-                      </span>
-                    </div>
-                    <button
-                      on:click={() => handleDeleteRule(rule.id)}
-                      class="text-white/20 hover:text-red-400 hover:bg-red-500/10 p-2 rounded-lg transition-colors"
-                      ><Trash2 size={16} /></button
-                    >
+                    No rules defined. Add one above!
                   </div>
-                {/each}
-              {/if}
-            </div>
-          {/if}
+                {:else}
+                  {#each rules as rule}
+                    <div
+                      class="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 group hover:border-white/10 transition-colors"
+                    >
+                      <div class="flex flex-col">
+                        <span class="text-white text-sm font-medium"
+                          >{rule.name || rule.keyword}</span
+                        >
+                        <span class="text-white/40 text-xs mt-0.5">
+                          If <span class="text-white/60">{rule.field}</span>
+                          contains "<span class="text-white/60"
+                            >{rule.keyword}</span
+                          >" →
+                          <span
+                            class="text-accent/80 font-medium uppercase text-[10px]"
+                            >{rule.action.replace("_", " ")}</span
+                          >
+                        </span>
+                      </div>
+                      <button
+                        on:click={() => handleDeleteRule(rule.id)}
+                        class="text-white/20 hover:text-red-400 hover:bg-red-500/10 p-2 rounded-lg transition-colors"
+                        ><Trash2 size={16} /></button
+                      >
+                    </div>
+                  {/each}
+                {/if}
+              </div>
+            {/if}
+          </div>
         {/if}
 
         <!-- Messages -->
