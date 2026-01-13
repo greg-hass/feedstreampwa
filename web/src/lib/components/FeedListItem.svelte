@@ -290,9 +290,6 @@
     <!-- Feed Title + Timestamp + Read Time -->
     <div class="flex-1 min-w-0 flex items-center gap-2 text-sm pt-1 flex-wrap">
       <span class="font-bold text-indigo-400 truncate">{item.feed_title}</span>
-      {#if isCached}
-        <OfflineBadge size="sm" showText={false} />
-      {/if}
       {#if showDiversityBadge}
         <span
           class="px-1.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-[8px] font-semibold text-cyan-400"
