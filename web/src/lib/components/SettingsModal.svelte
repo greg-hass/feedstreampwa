@@ -31,7 +31,12 @@
   import { feeds, removeFeed, loadFeeds } from "$lib/stores/feeds";
   import { feedsTree } from "$lib/stores/counts";
   import { loadFolders, folders } from "$lib/stores/folders";
-  import { theme, colorSchemes, type ColorScheme, type ThemeMode } from "$lib/stores/theme";
+  import {
+    theme,
+    colorSchemes,
+    type ColorScheme,
+    type ThemeMode,
+  } from "$lib/stores/theme";
   import { onMount } from "svelte";
   import type { Settings, ImportResult, Feed } from "$lib/types";
 
@@ -80,14 +85,14 @@
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
       const res = await fetch("http://localhost:3000/rules", {
-        signal: controller.signal
+        signal: controller.signal,
       });
       clearTimeout(timeoutId);
 
       const data = await res.json();
       if (data.ok) rules = data.rules;
     } catch (e: any) {
-      if (e.name === 'AbortError') {
+      if (e.name === "AbortError") {
         rulesError = "Request timed out - backend may not be running";
       } else {
         rulesError = "Failed to load rules";
@@ -224,10 +229,10 @@
   // Custom color inputs
   let showCustomColors = false;
   let customColors = {
-    primary: '#10B981',
-    background: '#050507',
-    surface: '#0e0e11',
-    raised: '#16161a',
+    primary: "#10B981",
+    background: "#050507",
+    surface: "#0e0e11",
+    raised: "#16161a",
   };
 
   function applyCustomColors() {
@@ -467,16 +472,19 @@
           <div class="space-y-8">
             <!-- Theme Mode -->
             <div class="space-y-3">
-              <span class="text-sm font-semibold text-white flex items-center gap-2">
+              <span
+                class="text-sm font-semibold text-white flex items-center gap-2"
+              >
                 <Palette size={16} />
                 Appearance
               </span>
 
               <!-- Light/Dark/System -->
               <div class="grid grid-cols-3 gap-3">
-                {#each ['light', 'dark', 'system'] as mode}
+                {#each ["light", "dark", "system"] as mode}
                   {@const isActive = $theme.mode === mode}
-                  {@const icon = mode === 'light' ? Sun : mode === 'dark' ? Moon : Monitor}
+                  {@const icon =
+                    mode === "light" ? Sun : mode === "dark" ? Moon : Monitor}
                   <button
                     type="button"
                     class="p-3 rounded-xl border transition-all text-left flex items-center gap-2 {isActive
@@ -488,7 +496,7 @@
                     <div>
                       <div class="font-medium text-sm capitalize">{mode}</div>
                       <div class="text-[11px] opacity-60">
-                        {mode === 'system' ? 'Follow system' : `${mode} mode`}
+                        {mode === "system" ? "Follow system" : `${mode} mode`}
                       </div>
                     </div>
                   </button>
@@ -516,7 +524,9 @@
                       ></div>
                       <div class="font-medium text-sm">{scheme.name}</div>
                     </div>
-                    <div class="text-[11px] opacity-60">{scheme.description}</div>
+                    <div class="text-[11px] opacity-60">
+                      {scheme.description}
+                    </div>
                   </button>
                 {/each}
               </div>
@@ -524,10 +534,14 @@
 
             <!-- Custom Colors (Advanced) -->
             <div class="space-y-3">
-              {#if $theme.colorScheme === 'custom' || showCustomColors}
-                <div class="space-y-3 p-4 rounded-xl bg-white/5 border border-white/10">
+              {#if $theme.colorScheme === "custom" || showCustomColors}
+                <div
+                  class="space-y-3 p-4 rounded-xl bg-white/5 border border-white/10"
+                >
                   <div class="flex items-center justify-between">
-                    <span class="text-sm font-semibold text-white">Custom Colors</span>
+                    <span class="text-sm font-semibold text-white"
+                      >Custom Colors</span
+                    >
                     <button
                       type="button"
                       class="text-xs px-3 py-1 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
@@ -538,7 +552,8 @@
                   </div>
                   <div class="grid grid-cols-2 gap-3">
                     <div class="space-y-1">
-                      <label class="text-xs text-white/60">Primary Accent</label>
+                      <label class="text-xs text-white/60">Primary Accent</label
+                      >
                       <div class="flex items-center gap-2">
                         <input
                           type="color"
@@ -1035,11 +1050,17 @@
                 </div>
               </div>
             {:else if rulesError}
-              <div class="flex flex-col items-center justify-center py-12 text-center">
-                <div class="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mb-4">
+              <div
+                class="flex flex-col items-center justify-center py-12 text-center"
+              >
+                <div
+                  class="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mb-4"
+                >
                   <AlertCircle size={32} class="text-red-400" />
                 </div>
-                <h3 class="text-lg font-semibold text-white mb-2">Failed to Load</h3>
+                <h3 class="text-lg font-semibold text-white mb-2">
+                  Failed to Load
+                </h3>
                 <p class="text-white/50 mb-4 max-w-md">{rulesError}</p>
                 <button
                   on:click={loadRules}
@@ -1054,53 +1075,53 @@
                 class="bg-white/5 p-4 rounded-xl space-y-4 border border-white/5"
               >
                 <h3
-                class="text-sm font-medium text-white flex items-center gap-2"
-              >
-                <Sparkles size={14} /> Create New Rule
-              </h3>
-              <div class="grid grid-cols-2 gap-4">
-                <input
-                  bind:value={newRule.keyword}
-                  placeholder="Keyword (e.g. 'Sponsor')"
-                  class="bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-accent outline-none"
-                />
-                <input
-                  bind:value={newRule.name}
-                  placeholder="Rule Name (Optional)"
-                  class="bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-accent outline-none"
-                />
-              </div>
-              <div class="grid grid-cols-3 gap-4">
-                <select
-                  bind:value={newRule.field}
-                  class="bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-accent outline-none"
+                  class="text-sm font-medium text-white flex items-center gap-2"
                 >
-                  <option value="title">Title</option>
-                  <option value="content">Content</option>
-                  <option value="author">Author</option>
-                  <option value="any">Anywhere</option>
-                </select>
-                <select
-                  bind:value={newRule.action}
-                  class="bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-accent outline-none"
-                >
-                  <option value="mark_read">Mark Read</option>
-                  <option value="star">Star</option>
-                  <option value="delete">Skip/Delete</option>
-                </select>
-                <button
-                  on:click={handleCreateRule}
-                  class="bg-accent text-white rounded-lg p-2 text-sm font-medium hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20"
-                  >Add Rule</button
-                >
-              </div>
+                  <Sparkles size={14} /> Create New Rule
+                </h3>
+                <div class="grid grid-cols-2 gap-4">
+                  <input
+                    bind:value={newRule.keyword}
+                    placeholder="Keyword (e.g. 'Sponsor')"
+                    class="bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-accent outline-none"
+                  />
+                  <input
+                    bind:value={newRule.name}
+                    placeholder="Rule Name (Optional)"
+                    class="bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-accent outline-none"
+                  />
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                  <select
+                    bind:value={newRule.field}
+                    class="bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-accent outline-none"
+                  >
+                    <option value="title">Title</option>
+                    <option value="content">Content</option>
+                    <option value="author">Author</option>
+                    <option value="any">Anywhere</option>
+                  </select>
+                  <select
+                    bind:value={newRule.action}
+                    class="bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-accent outline-none"
+                  >
+                    <option value="mark_read">Mark Read</option>
+                    <option value="star">Star</option>
+                    <option value="delete">Skip/Delete</option>
+                  </select>
+                  <button
+                    on:click={handleCreateRule}
+                    class="bg-accent text-white rounded-lg p-2 text-sm font-medium hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20"
+                    >Add Rule</button
+                  >
+                </div>
               </div>
 
               <!-- Rules List -->
               <div class="space-y-3">
                 <h3
-                class="text-xs font-medium text-white/40 uppercase tracking-wider"
-              >
+                  class="text-xs font-medium text-white/40 uppercase tracking-wider"
+                >
                   Active Rules
                 </h3>
                 {#if rules.length === 0}
@@ -1140,7 +1161,6 @@
               </div>
             {/if}
           </div>
-        {/if}
 
         <!-- Messages -->
         {#if error}
