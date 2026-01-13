@@ -27,49 +27,52 @@
 
   let startY = 0;
   let isScrolling = false;
+  let touchStarted = false;
 
   function handleTouchStart(e: TouchEvent) {
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
-    isSwiping = true;
+    touchStarted = true;
     isScrolling = false;
+    isSwiping = false;
     swipeDirection = null;
+    currentX = startX; // Initialize to prevent stale values
   }
 
   function handleTouchMove(e: TouchEvent) {
-    if (!isSwiping || isScrolling) return;
+    if (!touchStarted || isScrolling) return;
 
-    currentX = e.touches[0].clientX;
-    const currentY = e.touches[0].clientY;
+    const newX = e.touches[0].clientX;
+    const newY = e.touches[0].clientY;
 
-    const diffX = currentX - startX;
-    const diffY = currentY - startY;
+    const diffX = newX - startX;
+    const diffY = newY - startY;
 
     // Determine scrolling vs swiping intent early
-    if (!swipeDirection && (Math.abs(diffX) > 5 || Math.abs(diffY) > 5)) {
+    if (!swipeDirection && (Math.abs(diffX) > 10 || Math.abs(diffY) > 10)) {
       // If vertical movement is greater than horizontal, it's a scroll
       if (Math.abs(diffY) > Math.abs(diffX)) {
         isScrolling = true;
-        isSwiping = false; // Cancel swiping for this interaction
+        touchStarted = false;
         return;
       }
 
-      // Otherwise it's a swipe
+      // Otherwise it's a horizontal swipe
       swipeDirection = diffX > 0 ? "right" : "left";
+      isSwiping = true; // Only set isSwiping after confirming horizontal intent
     }
 
-    // Only process swipe if we are definitely swiping horizontal
-    if (swipeDirection) {
-      // Prevent default only if we are significantly moving horizontally (prevent browser back/forward gestures if needed)
-      // But mainly to stop the page from scrolling while we drag the item
+    // Only update position and prevent scroll if we're actively swiping
+    if (isSwiping && swipeDirection) {
+      currentX = newX;
       if (e.cancelable) e.preventDefault();
     }
   }
 
   function handleTouchEnd() {
-    if (!isSwiping) return;
+    if (!touchStarted) return;
 
-    if (shouldTrigger) {
+    if (isSwiping && shouldTrigger) {
       // Trigger haptic feedback if supported
       if ("vibrate" in navigator) {
         navigator.vibrate(10);
@@ -83,9 +86,12 @@
       }
     }
 
-    // Reset
+    // Reset all state
+    touchStarted = false;
     isSwiping = false;
+    isScrolling = false;
     startX = 0;
+    startY = 0;
     currentX = 0;
     swipeDirection = null;
   }

@@ -19,6 +19,7 @@
     Sun,
     Moon,
     Monitor,
+    AlertCircle,
   } from "lucide-svelte";
   import {
     isSettingsModalOpen,
@@ -68,30 +69,67 @@
   }
   let rules: Rule[] = [];
   let newRule = { keyword: "", field: "title", action: "mark_read", name: "" };
+  let rulesLoading = false;
+  let rulesError: string | null = null;
 
   async function loadRules() {
-    const res = await fetch("http://localhost:3000/rules");
-    const data = await res.json();
-    if (data.ok) rules = data.rules;
+    rulesLoading = true;
+    rulesError = null;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+      const res = await fetch("http://localhost:3000/rules", {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      const data = await res.json();
+      if (data.ok) rules = data.rules;
+    } catch (e: any) {
+      if (e.name === 'AbortError') {
+        rulesError = "Request timed out - backend may not be running";
+      } else {
+        rulesError = "Failed to load rules";
+        console.error(e);
+      }
+    } finally {
+      rulesLoading = false;
+    }
   }
 
   async function handleCreateRule() {
     if (!newRule.keyword) return;
-    await fetch("http://localhost:3000/rules", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newRule),
-    });
-    await loadRules();
-    newRule = { keyword: "", field: "title", action: "mark_read", name: "" };
+    try {
+      await fetch("http://localhost:3000/rules", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newRule),
+      });
+      await loadRules();
+      newRule = { keyword: "", field: "title", action: "mark_read", name: "" };
+    } catch (e) {
+      console.error("Failed to create rule:", e);
+    }
   }
 
   async function handleDeleteRule(id: string) {
-    await fetch(`http://localhost:3000/rules/${id}`, { method: "DELETE" });
-    await loadRules();
+    try {
+      await fetch(`http://localhost:3000/rules/${id}`, { method: "DELETE" });
+      await loadRules();
+    } catch (e) {
+      console.error("Failed to delete rule:", e);
+    }
   }
 
-  $: if (activeTab === "automation") loadRules();
+  // Load rules when switching to automation tab (only once per tab switch)
+  let lastActiveTab: string = "";
+  $: if (activeTab !== lastActiveTab) {
+    lastActiveTab = activeTab;
+    if (activeTab === "automation") {
+      loadRules();
+    }
+  }
 
   // Backups
   let backups: any[] = [];
@@ -989,7 +1027,29 @@
           </div>
         {:else if activeTab === "automation"}
           <div class="p-6 space-y-6">
-            <!-- Create Rule Form -->
+            {#if rulesLoading}
+              <div class="flex items-center justify-center py-12">
+                <div class="flex items-center gap-3 text-white/60">
+                  <Loader2 size={24} class="animate-spin" />
+                  <span>Loading rules...</span>
+                </div>
+              </div>
+            {:else if rulesError}
+              <div class="flex flex-col items-center justify-center py-12 text-center">
+                <div class="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mb-4">
+                  <AlertCircle size={32} class="text-red-400" />
+                </div>
+                <h3 class="text-lg font-semibold text-white mb-2">Failed to Load</h3>
+                <p class="text-white/50 mb-4 max-w-md">{rulesError}</p>
+                <button
+                  on:click={loadRules}
+                  class="px-4 py-2 rounded-xl bg-accent hover:bg-accent/80 text-white font-medium transition-colors"
+                >
+                  Retry
+                </button>
+              </div>
+            {:else}
+              <!-- Create Rule Form -->
             <div
               class="bg-white/5 p-4 rounded-xl space-y-4 border border-white/5"
             >
@@ -1078,7 +1138,7 @@
                 {/each}
               {/if}
             </div>
-          </div>
+          {/if}
         {/if}
 
         <!-- Messages -->
