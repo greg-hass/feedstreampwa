@@ -96,7 +96,17 @@ export async function openReader(item: any) {
             cacheArticleContent(item.id, formattedData).catch(console.error);
         }
     } catch (err) {
-        readerError.set(err instanceof Error ? err.message : "Failed to load reader");
+        const errorMessage = err instanceof Error ? err.message : "Failed to load reader";
+        console.error('Reader error:', errorMessage, 'for URL:', item.url);
+        
+        // If reader fails (403, 500, etc.), fall back to opening the original URL in a new tab
+        if (errorMessage.includes('HTTP 403') || errorMessage.includes('HTTP 500') || errorMessage.includes('HTTP 404')) {
+            console.log('Opening original URL due to reader error');
+            window.open(item.url, '_blank');
+            closeReader(); // Close the reader modal
+        } else {
+            readerError.set(errorMessage);
+        }
     } finally {
         readerLoading.set(false);
     }

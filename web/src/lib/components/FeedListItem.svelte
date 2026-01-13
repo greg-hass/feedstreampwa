@@ -34,7 +34,8 @@
 
   // Cast to diversity-aware item
   $: diversityItem = item as ItemWithDiversity;
-  $: showDiversityBadge = $diversitySettings.enabled && diversityItem._isDiverseSource;
+  $: showDiversityBadge =
+    $diversitySettings.enabled && diversityItem._isDiverseSource;
 
   // Check if this article is cached for offline
   $: isCached = $offlineArticles.has(item.id);
@@ -171,7 +172,9 @@
 
     const shareData = {
       title: item.title || "Article from FeedStream",
-      text: item.summary ? item.summary.replace(/<[^>]*>?/gm, "").substring(0, 200) : undefined,
+      text: item.summary
+        ? item.summary.replace(/<[^>]*>?/gm, "").substring(0, 200)
+        : undefined,
       url: item.url || undefined,
     };
 
@@ -291,7 +294,10 @@
         <OfflineBadge size="sm" showText={false} />
       {/if}
       {#if showDiversityBadge}
-        <span class="px-1.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-[8px] font-semibold text-cyan-400" title="New source - explore diverse content">NEW</span>
+        <span
+          class="px-1.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-[8px] font-semibold text-cyan-400"
+          title="New source - explore diverse content">NEW</span
+        >
       {/if}
       <span class="text-white/30">•</span>
       <span class="text-orange-400 whitespace-nowrap">{timeAgo}</span>
@@ -369,17 +375,6 @@
     </div>
   {/if}
 
-  <!-- Summary (Full Width) -->
-  {#if item.summary}
-    <p
-      class="{densityClasses.summarySize} text-white/60 leading-relaxed {densityClasses.spacing} {item.is_read
-        ? 'text-gray-500'
-        : ''}"
-    >
-      {@html item.summary.replace(/<[^>]*>?/gm, "")}
-    </p>
-  {/if}
-
   <!-- Actions Bar -->
   <div
     class="flex items-center justify-between pt-2 mt-1 border-t border-white/5"
@@ -421,24 +416,25 @@
         </button>
       {/if}
 
-    <button
-      class="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-blue-400 transition-colors"
-      on:click={handleShare}
-      title="Share"
-    >
-      <Share2 size={18} />
-    </button>
+      <button
+        class="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-blue-400 transition-colors"
+        on:click={handleShare}
+        title="Share"
+      >
+        <Share2 size={18} />
+      </button>
 
-    <a
-      href={item.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      class="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-blue-400 transition-colors"
-      on:click|stopPropagation
-      title="Open Link"
-    >
-      <ExternalLink size={18} />
-    </a>
+      <a
+        href={item.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-blue-400 transition-colors"
+        on:click|stopPropagation
+        title="Open Link"
+      >
+        <ExternalLink size={18} />
+      </a>
+    </div>
   </div>
 </article>
 
