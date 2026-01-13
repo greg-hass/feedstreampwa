@@ -157,7 +157,7 @@
     <h3
       class="text-base sm:text-lg font-semibold leading-snug transition-colors {item.is_read
         ? 'text-gray-400 font-normal'
-        : 'text-gray-100'}"
+        : 'text-white'}"
     >
       {item.title}
     </h3>
@@ -185,7 +185,7 @@
               <img
                 src={youtubeThumbnail}
                 alt={item.title}
-                class="w-full h-full object-cover opacity-90 group-hover/video:opacity-100 transition-opacity"
+                class="w-full h-full object-cover opacity-100 transition-opacity"
                 loading="lazy"
               />
               <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover/video:bg-black/10 transition-colors">
