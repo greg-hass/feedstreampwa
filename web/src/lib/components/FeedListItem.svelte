@@ -249,25 +249,6 @@
   tabindex="0"
   role="button"
 >
-  <!-- Selection Checkbox -->
-  {#if $isSelectionMode}
-    <div
-      class="absolute top-4 right-4 z-30 transition-transform duration-200"
-      class:scale-100={$isSelectionMode}
-      class:scale-0={!$isSelectionMode}
-    >
-      <div
-        class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors duration-200
-        {isSelected
-          ? 'bg-blue-500 border-blue-500'
-          : 'border-white/20 bg-black/40'}"
-      >
-        {#if isSelected}
-          <CheckCircle2 size={14} class="text-white" />
-        {/if}
-      </div>
-    </div>
-  {/if}
   <!-- Header: Feed Icon + Feed Title + Timestamp -->
   <div class="flex items-start gap-3 {densityClasses.headerSpacing}">
     <!-- Feed Icon -->
