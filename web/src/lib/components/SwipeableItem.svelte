@@ -9,8 +9,8 @@
   let isSwiping = false;
   let swipeDirection: "left" | "right" | null = null;
 
-  const SWIPE_THRESHOLD = 100; // Distance to trigger action
-  const MAX_SWIPE = 150; // Maximum swipe distance
+  const SWIPE_THRESHOLD = 100;
+  const MAX_SWIPE = 150;
 
   $: swipeDistance = isSwiping
     ? Math.max(Math.min(currentX - startX, MAX_SWIPE), -MAX_SWIPE)
@@ -18,34 +18,51 @@
   $: swipeProgress = Math.abs(swipeDistance) / SWIPE_THRESHOLD;
   $: shouldTrigger = Math.abs(swipeDistance) >= SWIPE_THRESHOLD;
 
-  // Background colors based on swipe direction
   $: backgroundColor = (() => {
     if (!isSwiping) return "transparent";
-    if (swipeDistance > 0) return `rgba(16, 185, 129, ${swipeProgress * 0.3})`; // Green for read
-    if (swipeDistance < 0) return `rgba(251, 146, 60, ${swipeProgress * 0.3})`; // Orange for bookmark
+    if (swipeDistance > 0) return `rgba(16, 185, 129, ${swipeProgress * 0.3})`;
+    if (swipeDistance < 0) return `rgba(251, 146, 60, ${swipeProgress * 0.3})`;
     return "transparent";
   })();
 
+  let startY = 0;
+  let isScrolling = false;
+
   function handleTouchStart(e: TouchEvent) {
     startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
     isSwiping = true;
+    isScrolling = false;
     swipeDirection = null;
   }
 
   function handleTouchMove(e: TouchEvent) {
-    if (!isSwiping) return;
+    if (!isSwiping || isScrolling) return;
 
     currentX = e.touches[0].clientX;
-    const distance = currentX - startX;
+    const currentY = e.touches[0].clientY;
 
-    // Determine direction on first significant move
-    if (!swipeDirection && Math.abs(distance) > 10) {
-      swipeDirection = distance > 0 ? "right" : "left";
+    const diffX = currentX - startX;
+    const diffY = currentY - startY;
+
+    // Determine scrolling vs swiping intent early
+    if (!swipeDirection && (Math.abs(diffX) > 5 || Math.abs(diffY) > 5)) {
+      // If vertical movement is greater than horizontal, it's a scroll
+      if (Math.abs(diffY) > Math.abs(diffX)) {
+        isScrolling = true;
+        isSwiping = false; // Cancel swiping for this interaction
+        return;
+      }
+
+      // Otherwise it's a swipe
+      swipeDirection = diffX > 0 ? "right" : "left";
     }
 
-    // Prevent vertical scroll if swiping horizontally
-    if (swipeDirection && Math.abs(distance) > 20) {
-      e.preventDefault();
+    // Only process swipe if we are definitely swiping horizontal
+    if (swipeDirection) {
+      // Prevent default only if we are significantly moving horizontally (prevent browser back/forward gestures if needed)
+      // But mainly to stop the page from scrolling while we drag the item
+      if (e.cancelable) e.preventDefault();
     }
   }
 
