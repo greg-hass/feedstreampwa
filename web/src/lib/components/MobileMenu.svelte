@@ -9,7 +9,8 @@
     LayoutDashboard,
     List,
     Bookmark,
-    Circle,
+    Eye,
+    Hash,
     Settings,
     Rss,
     Youtube,
@@ -163,12 +164,11 @@
           : 'text-white/60 hover:text-white hover:bg-white/5'}"
       >
         <div class="flex items-center gap-3">
-          <Circle
+          <Eye
             size={24}
             class={$viewMode === "unread"
               ? "text-blue-400"
               : "text-current group-hover:text-white"}
-            fill={$viewMode === "unread" ? "currentColor" : "none"}
           />
           Unread
         </div>
@@ -305,7 +305,7 @@
         }}
       >
         <div class="flex items-center gap-3">
-          <RedditIcon
+          <Hash
             size={24}
             class={$viewMode === "smart" && $activeSmartFolder === "reddit"
               ? "text-orange-400"

@@ -4,7 +4,8 @@
     LayoutDashboard,
     List,
     Bookmark,
-    Circle,
+    Eye,
+    Hash,
     Settings,
     PlusCircle,
     Rss,
@@ -209,12 +210,11 @@
       on:click={setViewUnread}
     >
       <div class="flex items-center gap-3">
-        <Circle
+        <Eye
           size={24}
           class={$viewMode === "unread"
             ? "text-blue-400"
             : "text-current group-hover:text-white"}
-          fill={$viewMode === "unread" ? "currentColor" : "none"}
         />
         Unread
       </div>
@@ -356,11 +356,8 @@
       on:click={() => setViewSmartFolder("reddit")}
     >
       <div class="flex items-center gap-3">
-        <RedditIcon
+        <Hash
           size={24}
-          color={$viewMode === "smart" && $activeSmartFolder === "reddit"
-            ? "#fb923c"
-            : "currentColor"}
           class={$viewMode === "smart" && $activeSmartFolder === "reddit"
             ? "text-orange-400"
             : "text-orange-400/70 group-hover:text-orange-400"}
