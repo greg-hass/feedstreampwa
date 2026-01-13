@@ -16,6 +16,7 @@
     ChevronRight,
     ChevronDown,
     MoreVertical,
+    Sparkles,
   } from "lucide-svelte";
   import RedditIcon from "$lib/components/icons/RedditIcon.svelte";
   import {
@@ -48,8 +49,11 @@
     feedsTree,
     folderUnreadCounts,
   } from "$lib/stores/counts";
-  import { folders, createFolder } from "$lib/stores/folders";
-  import { feeds } from "$lib/stores/feeds";
+  import { loadFolders, folders, createFolder } from "$lib/stores/folders";
+  import { loadFeeds, feeds } from "$lib/stores/feeds";
+  import AIRecommendationsModal from "$lib/components/modals/AIRecommendationsModal.svelte";
+
+  let isAIRecommendationsOpen = false;
   import { toast } from "$lib/stores/toast";
 
   // Navigation Items
@@ -131,7 +135,7 @@
   class="hidden md:flex flex-col w-[280px] h-screen fixed left-0 top-0 z-40 bg-[#121212] border-r border-white/5"
 >
   <!-- Brand -->
-  <div class="p-6 pt-8">
+  <div class="p-6 pt-6 flex-shrink-0">
     <h1
       class="text-2xl font-bold tracking-tight text-white flex items-center gap-2"
     >
@@ -145,7 +149,9 @@
   </div>
 
   <!-- Main Nav -->
-  <div class="flex-1 px-4 py-2 space-y-1 overflow-y-auto scrollbar-hide">
+  <div
+    class="flex-1 px-4 py-2 space-y-1 overflow-y-auto scrollbar-hide min-h-0"
+  >
     <div
       class="text-xs font-semibold text-white/40 uppercase tracking-wider px-3 mb-2 mt-2"
     >
@@ -156,7 +162,7 @@
     <a
       href="/"
       on:click={() => setViewAll()}
-      class="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative overflow-hidden
+      class="flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 group relative overflow-hidden
       {activeUrl === '/'
         ? 'bg-white/10 text-white shadow-inner border border-white/5'
         : 'text-white/60 hover:text-white hover:bg-white/5'}"
@@ -190,7 +196,7 @@
 
     <!-- Unread -->
     <button
-      class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+      class="w-full flex items-center justify-between gap-3 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
         {$viewMode === 'unread'
         ? 'bg-white/10 text-white shadow-inner border border-white/5'
         : 'text-white/60 hover:text-white hover:bg-white/5'}"
@@ -226,7 +232,7 @@
 
     <!-- Bookmarks (formerly Library) -->
     <button
-      class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+      class="w-full flex items-center justify-between gap-3 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
         {$viewMode === 'bookmarks'
         ? 'bg-white/10 text-white shadow-inner border border-white/5'
         : 'text-white/60 hover:text-white hover:bg-white/5'}"
@@ -262,12 +268,12 @@
 
     <!-- Smart Folders Section -->
     <div
-      class="text-xs font-semibold text-white/40 uppercase tracking-wider px-3 mb-2 mt-8"
+      class="text-xs font-semibold text-white/40 uppercase tracking-wider px-3 mb-2 mt-6"
     >
       Smart Folders
     </div>
     <button
-      class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+      class="w-full flex items-center justify-between gap-3 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
         {$viewMode === 'smart' && $activeSmartFolder === 'rss'
         ? 'bg-white/10 text-white shadow-inner border border-white/5'
         : 'text-white/60 hover:text-white hover:bg-white/5'}"
@@ -277,8 +283,8 @@
         <Rss
           size={24}
           class={$viewMode === "smart" && $activeSmartFolder === "rss"
-            ? "text-accent"
-            : "text-current group-hover:text-white"}
+            ? "text-emerald-400"
+            : "text-white/60 group-hover:text-emerald-400"}
         />
         RSS
       </div>
@@ -296,13 +302,13 @@
 
       {#if $viewMode === "smart" && $activeSmartFolder === "rss"}
         <div
-          class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
+          class="absolute inset-y-0 left-0 w-1 bg-emerald-400 rounded-r-full shadow-[0_0_10px_2px_rgba(52,211,153,0.5)]"
         ></div>
       {/if}
     </button>
 
     <button
-      class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+      class="w-full flex items-center justify-between gap-3 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
         {$viewMode === 'smart' && $activeSmartFolder === 'youtube'
         ? 'bg-white/10 text-white shadow-inner border border-white/5'
         : 'text-white/60 hover:text-white hover:bg-white/5'}"
@@ -312,8 +318,8 @@
         <Youtube
           size={24}
           class={$viewMode === "smart" && $activeSmartFolder === "youtube"
-            ? "text-accent"
-            : "text-current group-hover:text-white"}
+            ? "text-red-500"
+            : "text-white/60 group-hover:text-red-500"}
         />
         YouTube
       </div>
@@ -331,13 +337,13 @@
 
       {#if $viewMode === "smart" && $activeSmartFolder === "youtube"}
         <div
-          class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
+          class="absolute inset-y-0 left-0 w-1 bg-red-500 rounded-r-full shadow-[0_0_10px_2px_rgba(239,68,68,0.5)]"
         ></div>
       {/if}
     </button>
 
     <button
-      class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+      class="w-full flex items-center justify-between gap-3 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
         {$viewMode === 'smart' && $activeSmartFolder === 'reddit'
         ? 'bg-white/10 text-white shadow-inner border border-white/5'
         : 'text-white/60 hover:text-white hover:bg-white/5'}"
@@ -347,11 +353,11 @@
         <RedditIcon
           size={24}
           color={$viewMode === "smart" && $activeSmartFolder === "reddit"
-            ? "#10B981"
+            ? "#fb923c"
             : "currentColor"}
           class={$viewMode === "smart" && $activeSmartFolder === "reddit"
-            ? "text-accent"
-            : "text-current group-hover:text-white"}
+            ? "text-orange-400"
+            : "text-white/60 group-hover:text-orange-400"}
         />
         Reddit
       </div>
@@ -369,13 +375,13 @@
 
       {#if $viewMode === "smart" && $activeSmartFolder === "reddit"}
         <div
-          class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
+          class="absolute inset-y-0 left-0 w-1 bg-orange-400 rounded-r-full shadow-[0_0_10px_2px_rgba(251,146,60,0.5)]"
         ></div>
       {/if}
     </button>
 
     <button
-      class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+      class="w-full flex items-center justify-between gap-3 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
         {$viewMode === 'smart' && $activeSmartFolder === 'podcast'
         ? 'bg-white/10 text-white shadow-inner border border-white/5'
         : 'text-white/60 hover:text-white hover:bg-white/5'}"
@@ -385,8 +391,8 @@
         <Mic
           size={24}
           class={$viewMode === "smart" && $activeSmartFolder === "podcast"
-            ? "text-accent"
-            : "text-current group-hover:text-white"}
+            ? "text-indigo-400"
+            : "text-white/60 group-hover:text-indigo-400"}
         />
         Podcasts
       </div>
@@ -404,13 +410,13 @@
 
       {#if $viewMode === "smart" && $activeSmartFolder === "podcast"}
         <div
-          class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
+          class="absolute inset-y-0 left-0 w-1 bg-indigo-400 rounded-r-full shadow-[0_0_10px_2px_rgba(129,140,248,0.5)]"
         ></div>
       {/if}
     </button>
 
     <!-- Folders & Feeds Tree -->
-    <div class="flex items-center justify-between px-3 mb-2 mt-8">
+    <div class="flex items-center justify-between px-3 mb-2 mt-6">
       <div class="text-xs font-semibold text-white/40 uppercase tracking-wider">
         Feeds & Folders
       </div>
@@ -445,7 +451,7 @@
       {#each $folders as folder}
         <div class="flex flex-col">
           <button
-            class="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+            class="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
               {$viewMode === 'folder' && $activeFolderId === folder.id
               ? 'bg-white/10 text-white shadow-inner border border-white/5'
               : 'text-white/60 hover:text-white hover:bg-white/5'}"
@@ -570,7 +576,7 @@
       </div>
       {#each $feedsTree.uncategorized as feed}
         <button
-          class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+          class="w-full flex items-center justify-between gap-3 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
             {$viewMode === 'feed' && $selectedFeedUrl === feed.url
             ? 'bg-white/10 text-white shadow-inner border border-white/5'
             : 'text-white/60 hover:text-white hover:bg-white/5'}"
@@ -626,19 +632,32 @@
     {/if}
   </div>
 
-  <!-- User / Settings at bottom -->
-  <div class="p-4 border-t border-white/5">
-    <div
-      class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 cursor-pointer transition-colors"
-      on:click={() => isSettingsModalOpen.set(true)}
-      on:keydown={(e) => e.key === "Enter" && isSettingsModalOpen.set(true)}
-      tabindex="0"
-      role="button"
+  <!-- AI Recommendations & Settings - Always Visible at Bottom -->
+  <div class="flex-shrink-0 p-4 border-t border-white/5 bg-[#121212] space-y-2">
+    <!-- AI Recommendations -->
+    <button
+      class="w-full flex items-center gap-3 px-3 py-2 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 hover:from-purple-500/20 hover:to-pink-500/20 transition-all text-white group"
+      on:click={() => (isAIRecommendationsOpen = true)}
     >
-      <Settings size={24} class="text-white/60" />
-      <span class="text-sm font-medium text-white">Settings</span>
-    </div>
+      <Sparkles size={24} class="text-purple-400 group-hover:text-purple-300" />
+      <span class="text-sm font-semibold">AI Recommendations</span>
+    </button>
+
+    <!-- Settings -->
+    <button
+      class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors text-white/60 hover:text-white"
+      on:click={() => isSettingsModalOpen.set(true)}
+    >
+      <Settings size={24} />
+      <span class="text-sm font-medium">Settings</span>
+    </button>
   </div>
+
+  <!-- AI Recommendations Modal -->
+  <AIRecommendationsModal
+    bind:isOpen={isAIRecommendationsOpen}
+    on:close={() => (isAIRecommendationsOpen = false)}
+  />
 
   <!-- Slot for Player if Desktop -->
   <slot name="player" />

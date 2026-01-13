@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { RefreshCw, Plus, FolderPlus } from "lucide-svelte";
+  import { RefreshCw, Plus, FolderPlus, LayoutGrid } from "lucide-svelte";
 
   // Components
   import MobileHeader from "$lib/components/MobileHeader.svelte";
@@ -8,6 +8,9 @@
   import SearchBar from "$lib/components/SearchBar.svelte";
   import SkeletonCard from "$lib/components/SkeletonCard.svelte";
   import FilterChips from "$lib/components/FilterChips.svelte";
+  import PullToRefresh from "$lib/components/PullToRefresh.svelte";
+  import OnboardingFlow from "$lib/components/OnboardingFlow.svelte";
+  import BulkActionsBar from "$lib/components/BulkActionsBar.svelte";
 
   // Stores
   import {
@@ -17,6 +20,7 @@
     activeSmartFolder,
     activeFolderId,
     selectedFeedUrl,
+    viewDensity,
   } from "$lib/stores/ui";
   import {
     items,
@@ -40,11 +44,75 @@
   import { openReader } from "$lib/stores/reader";
   import { playMedia } from "$lib/stores/media";
   import { toast } from "$lib/stores/toast";
+  import {
+    shortcuts,
+    registerShortcuts,
+    handleKeyboardEvent,
+    showShortcutsHelp,
+    type KeyboardShortcut,
+  } from "$lib/stores/keyboard";
+  import KeyboardShortcutsHelp from "$lib/components/KeyboardShortcutsHelp.svelte";
+  import ReadingStatsModal from "$lib/components/ReadingStatsModal.svelte";
+
+  // State for modals
+  let showStats = false;
+
+  // Register shortcuts
+  onMount(() => {
+    registerShortcuts([
+      {
+        key: "?",
+        description: "Show keyboard shortcuts",
+        action: () => showShortcutsHelp.update((v) => !v),
+        shift: true,
+      },
+      {
+        key: "/",
+        description: "Focus search",
+        action: () => {
+          const searchInput = document.querySelector(
+            'input[type="search"]'
+          ) as HTMLInputElement;
+          if (searchInput) {
+            searchInput.focus();
+            // Prevent the '/' from being typed
+            setTimeout(() => (searchInput.value = ""), 0);
+          }
+        },
+      },
+      {
+        key: "r",
+        description: "Refresh feeds",
+        action: () => refreshAllFeeds(),
+      },
+      {
+        key: "g",
+        description: "Show reading stats",
+        action: () => (showStats = !showStats),
+        shift: true,
+      },
+      {
+        key: "Escape",
+        description: "Close modals / Clear selection",
+        action: () => {
+          // Logic to close top-most thing
+          if (showStats) showStats = false;
+          else if ($showShortcutsHelp) showShortcutsHelp.set(false);
+          // Selection clearing is handled in store logic or local
+        },
+      },
+    ]);
+  });
+
+  function handleKeydown(e: KeyboardEvent) {
+    handleKeyboardEvent(e, $shortcuts);
+  }
 
   // Local state
   let isMobile = false;
   let sentinel: HTMLElement;
   let wasRefreshing = false;
+  let showOnboarding = false;
 
   // Watch for refresh completion to reload items
   $: {
@@ -130,6 +198,17 @@
     }
   }
 
+  function cycleDensity() {
+    const densities: ("compact" | "comfortable" | "spacious")[] = [
+      "compact",
+      "comfortable",
+      "spacious",
+    ];
+    const currentIndex = densities.indexOf($viewDensity);
+    const nextIndex = (currentIndex + 1) % densities.length;
+    viewDensity.set(densities[nextIndex]);
+  }
+
   onMount(() => {
     // Initial load
     loadItems();
@@ -173,6 +252,11 @@
   <title>FeedStream - Private feed reader</title>
 </svelte:head>
 
+<!-- Pull to Refresh (Mobile Only) -->
+{#if isMobile}
+  <PullToRefresh on:refresh={refreshAll} />
+{/if}
+
 <!-- Sticky Header Container (Desktop Search + Filter) -->
 {#if !isMobile}
   <div class="sticky-header">
@@ -188,6 +272,22 @@
             title="Refresh"
           >
             <RefreshCw size={20} />
+          </button>
+          <button
+            class="p-2.5 rounded-xl bg-gradient-to-br from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg shadow-slate-500/20 text-white relative group"
+            on:click={cycleDensity}
+            title="View Density: {$viewDensity}"
+          >
+            <LayoutGrid size={20} />
+            <span
+              class="absolute -bottom-1 -right-1 text-[9px] font-bold bg-white text-slate-900 rounded-full w-4 h-4 flex items-center justify-center"
+            >
+              {$viewDensity === "compact"
+                ? "C"
+                : $viewDensity === "spacious"
+                  ? "S"
+                  : "M"}
+            </span>
           </button>
           <button
             class="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 transition-all shadow-lg shadow-blue-500/20 text-white"
@@ -253,7 +353,7 @@
   {#if $itemsLoading && $items.length === 0}
     <div class="flex flex-col gap-0 w-full">
       {#each Array(5) as _ (Math.random())}
-        <SkeletonCard />
+        <SkeletonCard density={$viewDensity} />
       {/each}
     </div>
   {:else if $itemsError}
@@ -265,6 +365,7 @@
   {:else}
     <FeedGrid
       items={filteredItems}
+      density={$viewDensity}
       on:open={(e) => openReader(e.detail.item)}
       on:toggleStar={(e) => toggleStar(e.detail.item)}
       on:toggleRead={(e) => toggleRead(e.detail.item)}
@@ -294,6 +395,13 @@
     <div bind:this={sentinel} class="h-4 w-full"></div>
   {/if}
 </div>
+
+<OnboardingFlow />
+<BulkActionsBar />
+<KeyboardShortcutsHelp shortcuts={$shortcuts} />
+<ReadingStatsModal bind:isOpen={showStats} />
+
+<svelte:window on:keydown={handleKeydown} />
 
 <style>
   /* Prevent horizontal scroll */

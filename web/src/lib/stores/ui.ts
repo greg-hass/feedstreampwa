@@ -93,3 +93,25 @@ export function setViewFeed(feedUrl: string) {
     activeFolderId.set(null);
     selectedFeedUrl.set(feedUrl);
 }
+
+// View Density
+export type ViewDensity = 'compact' | 'comfortable' | 'spacious';
+
+function createDensityStore() {
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('viewDensity') : null;
+    const initial: ViewDensity = (stored as ViewDensity) || 'comfortable';
+    
+    const { subscribe, set } = writable<ViewDensity>(initial);
+    
+    return {
+        subscribe,
+        set: (value: ViewDensity) => {
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('viewDensity', value);
+            }
+            set(value);
+        }
+    };
+}
+
+export const viewDensity = createDensityStore();

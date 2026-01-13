@@ -3,13 +3,13 @@
   import { renameFolder } from "$lib/stores/folders";
   import * as feedsApi from "$lib/api/feeds";
   import { toast } from "$lib/stores/toast";
-  import { loadFeeds } from "$lib/stores/feeds"; // To refresh feeds after rename
+  import { loadFeeds } from "$lib/stores/feeds";
+  import { X, Edit2, FolderOpen } from "lucide-svelte";
 
   let newName = "";
   let loading = false;
   let error: string | null = null;
 
-  // Sync local state with store
   $: if ($renameModal.isOpen) {
     newName = $renameModal.currentName;
     error = null;
@@ -30,9 +30,8 @@
         await renameFolder($renameModal.targetId, name);
         toast.success("Folder renamed");
       } else {
-        // Feed rename
         await feedsApi.update($renameModal.targetId, { title: name });
-        await loadFeeds(); // Refresh feeds list
+        await loadFeeds();
         toast.success("Feed renamed");
       }
       close();
@@ -48,57 +47,102 @@
     newName = "";
     error = null;
   }
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === "Escape") {
+      close();
+    }
+  }
 </script>
+
+<svelte:window on:keydown={handleKeydown} />
 
 {#if $renameModal.isOpen}
   <div
-    class="modal-overlay"
-    role="button"
-    tabindex="0"
+    class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
     on:click={close}
-    on:keydown={(e) => e.key === "Escape" && close()}
+    on:keydown={(e) => e.key === "Enter" && close()}
+    role="button"
+    tabindex="-1"
   >
     <div
-      class="folder-modal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="rename-title"
+      class="bg-[#18181b] rounded-2xl border border-white/10 max-w-md w-full flex flex-col shadow-2xl overflow-hidden"
       on:click|stopPropagation
       on:keydown|stopPropagation
+      role="dialog"
+      aria-modal="true"
+      tabindex="-1"
     >
-      <div class="modal-header">
-        <h2 id="rename-title">
-          Rename {$renameModal.type === "feed" ? "Feed" : "Folder"}
-        </h2>
-        <button class="close-btn" on:click={close}>×</button>
-      </div>
-      <div class="modal-body">
-        <label
-          for="rename-input"
-          class="block text-xs font-semibold text-white/40 uppercase tracking-wider mb-2"
+      <!-- Header -->
+      <div
+        class="bg-[#18181b] rounded-t-2xl border-b border-white/10 px-6 py-4 flex items-center justify-between flex-shrink-0"
+      >
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/20 flex items-center justify-center"
+          >
+            {#if $renameModal.type === "folder"}
+              <FolderOpen size={20} class="text-purple-400" />
+            {:else}
+              <Edit2 size={20} class="text-purple-400" />
+            {/if}
+          </div>
+          <h2 class="text-xl font-semibold text-white">
+            Rename {$renameModal.type === "feed" ? "Feed" : "Folder"}
+          </h2>
+        </div>
+        <button
+          class="p-2 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+          on:click={close}
+          aria-label="Close"
         >
-          New Name
+          <X size={20} />
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="p-6 space-y-4">
+        <label class="block">
+          <span
+            class="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3 block"
+          >
+            New Name
+          </span>
+          <input
+            type="text"
+            bind:value={newName}
+            placeholder="Enter new name..."
+            class="w-full bg-white/5 px-4 py-3 rounded-xl text-white placeholder-white/40 border border-white/10 hover:bg-white/10 focus:border-purple-500/50 transition-colors outline-none text-sm"
+            maxlength="100"
+            on:keydown={(e) => e.key === "Enter" && handleSubmit()}
+            autofocus
+          />
         </label>
-        <input
-          id="rename-input"
-          type="text"
-          bind:value={newName}
-          placeholder="Enter new name..."
-          class="folder-input"
-          maxlength="100"
-          on:keydown={(e) => e.key === "Enter" && handleSubmit()}
-          autofocus
-        />
+
         {#if error}
-          <div class="folder-error">{error}</div>
+          <div
+            class="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm"
+          >
+            {error}
+          </div>
         {/if}
       </div>
-      <div class="modal-footer">
-        <button class="secondary-btn" on:click={close}>Cancel</button>
+
+      <!-- Footer -->
+      <div
+        class="sticky bottom-0 bg-[#18181b] border-t border-white/10 px-6 py-4 flex items-center justify-end gap-3 rounded-b-2xl"
+      >
         <button
-          class="primary-btn"
-          disabled={loading || !newName.trim()}
+          class="px-4 py-2 rounded-xl text-white/60 hover:text-white hover:bg-white/5 transition-colors text-sm font-medium"
+          on:click={close}
+          disabled={loading}
+        >
+          Cancel
+        </button>
+        <button
+          class="px-6 py-2 rounded-xl bg-purple-500 text-white hover:bg-purple-600 transition-colors shadow-lg shadow-purple-500/20 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-bold"
           on:click={handleSubmit}
+          disabled={loading || !newName.trim()}
         >
           {loading ? "Renaming..." : "Rename"}
         </button>
@@ -106,172 +150,3 @@
     </div>
   </div>
 {/if}
-
-<style>
-  /* Modal Styles - Shared with CreateFolderModal could be extracted to global.css */
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.85);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    animation: fadeIn 0.2s ease;
-  }
-
-  .folder-modal {
-    width: 90%;
-    max-width: 420px;
-    padding: 0;
-    animation: scaleIn 0.25s ease-out;
-    background: #18181b;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: var(--radiusL);
-    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8);
-  }
-
-  .modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 24px;
-    border-bottom: 1px solid var(--stroke);
-  }
-
-  .modal-header h2 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text);
-  }
-
-  .close-btn {
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    background: none;
-    border: 1px solid var(--stroke);
-    color: var(--muted);
-    font-size: 24px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: all 0.2s;
-  }
-
-  .close-btn:hover {
-    background: var(--panel1);
-    color: var(--text);
-  }
-
-  .modal-body {
-    padding: 24px;
-  }
-
-  .folder-input {
-    width: 100%;
-    padding: 14px 16px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: var(--radiusM);
-    color: white;
-    font-size: 15px;
-    font-family: var(--font-ui);
-    transition: all 0.2s;
-  }
-
-  .folder-input:focus {
-    outline: none;
-    background: rgba(0, 0, 0, 0.4);
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
-  }
-
-  .folder-error {
-    margin-top: 12px;
-    padding: 10px 12px;
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    border-radius: var(--radiusM);
-    color: #ef4444;
-    font-size: 13px;
-  }
-
-  .modal-footer {
-    display: flex;
-    gap: 10px;
-    padding: 24px;
-    border-top: 1px solid var(--stroke);
-  }
-
-  .secondary-btn {
-    flex: 1;
-    padding: 12px 20px;
-    background: var(--panel1);
-    border: 1px solid var(--stroke);
-    border-radius: var(--radiusM);
-    color: var(--text);
-    font-size: 14px;
-    font-weight: 600;
-    font-family: var(--font-ui);
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .secondary-btn:hover {
-    background: var(--panel0);
-  }
-
-  .primary-btn {
-    flex: 1;
-    padding: 12px 20px;
-    background: var(--accent);
-    border: none;
-    border-radius: var(--radiusM);
-    color: var(--bg0);
-    font-size: 14px;
-    font-weight: 600;
-    font-family: var(--font-ui);
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .primary-btn:hover:not(:disabled) {
-    background: #3fb88a;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px var(--accent-glow);
-  }
-
-  .primary-btn:disabled {
-    background: var(--panel1);
-    color: var(--muted2);
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes scaleIn {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-</style>

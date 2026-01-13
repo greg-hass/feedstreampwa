@@ -1,6 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import type { Item } from "$lib/types";
+  import type { ViewDensity } from "$lib/stores/ui";
+  import { calculateReadTime, formatReadTime } from "$lib/utils/readTime";
   import {
     Bookmark,
     ExternalLink,
@@ -12,11 +14,62 @@
     Clock,
   } from "lucide-svelte";
   import RedditIcon from "$lib/components/icons/RedditIcon.svelte";
+  import {
+    isSelectionMode,
+    selectedItemIds,
+    toggleItemSelection,
+  } from "$lib/stores/selection";
+  import { vibrate, HapticPatterns } from "$lib/utils/haptics";
 
   export let item: Item;
   export let feedType: "rss" | "youtube" | "reddit" | "podcast" = "rss";
+  export let density: ViewDensity = "comfortable";
 
   const dispatch = createEventDispatcher();
+
+  // Calculate read time
+  $: readTime = item.summary ? calculateReadTime(item.summary) : 0;
+  $: readTimeText = readTime > 0 ? formatReadTime(readTime) : null;
+
+  // Density-aware sizing
+  $: densityClasses = {
+    padding:
+      density === "compact"
+        ? "px-4 py-2"
+        : density === "spacious"
+          ? "px-4 py-6"
+          : "px-4 py-4",
+    iconSize:
+      density === "compact"
+        ? "w-8 h-8"
+        : density === "spacious"
+          ? "w-14 h-14"
+          : "w-10 h-10 sm:w-12 sm:h-12",
+    iconInnerSize:
+      density === "compact"
+        ? "w-4 h-4"
+        : density === "spacious"
+          ? "w-8 h-8"
+          : "w-6 h-6 sm:w-7 sm:h-7",
+    titleSize:
+      density === "compact"
+        ? "text-sm"
+        : density === "spacious"
+          ? "text-xl"
+          : "text-base sm:text-lg",
+    summarySize:
+      density === "compact"
+        ? "text-xs"
+        : density === "spacious"
+          ? "text-base"
+          : "text-sm",
+    spacing:
+      density === "compact" ? "mb-1" : density === "spacious" ? "mb-4" : "mb-2",
+    headerSpacing:
+      density === "compact" ? "mb-1" : density === "spacious" ? "mb-4" : "mb-3",
+    mediaSpacing:
+      density === "compact" ? "mb-1" : density === "spacious" ? "mb-4" : "mb-3",
+  };
 
   // Extract YouTube video ID from external_id or URL
   $: youtubeVideoId = (() => {
@@ -115,154 +168,230 @@
     e.stopPropagation();
     playYouTubeVideo = !playYouTubeVideo;
   }
+
+  $: isSelected = $selectedItemIds.has(item.id);
+
+  function handleClick(e: Event) {
+    if ($isSelectionMode) {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleItemSelection(item.id);
+      vibrate(HapticPatterns.Selection);
+    } else {
+      // If we're not in selection mode, normal click opens the item
+      handleOpen();
+    }
+  }
+
+  // Long press handler for mobile to enter selection mode
+  let longPressTimer: any;
+
+  function handleTouchStart() {
+    longPressTimer = setTimeout(() => {
+      toggleItemSelection(item.id);
+      vibrate(HapticPatterns.Selection);
+    }, 500);
+  }
+
+  function handleTouchEnd() {
+    clearTimeout(longPressTimer);
+  }
 </script>
 
 <article
-  class="group flex flex-row gap-3 sm:gap-4 px-4 py-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer"
-  on:click={handleOpen}
-  on:keypress={(e) => e.key === "Enter" && handleOpen()}
+  class="group relative flex flex-col {densityClasses.padding} border-b transition-all duration-200 cursor-pointer overflow-hidden
+  {isSelected
+    ? 'bg-blue-500/10 border-blue-500/30'
+    : 'border-white/5 hover:bg-white/[0.02] hover:border-white/10'}"
+  class:opacity-100={item.is_read === 0}
+  class:opacity-60={item.is_read === 1}
+  on:click={handleClick}
+  on:touchstart={handleTouchStart}
+  on:touchend={handleTouchEnd}
+  on:keypress={(e) => e.key === "Enter" && handleClick(e)}
   tabindex="0"
   role="button"
 >
-  <!-- Left: Icon (Avatar style) -->
-  <div class="flex-shrink-0 pt-1">
+  <!-- Selection Checkbox -->
+  {#if $isSelectionMode}
     <div
-      class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-white/10 transition-colors"
+      class="absolute top-4 right-4 z-30 transition-transform duration-200"
+      class:scale-100={$isSelectionMode}
+      class:scale-0={!$isSelectionMode}
     >
-      {#if item.feed_icon_url}
-         <img src={item.feed_icon_url} alt="" class="w-6 h-6 sm:w-7 sm:h-7 object-contain opacity-80" />
-      {:else}
-         <svelte:component this={Icon} size={20} class={currentStyle.color} />
+      <div
+        class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors duration-200
+        {isSelected
+          ? 'bg-blue-500 border-blue-500'
+          : 'border-white/20 bg-black/40'}"
+      >
+        {#if isSelected}
+          <CheckCircle2 size={14} class="text-white" />
+        {/if}
+      </div>
+    </div>
+  {/if}
+  <!-- Header: Feed Icon + Feed Title + Timestamp -->
+  <div class="flex items-start gap-3 {densityClasses.headerSpacing}">
+    <!-- Feed Icon -->
+    <div class="flex-shrink-0">
+      <div
+        class="{densityClasses.iconSize} rounded-full bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-white/10 transition-colors"
+      >
+        {#if item.feed_icon_url}
+          <img
+            src={item.feed_icon_url}
+            alt=""
+            class="{densityClasses.iconInnerSize} object-contain opacity-80"
+          />
+        {:else}
+          <svelte:component this={Icon} size={20} class={currentStyle.color} />
+        {/if}
+      </div>
+    </div>
+
+    <!-- Feed Title + Timestamp + Read Time -->
+    <div class="flex-1 min-w-0 flex items-center gap-2 text-sm pt-1 flex-wrap">
+      <span class="font-bold text-indigo-400 truncate">{item.feed_title}</span>
+      <span class="text-white/30">•</span>
+      <span class="text-orange-400 whitespace-nowrap">{timeAgo}</span>
+      {#if readTimeText}
+        <span class="text-white/30">•</span>
+        <span class="text-white/40 whitespace-nowrap flex items-center gap-1">
+          <Clock size={12} />
+          {readTimeText}
+        </span>
       {/if}
     </div>
   </div>
 
-  <!-- Right: Main Content -->
-  <div class="flex-1 min-w-0 flex flex-col gap-2">
-    <!-- Header: Meta -->
-    <div class="flex items-center justify-between text-sm">
-      <div class="flex items-center gap-2 overflow-hidden">
-        <span class="font-bold text-gray-200 truncate">{item.feed_title}</span>
-        <span class="text-white/30">•</span>
-        <span class="text-white/40 whitespace-nowrap">{timeAgo}</span>
-      </div>
-      {#if item.is_read}
-        <div class="flex-shrink-0" title="Read">
-            <CheckCircle2 size={14} class="text-emerald-500/50" />
+  <!-- Article Title (Full Width) -->
+  <h3
+    class="{densityClasses.titleSize} font-semibold leading-snug transition-colors {densityClasses.spacing} {item.is_read
+      ? 'text-gray-400 font-normal'
+      : 'text-white'}"
+  >
+    {item.title}
+  </h3>
+
+  <!-- Media (Image or Video) - Full Width Below Title -->
+  {#if youtubeVideoId}
+    <div
+      class="w-full aspect-video rounded-xl overflow-hidden bg-black {densityClasses.mediaSpacing} border border-white/10"
+      on:click|stopPropagation
+      role="none"
+    >
+      {#if playYouTubeVideo}
+        <iframe
+          src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0&vq=hd1080`}
+          class="w-full h-full"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+          title={item.title}
+        ></iframe>
+      {:else}
+        <div
+          class="relative w-full h-full group/video cursor-pointer"
+          on:click={toggleYouTubePlay}
+          role="button"
+          tabindex="0"
+          on:keypress={(e) => e.key === "Enter" && toggleYouTubePlay(e)}
+        >
+          <img
+            src={youtubeThumbnail}
+            alt={item.title}
+            class="w-full h-full object-cover opacity-100 transition-opacity"
+            loading="lazy"
+          />
+          <div
+            class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover/video:bg-black/10 transition-colors"
+          >
+            <div
+              class="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-2xl scale-100 group-hover/video:scale-110 transition-transform"
+            >
+              <PlayCircle size={32} class="text-white fill-white/20" />
+            </div>
+          </div>
         </div>
       {/if}
     </div>
-
-    <!-- Title -->
-    <h3
-      class="text-base sm:text-lg font-semibold leading-snug transition-colors {item.is_read
-        ? 'text-gray-400 font-normal'
-        : 'text-white'}"
+  {:else if thumbnailUrl}
+    <div
+      class="w-full aspect-video sm:aspect-[2/1] rounded-xl overflow-hidden bg-white/5 {densityClasses.mediaSpacing} border border-white/5"
     >
-      {item.title}
-    </h3>
-
-    <!-- Media (Image or Video) - Now Below Title -->
-    {#if youtubeVideoId}
-       <div class="w-full aspect-video rounded-xl overflow-hidden bg-black mt-1 mb-1 border border-white/10" on:click|stopPropagation role="none">
-          {#if playYouTubeVideo}
-            <iframe
-              src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0&vq=hd1080`}
-              class="w-full h-full"
-              frameborder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowfullscreen
-              title={item.title}
-            ></iframe>
-          {:else}
-            <div 
-                class="relative w-full h-full group/video cursor-pointer" 
-                on:click={toggleYouTubePlay} 
-                role="button" 
-                tabindex="0" 
-                on:keypress={(e) => e.key === 'Enter' && toggleYouTubePlay(e)}
-            >
-              <img
-                src={youtubeThumbnail}
-                alt={item.title}
-                class="w-full h-full object-cover opacity-100 transition-opacity"
-                loading="lazy"
-              />
-              <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover/video:bg-black/10 transition-colors">
-                <div class="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-2xl scale-100 group-hover/video:scale-110 transition-transform">
-                   <PlayCircle size={32} class="text-white fill-white/20" />
-                </div>
-              </div>
-            </div>
-          {/if}
-       </div>
-    {:else if thumbnailUrl}
-       <div class="w-full aspect-video sm:aspect-[2/1] rounded-xl overflow-hidden bg-white/5 mt-1 mb-1 border border-white/5">
-          <img
-            src={thumbnailUrl}
-            alt={item.title}
-            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-            loading="lazy"
-          />
-       </div>
-    {/if}
-
-    <!-- Summary -->
-    {#if item.summary}
-      <p
-        class="text-sm text-gray-400 line-clamp-3 leading-relaxed {item.is_read
-          ? 'text-gray-500'
-          : ''}"
-      >
-        {@html item.summary.replace(/<[^>]*>?/gm, "")}
-      </p>
-    {/if}
-
-    <!-- Actions Bar -->
-    <div class="flex items-center justify-between pt-2 mt-1">
-        <div class="flex items-center gap-4">
-             <button
-                class="p-1.5 -ml-1.5 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-1.5 {item.is_read ? 'text-emerald-400' : 'text-white/40 hover:text-white'}"
-                on:click={handleRead}
-                title={item.is_read ? "Mark as Unread" : "Mark as Read"}
-             >
-                {#if item.is_read}
-                  <CheckCircle2 size={18} />
-                {:else}
-                  <div class="w-[18px] h-[18px] border-2 border-current rounded-full"></div>
-                {/if}
-             </button>
-
-             <button
-                class="p-1.5 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-1.5 {item.is_starred ? 'text-orange-400' : 'text-white/40 hover:text-white'}"
-                on:click={handleStar}
-                title="Bookmark"
-             >
-                <Bookmark size={18} class={item.is_starred ? "fill-current" : ""} />
-             </button>
-             
-             {#if isPlayable}
-              <button
-                 class="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/40 hover:text-accent"
-                 on:click={handlePlay}
-                 title="Play"
-              >
-                 <PlayCircle size={18} />
-              </button>
-             {/if}
-        </div>
-        
-        <a
-          href={item.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-blue-400 transition-colors"
-          on:click|stopPropagation
-          title="Open Link"
-        >
-          <ExternalLink size={18} />
-        </a>
+      <img
+        src={thumbnailUrl}
+        alt={item.title}
+        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+        loading="lazy"
+      />
     </div>
+  {/if}
+
+  <!-- Summary (Full Width) -->
+  {#if item.summary}
+    <p
+      class="{densityClasses.summarySize} text-white/60 leading-relaxed {densityClasses.spacing} {item.is_read
+        ? 'text-gray-500'
+        : ''}"
+    >
+      {@html item.summary.replace(/<[^>]*>?/gm, "")}
+    </p>
+  {/if}
+
+  <!-- Actions Bar -->
+  <div
+    class="flex items-center justify-between pt-2 mt-1 border-t border-white/5"
+  >
+    <div class="flex items-center gap-4">
+      <button
+        class="p-1.5 -ml-1.5 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-1.5 {item.is_read
+          ? 'text-emerald-400'
+          : 'text-white/40 hover:text-white'}"
+        on:click={handleRead}
+        title={item.is_read ? "Mark as Unread" : "Mark as Read"}
+      >
+        {#if item.is_read}
+          <CheckCircle2 size={18} />
+        {:else}
+          <div
+            class="w-[18px] h-[18px] border-2 border-current rounded-full"
+          ></div>
+        {/if}
+      </button>
+
+      <button
+        class="p-1.5 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-1.5 {item.is_starred
+          ? 'text-orange-400'
+          : 'text-white/40 hover:text-white'}"
+        on:click={handleStar}
+        title="Bookmark"
+      >
+        <Bookmark size={18} class={item.is_starred ? "fill-current" : ""} />
+      </button>
+
+      {#if isPlayable}
+        <button
+          class="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/40 hover:text-accent"
+          on:click={handlePlay}
+          title="Play"
+        >
+          <PlayCircle size={18} />
+        </button>
+      {/if}
+    </div>
+
+    <a
+      href={item.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-blue-400 transition-colors"
+      on:click|stopPropagation
+      title="Open Link"
+    >
+      <ExternalLink size={18} />
+    </a>
   </div>
 </article>
 

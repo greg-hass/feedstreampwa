@@ -34,11 +34,6 @@
           : 'text-white/40'}"
         strokeWidth={$isMobileMenuOpen ? 2.5 : 2}
       />
-      {#if $isMobileMenuOpen}
-        <span
-          class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]"
-        ></span>
-      {/if}
     </div>
     <span
       class="text-[10px] font-medium {$isMobileMenuOpen
@@ -67,11 +62,6 @@
           : 'text-white/40'}"
         strokeWidth={$viewMode === "all" ? 2.5 : 2}
       />
-      {#if $viewMode === "all"}
-        <span
-          class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]"
-        ></span>
-      {/if}
     </div>
     <span
       class="text-[10px] font-medium {$viewMode === 'all'
@@ -100,11 +90,6 @@
           : 'text-white/40'}"
         strokeWidth={$viewMode === "unread" ? 2.5 : 2}
       />
-      {#if $viewMode === "unread"}
-        <span
-          class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]"
-        ></span>
-      {/if}
     </div>
     <span
       class="text-[10px] font-medium {$viewMode === 'unread'
@@ -141,11 +126,6 @@
           {$libraryTotal}
         </span>
       {/if}
-      {#if $viewMode === "bookmarks"}
-        <span
-          class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#FF9500] rounded-full shadow-[0_0_8px_rgba(255,149,0,0.8)]"
-        ></span>
-      {/if}
     </div>
     <span
       class="text-[10px] font-medium {$viewMode === 'bookmarks'
@@ -159,6 +139,6 @@
 
 <style>
   .safe-bottom {
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 20px));
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 20px));
   }
 </style>

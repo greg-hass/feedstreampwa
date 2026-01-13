@@ -13,6 +13,12 @@ import sanitizeHtml from 'sanitize-html';
 import { searchFeeds, searchRSS, SearchResult } from './feed-search.js';
 import { createImportJob, getJobStatus } from './services/import-service.js';
 import { detectFeedKind } from './utils/feed-utils.js';
+import { aiRecommendationService } from './services/ai-recommendations.js';
+import { createBackup, listBackups, initBackupService } from './services/backup-service.js';
+import { applyRules } from './services/rules-service.js';
+import { findDiscussions } from './services/discussion-service.js';
+import fs from 'fs';
+import path from 'path';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const DB_PATH = process.env.DB_PATH || '/data/feedstream.sqlite';
@@ -56,6 +62,7 @@ const MAX_JOBS = 5;
 let backgroundSyncTimer: NodeJS.Timeout | null = null;
 const SYNC_INTERVAL_KEY = 'sync_interval';
 const LAST_SYNC_KEY = 'last_global_sync';
+const LAST_BACKUP_KEY = 'last_auto_backup';
 
 function parseInterval(interval: string): number | null {
     if (interval === 'off') return null;
@@ -75,6 +82,22 @@ async function startBackgroundSync() {
     // Run every minute to check if sync is due
     backgroundSyncTimer = setInterval(async () => {
         try {
+            // Check for daily backup
+            const lastBackupSetting = db.prepare('SELECT value FROM meta WHERE key = ?').get(LAST_BACKUP_KEY) as any;
+            const lastBackup = lastBackupSetting ? parseInt(lastBackupSetting.value, 10) : 0;
+            const now = Date.now();
+
+            if (now - lastBackup >= 24 * 60 * 60 * 1000) {
+                try {
+                    fastify.log.info('Running automatic daily backup...');
+                    createBackup();
+                    db.prepare('INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value')
+                        .run(LAST_BACKUP_KEY, now.toString());
+                } catch (e) {
+                    fastify.log.error(e as any, 'Auto backup failed');
+                }
+            }
+
             const intervalSetting = db.prepare('SELECT value FROM meta WHERE key = ?').get(SYNC_INTERVAL_KEY) as any;
             const intervalStr = intervalSetting?.value || 'off';
 
@@ -85,7 +108,6 @@ async function startBackgroundSync() {
 
             const lastSyncSetting = db.prepare('SELECT value FROM meta WHERE key = ?').get(LAST_SYNC_KEY) as any;
             const lastSync = lastSyncSetting ? parseInt(lastSyncSetting.value, 10) : 0;
-            const now = Date.now();
 
             if (now - lastSync >= intervalMs) {
                 fastify.log.info(`Background sync triggered (interval: ${intervalStr})...`);
@@ -382,6 +404,20 @@ db.exec(`
     );
     CREATE INDEX IF NOT EXISTS idx_folder_feeds_feed_url ON folder_feeds(feed_url);
     CREATE INDEX IF NOT EXISTS idx_folder_feeds_folder_id ON folder_feeds(folder_id);
+`);
+
+// Automation Rules Table
+db.exec(`
+    CREATE TABLE IF NOT EXISTS auto_rules (
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        keyword TEXT NOT NULL,
+        field TEXT NOT NULL DEFAULT 'title',
+        action TEXT NOT NULL,
+        feed_url TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_at TEXT NOT NULL
+    );
 `);
 
 fastify.log.info(`Database initialized at ${DB_PATH}`);
@@ -784,6 +820,19 @@ function generateItemId(feedUrl: string, item: any, index: number, externalId?: 
     return createHash('sha256').update(input).digest('hex');
 }
 
+// Helper: Normalize URL string (strip tracking params)
+function normalizeUrlString(url: string | null): string | null {
+    if (!url) return null;
+    try {
+        const u = new URL(url);
+        // Strip common tracking params
+        ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'gclid', 'ref', 'source'].forEach(p => u.searchParams.delete(p));
+        return u.toString();
+    } catch {
+        return url;
+    }
+}
+
 // Helper: Normalize parsed item
 function normalizeItem(item: any, kind: 'youtube' | 'reddit' | 'podcast' | 'generic'): any {
     const rawPublished = item.pubDate || item.isoDate || item.date_published || null;
@@ -822,7 +871,7 @@ function normalizeItem(item: any, kind: 'youtube' | 'reddit' | 'podcast' | 'gene
 
     const normalized: any = {
         title: item.title || null,
-        url: extractItemUrl(item),
+        url: normalizeUrlString(extractItemUrl(item)),
         author: item.creator || item.author?.name || item.author || null,
         summary: item.contentSnippet || item.summary || null,
         content: item.content || item['content:encoded'] || null,
@@ -1011,6 +1060,16 @@ async function fetchFeed(url: string, force: boolean): Promise<any> {
             const item = items[i];
             const normalized = normalizeItem(item, kind);
 
+            // Apply Rules
+            const { isRead, isStarred, shouldSkip } = applyRules(db, normalized, url);
+            if (shouldSkip) continue;
+
+            // Duplicate Detection: Check if same URL exists in another feed
+            if (normalized.url) {
+                const dup = db.prepare('SELECT id FROM items WHERE url = ? AND feed_url != ? LIMIT 1').get(normalized.url, url);
+                if (dup) continue;
+            }
+
             // Generate stable ID
             const idSource = normalized.external_id || normalized.raw_guid || normalized.url || normalized.title || `${url}-${i}`;
             const id = createHash('sha256').update(`${url}|${idSource}`).digest('hex');
@@ -1033,6 +1092,13 @@ async function fetchFeed(url: string, force: boolean): Promise<any> {
                     normalized.raw_guid,
                     now
                 );
+
+                if (isRead) {
+                    db.prepare('UPDATE items SET is_read = 1 WHERE id = ?').run(id);
+                }
+                if (isStarred) {
+                    db.prepare('UPDATE items SET is_starred = 1 WHERE id = ?').run(id);
+                }
             } catch (err: any) {
                 // Ignore duplicate key errors
                 if (!err.message.includes('UNIQUE constraint')) {
@@ -1664,6 +1730,39 @@ fastify.get('/feeds/search', async (request, reply) => {
     }
 });
 
+// AI-powered feed recommendations
+fastify.get('/feeds/recommendations', async (request, reply) => {
+    const query = request.query as any;
+    const limit = Math.min(parseInt(query?.limit || '5', 10), 10); // Max 10 recommendations
+
+    try {
+        // Check if AI service is available
+        if (!aiRecommendationService.isAvailable()) {
+            return {
+                ok: false,
+                error: 'AI recommendations not available. Please configure GEMINI_API_KEY environment variable.',
+                recommendations: []
+            };
+        }
+
+        // Generate recommendations
+        const recommendations = await aiRecommendationService.generateRecommendations(db, limit);
+
+        return {
+            ok: true,
+            recommendations,
+            count: recommendations.length
+        };
+    } catch (error: any) {
+        console.error('Error generating recommendations:', error);
+        return {
+            ok: false,
+            error: error.message || 'Failed to generate recommendations',
+            recommendations: []
+        };
+    }
+});
+
 // Add feed endpoint
 fastify.post('/feeds', async (request, reply) => {
     const body = request.body as any;
@@ -2110,6 +2209,7 @@ fastify.get('/items', async (request, reply) => {
     const starredOnly = query.starredOnly === '1' || query.starredOnly === 'true';
     const limit = Math.min(parseInt(query.limit || '50', 10), 200);
     const offset = parseInt(query.offset || '0', 10);
+    const q = query.q ? query.q.trim() : null;
 
     // Build WHERE clause
     const conditions: string[] = [];
@@ -2149,8 +2249,16 @@ fastify.get('/items', async (request, reply) => {
         conditions.push('i.is_starred = 1');
     }
 
+    if (q) {
+        conditions.push('items_fts MATCH ?');
+        params.push(q);
+    }
+
     // Need to join feeds table if filtering by smartFolder
-    const fromClause = 'FROM items i INNER JOIN feeds f ON i.feed_url = f.url';
+    const baseFromClause = 'FROM items i INNER JOIN feeds f ON i.feed_url = f.url';
+    const fromClause = q 
+        ? `${baseFromClause} INNER JOIN items_fts fts ON i.rowid = fts.rowid`
+        : baseFromClause;
     const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
 
     // Get total count
@@ -2546,10 +2654,46 @@ fastify.get('/reader', async (request, reply) => {
                 '.reddit-link', '.subreddit-link', '.author-link', 
                 '#header', '#footer', '.comment-count', '.share-button',
                 'div[data-click-id="background"] > div:first-child', // Sidebar/Prompt noise
-                'button' // Most buttons are noise
+                'button', // Most buttons are noise
+                'nav', 'aside', // Navigation and sidebars
+                '[role="navigation"]', '[role="banner"]', '[role="complementary"]',
+                'header', 'footer',
+                // Remove specific Reddit metadata elements
+                'shreddit-subreddit-header',
+                'shreddit-async-loader',
+                '[slot="credit-bar"]',
+                '[slot="post-media-container"]',
+                'faceplate-tracker',
+                // Remove elements containing common Reddit boilerplate text
+                '*:not(script):not(style)' // We'll filter by text content below
             ];
+            
             redditNoise.forEach(sel => {
                 document.querySelectorAll(sel).forEach((el: Element) => el.remove());
+            });
+            
+            // Remove elements by text content (Reddit-specific boilerplate)
+            const boilerplateTexts = [
+                'Go to selfhosted',
+                'r/selfhosted',
+                'Members',
+                'A place to share, discuss, discover',
+                'Dive into anything',
+                'Open in app',
+                'Log in',
+                'Sign up',
+                'Get app',
+                'Get the Reddit app',
+                'More posts you may like'
+            ];
+            
+            const allElements = document.querySelectorAll('*');
+            allElements.forEach((el: Element) => {
+                const text = (el as HTMLElement).textContent?.trim() || '';
+                // If element's text exactly matches or starts with boilerplate, remove it
+                if (boilerplateTexts.some(bp => text === bp || text.startsWith(bp))) {
+                    el.remove();
+                }
             });
         }
 
@@ -2747,6 +2891,108 @@ fastify.get('/search', async (request, reply) => {
     }
 });
 
+// Reading stats endpoint
+fastify.get('/stats', async (request, reply) => {
+    try {
+        // Total articles
+        const totalResult = db.prepare('SELECT COUNT(*) as count FROM items').get() as any;
+        const totalArticles = totalResult?.count || 0;
+
+        // Read articles
+        const readResult = db.prepare('SELECT COUNT(*) as count FROM items WHERE is_read = 1').get() as any;
+        const readArticles = readResult?.count || 0;
+
+        // Starred articles
+        const starredResult = db.prepare('SELECT COUNT(*) as count FROM items WHERE is_starred = 1').get() as any;
+        const starredArticles = starredResult?.count || 0;
+
+        // Total feeds
+        const feedsResult = db.prepare('SELECT COUNT(*) as count FROM feeds').get() as any;
+        const totalFeeds = feedsResult?.count || 0;
+
+        // Top feeds by read count
+        const topFeeds = db.prepare(`
+            SELECT 
+                feeds.title as name,
+                COUNT(items.id) as count
+            FROM items
+            JOIN feeds ON items.feed_url = feeds.url
+            WHERE items.is_read = 1
+            GROUP BY feeds.url
+            ORDER BY count DESC
+            LIMIT 10
+        `).all() as Array<{ name: string; count: number }>;
+
+        // Reading activity for last 7 days
+        const readByDay = db.prepare(`
+            SELECT 
+                DATE(updated_at) as day,
+                COUNT(*) as count
+            FROM items
+            WHERE is_read = 1 
+                AND updated_at >= datetime('now', '-7 days')
+            GROUP BY DATE(updated_at)
+            ORDER BY day DESC
+            LIMIT 7
+        `).all() as Array<{ day: string; count: number }>;
+
+        // Format days to short names
+        const formattedReadByDay = readByDay.reverse().map(item => {
+            const date = new Date(item.day);
+            const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+            return {
+                day: dayName,
+                count: item.count
+            };
+        });
+
+        // Calculate reading streak (consecutive days with at least one read article)
+        let readingStreak = 0;
+        const streakQuery = db.prepare(`
+            SELECT DISTINCT DATE(updated_at) as day
+            FROM items
+            WHERE is_read = 1
+            ORDER BY day DESC
+            LIMIT 30
+        `).all() as Array<{ day: string }>;
+
+        if (streakQuery.length > 0) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            for (let i = 0; i < streakQuery.length; i++) {
+                const readDate = new Date(streakQuery[i].day);
+                readDate.setHours(0, 0, 0, 0);
+                
+                const expectedDate = new Date(today);
+                expectedDate.setDate(today.getDate() - i);
+                
+                if (readDate.getTime() === expectedDate.getTime()) {
+                    readingStreak++;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        return {
+            ok: true,
+            totalArticles,
+            readArticles,
+            starredArticles,
+            totalFeeds,
+            readingStreak,
+            avgReadTime: 0, // Could be calculated if we track reading time
+            topFeeds,
+            readByDay: formattedReadByDay
+        };
+    } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500);
+        return { ok: false, error: 'Failed to fetch stats' };
+    }
+});
+
 // Settings management endpoints
 fastify.get('/settings', async (request, reply) => {
     try {
@@ -2799,8 +3045,135 @@ fastify.patch('/settings', async (request, reply) => {
         return { ok: false, error: 'Database error' };
     }
 });
+// AI Summarization Endpoint
+fastify.post('/ai/summarize', async (request, reply) => {
+    const body = request.body as any;
+    const { itemId } = body;
+    
+    if (!itemId) {
+        reply.code(400); 
+        return { ok: false, error: 'Missing itemId' };
+    }
+
+    try {
+        // Fetch item
+        const item = db.prepare('SELECT title, content, url FROM items WHERE id = ?').get(itemId) as any;
+        if (!item) {
+             reply.code(404);
+             return { ok: false, error: 'Item not found' };
+        }
+
+        // Check for reader content (better quality usually)
+        let content = item.content;
+        // Try getting reader cache by URL
+        if (item.url) {
+            const readerData = db.prepare('SELECT content_html FROM reader_cache WHERE url = ?').get(item.url) as any;
+            if (readerData?.content_html) {
+                content = readerData.content_html; 
+            }
+        }
+        
+        // Strip HTML for summary (save tokens)
+        const textContent = sanitizeHtml(content || '', { allowedTags: [], allowedAttributes: {} });
+
+        if (!textContent || textContent.length < 50) {
+             return { ok: true, summary: "Content too short or empty to summarize." };
+        }
+        
+        const summary = await aiRecommendationService.summarizeArticle(db, item.title, textContent);
+        
+        return { ok: true, summary };
+
+    } catch (e: any) {
+        request.log.error(e);
+        reply.code(500);
+        return { ok: false, error: e.message || 'AI generation failed' };
+    }
+});
+
+// Rules Management
+fastify.get('/rules', async (request, reply) => {
+    const rules = db.prepare('SELECT * FROM auto_rules ORDER BY created_at DESC').all();
+    return { ok: true, rules };
+});
+
+fastify.post('/rules', async (request, reply) => {
+    const body = request.body as any;
+    const { name, keyword, field, action, feed_url } = body;
+    if (!keyword || !field || !action) {
+        reply.code(400);
+        return { ok: false, error: 'Missing required fields' };
+    }
+    const id = `rule_${Date.now()}`;
+    db.prepare('INSERT INTO auto_rules (id, name, keyword, field, action, feed_url, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(id, name, keyword, field, action, feed_url, new Date().toISOString());
+    return { ok: true, id };
+});
+
+fastify.delete('/rules/:id', async (request, reply) => {
+    const { id } = request.params as any;
+    db.prepare('DELETE FROM auto_rules WHERE id = ?').run(id);
+    return { ok: true };
+});
+
+// Backup Management
+fastify.post('/backups', async (request, reply) => {
+    try {
+        const result = createBackup();
+        return { ok: true, result };
+    } catch (e: any) {
+        request.log.error(e);
+        reply.code(500);
+        return { ok: false, error: 'Backup failed' };
+    }
+});
+
+fastify.get('/backups', async (request, reply) => {
+    return { ok: true, backups: listBackups() };
+});
+
+fastify.get('/backups/:filename', async (request, reply) => {
+    const { filename } = request.params as any;
+    // Security check: simple path traversal prevention
+    if (filename.includes('..') || filename.includes('/')) {
+        reply.code(400);
+        return { ok: false, error: 'Invalid filename' };
+    }
+    
+    const backups = listBackups();
+    const backup = backups.find(b => b.filename === filename);
+    
+    if (!backup) {
+        reply.code(404);
+        return { ok: false, error: 'Backup not found' };
+    }
+    
+    const stream = fs.createReadStream(backup.path);
+    reply.header('Content-Disposition', `attachment; filename="${filename}"`);
+    return stream;
+});
+
+// Discussions Endpoint
+fastify.get('/discussions', async (request, reply) => {
+    const { url } = request.query as any;
+    if (!url) {
+        reply.code(400); 
+        return { ok: false, error: 'Missing url parameter' };
+    }
+
+    try {
+        const discussions = await findDiscussions(url);
+        return { ok: true, discussions };
+    } catch (e: any) {
+        request.log.error(e);
+        reply.code(500);
+        return { ok: false, error: 'Failed to fetch discussions' };
+    }
+});
+
 const start = async () => {
     try {
+        initBackupService();
+
         // Register security middleware
         await fastify.register(helmet, {
             contentSecurityPolicy: {

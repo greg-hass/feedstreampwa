@@ -7,10 +7,107 @@
     currentItem,
     closeReader,
   } from "$lib/stores/reader";
+  import { readerSettings } from "$lib/stores/readerSettings";
+  import { calculateReadTime } from "$lib/utils/readTime";
+  import ReaderControls from "$lib/components/ReaderControls.svelte";
+  import ReadingProgress from "$lib/components/ReadingProgress.svelte";
+  import {
+    Sparkles,
+    MessageSquare,
+    ExternalLink,
+    MessageCircle,
+  } from "lucide-svelte";
+
+  let summary: string | null = null;
+  let summaryLoading = false;
+
+  async function handleSummarize() {
+    if (!$currentItem) return;
+    summaryLoading = true;
+    try {
+      const res = await fetch("/api/ai/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId: $currentItem.id }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        summary = data.summary;
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      summaryLoading = false;
+    }
+  }
+
+  // Reset summary when item changes
+  $: if ($currentItem?.id) {
+    summary = null;
+    summaryLoading = false;
+    // Reset discussions
+    discussions = [];
+    showDiscussions = false;
+    fetchDiscussions();
+  }
+
+  // Discussions Logic
+  let showDiscussions = false;
+  let discussions: any[] = [];
+  let discussionsLoading = false;
+
+  async function fetchDiscussions() {
+    if (!$currentItem?.url) return;
+    discussionsLoading = true;
+    try {
+      const res = await fetch(
+        `/api/discussions?url=${encodeURIComponent($currentItem.url)}`
+      );
+      const data = await res.json();
+      if (data.ok) {
+        discussions = data.discussions;
+      }
+    } catch (e) {
+      console.error("Failed to fetch discussions", e);
+    } finally {
+      discussionsLoading = false;
+    }
+  }
+
+  function toggleDiscussions() {
+    showDiscussions = !showDiscussions;
+  }
 
   let ytPlayer: any = null;
   let ytProgressInterval: ReturnType<typeof setInterval> | null = null;
   let ytApiLoaded = false;
+  let scrollContainer: HTMLElement | null = null;
+  let readTime = 0;
+
+  // Calculate read time when content changes
+  $: if ($readerData?.contentHtml) {
+    readTime = calculateReadTime($readerData.contentHtml);
+  }
+
+  // Dynamic styles based on reader settings
+  $: fontSizeClass = {
+    small: "text-base",
+    medium: "text-lg",
+    large: "text-xl",
+    xlarge: "text-2xl",
+  }[$readerSettings.fontSize];
+
+  $: fontFamilyClass = {
+    sans: "font-sans",
+    serif: "font-serif",
+    mono: "font-mono",
+  }[$readerSettings.fontFamily];
+
+  $: maxWidthClass = {
+    narrow: "max-w-2xl",
+    medium: "max-w-3xl",
+    wide: "max-w-4xl",
+  }[$readerSettings.readingWidth];
 
   $: if ($showReader && $readerData && typeof document !== "undefined") {
     setTimeout(() => {
@@ -152,23 +249,73 @@
 
   function formatContent(html: string): string {
     if (!html) return "";
-    
-    // If it seems to have paragraphs already, return as is
-    if (html.toLowerCase().includes("<p>")) {
-      return html;
-    }
-    
-    // If it has double breaks, convert to paragraphs
-    if (html.toLowerCase().includes("<br")) {
-       const withParas = html.replace(/<br\s*\/?>\s*<br\s*\/?>/gi, "</p><p>");
-       return `<p>${withParas}</p>`;
+
+    // Clean up the HTML first
+    let cleaned = html.trim();
+
+    // If it already has paragraphs, just ensure proper spacing
+    if (cleaned.toLowerCase().includes("<p>")) {
+      return cleaned;
     }
 
-    // Otherwise split by double newlines
-    return html.split(/\n\s*\n/).map(p => {
-        const text = p.trim();
-        return text ? `<p>${text}</p>` : "";
-    }).join("");
+    // Convert double line breaks to paragraph breaks
+    if (cleaned.includes("\n\n")) {
+      const paragraphs = cleaned
+        .split(/\n\n+/)
+        .map((p) => p.trim())
+        .filter((p) => p.length > 0)
+        .map((p) => {
+          // Replace single line breaks within paragraphs with spaces
+          const text = p.replace(/\n/g, " ").replace(/\s+/g, " ").trim();
+          return text ? `<p>${text}</p>` : "";
+        })
+        .filter((p) => p.length > 0);
+
+      return paragraphs.join("");
+    }
+
+    // If it has <br> tags, convert double breaks to paragraphs
+    if (cleaned.toLowerCase().includes("<br")) {
+      const withParas = cleaned.replace(
+        /<br\s*\/?>(\s*<br\s*\/?>\s*)+/gi,
+        "</p><p>"
+      );
+      // Wrap in paragraph tags if not already
+      if (!withParas.toLowerCase().startsWith("<p>")) {
+        return `<p>${withParas}</p>`;
+      }
+      return withParas;
+    }
+
+    // Otherwise, wrap the entire content in a paragraph
+    return `<p>${cleaned}</p>`;
+  }
+
+  function formatSummary(text: string) {
+    if (!text) return "";
+    // Basic Markdown to HTML
+    let html = text
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.*?)\*/g, "<em>$1</em>")
+      .replace(/^\s*-\s+(.*)/gm, "<li>$1</li>");
+
+    // Wrap lists
+    html = html.replace(
+      /((<li>.*<\/li>\n?)+)/g,
+      '<ul class="list-disc pl-5 my-3 space-y-1 text-white/80">$1</ul>'
+    );
+
+    // Paragraphs (lines not in lists)
+    html = html
+      .split("\n\n")
+      .map((p) => {
+        if (p.trim().startsWith("<ul")) return p.trim();
+        if (p.trim().startsWith("<li>")) return p.trim();
+        return `<p class="mb-3 text-white/90 leading-relaxed">${p.trim()}</p>`;
+      })
+      .join("");
+
+    return html;
   }
 </script>
 
@@ -189,6 +336,9 @@
       aria-modal="true"
       aria-labelledby="reader-title"
     >
+      <!-- Reading Progress Bar -->
+      <ReadingProgress {scrollContainer} />
+
       <div class="reader-header">
         <button class="reader-close" on:click={handleClose} title="Close (ESC)">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -200,19 +350,45 @@
             />
           </svg>
         </button>
-        {#if $readerData?.url}
-          <a
-            href={$readerData.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="reader-source"
+
+        <div class="flex items-center gap-3">
+          <button
+            class="p-2 text-white/50 hover:text-accent disabled:opacity-50 transition-colors hidden md:block"
+            on:click={handleSummarize}
+            disabled={summaryLoading || !!summary}
+            title="Summarize with AI"
           >
-            Open Original ↗
-          </a>
-        {/if}
+            <Sparkles size={20} class={summaryLoading ? "animate-pulse" : ""} />
+          </button>
+
+          <button
+            class="p-2 text-white/50 hover:text-accent transition-colors relative"
+            on:click={toggleDiscussions}
+            title="View Discussions (HN/Reddit)"
+          >
+            <MessageSquare size={20} />
+            {#if discussions.length > 0}
+              <span
+                class="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full"
+              ></span>
+            {/if}
+          </button>
+
+          <ReaderControls content={$readerData?.contentHtml || ""} {readTime} />
+          {#if $readerData?.url}
+            <a
+              href={$readerData.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="reader-source"
+            >
+              Open Original ↗
+            </a>
+          {/if}
+        </div>
       </div>
 
-      <div class="reader-scroll-container">
+      <div class="reader-scroll-container" bind:this={scrollContainer}>
         {#if $readerLoading}
           <div class="reader-loading">
             <div class="reader-spinner"></div>
@@ -237,6 +413,34 @@
             <h1 class="reader-title" id="reader-title">
               {$readerData.title || "Untitled"}
             </h1>
+
+            {#if summary}
+              <div
+                class="mb-10 p-6 bg-accent/10 border border-accent/20 rounded-xl relative overflow-hidden group"
+              >
+                <div class="absolute top-0 left-0 w-1 h-full bg-accent"></div>
+                <div
+                  class="flex items-center gap-2 mb-4 text-accent text-sm font-bold uppercase tracking-wider"
+                >
+                  <Sparkles size={14} />
+                  AI Summary
+                </div>
+                <div class="prose prose-invert prose-sm max-w-none font-sans">
+                  {@html formatSummary(summary)}
+                </div>
+              </div>
+            {:else if summaryLoading}
+              <div
+                class="mb-10 p-6 bg-white/5 border border-white/10 rounded-xl animate-pulse"
+              >
+                <div class="h-4 bg-white/10 rounded w-1/4 mb-4"></div>
+                <div class="space-y-3">
+                  <div class="h-3 bg-white/10 rounded w-full"></div>
+                  <div class="h-3 bg-white/10 rounded w-5/6"></div>
+                  <div class="h-3 bg-white/10 rounded w-4/6"></div>
+                </div>
+              </div>
+            {/if}
             {#if $readerData.byline || $readerData.siteName}
               <div class="reader-meta">
                 {#if $readerData.byline}<span>{$readerData.byline}</span>{/if}
@@ -263,7 +467,10 @@
             {#if $readerData.imageUrl && !($readerData.url && ($readerData.url.includes("youtube.com/watch") || $readerData.url.includes("youtu.be/")))}
               <img src={$readerData.imageUrl} alt="" class="reader-hero" />
             {/if}
-            <div class="reader-body" id="reader-body-content">
+            <div
+              class="reader-body {fontSizeClass} {fontFamilyClass} {maxWidthClass} mx-auto"
+              id="reader-body-content"
+            >
               {#if !($readerData.url && ($readerData.url.includes("youtube.com/watch") || $readerData.url.includes("youtu.be/")))}
                 {@html formatContent($readerData.contentHtml)}
               {/if}
@@ -275,7 +482,141 @@
   </div>
 {/if}
 
+{#if showDiscussions}
+  <div class="discussions-panel">
+    <div
+      class="p-4 border-b border-white/10 flex items-center justify-between bg-[#0a0a0c]"
+    >
+      <h3 class="font-bold text-lg text-white flex items-center gap-2">
+        <MessageSquare size={18} class="text-accent" />
+        Context
+      </h3>
+      <button
+        class="p-1 hover:bg-white/10 rounded"
+        on:click={() => (showDiscussions = false)}
+      >
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 20 20"
+          fill="none"
+          stroke="currentColor"
+          ><path
+            d="M15 5L5 15M5 5l10 10"
+            stroke-width="2"
+            stroke-linecap="round"
+          /></svg
+        >
+      </button>
+    </div>
+    <div class="p-4 overflow-y-auto h-[calc(100vh-60px)]">
+      {#if discussionsLoading}
+        <div class="flex flex-col items-center py-10 text-white/50 gap-3">
+          <div
+            class="w-6 h-6 border-2 border-white/20 border-t-accent rounded-full animate-spin"
+          ></div>
+          <span class="text-sm">Searching communities...</span>
+        </div>
+      {:else if discussions.length === 0}
+        <div class="text-center py-10 text-white/50">
+          <p>No discussions found on Hacker News or Reddit.</p>
+        </div>
+      {:else}
+        <div class="space-y-4">
+          {#each discussions as discussion}
+            <a
+              href={discussion.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="block p-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 transition-all group"
+            >
+              <div class="flex items-start gap-3">
+                <div class="shrink-0 mt-1">
+                  {#if discussion.source === "hackernews"}
+                    <div
+                      class="w-6 h-6 flex items-center justify-center bg-[#ff6600] text-white font-bold text-xs rounded"
+                    >
+                      Y
+                    </div>
+                  {:else}
+                    <div
+                      class="w-6 h-6 flex items-center justify-center bg-[#ff4500] text-white font-bold text-xs rounded-full"
+                    >
+                      R
+                    </div>
+                  {/if}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h4
+                    class="text-sm font-medium text-white/90 leading-snug mb-1 group-hover:text-accent transition-colors line-clamp-2"
+                  >
+                    {discussion.title}
+                  </h4>
+                  <div class="flex items-center gap-3 text-xs text-white/50">
+                    <span class="flex items-center gap-1">
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        ><path d="M12 20v-6M6 20V10M18 20V4" /></svg
+                      >
+                      {discussion.score}
+                    </span>
+                    <span class="flex items-center gap-1">
+                      <MessageCircle size={12} />
+                      {discussion.commentsCount}
+                    </span>
+                    {#if discussion.subreddit}
+                      <span class="text-white/40">r/{discussion.subreddit}</span
+                      >
+                    {/if}
+                  </div>
+                </div>
+                <ExternalLink
+                  size={14}
+                  class="text-white/20 group-hover:text-white/60 shrink-0"
+                />
+              </div>
+            </a>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  </div>
+{/if}
+
 <style>
+  .discussions-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 350px;
+    height: 100vh;
+    background: #050507;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 2005; /* Above reader overlay (2000) */
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+    animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .discussions-panel {
+      width: 100%;
+    }
+  }
+  /* Existing styles continue... */
   .reader-overlay {
     position: fixed;
     inset: 0;

@@ -87,6 +87,7 @@ export type Article = Item;
 export interface Settings {
     theme: 'light' | 'dark' | 'system';
     sync_interval: string;
+    gemini_api_key?: string;
 }
 
 export type TimeFilter = 'all' | 'today' | '24h' | 'week';

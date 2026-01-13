@@ -49,8 +49,74 @@
   }
 
   // Tabs
-  type Tab = "general" | "feeds" | "data";
+  type Tab = "general" | "feeds" | "data" | "automation";
   let activeTab: Tab = "general";
+
+  // Rules
+  interface Rule { id: string; name?: string; keyword: string; field: string; action: string; feed_url?: string; }
+  let rules: Rule[] = [];
+  let newRule = { keyword: '', field: 'title', action: 'mark_read', name: '' };
+  
+  async function loadRules() {
+      const res = await fetch('http://localhost:3000/rules');
+      const data = await res.json();
+      if (data.ok) rules = data.rules;
+  }
+  
+  async function handleCreateRule() {
+      if (!newRule.keyword) return;
+      await fetch('http://localhost:3000/rules', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newRule)
+      });
+      await loadRules();
+      newRule = { keyword: '', field: 'title', action: 'mark_read', name: '' };
+  }
+  
+  async function handleDeleteRule(id: string) {
+      await fetch(`http://localhost:3000/rules/${id}`, { method: 'DELETE' });
+      await loadRules();
+  }
+  
+  $: if (activeTab === 'automation') loadRules();
+
+  // Backups
+  let backups: any[] = [];
+  let backupLoading = false;
+
+  async function loadBackups() {
+    try {
+      const res = await fetch(`http://localhost:3000/backups`);
+      const data = await res.json();
+      if (data.ok) {
+        backups = data.backups;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function handleCreateBackup() {
+    backupLoading = true;
+    try {
+      const res = await fetch(`http://localhost:3000/backups`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (data.ok) {
+        await loadBackups();
+      }
+    } catch (e) {
+      error = "Backup failed";
+    } finally {
+      backupLoading = false;
+    }
+  }
+
+  $: if (activeTab === "data") {
+    loadBackups();
+  }
 
   // Sync local settings when store updates
   $: if ($isSettingsModalOpen) {
@@ -261,7 +327,7 @@
   >
     <!-- Modal Content -->
     <div
-      class="bg-[#18181b] rounded-2xl border border-white/10 max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl"
+      class="bg-[#18181b] rounded-2xl border border-white/10 max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
       on:click|stopPropagation
       on:keydown|stopPropagation
       role="dialog"
@@ -270,7 +336,7 @@
     >
       <!-- Header with Tabs -->
       <div
-        class="bg-[#18181b] border-b border-white/10 px-6 pt-6 pb-0 flex-shrink-0"
+        class="bg-[#18181b] rounded-t-2xl border-b border-white/10 px-6 pt-6 pb-0 flex-shrink-0"
       >
         <div class="flex items-center justify-between mb-6">
           <div class="flex items-center gap-3">
@@ -322,6 +388,15 @@
           >
             Data & OPML
           </button>
+          <button
+            class="pb-3 text-sm font-medium border-b-2 transition-colors {activeTab ===
+            'automation'
+              ? 'text-accent border-accent'
+              : 'text-white/60 border-transparent hover:text-white'}"
+            on:click={() => (activeTab = "automation")}
+          >
+            Automation
+          </button>
         </div>
       </div>
 
@@ -368,6 +443,63 @@
                     <option value={option.value}>{option.label}</option>
                   {/each}
                 </select>
+              </label>
+            </div>
+
+            <div class="space-y-3">
+              <label class="block">
+                <div class="flex items-center justify-between mb-3">
+                  <span
+                    class="text-sm font-semibold text-white flex items-center gap-2"
+                  >
+                    <svg
+                      class="w-4 h-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <path
+                        d="M12 2L2 7l10 5 10-5-10-5z"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <path
+                        d="M2 17l10 5 10-5"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <path
+                        d="M2 12l10 5 10-5"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                    Gemini API Key
+                  </span>
+                  <span class="text-xs text-white/40">Optional</span>
+                </div>
+                <input
+                  type="password"
+                  bind:value={localSettings.gemini_api_key}
+                  placeholder="Enter your Gemini API key..."
+                  class="w-full bg-white/5 px-4 py-3 rounded-xl text-white border border-white/10 hover:bg-white/10 focus:border-purple-500/50 transition-colors outline-none text-sm font-mono"
+                />
+                <p class="text-xs text-white/40 mt-2">
+                  Enable AI-powered feed recommendations. Get your API key from
+                  <a
+                    href="https://aistudio.google.com/app/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-purple-400 hover:text-purple-300 underline"
+                  >
+                    Google AI Studio
+                  </a>
+                  . Your key is stored securely on the server and never exposed to
+                  the browser.
+                </p>
               </label>
             </div>
           </div>
@@ -641,7 +773,126 @@
                 </div>
               {/if}
             </div>
+            <!-- Backups Section -->
+            <div class="mt-8 pt-8 border-t border-white/5">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="text-base font-medium text-white">Backups</h3>
+                  <p class="text-xs text-white/50">
+                    Manage your data exports (OPML & Settings)
+                  </p>
+                </div>
+                <button
+                  class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-medium text-white transition-colors flex items-center gap-2"
+                  on:click={handleCreateBackup}
+                  disabled={backupLoading}
+                >
+                  {#if backupLoading}
+                    <Loader2 size={12} class="animate-spin" />
+                  {:else}
+                    <Database size={12} />
+                  {/if}
+                  Create Backup
+                </button>
+              </div>
+
+              {#if backups.length === 0}
+                <div class="text-sm text-white/30 italic">
+                  No backups found.
+                </div>
+              {:else}
+                <div
+                  class="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-2"
+                >
+                  {#each backups as backup}
+                    <div
+                      class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white/40"
+                        >
+                          {#if backup.filename.endsWith(".json")}
+                            <SettingsIcon size={14} />
+                          {:else}
+                            <List size={14} />
+                          {/if}
+                        </div>
+                        <div class="flex flex-col">
+                          <span
+                            class="text-sm text-white font-medium truncate max-w-[200px]"
+                            >{backup.filename}</span
+                          >
+                          <span class="text-[10px] text-white/40">
+                            {new Date(backup.createdAt).toLocaleDateString()}
+                            {new Date(backup.createdAt).toLocaleTimeString()} • {(
+                              backup.size / 1024
+                            ).toFixed(1)} KB
+                          </span>
+                        </div>
+                      </div>
+                      <a
+                        href="http://localhost:3000/backups/{backup.filename}"
+                        class="p-2 rounded-lg bg-black/20 hover:bg-emerald-500 hover:text-white text-white/50 transition-colors"
+                        download
+                        title="Download"
+                      >
+                        <Download size={14} />
+                      </a>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+            </div>
           </div>
+        {/if}
+
+        {:else if activeTab === 'automation'}
+            <div class="p-6 space-y-6">
+                <!-- Create Rule Form -->
+                <div class="bg-white/5 p-4 rounded-xl space-y-4 border border-white/5">
+                    <h3 class="text-sm font-medium text-white flex items-center gap-2"><Sparkles size={14}/> Create New Rule</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <input bind:value={newRule.keyword} placeholder="Keyword (e.g. 'Sponsor')" class="bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-accent outline-none" />
+                        <input bind:value={newRule.name} placeholder="Rule Name (Optional)" class="bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-accent outline-none" />
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <select bind:value={newRule.field} class="bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-accent outline-none">
+                            <option value="title">Title</option>
+                            <option value="content">Content</option>
+                            <option value="author">Author</option>
+                            <option value="any">Anywhere</option>
+                        </select>
+                        <select bind:value={newRule.action} class="bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-accent outline-none">
+                            <option value="mark_read">Mark Read</option>
+                            <option value="star">Star</option>
+                            <option value="delete">Skip/Delete</option>
+                        </select>
+                        <button on:click={handleCreateRule} class="bg-accent text-white rounded-lg p-2 text-sm font-medium hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20">Add Rule</button>
+                    </div>
+                </div>
+
+                <!-- Rules List -->
+                <div class="space-y-3">
+                    <h3 class="text-xs font-medium text-white/40 uppercase tracking-wider">Active Rules</h3>
+                    {#if rules.length === 0}
+                        <div class="text-white/30 text-center py-8 text-sm italic border border-white/5 rounded-xl border-dashed">No rules defined. Add one above!</div>
+                    {:else}
+                        {#each rules as rule}
+                            <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 group hover:border-white/10 transition-colors">
+                                <div class="flex flex-col">
+                                    <span class="text-white text-sm font-medium">{rule.name || rule.keyword}</span>
+                                    <span class="text-white/40 text-xs mt-0.5">
+                                        If <span class="text-white/60">{rule.field}</span> contains "<span class="text-white/60">{rule.keyword}</span>" → 
+                                        <span class="text-accent/80 font-medium uppercase text-[10px]">{rule.action.replace('_', ' ')}</span>
+                                    </span>
+                                </div>
+                                <button on:click={() => handleDeleteRule(rule.id)} class="text-white/20 hover:text-red-400 hover:bg-red-500/10 p-2 rounded-lg transition-colors"><Trash2 size={16}/></button>
+                            </div>
+                        {/each}
+                    {/if}
+                </div>
+            </div>
         {/if}
 
         <!-- Messages -->

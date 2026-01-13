@@ -129,3 +129,26 @@ export async function removeFeedFromFolder(
         );
     }
 }
+
+export interface FeedRecommendation {
+    title: string;
+    url: string;
+    description: string;
+    category: string;
+    reason: string;
+    confidence: number;
+}
+
+export async function getFeedRecommendations(limit: number = 5): Promise<FeedRecommendation[]> {
+    const response = await fetch(`${API_BASE}/feeds/recommendations?limit=${limit}`);
+    
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+            errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        );
+    }
+    
+    const data = await response.json();
+    return data.recommendations || [];
+}
