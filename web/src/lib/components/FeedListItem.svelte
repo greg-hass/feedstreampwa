@@ -209,29 +209,29 @@
   $: isSelected = $selectedItemIds.has(item.id);
 
   function handleClick(e: Event) {
-    if ($isSelectionMode) {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleItemSelection(item.id);
-      vibrate(HapticPatterns.Selection);
-    } else {
-      // If we're not in selection mode, normal click opens the item
-      handleOpen();
+    // Clear any pending long-press timer
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
     }
+
+    // Always open the article on click (selection mode was removed)
+    handleOpen();
   }
 
-  // Long press handler for mobile to enter selection mode
-  let longPressTimer: any;
+  // Long press handler for mobile - disabled since we removed selection mode UI
+  let longPressTimer: any = null;
 
   function handleTouchStart() {
-    longPressTimer = setTimeout(() => {
-      toggleItemSelection(item.id);
-      vibrate(HapticPatterns.Selection);
-    }, 500);
+    // Long press no longer enables selection mode
+    // Just track for cancellation purposes
   }
 
   function handleTouchEnd() {
-    clearTimeout(longPressTimer);
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
   }
 </script>
 
