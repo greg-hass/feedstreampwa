@@ -793,16 +793,31 @@ function normalizeItem(item: any, kind: 'youtube' | 'reddit' | 'podcast' | 'gene
     let updated = null;
 
     try {
-        if (rawPublished) published = new Date(rawPublished).toISOString();
+        if (rawPublished) {
+            const date = new Date(rawPublished);
+            if (!isNaN(date.getTime())) {
+                published = date.toISOString();
+            } else {
+                console.warn(`Failed to parse published date: ${rawPublished} - Invalid Date`);
+                published = null;
+            }
+        }
     } catch (e) {
         console.warn(`Failed to parse published date: ${rawPublished}`, e);
-        published = rawPublished; // Fallback
+        published = null;
     }
 
     try {
-        if (rawUpdated) updated = new Date(rawUpdated).toISOString();
+        if (rawUpdated) {
+            const date = new Date(rawUpdated);
+            if (!isNaN(date.getTime())) {
+                updated = date.toISOString();
+            } else {
+                updated = null;
+            }
+        }
     } catch (e) {
-        updated = rawUpdated; // Fallback
+        updated = null;
     }
 
     const normalized: any = {

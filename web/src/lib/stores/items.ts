@@ -24,6 +24,14 @@ export const unreadCount = derived(items, ($items) =>
     $items.filter((i) => i.is_read === 0).length
 );
 
+// Helper to safely parse dates for sorting
+const getDate = (dateStr: string | null | undefined): number => {
+    if (!dateStr) return 0;
+    const date = new Date(dateStr);
+    const time = date.getTime();
+    return isNaN(time) ? 0 : time;
+};
+
 // Actions
 export async function loadItems(params: {
     feedUrl?: string;
@@ -55,9 +63,9 @@ export async function loadItems(params: {
             const data = await itemsApi.searchItems(query, PAGE_SIZE, offset);
             
             if (isRefresh) {
-                items.set(data.items.sort((a, b) => new Date(b.published || 0).getTime() - new Date(a.published || 0).getTime()));
+                items.set(data.items.sort((a, b) => getDate(b.published) - getDate(a.published)));
             } else {
-                items.update(current => [...current, ...data.items].sort((a, b) => new Date(b.published || 0).getTime() - new Date(a.published || 0).getTime()));
+                items.update(current => [...current, ...data.items].sort((a, b) => getDate(b.published) - getDate(a.published)));
             }
             
             itemsTotal.set(data.total);
@@ -71,9 +79,9 @@ export async function loadItems(params: {
             });
             
             if (isRefresh) {
-                items.set(data.items.sort((a, b) => new Date(b.published || 0).getTime() - new Date(a.published || 0).getTime()));
+                items.set(data.items.sort((a, b) => getDate(b.published) - getDate(a.published)));
             } else {
-                items.update(current => [...current, ...data.items].sort((a, b) => new Date(b.published || 0).getTime() - new Date(a.published || 0).getTime()));
+                items.update(current => [...current, ...data.items].sort((a, b) => getDate(b.published) - getDate(a.published)));
             }
             
             itemsTotal.set(data.total);
