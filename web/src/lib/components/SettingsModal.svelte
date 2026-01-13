@@ -1161,6 +1161,7 @@
               </div>
             {/if}
           </div>
+        {/if}
 
         <!-- Messages -->
         {#if error}
