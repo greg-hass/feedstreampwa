@@ -149,6 +149,27 @@
       handleClose();
     }
   }
+
+  function formatContent(html: string): string {
+    if (!html) return "";
+    
+    // If it seems to have paragraphs already, return as is
+    if (html.toLowerCase().includes("<p>")) {
+      return html;
+    }
+    
+    // If it has double breaks, convert to paragraphs
+    if (html.toLowerCase().includes("<br")) {
+       const withParas = html.replace(/<br\s*\/?>\s*<br\s*\/?>/gi, "</p><p>");
+       return `<p>${withParas}</p>`;
+    }
+
+    // Otherwise split by double newlines
+    return html.split(/\n\s*\n/).map(p => {
+        const text = p.trim();
+        return text ? `<p>${text}</p>` : "";
+    }).join("");
+  }
 </script>
 
 {#if $showReader}
@@ -244,7 +265,7 @@
             {/if}
             <div class="reader-body" id="reader-body-content">
               {#if !($readerData.url && ($readerData.url.includes("youtube.com/watch") || $readerData.url.includes("youtu.be/")))}
-                {@html $readerData.contentHtml}
+                {@html formatContent($readerData.contentHtml)}
               {/if}
             </div>
           </article>

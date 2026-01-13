@@ -118,38 +118,70 @@
 </script>
 
 <article
-  class="group flex flex-col sm:flex-row gap-3 sm:gap-4 px-4 py-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer"
+  class="group flex flex-col gap-3 sm:gap-4 px-4 py-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer"
   on:click={handleOpen}
   on:keypress={(e) => e.key === "Enter" && handleOpen()}
   tabindex="0"
   role="button"
 >
-  <!-- Desktop: Thumbnail (Left) -->
-  {#if thumbnailUrl}
-    <div class="hidden sm:flex flex-shrink-0">
-      <div
-        class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-white/5"
-      >
-        <img
-          src={thumbnailUrl}
-          alt={item.title}
-          class="w-full h-full object-cover"
-          loading="lazy"
-        />
-      </div>
+  <!-- Hero Image (Desktop & Mobile) -->
+  {#if thumbnailUrl && !youtubeVideoId}
+    <div class="w-full aspect-video sm:aspect-[21/9] rounded-xl overflow-hidden bg-white/5 mb-2">
+      <img
+        src={thumbnailUrl}
+        alt={item.title}
+        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        loading="lazy"
+      />
     </div>
-  {:else}
-    <div class="hidden sm:flex flex-shrink-0">
-      <div
-        class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-white/5 flex items-center justify-center"
-      >
-        <svelte:component this={Icon} size={28} class={currentStyle.color} />
-      </div>
-    </div>
+  {:else if youtubeVideoId}
+     <!-- YouTube Inline Player -->
+     <div class="w-full aspect-video rounded-xl overflow-hidden bg-black mb-2">
+        {#if playYouTubeVideo}
+          <iframe
+            src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0&vq=hd1080`}
+            class="w-full h-full"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+            on:click|stopPropagation
+          ></iframe>
+        {:else}
+          <img
+            src={youtubeThumbnail}
+            alt={item.title}
+            class="w-full h-full object-cover"
+            loading="lazy"
+          />
+          <button
+            on:click={toggleYouTubePlay}
+            class="absolute inset-0 flex items-center justify-center bg-black/10 hover:bg-black/20 transition-colors"
+            aria-label="Play video"
+          >
+            <div
+              class="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform"
+            >
+              <PlayCircle size={40} class="text-white fill-white/20" />
+            </div>
+          </button>
+        {/if}
+     </div>
   {/if}
 
-  <!-- Content (Middle) -->
-  <div class="flex-1 min-w-0 flex flex-col justify-between py-1">
+  <div class="flex flex-row gap-4">
+    <!-- Icon Placeholder if no image (Optional, or just keep it simple) -->
+    {#if !thumbnailUrl && !youtubeVideoId}
+      <div class="hidden sm:flex flex-shrink-0">
+        <div
+          class="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center"
+        >
+          <svelte:component this={Icon} size={20} class={currentStyle.color} />
+        </div>
+      </div>
+    {/if}
+
+    <!-- Content (Middle) -->
+    <div class="flex-1 min-w-0 flex flex-col justify-between py-1">
     <!-- Top Row: Source + Date -->
     <!-- Top Row: Source + Date -->
     <div class="flex items-center gap-2 mb-1.5 text-sm">
@@ -189,59 +221,8 @@
       </p>
     {/if}
 
-    <!-- Mobile: Thumbnail/Video below title -->
-    <div class="sm:hidden mt-2">
-      {#if youtubeVideoId}
-        <!-- YouTube inline player on mobile -->
-        <div
-          class="relative w-full aspect-video rounded-xl overflow-hidden bg-black"
-        >
-          {#if playYouTubeVideo}
-            <iframe
-              src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0&vq=hd1080`}
-              class="w-full h-full"
-              frameborder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowfullscreen
-              on:click|stopPropagation
-            ></iframe>
-          {:else}
-            <img
-              src={youtubeThumbnail}
-              alt={item.title}
-              class="w-full h-full object-cover"
-              loading="lazy"
-            />
-            <button
-              on:click={toggleYouTubePlay}
-              class="absolute inset-0 flex items-center justify-center bg-black/10 hover:bg-black/20 transition-colors"
-              aria-label="Play video"
-            >
-              <div
-                class="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform"
-              >
-                <PlayCircle size={32} class="text-white fill-white/20" />
-              </div>
-            </button>
-          {/if}
-        </div>
-      {:else if thumbnailUrl}
-        <!-- Regular image thumbnail on mobile -->
-        <div
-          class="relative w-full aspect-video rounded-xl overflow-hidden bg-white/5"
-        >
-          <img
-            src={thumbnailUrl}
-            alt={item.title}
-            class="w-full h-full object-cover"
-            loading="lazy"
-          />
-        </div>
-      {/if}
     </div>
-  </div>
-
-  <!-- Actions (Right) -->
+    <!-- Actions (Right) -->
   <div class="flex-shrink-0 flex items-center gap-1 py-1">
     <!-- Mark as Read -->
     <button
@@ -291,6 +272,7 @@
     >
       <ExternalLink size={18} />
     </a>
+  </div>
   </div>
 </article>
 
