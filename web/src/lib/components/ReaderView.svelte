@@ -497,9 +497,9 @@
         {:else if $readerError}
           <div class="reader-error">
             <p>{$readerError}</p>
-            {#if $readerData?.url}
+            {#if $currentItem?.url}
               <a
-                href={$readerData.url}
+                href={$currentItem.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 class="reader-fallback-btn"
