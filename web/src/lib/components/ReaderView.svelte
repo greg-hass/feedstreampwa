@@ -87,7 +87,8 @@
     if (!$currentItem && !$readerData?.url) return;
 
     const shareData = {
-      title: $readerData?.title || $currentItem?.title || "Article from FeedStream",
+      title:
+        $readerData?.title || $currentItem?.title || "Article from FeedStream",
       text: $readerData?.excerpt || $currentItem?.summary || undefined,
       url: $readerData?.url || $currentItem?.url || window.location.href,
     };
@@ -112,7 +113,9 @@
     if (!ytPlayer) return;
 
     try {
-      const iframe = document.querySelector("#yt-player-container iframe") as HTMLIFrameElement;
+      const iframe = document.querySelector(
+        "#yt-player-container iframe"
+      ) as HTMLIFrameElement;
       if (!iframe) return;
 
       if (isInPiP) {
@@ -132,13 +135,17 @@
         } else {
           // Fallback: Try to open YouTube in PiP via URL parameter
           // This won't work in embedded players due to YouTube restrictions
-          alert("PiP is not available for this video. Try opening it in the YouTube app.");
+          alert(
+            "PiP is not available for this video. Try opening it in the YouTube app."
+          );
         }
       }
     } catch (e) {
       console.error("PiP error:", e);
       // Many browsers block iframe PiP due to security
-      alert("Picture-in-Picture is restricted for embedded YouTube videos. Use the YouTube app for PiP.");
+      alert(
+        "Picture-in-Picture is restricted for embedded YouTube videos. Use the YouTube app for PiP."
+      );
     }
   }
 
@@ -853,7 +860,7 @@
 
   .reader-content {
     color: var(--text);
-    padding-bottom: 40px; /* Extra bottom padding */
+    padding-bottom: 60px; /* Extra bottom padding for comfortable scrolling */
   }
 
   .reader-hero {
@@ -861,27 +868,29 @@
     max-height: 400px;
     object-fit: cover;
     border-radius: var(--radiusM);
-    margin-bottom: 32px;
+    margin-bottom: 40px;
   }
 
   .reader-title {
     font-family: var(--font-display);
-    font-size: 32px;
+    font-size: 34px;
     font-weight: 700;
-    line-height: 1.25;
-    letter-spacing: -0.02em;
-    margin: 0 0 16px 0;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+    margin: 0 0 20px 0;
     color: #fff;
+    text-wrap: balance; /* Modern text balancing for better line breaks */
   }
 
   .reader-meta {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 12px;
     font-size: 15px;
     color: var(--muted);
-    margin-bottom: 32px;
-    padding-bottom: 24px;
+    margin-bottom: 40px;
+    padding-bottom: 28px;
     border-bottom: 1px solid var(--stroke);
   }
 
@@ -890,79 +899,194 @@
   }
 
   .reader-body {
-    font-size: 18px;
-    line-height: 1.8;
-    color: rgba(255, 255, 255, 0.88);
+    font-size: 19px;
+    line-height: 1.85;
+    color: rgba(255, 255, 255, 0.9);
+    text-align: left;
+    word-spacing: 0.05em;
+    hyphens: auto;
+    -webkit-hyphens: auto;
   }
 
+  /* Paragraph styling - the key to good readability */
   .reader-body p {
-    margin: 0 0 1.5em 0;
+    margin: 0 0 1.75em 0;
+    text-align: justify;
+    text-justify: inter-word;
   }
 
+  /* First paragraph after heading - no indent, larger first letter optional */
+  .reader-body h2 + p,
+  .reader-body h3 + p,
+  .reader-body h4 + p {
+    text-indent: 0;
+  }
+
+  /* Links */
   .reader-body a {
     color: var(--accent);
     text-decoration: underline;
-    text-underline-offset: 2px;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+    transition: text-decoration-color 0.2s;
   }
 
   .reader-body a:hover {
-    text-decoration: none;
+    text-decoration-color: transparent;
   }
 
+  /* Blockquotes - elegant styling */
   .reader-body blockquote {
-    margin: 1.5em 0;
-    padding-left: 20px;
-    border-left: 3px solid var(--accent);
-    color: var(--muted);
+    margin: 2em 0;
+    padding: 1.25em 1.5em;
+    border-left: 4px solid var(--accent);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 0 8px 8px 0;
+    color: rgba(255, 255, 255, 0.75);
     font-style: italic;
+    line-height: 1.7;
   }
 
+  .reader-body blockquote p {
+    margin-bottom: 0.75em;
+  }
+
+  .reader-body blockquote p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Code blocks */
   .reader-body pre,
   .reader-body code {
     background: var(--panel0);
-    border-radius: 6px;
-    font-family: "SF Mono", "Monaco", "Consolas", monospace;
-    font-size: 0.9em;
+    border-radius: 8px;
+    font-family: "SF Mono", "Monaco", "Consolas", "Menlo", monospace;
+    font-size: 0.88em;
   }
 
   .reader-body pre {
-    padding: 16px;
+    padding: 20px;
     overflow-x: auto;
-    margin: 1.5em 0;
+    margin: 2em 0;
+    border: 1px solid var(--stroke);
   }
 
   .reader-body code {
-    padding: 2px 6px;
+    padding: 3px 8px;
   }
 
+  .reader-body pre code {
+    padding: 0;
+    background: none;
+  }
+
+  /* Lists */
   .reader-body ul,
   .reader-body ol {
-    margin: 1.5em 0;
-    padding-left: 1.5em;
+    margin: 1.75em 0;
+    padding-left: 1.75em;
   }
 
   .reader-body li {
-    margin-bottom: 0.5em;
+    margin-bottom: 0.75em;
+    line-height: 1.7;
   }
 
+  .reader-body li::marker {
+    color: var(--accent);
+  }
+
+  /* Headings */
   .reader-body h2,
-  .reader-body h3 {
+  .reader-body h3,
+  .reader-body h4 {
     font-family: var(--font-display);
-    margin: 2em 0 1em 0;
     color: #fff;
+    letter-spacing: -0.01em;
+    margin-top: 2.5em;
+    margin-bottom: 1em;
   }
 
   .reader-body h2 {
-    font-size: 24px;
+    font-size: 26px;
+    font-weight: 700;
+    padding-bottom: 0.5em;
+    border-bottom: 1px solid var(--stroke);
   }
 
   .reader-body h3 {
-    font-size: 20px;
+    font-size: 22px;
+    font-weight: 600;
   }
 
+  .reader-body h4 {
+    font-size: 18px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  /* Horizontal rule */
   .reader-body hr {
     border: none;
     border-top: 1px solid var(--stroke);
+    margin: 3em 0;
+  }
+
+  /* Images in content */
+  .reader-body img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
     margin: 2em 0;
+  }
+
+  /* Figure captions */
+  .reader-body figcaption {
+    font-size: 14px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 0.75em;
+    font-style: italic;
+  }
+
+  /* Tables */
+  .reader-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 2em 0;
+    font-size: 0.95em;
+  }
+
+  .reader-body th,
+  .reader-body td {
+    padding: 12px 16px;
+    border: 1px solid var(--stroke);
+    text-align: left;
+  }
+
+  .reader-body th {
+    background: rgba(255, 255, 255, 0.05);
+    font-weight: 600;
+  }
+
+  /* Strong and emphasis */
+  .reader-body strong {
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .reader-body em {
+    font-style: italic;
+  }
+
+  /* First letter drop cap (optional enhancement) */
+  .reader-body > p:first-of-type::first-letter {
+    font-size: 3.5em;
+    font-weight: 700;
+    float: left;
+    line-height: 0.8;
+    margin-right: 0.1em;
+    margin-top: 0.1em;
+    color: var(--accent);
   }
 </style>
