@@ -9,8 +9,9 @@
   let isSwiping = false;
   let swipeDirection: "left" | "right" | null = null;
 
-  const SWIPE_THRESHOLD = 100;
-  const MAX_SWIPE = 150;
+  const SWIPE_THRESHOLD = 120; // Increased from 100 to prevent accidental triggers
+  const MAX_SWIPE = 180;
+  const INTENT_THRESHOLD = 25; // Minimum movement to consider it a swipe intent
 
   $: swipeDistance = isSwiping
     ? Math.max(Math.min(currentX - startX, MAX_SWIPE), -MAX_SWIPE)
@@ -34,9 +35,9 @@
     startY = e.touches[0].clientY;
     touchStarted = true;
     isScrolling = false;
-    isSwiping = false;
+    isSwiping = false; // Don't assume swipe yet
     swipeDirection = null;
-    currentX = startX; // Initialize to prevent stale values
+    currentX = startX;
   }
 
   function handleTouchMove(e: TouchEvent) {
@@ -49,9 +50,13 @@
     const diffY = newY - startY;
 
     // Determine scrolling vs swiping intent early
-    if (!swipeDirection && (Math.abs(diffX) > 10 || Math.abs(diffY) > 10)) {
+    if (
+      !swipeDirection &&
+      (Math.abs(diffX) > INTENT_THRESHOLD || Math.abs(diffY) > INTENT_THRESHOLD)
+    ) {
       // If vertical movement is greater than horizontal, it's a scroll
-      if (Math.abs(diffY) > Math.abs(diffX)) {
+      if (Math.abs(diffY) > Math.abs(diffX) * 1.5) {
+        // Bias towards scrolling (vertical)
         isScrolling = true;
         touchStarted = false;
         return;
@@ -59,10 +64,10 @@
 
       // Otherwise it's a horizontal swipe
       swipeDirection = diffX > 0 ? "right" : "left";
-      isSwiping = true; // Only set isSwiping after confirming horizontal intent
+      isSwiping = true;
     }
 
-    // Only update position and prevent scroll if we're actively swiping
+    // Only update position if we're actively swiping
     if (isSwiping && swipeDirection) {
       currentX = newX;
       if (e.cancelable) e.preventDefault();
@@ -101,18 +106,24 @@
     if (window.innerWidth > 768) return;
 
     startX = e.clientX;
-    isSwiping = true;
+    isSwiping = false; // Wait for movement
     swipeDirection = null;
   }
 
   function handleMouseMove(e: MouseEvent) {
-    if (!isSwiping) return;
+    // Mouse move tracking logic to mirror touch logic...
+    if (e.buttons !== 1) return; // Only if left button is held
 
-    currentX = e.clientX;
-    const distance = currentX - startX;
+    const newX = e.clientX;
+    const diffX = newX - startX;
 
-    if (!swipeDirection && Math.abs(distance) > 10) {
-      swipeDirection = distance > 0 ? "right" : "left";
+    if (!isSwiping && Math.abs(diffX) > INTENT_THRESHOLD) {
+      isSwiping = true;
+      swipeDirection = diffX > 0 ? "right" : "left";
+    }
+
+    if (isSwiping) {
+      currentX = newX;
     }
   }
 
