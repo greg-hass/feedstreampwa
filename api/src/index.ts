@@ -2662,7 +2662,6 @@ fastify.get('/reader', async (request, reply) => {
                 'shreddit-subreddit-header',
                 'shreddit-async-loader',
                 '[slot="credit-bar"]',
-                '[slot="post-media-container"]',
                 'faceplate-tracker',
                 // Remove elements containing common Reddit boilerplate text
                 '*:not(script):not(style)' // We'll filter by text content below
@@ -2699,7 +2698,28 @@ fastify.get('/reader', async (request, reply) => {
 
         // Run Readability
         const reader = new Readability(document);
-        const article = reader.parse();
+        let article = reader.parse();
+
+        // Fallback for modern Reddit (shreddit) if Readability fails
+        if ((!article || !article.content) && targetUrl.includes('reddit.com')) {
+            const shredditPost = document.querySelector('shreddit-post');
+            if (shredditPost) {
+                const postContent = shredditPost.querySelector('[slot="post-media-container"], .m-none.mb-sm');
+                if (postContent) {
+                    article = {
+                        title: redditPostTitle || document.title,
+                        content: postContent.innerHTML,
+                        textContent: postContent.textContent || '',
+                        length: postContent.innerHTML.length,
+                        excerpt: null,
+                        byline: null,
+                        dir: null,
+                        siteName: 'Reddit',
+                        lang: 'en'
+                    };
+                }
+            }
+        }
 
         if (!article || !article.content) {
             reply.code(422);
@@ -2724,11 +2744,8 @@ fastify.get('/reader', async (request, reply) => {
             }
         }
 
-        // Remove all headings from content (title is separate)
-        contentDoc.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((el: Element) => el.remove());
-
-        // Remove all images from content (hero image is separate)
-        contentDoc.querySelectorAll('img').forEach((el: Element) => el.remove());
+        // Keep images and headings for better readability in the reader
+        // previously they were being aggressively removed
 
         // Get raw HTML before sanitizing
         const rawHtml = contentDoc.body.innerHTML;

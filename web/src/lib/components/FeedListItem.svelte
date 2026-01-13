@@ -216,11 +216,7 @@
     }
 
     // Always open the article on click (selection mode was removed)
-    if (feedType === "reddit") {
-      window.open(item.url, "_blank");
-    } else {
-      handleOpen();
-    }
+    handleOpen();
   }
 
   // Long press handler for mobile - disabled since we removed selection mode UI
