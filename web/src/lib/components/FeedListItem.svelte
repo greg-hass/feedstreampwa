@@ -105,10 +105,14 @@
   $: thumbnailUrl = youtubeThumbnail || item.media_thumbnail;
 
   // Format Date
-  const date = new Date(item.published_at || item.created_at);
+  const date = new Date(item.published || item.created_at);
+  const now = new Date();
+  const isCurrentYear = date.getFullYear() === now.getFullYear();
+
   const dateStr = new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
+    year: isCurrentYear ? undefined : "numeric",
     hour: "numeric",
     minute: "2-digit",
   }).format(date);

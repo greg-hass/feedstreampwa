@@ -20,6 +20,7 @@
     Moon,
     Monitor,
     AlertCircle,
+    Sparkles,
   } from "lucide-svelte";
   import {
     isSettingsModalOpen,

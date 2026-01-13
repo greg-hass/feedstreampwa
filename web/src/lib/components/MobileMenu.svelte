@@ -18,11 +18,17 @@
     FolderOpen,
     ChevronRight,
     ChevronDown,
+    Sparkles,
+    Activity,
+    Copy,
+    Plus,
+    MoreVertical,
   } from "lucide-svelte";
   import RedditIcon from "./icons/RedditIcon.svelte";
   import {
     isMobileMenuOpen,
     isSettingsModalOpen,
+    isCreateFolderModalOpen,
     viewMode,
     activeSmartFolder,
     activeFolderId,
@@ -33,6 +39,7 @@
     setViewBookmarks,
     setViewFolder,
     setViewFeed,
+    contextMenu,
   } from "$lib/stores/ui";
   import {
     feedsTree,
@@ -45,11 +52,23 @@
     libraryTotal,
     allArticlesUnread,
   } from "$lib/stores/counts";
-  import { folders } from "$lib/stores/folders";
+  import { folders, createFolder } from "$lib/stores/folders";
+  import { toast } from "$lib/stores/toast";
+
+  import AIRecommendationsModal from "$lib/components/modals/AIRecommendationsModal.svelte";
+  import FeedHealthModal from "$lib/components/modals/FeedHealthModal.svelte";
+  import DuplicatesModal from "$lib/components/modals/DuplicatesModal.svelte";
 
   $: activeUrl = $page.url.pathname;
 
   let openFolders: Record<string, boolean> = {};
+  let isCreatingInline = false;
+  let inlineFolderName = "";
+  let isSubmitting = false;
+
+  let isAIRecommendationsOpen = false;
+  let isFeedHealthOpen = false;
+  let isDuplicatesOpen = false;
 
   function toggleFolder(e: MouseEvent, id: string) {
     e.stopPropagation();
@@ -72,9 +91,46 @@
 
   // Close on escape key
   function handleKeydown(e: KeyboardEvent) {
-    if (e.key === "Escape" && $isMobileMenuOpen) {
-      closeMenu();
+    if (e.key === "Escape") {
+      if ($isMobileMenuOpen) closeMenu();
+      if (isCreatingInline) {
+        isCreatingInline = false;
+        inlineFolderName = "";
+      }
     }
+  }
+
+  async function handleInlineSubmit() {
+    const name = inlineFolderName.trim();
+    if (!name || isSubmitting) return;
+
+    isSubmitting = true;
+    try {
+      await createFolder(name);
+      inlineFolderName = "";
+      isCreatingInline = false;
+      toast.success(`Folder "${name}" created`);
+    } catch (err) {
+      toast.error("Failed to create folder");
+    } finally {
+      isSubmitting = false;
+    }
+  }
+
+  function handleContextMenu(
+    e: MouseEvent,
+    type: "folder" | "feed",
+    target: any
+  ) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    contextMenu.set({
+      isOpen: true,
+      type,
+      target,
+      position: { x: e.clientX, y: e.clientY },
+    });
   }
 </script>
 
@@ -93,11 +149,11 @@
 
   <!-- Slide-in Menu -->
   <aside
-    class="fixed left-0 top-0 h-full w-[280px] bg-[#121212] border-r border-white/10 z-[70] md:hidden overflow-y-auto shadow-2xl"
+    class="fixed left-0 top-0 h-full w-[280px] bg-[#121212] border-r border-white/10 z-[70] md:hidden flex flex-col shadow-2xl"
     transition:fly={{ x: -280, duration: 300, opacity: 1 }}
   >
     <!-- Header -->
-    <div class="p-6 pt-8 flex items-center justify-between">
+    <div class="p-6 pt-8 flex items-center justify-between flex-shrink-0">
       <h1
         class="text-2xl font-bold tracking-tight text-white flex items-center gap-2"
       >
@@ -117,8 +173,8 @@
       </button>
     </div>
 
-    <!-- Main Nav -->
-    <div class="px-4 py-2 space-y-1">
+    <!-- Scrollable Content -->
+    <div class="flex-1 overflow-y-auto scrollbar-hide px-4 py-2 space-y-1">
       <div
         class="text-xs font-semibold text-white/40 uppercase tracking-wider px-3 mb-2 mt-2"
       >
@@ -145,6 +201,15 @@
           />
           All Articles
         </div>
+        {#if $allArticlesUnread > 0}
+          <span
+            class="text-xs font-medium {$viewMode === 'all'
+              ? 'text-white/70'
+              : 'text-white/40'}"
+          >
+            {formatUnreadTotal($allArticlesUnread, $allArticlesTotal)}
+          </span>
+        {/if}
         {#if $viewMode === "all"}
           <div
             class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
@@ -246,8 +311,8 @@
           <Rss
             size={24}
             class={$viewMode === "smart" && $activeSmartFolder === "rss"
-              ? "text-accent"
-              : "text-accent/70 group-hover:text-accent"}
+              ? "text-emerald-400"
+              : "text-emerald-400/70 group-hover:text-emerald-400"}
           />
           RSS
         </div>
@@ -260,6 +325,11 @@
           >
             {formatUnreadTotal($rssCount.unread, $rssCount.total)}
           </span>
+        {/if}
+        {#if $viewMode === "smart" && $activeSmartFolder === "rss"}
+          <div
+            class="absolute inset-y-0 left-0 w-1 bg-emerald-400 rounded-r-full shadow-[0_0_10px_2px_rgba(52,211,153,0.5)]"
+          ></div>
         {/if}
       </button>
 
@@ -292,6 +362,11 @@
             {formatUnreadTotal($youtubeCount.unread, $youtubeCount.total)}
           </span>
         {/if}
+        {#if $viewMode === "smart" && $activeSmartFolder === "youtube"}
+          <div
+            class="absolute inset-y-0 left-0 w-1 bg-red-500 rounded-r-full shadow-[0_0_10px_2px_rgba(239,68,68,0.5)]"
+          ></div>
+        {/if}
       </button>
 
       <button
@@ -322,6 +397,11 @@
           >
             {formatUnreadTotal($redditCount.unread, $redditCount.total)}
           </span>
+        {/if}
+        {#if $viewMode === "smart" && $activeSmartFolder === "reddit"}
+          <div
+            class="absolute inset-y-0 left-0 w-1 bg-orange-400 rounded-r-full shadow-[0_0_10px_2px_rgba(251,146,60,0.5)]"
+          ></div>
         {/if}
       </button>
 
@@ -354,14 +434,45 @@
             {formatUnreadTotal($podcastCount.unread, $podcastCount.total)}
           </span>
         {/if}
+        {#if $viewMode === "smart" && $activeSmartFolder === "podcast"}
+          <div
+            class="absolute inset-y-0 left-0 w-1 bg-indigo-400 rounded-r-full shadow-[0_0_10px_2px_rgba(129,140,248,0.5)]"
+          ></div>
+        {/if}
       </button>
 
       <!-- Feeds & Folders Tree -->
-      <div
-        class="text-xs font-semibold text-white/40 uppercase tracking-wider px-3 mb-2 mt-8"
-      >
-        Feeds & Folders
+      <div class="flex items-center justify-between px-3 mb-2 mt-8">
+        <div
+          class="text-xs font-semibold text-white/40 uppercase tracking-wider"
+        >
+          Feeds & Folders
+        </div>
+        <button
+          class="text-white/40 hover:text-white transition-colors"
+          on:click={() => (isCreatingInline = true)}
+          title="New folder"
+        >
+          <Plus size={16} />
+        </button>
       </div>
+
+      <!-- Inline Quick Create -->
+      {#if isCreatingInline}
+        <div
+          class="px-3 mb-2 animate-in fade-in slide-in-from-top-1 duration-200"
+        >
+          <input
+            type="text"
+            bind:value={inlineFolderName}
+            placeholder="Folder name..."
+            class="w-full bg-raised border border-accent/30 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent shadow-[0_0_10px_rgba(16,185,129,0.1)]"
+            on:keydown={(e) => e.key === "Enter" && handleInlineSubmit()}
+            on:blur={() => !inlineFolderName && (isCreatingInline = false)}
+            autofocus
+          />
+        </div>
+      {/if}
 
       {#if $folders.length > 0}
         {#each $folders as folder}
@@ -395,12 +506,26 @@
                 />
                 <span class="truncate">{folder.name}</span>
               </div>
-              {#if ($folderUnreadCounts[folder.id] || 0) > 0}
-                <span
-                  class="text-xs font-medium bg-accent text-bg0 px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+              <div class="flex items-center gap-2">
+                <button
+                  class="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-white/10 text-white/40 hover:text-white transition-all"
+                  on:click={(e) => handleContextMenu(e, "folder", folder)}
+                  title="Folder Options"
                 >
-                  {$folderUnreadCounts[folder.id]}
-                </span>
+                  <MoreVertical size={14} />
+                </button>
+                {#if ($folderUnreadCounts[folder.id] || 0) > 0}
+                  <span
+                    class="text-xs font-medium bg-accent text-bg0 px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+                  >
+                    {$folderUnreadCounts[folder.id]}
+                  </span>
+                {/if}
+              </div>
+              {#if $viewMode === "folder" && $activeFolderId === folder.id}
+                <div
+                  class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
+                ></div>
               {/if}
             </button>
 
@@ -443,11 +568,20 @@
                         >{feed.title || feed.url}</span
                       >
                     </div>
-                    {#if (feed.unreadCount || 0) > 0}
-                      <span class="text-[10px] font-medium text-white/40">
-                        {feed.unreadCount}
-                      </span>
-                    {/if}
+                    <div class="flex items-center gap-1">
+                      <button
+                        class="p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-white/10 text-white/40 hover:text-white transition-all"
+                        on:click={(e) => handleContextMenu(e, "feed", feed)}
+                        title="Feed Options"
+                      >
+                        <MoreVertical size={12} />
+                      </button>
+                      {#if (feed.unreadCount || 0) > 0}
+                        <span class="text-[10px] font-medium text-white/40">
+                          {feed.unreadCount}
+                        </span>
+                      {/if}
+                    </div>
                   </button>
                 {/each}
               </div>
@@ -495,27 +629,84 @@
               {/if}
               <span class="truncate">{feed.title || feed.url}</span>
             </div>
-            {#if (feed.unreadCount || 0) > 0}
-              <span
-                class="text-xs font-medium bg-white/10 text-white/70 px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+            <div class="flex items-center gap-1">
+              <button
+                class="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-white/10 text-white/40 hover:text-white transition-all"
+                on:click={(e) => handleContextMenu(e, "feed", feed)}
+                title="Feed Options"
               >
-                {feed.unreadCount}
-              </span>
+                <MoreVertical size={14} />
+              </button>
+              {#if (feed.unreadCount || 0) > 0}
+                <span
+                  class="text-xs font-medium bg-white/10 text-white/70 px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+                >
+                  {feed.unreadCount}
+                </span>
+              {/if}
+            </div>
+            {#if $viewMode === "feed" && $selectedFeedUrl === feed.url}
+              <div
+                class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
+              ></div>
             {/if}
           </button>
         {/each}
       {/if}
     </div>
 
-    <!-- Settings at bottom -->
-    <div class="p-4 border-t border-white/5 mt-auto">
+    <!-- AI Recommendations, Feed Health, Duplicates & Settings -->
+    <div
+      class="flex-shrink-0 p-4 border-t border-white/5 bg-[#121212] space-y-2"
+    >
+      <!-- AI Recommendations -->
       <button
-        class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 cursor-pointer transition-colors w-full"
+        class="w-full flex items-center gap-3 px-3 py-2 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 hover:from-purple-500/20 hover:to-pink-500/20 transition-all text-white group"
+        on:click={() => (isAIRecommendationsOpen = true)}
+      >
+        <Sparkles
+          size={24}
+          class="text-purple-400 group-hover:text-purple-300"
+        />
+        <span class="text-sm font-semibold">AI Recommendations</span>
+      </button>
+
+      <!-- Feed Health -->
+      <button
+        class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors text-white/60 hover:text-white"
+        on:click={() => (isFeedHealthOpen = true)}
+      >
+        <Activity size={24} />
+        <span class="text-sm font-medium">Feed Health</span>
+      </button>
+
+      <!-- Duplicates -->
+      <button
+        class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors text-white/60 hover:text-white"
+        on:click={() => (isDuplicatesOpen = true)}
+      >
+        <Copy size={24} class="text-orange-400 group-hover:text-orange-300" />
+        <span class="text-sm font-medium">Duplicates</span>
+      </button>
+
+      <!-- Settings -->
+      <button
+        class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 cursor-pointer transition-colors w-full text-white/60 hover:text-white"
         on:click={handleSettings}
       >
-        <Settings size={24} class="text-white/60" />
-        <span class="text-sm font-medium text-white">Settings</span>
+        <Settings size={24} />
+        <span class="text-sm font-medium">Settings</span>
       </button>
     </div>
   </aside>
+
+  <!-- Modals (Only render when menu is open/active to keep DOM light, or keep persistent if needed) -->
+  <AIRecommendationsModal
+    bind:isOpen={isAIRecommendationsOpen}
+    on:close={() => (isAIRecommendationsOpen = false)}
+  />
+
+  <FeedHealthModal bind:isOpen={isFeedHealthOpen} />
+
+  <DuplicatesModal bind:isOpen={isDuplicatesOpen} />
 {/if}

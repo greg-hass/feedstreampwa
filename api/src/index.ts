@@ -2700,23 +2700,37 @@ fastify.get('/reader', async (request, reply) => {
         const reader = new Readability(document);
         let article = reader.parse();
 
-        // Fallback for modern Reddit (shreddit) if Readability fails
-        if ((!article || !article.content) && targetUrl.includes('reddit.com')) {
+        // Fallback for modern Reddit (shreddit) if Readability fails or returns empty content
+        if ((!article || !article.content || article.content.length < 100) && targetUrl.includes('reddit.com')) {
             const shredditPost = document.querySelector('shreddit-post');
             if (shredditPost) {
-                const postContent = shredditPost.querySelector('[slot="post-media-container"], .m-none.mb-sm');
+                // Try multiple selectors for content in order of preference
+                const contentSelectors = [
+                    '[slot="post-media-container"]',
+                    '.m-none.mb-sm',
+                    'div[id^="t3_"]', // Classic post content div
+                    '.text-neutral-content' 
+                ];
+
+                let postContent: Element | null = null;
+                for (const sel of contentSelectors) {
+                    postContent = shredditPost.querySelector(sel);
+                    if (postContent) break;
+                }
+
                 if (postContent) {
+                    fastify.log.info(`Extracted Reddit content via fallback for ${targetUrl}`);
                     article = {
-                        title: redditPostTitle || document.title,
+                        title: redditPostTitle || document.title || 'Reddit Post',
                         content: postContent.innerHTML,
                         textContent: postContent.textContent || '',
                         length: postContent.innerHTML.length,
                         excerpt: '',
-                        byline: '',
+                        byline: shredditPost.getAttribute('author') || '',
                         dir: '',
                         siteName: 'Reddit',
                         lang: 'en',
-                        publishedTime: ''
+                        publishedTime: shredditPost.getAttribute('created-timestamp') || ''
                     };
                 }
             }
