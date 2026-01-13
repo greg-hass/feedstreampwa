@@ -58,15 +58,24 @@
     youtubeThumbnail || (isRedditVideo ? null : item.media_thumbnail);
 
   // Format Date
-  const date = new Date(item.published || item.created_at);
-  const now = new Date();
-  const isCurrentYear = date.getFullYear() === now.getFullYear();
+  // Format Date
+  let dateStr = "";
+  try {
+    const date = new Date(item.published || item.created_at);
+    // Check if date is valid
+    if (!isNaN(date.getTime())) {
+      const now = new Date();
+      const isCurrentYear = date.getFullYear() === now.getFullYear();
 
-  const dateStr = new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: isCurrentYear ? undefined : "numeric",
-  }).format(date);
+      dateStr = new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "numeric",
+        year: isCurrentYear ? undefined : "numeric",
+      }).format(date);
+    }
+  } catch (e) {
+    console.error("Error formatting date", item.id, e);
+  }
 
   // Source Styling
   const styles = {

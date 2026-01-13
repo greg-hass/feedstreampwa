@@ -105,20 +105,29 @@
   $: thumbnailUrl = youtubeThumbnail || item.media_thumbnail;
 
   // Format Date
-  const date = new Date(item.published || item.created_at);
-  const now = new Date();
-  const isCurrentYear = date.getFullYear() === now.getFullYear();
+  let dateStr = "";
+  let timeAgo = "";
 
-  const dateStr = new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: isCurrentYear ? undefined : "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
+  try {
+    const date = new Date(item.published || item.created_at);
+    // Check if date is valid
+    if (!isNaN(date.getTime())) {
+      const now = new Date();
+      const isCurrentYear = date.getFullYear() === now.getFullYear();
 
-  // Time ago
-  const timeAgo = getTimeAgo(date);
+      dateStr = new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "numeric",
+        year: isCurrentYear ? undefined : "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      }).format(date);
+
+      timeAgo = getTimeAgo(date);
+    }
+  } catch (e) {
+    console.error("Error formatting date for item", item.id, e);
+  }
 
   function getTimeAgo(date: Date): string {
     const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
