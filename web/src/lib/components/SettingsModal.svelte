@@ -53,33 +53,40 @@
   let activeTab: Tab = "general";
 
   // Rules
-  interface Rule { id: string; name?: string; keyword: string; field: string; action: string; feed_url?: string; }
+  interface Rule {
+    id: string;
+    name?: string;
+    keyword: string;
+    field: string;
+    action: string;
+    feed_url?: string;
+  }
   let rules: Rule[] = [];
-  let newRule = { keyword: '', field: 'title', action: 'mark_read', name: '' };
-  
+  let newRule = { keyword: "", field: "title", action: "mark_read", name: "" };
+
   async function loadRules() {
-      const res = await fetch('http://localhost:3000/rules');
-      const data = await res.json();
-      if (data.ok) rules = data.rules;
+    const res = await fetch("http://localhost:3000/rules");
+    const data = await res.json();
+    if (data.ok) rules = data.rules;
   }
-  
+
   async function handleCreateRule() {
-      if (!newRule.keyword) return;
-      await fetch('http://localhost:3000/rules', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newRule)
-      });
-      await loadRules();
-      newRule = { keyword: '', field: 'title', action: 'mark_read', name: '' };
+    if (!newRule.keyword) return;
+    await fetch("http://localhost:3000/rules", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newRule),
+    });
+    await loadRules();
+    newRule = { keyword: "", field: "title", action: "mark_read", name: "" };
   }
-  
+
   async function handleDeleteRule(id: string) {
-      await fetch(`http://localhost:3000/rules/${id}`, { method: 'DELETE' });
-      await loadRules();
+    await fetch(`http://localhost:3000/rules/${id}`, { method: "DELETE" });
+    await loadRules();
   }
-  
-  $: if (activeTab === 'automation') loadRules();
+
+  $: if (activeTab === "automation") loadRules();
 
   // Backups
   let backups: any[] = [];
@@ -845,54 +852,98 @@
               {/if}
             </div>
           </div>
-        {/if}
-
-        {:else if activeTab === 'automation'}
-            <div class="p-6 space-y-6">
-                <!-- Create Rule Form -->
-                <div class="bg-white/5 p-4 rounded-xl space-y-4 border border-white/5">
-                    <h3 class="text-sm font-medium text-white flex items-center gap-2"><Sparkles size={14}/> Create New Rule</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <input bind:value={newRule.keyword} placeholder="Keyword (e.g. 'Sponsor')" class="bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-accent outline-none" />
-                        <input bind:value={newRule.name} placeholder="Rule Name (Optional)" class="bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-accent outline-none" />
-                    </div>
-                    <div class="grid grid-cols-3 gap-4">
-                        <select bind:value={newRule.field} class="bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-accent outline-none">
-                            <option value="title">Title</option>
-                            <option value="content">Content</option>
-                            <option value="author">Author</option>
-                            <option value="any">Anywhere</option>
-                        </select>
-                        <select bind:value={newRule.action} class="bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-accent outline-none">
-                            <option value="mark_read">Mark Read</option>
-                            <option value="star">Star</option>
-                            <option value="delete">Skip/Delete</option>
-                        </select>
-                        <button on:click={handleCreateRule} class="bg-accent text-white rounded-lg p-2 text-sm font-medium hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20">Add Rule</button>
-                    </div>
-                </div>
-
-                <!-- Rules List -->
-                <div class="space-y-3">
-                    <h3 class="text-xs font-medium text-white/40 uppercase tracking-wider">Active Rules</h3>
-                    {#if rules.length === 0}
-                        <div class="text-white/30 text-center py-8 text-sm italic border border-white/5 rounded-xl border-dashed">No rules defined. Add one above!</div>
-                    {:else}
-                        {#each rules as rule}
-                            <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 group hover:border-white/10 transition-colors">
-                                <div class="flex flex-col">
-                                    <span class="text-white text-sm font-medium">{rule.name || rule.keyword}</span>
-                                    <span class="text-white/40 text-xs mt-0.5">
-                                        If <span class="text-white/60">{rule.field}</span> contains "<span class="text-white/60">{rule.keyword}</span>" → 
-                                        <span class="text-accent/80 font-medium uppercase text-[10px]">{rule.action.replace('_', ' ')}</span>
-                                    </span>
-                                </div>
-                                <button on:click={() => handleDeleteRule(rule.id)} class="text-white/20 hover:text-red-400 hover:bg-red-500/10 p-2 rounded-lg transition-colors"><Trash2 size={16}/></button>
-                            </div>
-                        {/each}
-                    {/if}
-                </div>
+        {:else if activeTab === "automation"}
+          <div class="p-6 space-y-6">
+            <!-- Create Rule Form -->
+            <div
+              class="bg-white/5 p-4 rounded-xl space-y-4 border border-white/5"
+            >
+              <h3
+                class="text-sm font-medium text-white flex items-center gap-2"
+              >
+                <Sparkles size={14} /> Create New Rule
+              </h3>
+              <div class="grid grid-cols-2 gap-4">
+                <input
+                  bind:value={newRule.keyword}
+                  placeholder="Keyword (e.g. 'Sponsor')"
+                  class="bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-accent outline-none"
+                />
+                <input
+                  bind:value={newRule.name}
+                  placeholder="Rule Name (Optional)"
+                  class="bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-accent outline-none"
+                />
+              </div>
+              <div class="grid grid-cols-3 gap-4">
+                <select
+                  bind:value={newRule.field}
+                  class="bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-accent outline-none"
+                >
+                  <option value="title">Title</option>
+                  <option value="content">Content</option>
+                  <option value="author">Author</option>
+                  <option value="any">Anywhere</option>
+                </select>
+                <select
+                  bind:value={newRule.action}
+                  class="bg-black/20 border border-white/10 rounded-lg p-2 text-white text-sm focus:border-accent outline-none"
+                >
+                  <option value="mark_read">Mark Read</option>
+                  <option value="star">Star</option>
+                  <option value="delete">Skip/Delete</option>
+                </select>
+                <button
+                  on:click={handleCreateRule}
+                  class="bg-accent text-white rounded-lg p-2 text-sm font-medium hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20"
+                  >Add Rule</button
+                >
+              </div>
             </div>
+
+            <!-- Rules List -->
+            <div class="space-y-3">
+              <h3
+                class="text-xs font-medium text-white/40 uppercase tracking-wider"
+              >
+                Active Rules
+              </h3>
+              {#if rules.length === 0}
+                <div
+                  class="text-white/30 text-center py-8 text-sm italic border border-white/5 rounded-xl border-dashed"
+                >
+                  No rules defined. Add one above!
+                </div>
+              {:else}
+                {#each rules as rule}
+                  <div
+                    class="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 group hover:border-white/10 transition-colors"
+                  >
+                    <div class="flex flex-col">
+                      <span class="text-white text-sm font-medium"
+                        >{rule.name || rule.keyword}</span
+                      >
+                      <span class="text-white/40 text-xs mt-0.5">
+                        If <span class="text-white/60">{rule.field}</span>
+                        contains "<span class="text-white/60"
+                          >{rule.keyword}</span
+                        >" →
+                        <span
+                          class="text-accent/80 font-medium uppercase text-[10px]"
+                          >{rule.action.replace("_", " ")}</span
+                        >
+                      </span>
+                    </div>
+                    <button
+                      on:click={() => handleDeleteRule(rule.id)}
+                      class="text-white/20 hover:text-red-400 hover:bg-red-500/10 p-2 rounded-lg transition-colors"
+                      ><Trash2 size={16} /></button
+                    >
+                  </div>
+                {/each}
+              {/if}
+            </div>
+          </div>
         {/if}
 
         <!-- Messages -->
