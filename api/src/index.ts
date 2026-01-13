@@ -2711,11 +2711,12 @@ fastify.get('/reader', async (request, reply) => {
                         content: postContent.innerHTML,
                         textContent: postContent.textContent || '',
                         length: postContent.innerHTML.length,
-                        excerpt: null,
-                        byline: null,
-                        dir: null,
+                        excerpt: '',
+                        byline: '',
+                        dir: '',
                         siteName: 'Reddit',
-                        lang: 'en'
+                        lang: 'en',
+                        publishedTime: ''
                     };
                 }
             }

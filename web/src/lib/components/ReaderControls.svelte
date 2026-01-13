@@ -167,7 +167,7 @@
       <!-- Text to Speech -->
       {#if speechSynthesis}
         <button
-          class="control-option"
+          class="control-option tts-trigger"
           on:click={toggleTextToSpeech}
           title={$isSpeaking ? "Stop Reading" : "Read Aloud"}
         >

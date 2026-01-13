@@ -19,6 +19,12 @@
     Database,
     Share2,
     PictureInPicture,
+    ChevronLeft,
+    ZoomIn,
+    ZoomOut,
+    Headphones,
+    BookOpen,
+    Share,
   } from "lucide-svelte";
   import OfflineBadge from "$lib/components/OfflineBadge.svelte";
 
@@ -186,6 +192,53 @@
     medium: "max-w-3xl",
     wide: "max-w-4xl",
   }[$readerSettings.readingWidth];
+
+  $: themeClass = `theme-${$readerSettings.theme}`;
+
+  function increaseFontSize() {
+    const sizes: FontSize[] = ["small", "medium", "large", "xlarge"];
+    const currentIndex = sizes.indexOf($readerSettings.fontSize);
+    if (currentIndex < sizes.length - 1) {
+      readerSettings.setFontSize(sizes[currentIndex + 1]);
+    }
+  }
+
+  function decreaseFontSize() {
+    const sizes: FontSize[] = ["small", "medium", "large", "xlarge"];
+    const currentIndex = sizes.indexOf($readerSettings.fontSize);
+    if (currentIndex > 0) {
+      readerSettings.setFontSize(sizes[currentIndex - 1]);
+    }
+  }
+
+  function formatDate(dateStr: string | undefined) {
+    if (!dateStr) return "";
+    try {
+      const date = new Date(dateStr);
+      return new Intl.DateTimeFormat("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      }).format(date);
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  const themes: { id: ReaderTheme; color: string; label: string }[] = [
+    { id: "light", color: "#FFFFFF", label: "Light" },
+    { id: "sepia", color: "#F4ECD8", label: "Sepia" },
+    { id: "dark", color: "#2B313E", label: "Dark" },
+    { id: "black", color: "#000000", label: "Black" },
+  ];
+
+  function toggleTTS() {
+    // We'll reuse the logic from ReaderControls or trigger it
+    const controlsElement = document.querySelector(
+      ".tts-trigger"
+    ) as HTMLButtonElement;
+    if (controlsElement) controlsElement.click();
+  }
 
   $: if ($showReader && $readerData && typeof document !== "undefined") {
     setTimeout(() => {
@@ -417,74 +470,57 @@
       <!-- Reading Progress Bar -->
       <ReadingProgress {scrollContainer} />
 
-      <div class="reader-header">
-        <button class="reader-close" on:click={handleClose} title="Close (ESC)">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path
-              d="M5 5l10 10M15 5l-10 10"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
-          </svg>
-        </button>
-
-        <div class="flex items-center gap-3">
-          <button
-            class="p-2 text-white/50 hover:text-accent disabled:opacity-50 transition-colors hidden md:block"
-            on:click={handleSummarize}
-            disabled={summaryLoading || !!summary}
-            title="Summarize with AI"
-          >
-            <Sparkles size={20} class={summaryLoading ? "animate-pulse" : ""} />
+      <div class="reader-header-new">
+        <div class="header-top">
+          <button class="back-button" on:click={handleClose}>
+            <ChevronLeft size={20} />
+            <span>Back</span>
           </button>
+        </div>
 
-          <button
-            class="p-2 text-white/50 hover:text-accent transition-colors relative"
-            on:click={toggleDiscussions}
-            title="View Discussions (HN/Reddit)"
-          >
-            <MessageSquare size={20} />
-            {#if discussions.length > 0}
-              <span
-                class="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full"
-              ></span>
-            {/if}
-          </button>
+        <div class="header-controls-row">
+          <div class="theme-picker">
+            {#each themes as t}
+              <button
+                class="theme-circle {$readerSettings.theme === t.id
+                  ? 'active'
+                  : ''}"
+                style="background-color: {t.color}"
+                on:click={() => readerSettings.setTheme(t.id)}
+                title={t.label}
+              ></button>
+            {/each}
+          </div>
 
-          <!-- Share Button -->
-          <button
-            class="p-2 text-white/50 hover:text-accent transition-colors"
-            on:click={handleShare}
-            title="Share article"
-          >
-            <Share2 size={20} />
-          </button>
-
-          <!-- PiP Button (only for YouTube videos) -->
-          {#if $readerData?.url && ($readerData.url.includes("youtube.com/watch") || $readerData.url.includes("youtu.be/"))}
-            <button
-              class="p-2 text-white/50 hover:text-accent transition-colors {isInPiP
-                ? 'text-accent'
-                : ''}"
-              on:click={togglePiP}
-              title={isInPiP ? "Exit Picture-in-Picture" : "Picture-in-Picture"}
-            >
-              <PictureInPicture size={20} />
+          <div class="zoom-controls">
+            <button on:click={decreaseFontSize} title="Decrease Font Size">
+              <ZoomOut size={18} />
             </button>
-          {/if}
+            <span class="zoom-level">
+              {{ small: "80%", medium: "100%", large: "120%", xlarge: "140%" }[
+                $readerSettings.fontSize
+              ]}
+            </span>
+            <button on:click={increaseFontSize} title="Increase Font Size">
+              <ZoomIn size={18} />
+            </button>
+          </div>
 
+          <div class="control-divider"></div>
+
+          <div class="action-buttons">
+            <button on:click={handleShare} title="Share">
+              <Share size={20} />
+            </button>
+            <button on:click={toggleTTS} title="Listen">
+              <Headphones size={20} />
+            </button>
+          </div>
+        </div>
+
+        <!-- Hidden ReaderControls to reuse TTS logic -->
+        <div class="hidden">
           <ReaderControls content={$readerData?.contentHtml || ""} {readTime} />
-          {#if $readerData?.url}
-            <a
-              href={$readerData.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="reader-source"
-            >
-              Open Original ↗
-            </a>
-          {/if}
         </div>
       </div>
 
@@ -509,10 +545,37 @@
             {/if}
           </div>
         {:else if $readerData}
-          <article class="reader-content">
-            <h1 class="reader-title" id="reader-title">
-              {$readerData.title || "Untitled"}
-            </h1>
+          <article class="reader-content {themeClass}">
+            <div class="article-header">
+              <h1 class="reader-title-new" id="reader-title">
+                {$readerData.title || "Untitled"}
+              </h1>
+
+              <div class="article-meta-row">
+                <span class="article-date">
+                  {formatDate(
+                    $currentItem?.published_at || $readerData.published_at
+                  )}
+                </span>
+                <div class="article-actions-mini">
+                  <button class="meta-action-btn" title="Mark as Read">
+                    <BookOpen size={18} class="text-emerald-400" />
+                  </button>
+                  {#if $readerData.url}
+                    <a
+                      href={$readerData.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="meta-action-btn"
+                      title="Open Original"
+                    >
+                      <ExternalLink size={18} />
+                    </a>
+                  {/if}
+                </div>
+              </div>
+              <div class="article-divider"></div>
+            </div>
 
             {#if summary}
               <div
@@ -698,54 +761,24 @@
 {/if}
 
 <style>
-  .discussions-panel {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 350px;
-    height: 100vh;
-    background: #050507;
-    border-left: 1px solid rgba(255, 255, 255, 0.1);
-    z-index: 2005; /* Above reader overlay (2000) */
-    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
-    animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  @keyframes slideInRight {
-    from {
-      transform: translateX(100%);
-    }
-    to {
-      transform: translateX(0);
-    }
-  }
-
-  @media (max-width: 640px) {
-    .discussions-panel {
-      width: 100%;
-    }
-  }
-  /* Existing styles continue... */
   .reader-overlay {
     position: fixed;
     inset: 0;
-    background: #050507;
     z-index: 2000;
     display: flex;
     justify-content: center;
-    overflow: hidden; /* No scroll on overlay */
+    overflow: hidden;
     animation: fadeIn 0.2s ease;
   }
 
   .reader-container {
     width: 100%;
     max-width: 720px;
-    height: 100vh; /* Full viewport height */
+    height: 100vh;
     display: flex;
     flex-direction: column;
     padding: 0;
     animation: scaleIn 0.25s ease-out;
-    background: #050507;
   }
 
   .reader-scroll-container {
@@ -760,78 +793,309 @@
     .reader-scroll-container {
       padding: 32px 40px;
     }
-
-    /* On desktop, maybe give it some breathing room if desired, 
-       but user requested fixing scroll bleed, so full height column is safest.
-       We can keep it centered 720px max-width though. */
   }
 
-  .reader-header {
+  /* Redesigned Header */
+  .reader-header-new {
     flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #050507; /* Solid background */
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 16px 20px;
+    padding: 12px 20px;
+    background: inherit;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.1);
     z-index: 50;
   }
 
-  .reader-close {
-    width: 40px;
-    height: 40px;
-    background: var(--panel1);
-    border: 1px solid var(--stroke);
-    border-radius: 50%;
-    color: var(--muted);
-    cursor: pointer;
+  .header-top {
+    margin-bottom: 16px;
+  }
+
+  .back-button {
     display: flex;
     align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-  }
-
-  .reader-close:hover {
-    background: var(--chip-hover);
-    color: var(--text);
-    transform: rotate(90deg);
-  }
-
-  .reader-source {
-    color: var(--accent);
-    text-decoration: none;
-    font-size: 13px;
+    gap: 4px;
+    color: inherit;
+    opacity: 0.6;
+    font-size: 14px;
     font-weight: 500;
-    padding: 8px 14px;
-    border: 1px solid var(--accent);
-    border-radius: 99px;
+    background: none;
+    border: none;
+    padding: 4px 0;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .back-button:hover {
+    opacity: 1;
+  }
+
+  .header-controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .theme-picker {
+    display: flex;
+    gap: 12px;
+  }
+
+  .theme-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid rgba(128, 128, 128, 0.2);
+    cursor: pointer;
+    transition:
+      transform 0.2s,
+      border-color 0.2s;
+  }
+
+  .theme-circle.active {
+    border-color: #a855f7;
+    transform: scale(1.15);
+  }
+
+  .zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: inherit;
+  }
+
+  .zoom-controls button {
+    background: none;
+    border: none;
+    color: inherit;
+    padding: 4px;
+    cursor: pointer;
+    opacity: 0.7;
+    display: flex;
+    align-items: center;
+  }
+
+  .zoom-controls button:hover {
+    opacity: 1;
+  }
+
+  .zoom-level {
+    font-size: 14px;
+    font-weight: 600;
+    min-width: 45px;
+    text-align: center;
+    opacity: 0.8;
+  }
+
+  .control-divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(128, 128, 128, 0.2);
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 20px;
+  }
+
+  .action-buttons button {
+    background: none;
+    border: none;
+    color: inherit;
+    padding: 4px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+
+  .action-buttons button:hover {
+    opacity: 1;
+  }
+
+  /* Article Content & Themes */
+  .reader-content {
+    padding-bottom: 120px;
+    transition:
+      background-color 0.3s,
+      color 0.3s;
+  }
+
+  /* Theme Definitions */
+  .theme-light {
+    --bg: #ffffff;
+    --text: #1a1a1a;
+    --meta: #666666;
+    --divider: rgba(0, 0, 0, 0.1);
+  }
+  .theme-sepia {
+    --bg: #f4ecd8;
+    --text: #433422;
+    --meta: #736357;
+    --divider: rgba(67, 52, 34, 0.1);
+  }
+  .theme-dark {
+    --bg: #2b313e;
+    --text: #e2e8f0;
+    --meta: #94a3b8;
+    --divider: rgba(255, 255, 255, 0.1);
+  }
+  .theme-black {
+    --bg: #000000;
+    --text: #ffffff;
+    --meta: #a1a1aa;
+    --divider: rgba(255, 255, 255, 0.1);
+  }
+
+  :global(.reader-overlay:has(.theme-light)) {
+    background: #ffffff;
+    color: #1a1a1a;
+  }
+  :global(.reader-overlay:has(.theme-sepia)) {
+    background: #f4ecd8;
+    color: #433422;
+  }
+  :global(.reader-overlay:has(.theme-dark)) {
+    background: #2b313e;
+    color: #e2e8f0;
+  }
+  :global(.reader-overlay:has(.theme-black)) {
+    background: #000000;
+    color: #ffffff;
+  }
+
+  .reader-container {
+    background: inherit;
+    color: inherit;
+  }
+
+  /* Article Header */
+  .article-header {
+    margin-bottom: 40px;
+  }
+
+  .reader-title-new {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.25;
+    margin-bottom: 24px;
+    letter-spacing: -0.02em;
+    color: inherit;
+  }
+
+  .article-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .article-date {
+    font-size: 15px;
+    opacity: 0.6;
+    font-weight: 500;
+  }
+
+  .article-actions-mini {
+    display: flex;
+    gap: 20px;
+  }
+
+  .meta-action-btn {
+    background: none;
+    border: none;
+    color: inherit;
+    padding: 4px;
+    cursor: pointer;
+    opacity: 0.6;
     transition: all 0.2s;
   }
 
-  .reader-source:hover {
-    background: var(--accent);
-    color: var(--bg0);
+  .meta-action-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
   }
 
+  .article-divider {
+    height: 1px;
+    background: var(--divider);
+    width: 100%;
+  }
+
+  /* Typography */
+  .reader-body {
+    line-height: 1.8;
+    letter-spacing: 0.01em;
+  }
+
+  .reader-body :global(p) {
+    margin-bottom: 1.75em;
+  }
+
+  .reader-body :global(img) {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 24px 0;
+  }
+
+  .reader-body :global(h2),
+  .reader-body :global(h3) {
+    margin-top: 2em;
+    margin-bottom: 1em;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .reader-body :global(blockquote) {
+    border-left: 4px solid #a855f7;
+    padding-left: 1.5em;
+    margin: 2em 0;
+    font-style: italic;
+    opacity: 0.9;
+  }
+
+  .reader-body :global(pre) {
+    background: rgba(128, 128, 128, 0.1);
+    padding: 1.5em;
+    border-radius: 12px;
+    overflow-x: auto;
+    margin: 2em 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+      monospace;
+    font-size: 0.9em;
+  }
+
+  /* Font Sizes */
+  .text-base {
+    font-size: 18px;
+  }
+  .text-lg {
+    font-size: 20px;
+  }
+  .text-xl {
+    font-size: 23px;
+  }
+  .text-2xl {
+    font-size: 27px;
+  }
+
+  /* Utilities */
   .reader-loading,
   .reader-error {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 20px;
-    padding: 80px 20px;
-    text-align: center;
-    color: var(--muted);
+    padding: 100px 20px;
+    gap: 24px;
+    opacity: 0.6;
   }
 
   .reader-spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid var(--stroke);
-    border-top-color: var(--accent);
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(128, 128, 128, 0.2);
+    border-top-color: #a855f7;
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    animation: spin 1s linear infinite;
   }
 
   @keyframes spin {
@@ -839,254 +1103,26 @@
       transform: rotate(360deg);
     }
   }
-
-  .reader-error {
-    color: var(--muted2);
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes scaleIn {
+    from {
+      transform: scale(0.98);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
   }
 
-  .reader-fallback-btn {
-    color: var(--accent);
-    text-decoration: none;
-    padding: 12px 24px;
-    border: 1px solid var(--accent);
-    border-radius: var(--radiusM);
-    transition: all 0.2s;
-  }
-
-  .reader-fallback-btn:hover {
-    background: var(--accent);
-    color: var(--bg0);
-  }
-
-  .reader-content {
-    color: var(--text);
-    padding-bottom: 60px; /* Extra bottom padding for comfortable scrolling */
-  }
-
-  .reader-hero {
-    width: 100%;
-    max-height: 400px;
-    object-fit: cover;
-    border-radius: var(--radiusM);
-    margin-bottom: 40px;
-  }
-
-  .reader-title {
-    font-family: var(--font-display);
-    font-size: 34px;
-    font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: -0.025em;
-    margin: 0 0 20px 0;
-    color: #fff;
-    text-wrap: balance; /* Modern text balancing for better line breaks */
-  }
-
-  .reader-meta {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    font-size: 15px;
-    color: var(--muted);
-    margin-bottom: 40px;
-    padding-bottom: 28px;
-    border-bottom: 1px solid var(--stroke);
-  }
-
-  .meta-sep {
-    color: var(--muted);
-  }
-
-  .reader-body {
-    font-size: 19px;
-    line-height: 1.85;
-    color: rgba(255, 255, 255, 0.9);
-    text-align: left;
-    word-spacing: 0.05em;
-    hyphens: auto;
-    -webkit-hyphens: auto;
-  }
-
-  /* Paragraph styling - the key to good readability */
-  .reader-body p {
-    margin: 0 0 1.75em 0;
-    text-align: justify;
-    text-justify: inter-word;
-  }
-
-  /* First paragraph after heading - no indent, larger first letter optional */
-  .reader-body h2 + p,
-  .reader-body h3 + p,
-  .reader-body h4 + p {
-    text-indent: 0;
-  }
-
-  /* Links */
-  .reader-body a {
-    color: var(--accent);
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    text-decoration-thickness: 1px;
-    transition: text-decoration-color 0.2s;
-  }
-
-  .reader-body a:hover {
-    text-decoration-color: transparent;
-  }
-
-  /* Blockquotes - elegant styling */
-  .reader-body blockquote {
-    margin: 2em 0;
-    padding: 1.25em 1.5em;
-    border-left: 4px solid var(--accent);
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 0 8px 8px 0;
-    color: rgba(255, 255, 255, 0.75);
-    font-style: italic;
-    line-height: 1.7;
-  }
-
-  .reader-body blockquote p {
-    margin-bottom: 0.75em;
-  }
-
-  .reader-body blockquote p:last-child {
-    margin-bottom: 0;
-  }
-
-  /* Code blocks */
-  .reader-body pre,
-  .reader-body code {
-    background: var(--panel0);
-    border-radius: 8px;
-    font-family: "SF Mono", "Monaco", "Consolas", "Menlo", monospace;
-    font-size: 0.88em;
-  }
-
-  .reader-body pre {
-    padding: 20px;
-    overflow-x: auto;
-    margin: 2em 0;
-    border: 1px solid var(--stroke);
-  }
-
-  .reader-body code {
-    padding: 3px 8px;
-  }
-
-  .reader-body pre code {
-    padding: 0;
-    background: none;
-  }
-
-  /* Lists */
-  .reader-body ul,
-  .reader-body ol {
-    margin: 1.75em 0;
-    padding-left: 1.75em;
-  }
-
-  .reader-body li {
-    margin-bottom: 0.75em;
-    line-height: 1.7;
-  }
-
-  .reader-body li::marker {
-    color: var(--accent);
-  }
-
-  /* Headings */
-  .reader-body h2,
-  .reader-body h3,
-  .reader-body h4 {
-    font-family: var(--font-display);
-    color: #fff;
-    letter-spacing: -0.01em;
-    margin-top: 2.5em;
-    margin-bottom: 1em;
-  }
-
-  .reader-body h2 {
-    font-size: 26px;
-    font-weight: 700;
-    padding-bottom: 0.5em;
-    border-bottom: 1px solid var(--stroke);
-  }
-
-  .reader-body h3 {
-    font-size: 22px;
-    font-weight: 600;
-  }
-
-  .reader-body h4 {
-    font-size: 18px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
-  }
-
-  /* Horizontal rule */
-  .reader-body hr {
-    border: none;
-    border-top: 1px solid var(--stroke);
-    margin: 3em 0;
-  }
-
-  /* Images in content */
-  .reader-body img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 8px;
-    margin: 2em 0;
-  }
-
-  /* Figure captions */
-  .reader-body figcaption {
-    font-size: 14px;
-    color: var(--muted);
-    text-align: center;
-    margin-top: 0.75em;
-    font-style: italic;
-  }
-
-  /* Tables */
-  .reader-body table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 2em 0;
-    font-size: 0.95em;
-  }
-
-  .reader-body th,
-  .reader-body td {
-    padding: 12px 16px;
-    border: 1px solid var(--stroke);
-    text-align: left;
-  }
-
-  .reader-body th {
-    background: rgba(255, 255, 255, 0.05);
-    font-weight: 600;
-  }
-
-  /* Strong and emphasis */
-  .reader-body strong {
-    color: #fff;
-    font-weight: 600;
-  }
-
-  .reader-body em {
-    font-style: italic;
-  }
-
-  /* First letter drop cap (optional enhancement) */
-  .reader-body > p:first-of-type::first-letter {
-    font-size: 3.5em;
-    font-weight: 700;
-    float: left;
-    line-height: 0.8;
-    margin-right: 0.1em;
-    margin-top: 0.1em;
-    color: var(--accent);
+  .hidden {
+    display: none;
   }
 </style>

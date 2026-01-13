@@ -3,11 +3,13 @@ import { writable } from 'svelte/store';
 export type FontSize = 'small' | 'medium' | 'large' | 'xlarge';
 export type FontFamily = 'sans' | 'serif' | 'mono';
 export type ReadingWidth = 'narrow' | 'medium' | 'wide';
+export type ReaderTheme = 'light' | 'sepia' | 'dark' | 'black';
 
 export interface ReaderSettings {
     fontSize: FontSize;
     fontFamily: FontFamily;
     readingWidth: ReadingWidth;
+    theme: ReaderTheme;
 }
 
 function createReaderSettingsStore() {
@@ -15,7 +17,8 @@ function createReaderSettingsStore() {
     const initial: ReaderSettings = stored ? JSON.parse(stored) : {
         fontSize: 'medium',
         fontFamily: 'sans',
-        readingWidth: 'medium'
+        readingWidth: 'medium',
+        theme: 'black'
     };
     
     const { subscribe, set, update } = writable<ReaderSettings>(initial);
@@ -58,6 +61,15 @@ function createReaderSettingsStore() {
         setReadingWidth: (readingWidth: ReadingWidth) => {
             update((current) => {
                 const newValue = { ...current, readingWidth };
+                if (typeof window !== 'undefined') {
+                    localStorage.setItem('readerSettings', JSON.stringify(newValue));
+                }
+                return newValue;
+            });
+        },
+        setTheme: (theme: ReaderTheme) => {
+            update((current) => {
+                const newValue = { ...current, theme };
                 if (typeof window !== 'undefined') {
                     localStorage.setItem('readerSettings', JSON.stringify(newValue));
                 }

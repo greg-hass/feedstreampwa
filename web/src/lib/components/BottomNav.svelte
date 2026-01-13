@@ -7,7 +7,7 @@
     setViewUnread,
     viewMode,
   } from "$lib/stores/ui";
-  import { libraryTotal } from "$lib/stores/counts";
+  import { libraryTotal, allArticlesUnread } from "$lib/stores/counts";
 
   function toggleMenu() {
     isMobileMenuOpen.update((v) => !v);
@@ -15,7 +15,7 @@
 </script>
 
 <nav
-  class="md:hidden fixed bottom-0 left-0 right-0 min-h-[64px] bg-background border-t border-white/5 z-40 flex items-center justify-around px-2 pt-2 select-none safe-bottom"
+  class="md:hidden fixed bottom-0 left-0 right-0 min-h-[64px] bg-background border-t border-white/5 z-[2100] flex items-center justify-around px-2 pt-2 select-none safe-bottom"
 >
   <!-- Menu Button -->
   <button
@@ -62,6 +62,13 @@
           : 'text-white/40'}"
         strokeWidth={$viewMode === "all" ? 2.5 : 2}
       />
+      {#if $allArticlesUnread > 0}
+        <span
+          class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border border-background shadow-lg"
+        >
+          {$allArticlesUnread > 99 ? "99+" : $allArticlesUnread}
+        </span>
+      {/if}
     </div>
     <span
       class="text-[10px] font-medium {$viewMode === 'all'
@@ -72,7 +79,7 @@
     </span>
   </button>
 
-  <!-- Unread Button -->
+  <!-- Unread Button (labeled as Today in the image) -->
   <button
     on:click={setViewUnread}
     class="flex flex-col items-center justify-center w-full gap-1 active:scale-95 transition-transform duration-100 py-2"
@@ -90,13 +97,20 @@
           : 'text-white/40'}"
         strokeWidth={$viewMode === "unread" ? 2.5 : 2}
       />
+      {#if $allArticlesUnread > 0}
+        <span
+          class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border border-background shadow-lg"
+        >
+          {$allArticlesUnread > 99 ? "99+" : $allArticlesUnread}
+        </span>
+      {/if}
     </div>
     <span
       class="text-[10px] font-medium {$viewMode === 'unread'
         ? 'text-white'
         : 'text-white/40'}"
     >
-      Unread
+      Today
     </span>
   </button>
 
@@ -121,7 +135,7 @@
       />
       {#if $libraryTotal > 0}
         <span
-          class="absolute -top-1 -right-1 bg-[#FF9500] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border border-background"
+          class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border border-background"
         >
           {$libraryTotal}
         </span>
