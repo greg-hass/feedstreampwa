@@ -44,6 +44,15 @@
   // Local state
   let isMobile = false;
   let sentinel: HTMLElement;
+  let wasRefreshing = false;
+
+  // Watch for refresh completion to reload items
+  $: {
+    if (wasRefreshing && !$refreshState.isRefreshing) {
+      loadItems({ ...getLoadParams(), refresh: true });
+    }
+    wasRefreshing = $refreshState.isRefreshing;
+  }
 
   // Derived
   $: pageTitle = (() => {

@@ -111,168 +111,158 @@
   // Track whether YouTube video should be loaded/played
   let playYouTubeVideo = false;
 
-  function toggleYouTubePlay(e: MouseEvent) {
+  function toggleYouTubePlay(e: Event) {
     e.stopPropagation();
     playYouTubeVideo = !playYouTubeVideo;
   }
 </script>
 
 <article
-  class="group flex flex-col gap-3 sm:gap-4 px-4 py-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer"
+  class="group flex flex-row gap-3 sm:gap-4 px-4 py-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer"
   on:click={handleOpen}
   on:keypress={(e) => e.key === "Enter" && handleOpen()}
   tabindex="0"
   role="button"
 >
-  <!-- Hero Image (Desktop & Mobile) -->
-  {#if thumbnailUrl && !youtubeVideoId}
-    <div class="w-full aspect-video sm:aspect-[21/9] rounded-xl overflow-hidden bg-white/5 mb-2">
-      <img
-        src={thumbnailUrl}
-        alt={item.title}
-        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        loading="lazy"
-      />
+  <!-- Left: Icon (Avatar style) -->
+  <div class="flex-shrink-0 pt-1">
+    <div
+      class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-white/10 transition-colors"
+    >
+      {#if item.feed_icon_url}
+         <img src={item.feed_icon_url} alt="" class="w-6 h-6 sm:w-7 sm:h-7 object-contain opacity-80" />
+      {:else}
+         <svelte:component this={Icon} size={20} class={currentStyle.color} />
+      {/if}
     </div>
-  {:else if youtubeVideoId}
-     <!-- YouTube Inline Player -->
-     <div class="w-full aspect-video rounded-xl overflow-hidden bg-black mb-2">
-        {#if playYouTubeVideo}
-          <iframe
-            src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0&vq=hd1080`}
-            class="w-full h-full"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen
-            on:click|stopPropagation
-          ></iframe>
-        {:else}
-          <img
-            src={youtubeThumbnail}
-            alt={item.title}
-            class="w-full h-full object-cover"
-            loading="lazy"
-          />
-          <button
-            on:click={toggleYouTubePlay}
-            class="absolute inset-0 flex items-center justify-center bg-black/10 hover:bg-black/20 transition-colors"
-            aria-label="Play video"
-          >
-            <div
-              class="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform"
-            >
-              <PlayCircle size={40} class="text-white fill-white/20" />
-            </div>
-          </button>
-        {/if}
-     </div>
-  {/if}
+  </div>
 
-  <div class="flex flex-row gap-4">
-    <!-- Icon Placeholder if no image (Optional, or just keep it simple) -->
-    {#if !thumbnailUrl && !youtubeVideoId}
-      <div class="hidden sm:flex flex-shrink-0">
-        <div
-          class="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center"
-        >
-          <svelte:component this={Icon} size={20} class={currentStyle.color} />
-        </div>
-      </div>
-    {/if}
-
-    <!-- Content (Middle) -->
-    <div class="flex-1 min-w-0 flex flex-col justify-between py-1">
-    <!-- Top Row: Source + Date -->
-    <!-- Top Row: Source + Date -->
-    <div class="flex items-center gap-2 mb-1.5 text-sm">
-      <div class="flex items-center gap-2 text-emerald-400">
-        <svelte:component this={Icon} size={14} class={currentStyle.color} />
-        <span class="font-medium">{item.feed_title}</span>
-      </div>
-      <span class="text-white/30">•</span>
-      <div class="flex items-center gap-1 text-purple-400">
-        <Clock size={12} />
-        <span>{timeAgo}</span>
+  <!-- Right: Main Content -->
+  <div class="flex-1 min-w-0 flex flex-col gap-2">
+    <!-- Header: Meta -->
+    <div class="flex items-center justify-between text-sm">
+      <div class="flex items-center gap-2 overflow-hidden">
+        <span class="font-bold text-gray-200 truncate">{item.feed_title}</span>
+        <span class="text-white/30">•</span>
+        <span class="text-white/40 whitespace-nowrap">{timeAgo}</span>
       </div>
       {#if item.is_read}
-        <span class="text-white/30 flex items-center gap-1 text-xs">
-          <CheckCircle2 size={12} /> Read
-        </span>
+        <div class="flex-shrink-0" title="Read">
+            <CheckCircle2 size={14} class="text-emerald-500/50" />
+        </div>
       {/if}
     </div>
 
     <!-- Title -->
     <h3
-      class="text-sm sm:text-base font-medium text-gray-100 leading-snug line-clamp-2 mb-1 group-hover:text-white transition-colors {item.is_read
-        ? 'text-white/50'
-        : ''}"
+      class="text-base sm:text-lg font-semibold leading-snug transition-colors {item.is_read
+        ? 'text-gray-400 font-normal'
+        : 'text-gray-100'}"
     >
       {item.title}
     </h3>
 
-    <!-- Summary (Desktop) -->
+    <!-- Media (Image or Video) - Now Below Title -->
+    {#if youtubeVideoId}
+       <div class="w-full aspect-video rounded-xl overflow-hidden bg-black mt-1 mb-1 border border-white/10" on:click|stopPropagation role="none">
+          {#if playYouTubeVideo}
+            <iframe
+              src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0&vq=hd1080`}
+              class="w-full h-full"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+              title={item.title}
+            ></iframe>
+          {:else}
+            <div 
+                class="relative w-full h-full group/video cursor-pointer" 
+                on:click={toggleYouTubePlay} 
+                role="button" 
+                tabindex="0" 
+                on:keypress={(e) => e.key === 'Enter' && toggleYouTubePlay(e)}
+            >
+              <img
+                src={youtubeThumbnail}
+                alt={item.title}
+                class="w-full h-full object-cover opacity-90 group-hover/video:opacity-100 transition-opacity"
+                loading="lazy"
+              />
+              <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover/video:bg-black/10 transition-colors">
+                <div class="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-2xl scale-100 group-hover/video:scale-110 transition-transform">
+                   <PlayCircle size={32} class="text-white fill-white/20" />
+                </div>
+              </div>
+            </div>
+          {/if}
+       </div>
+    {:else if thumbnailUrl}
+       <div class="w-full aspect-video sm:aspect-[2/1] rounded-xl overflow-hidden bg-white/5 mt-1 mb-1 border border-white/5">
+          <img
+            src={thumbnailUrl}
+            alt={item.title}
+            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+            loading="lazy"
+          />
+       </div>
+    {/if}
+
+    <!-- Summary -->
     {#if item.summary}
       <p
-        class="text-xs sm:text-sm text-gray-500 line-clamp-1 leading-relaxed hidden sm:block {item.is_read
-          ? 'text-white/30'
+        class="text-sm text-gray-400 line-clamp-3 leading-relaxed {item.is_read
+          ? 'text-gray-500'
           : ''}"
       >
         {@html item.summary.replace(/<[^>]*>?/gm, "")}
       </p>
     {/if}
 
+    <!-- Actions Bar -->
+    <div class="flex items-center justify-between pt-2 mt-1">
+        <div class="flex items-center gap-4">
+             <button
+                class="p-1.5 -ml-1.5 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-1.5 {item.is_read ? 'text-emerald-400' : 'text-white/40 hover:text-white'}"
+                on:click={handleRead}
+                title={item.is_read ? "Mark as Unread" : "Mark as Read"}
+             >
+                {#if item.is_read}
+                  <CheckCircle2 size={18} />
+                {:else}
+                  <div class="w-[18px] h-[18px] border-2 border-current rounded-full"></div>
+                {/if}
+             </button>
+
+             <button
+                class="p-1.5 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-1.5 {item.is_starred ? 'text-orange-400' : 'text-white/40 hover:text-white'}"
+                on:click={handleStar}
+                title="Bookmark"
+             >
+                <Bookmark size={18} class={item.is_starred ? "fill-current" : ""} />
+             </button>
+             
+             {#if isPlayable}
+              <button
+                 class="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/40 hover:text-accent"
+                 on:click={handlePlay}
+                 title="Play"
+              >
+                 <PlayCircle size={18} />
+              </button>
+             {/if}
+        </div>
+        
+        <a
+          href={item.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-blue-400 transition-colors"
+          on:click|stopPropagation
+          title="Open Link"
+        >
+          <ExternalLink size={18} />
+        </a>
     </div>
-    <!-- Actions (Right) -->
-  <div class="flex-shrink-0 flex items-center gap-1 py-1">
-    <!-- Mark as Read -->
-    <button
-      class="p-2 rounded-lg hover:bg-white/10 transition-colors {item.is_read
-        ? 'text-green-400'
-        : 'text-white/40 hover:text-white'}"
-      title={item.is_read ? "Mark as Unread" : "Mark as Read"}
-      on:click={handleRead}
-    >
-      {#if item.is_read}
-        <CheckCircle2 size={18} />
-      {:else}
-        <div
-          class="w-[18px] h-[18px] border-2 border-current rounded-full"
-        ></div>
-      {/if}
-    </button>
-
-    {#if isPlayable}
-      <button
-        class="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-accent transition-colors"
-        title="Play"
-        on:click={handlePlay}
-      >
-        <PlayCircle size={18} />
-      </button>
-    {/if}
-
-    <button
-      class="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-orange-400 transition-colors"
-      title="Bookmark"
-      on:click={handleStar}
-    >
-      <Bookmark
-        size={18}
-        class={item.is_starred ? "fill-orange-400 text-orange-400" : ""}
-      />
-    </button>
-
-    <a
-      href={item.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      class="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-blue-400 transition-colors"
-      title="Open Link"
-      on:click|stopPropagation
-    >
-      <ExternalLink size={18} />
-    </a>
-  </div>
   </div>
 </article>
 
