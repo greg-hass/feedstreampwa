@@ -96,9 +96,9 @@
     return null;
   })();
 
-  // YouTube thumbnail URL
+  // YouTube thumbnail URL - use maxresdefault for highest quality (1280x720)
   $: youtubeThumbnail = youtubeVideoId
-    ? `https://img.youtube.com/vi/${youtubeVideoId}/mqdefault.jpg`
+    ? `https://img.youtube.com/vi/${youtubeVideoId}/maxresdefault.jpg`
     : null;
 
   // Use YouTube thumbnail if available, otherwise use media_thumbnail.
