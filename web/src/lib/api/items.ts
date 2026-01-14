@@ -50,7 +50,7 @@ export async function searchItems(query: string, limit = 100, offset = 0): Promi
         offset: offset.toString(),
     });
 
-    const response = await fetch(`${API_BASE}/search?${params}`);
+    const response = await fetch(`${API_BASE}/items?${params}`);
 
     if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
