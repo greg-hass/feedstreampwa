@@ -1085,6 +1085,8 @@
   /* Article Content & Themes */
   .reader-content {
     padding-bottom: 120px;
+    background-color: var(--bg, inherit);
+    color: var(--text, inherit);
     transition:
       background-color 0.3s,
       color 0.3s;
