@@ -859,12 +859,19 @@ function normalizeItem(item: any, kind: 'youtube' | 'reddit' | 'podcast' | 'gene
 
     let published = null;
     let updated = null;
+    const now = new Date();
 
     try {
         if (rawPublished) {
             const date = new Date(rawPublished);
             if (!isNaN(date.getTime())) {
-                published = date.toISOString();
+                // Clamp future dates to current time to prevent them from appearing at top
+                if (date > now) {
+                    console.warn(`Clamping future date ${rawPublished} to current time`);
+                    published = now.toISOString();
+                } else {
+                    published = date.toISOString();
+                }
             } else {
                 console.warn(`Failed to parse published date: ${rawPublished} - Invalid Date`);
                 published = null;
