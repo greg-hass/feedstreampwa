@@ -96,10 +96,18 @@
     return null;
   })();
 
-  // YouTube thumbnail URL - use maxresdefault for highest quality (1280x720)
+  // YouTube thumbnail URL - try highest quality first, fallback on error
+  // maxresdefault (1280x720) → hqdefault (480x360)
+  let ytThumbnailQuality = "maxresdefault";
   $: youtubeThumbnail = youtubeVideoId
-    ? `https://img.youtube.com/vi/${youtubeVideoId}/maxresdefault.jpg`
+    ? `https://img.youtube.com/vi/${youtubeVideoId}/${ytThumbnailQuality}.jpg`
     : null;
+
+  function handleYouTubeThumbnailError() {
+    if (ytThumbnailQuality === "maxresdefault") {
+      ytThumbnailQuality = "hqdefault"; // Fallback to 480x360
+    }
+  }
 
   // Use YouTube thumbnail if available, otherwise use media_thumbnail.
   // For podcasts, fallback to feed icon (usually high-res cover art) if no episode image.
@@ -431,7 +439,7 @@
             alt={item.title}
             class="w-full h-full object-cover opacity-100 transition-opacity"
             loading="lazy"
-            on:error={handleImageError}
+            on:error={handleYouTubeThumbnailError}
           />
           <div class="absolute inset-0 flex items-center justify-center">
             <!-- Official YouTube-style play button -->
