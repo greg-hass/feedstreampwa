@@ -433,17 +433,17 @@
             loading="lazy"
             on:error={handleImageError}
           />
-          <div
-            class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover/video:bg-black/10 transition-colors"
-          >
-            <!-- Start button smaller on desktop? Or relying on scaling -->
+          <div class="absolute inset-0 flex items-center justify-center">
+            <!-- YouTube-style translucent play button -->
             <div
-              class="w-14 h-14 md:w-10 md:h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-2xl scale-100 group-hover/video:scale-110 transition-transform"
+              class="w-16 h-16 md:w-12 md:h-12 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center shadow-xl scale-100 group-hover/video:scale-110 group-hover/video:bg-black/70 transition-all"
             >
-              <PlayCircle
-                size={32}
-                class="text-white fill-white/20 md:w-6 md:h-6"
-              />
+              <svg
+                viewBox="0 0 24 24"
+                class="w-8 h-8 md:w-6 md:h-6 text-white fill-current ml-1"
+              >
+                <path d="M8 5v14l11-7z" />
+              </svg>
             </div>
           </div>
         </div>
