@@ -137,3 +137,13 @@ export async function updateVideoProgress(
         );
     }
 }
+
+export async function deleteItem(itemId: string | number): Promise<void> {
+    const response = await fetch(`${API_BASE}/items/${itemId}`, {
+        method: 'DELETE',
+    });
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+}

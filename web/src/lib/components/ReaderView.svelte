@@ -26,7 +26,11 @@
     Headphones,
     BookOpen,
     Share,
+    Trash2,
   } from "lucide-svelte";
+  import * as itemsApi from "$lib/api/items";
+  import { toast } from "$lib/stores/toast";
+  import { confirmDialog } from "$lib/stores/confirm";
   import OfflineBadge from "$lib/components/OfflineBadge.svelte";
 
   let summary: string | null = null;
@@ -89,6 +93,33 @@
     showDiscussions = !showDiscussions;
   }
 
+  async function handleDelete() {
+    if (!$currentItem) return;
+
+    const confirmed = await confirmDialog.confirm({
+      title: "Delete Article",
+      message:
+        "Are you sure you want to delete this article? This action cannot be undone.",
+      confirmText: "Delete",
+      type: "danger",
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await itemsApi.deleteItem($currentItem.id);
+      toast.success("Article deleted");
+      handleClose();
+      // Force reload of feed list if possible, or just let users refresh
+      if (typeof window !== "undefined") {
+        window.location.reload();
+      }
+    } catch (e) {
+      console.error("Failed to delete item:", e);
+      toast.error("Failed to delete article");
+    }
+  }
+
   // Share functionality
   async function copyToClipboard(text: string): Promise<boolean> {
     if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
@@ -137,7 +168,8 @@
 
     try {
       const canShare =
-        typeof navigator !== "undefined" && typeof navigator.share === "function";
+        typeof navigator !== "undefined" &&
+        typeof navigator.share === "function";
       const supportsData =
         canShare && typeof navigator.canShare === "function"
           ? navigator.canShare(shareData)
@@ -461,7 +493,10 @@
       ytPlayer = null;
     }
 
-    if (typeof window !== "undefined" && (window as any).onYouTubeIframeAPIReady) {
+    if (
+      typeof window !== "undefined" &&
+      (window as any).onYouTubeIframeAPIReady
+    ) {
       (window as any).onYouTubeIframeAPIReady = null;
     }
   });
@@ -597,6 +632,13 @@
           <div class="control-divider"></div>
 
           <div class="action-buttons">
+            <button
+              on:click={handleDelete}
+              title="Delete Article"
+              class="hover:text-red-400 transition-colors"
+            >
+              <Trash2 size={20} />
+            </button>
             <button on:click={handleShare} title="Share">
               <Share size={20} />
             </button>
