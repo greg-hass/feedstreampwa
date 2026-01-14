@@ -62,18 +62,20 @@
   </main>
 
   <!-- Mobile Floating Elements (Fixed Bottom) -->
-  <div class="md:hidden fixed bottom-0 left-0 right-0 z-50 flex flex-col">
+  <div
+    class="md:hidden fixed bottom-0 left-0 right-0 z-50 flex flex-col items-stretch pointer-events-none"
+  >
     <!-- Mobile Media Player (Above Nav) -->
     {#if isMediaVisible}
       <div
-        class="w-full pb-[64px] transition-transform duration-300 slide-in-from-bottom-10"
+        class="w-full transition-transform duration-300 slide-in-from-bottom-10 pointer-events-auto bg-[#121212]/95 backdrop-blur-md border-t border-white/10"
       >
         <MediaPlayer />
       </div>
     {/if}
 
-    <!-- Mobile Navigation (Absolute Bottom) -->
-    <div class="absolute bottom-0 w-full">
+    <!-- Mobile Navigation (Stacked Bottom) -->
+    <div class="w-full pointer-events-auto">
       <BottomNav />
     </div>
   </div>

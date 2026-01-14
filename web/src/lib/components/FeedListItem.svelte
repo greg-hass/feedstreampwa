@@ -363,13 +363,16 @@
         </button>
 
         {#if isPlayable}
-          <button
-            class="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/40 hover:text-accent"
-            on:click={handlePlay}
-            title="Play"
-          >
-            <PlayCircle size={18} />
-          </button>
+          <div class="flex items-center gap-2">
+            <button
+              class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-medium text-xs transition-colors border border-white/5"
+              on:click={handlePlay}
+              title="Play Episode"
+            >
+              <PlayCircle size={14} class="fill-current text-accent" />
+              <span>Play</span>
+            </button>
+          </div>
         {/if}
 
         <button
