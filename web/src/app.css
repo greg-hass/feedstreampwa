@@ -27,6 +27,46 @@
   --text-base: #1f2937; /* gray-800 */
 }
 
+/* Light mode text color overrides */
+:root.light .text-white {
+  color: #1f2937 !important;
+}
+:root.light .text-white\/60,
+:root.light .text-white\/50,
+:root.light .text-white\/40,
+:root.light .text-white\/30,
+:root.light .text-white\/20 {
+  color: #6b7280 !important;
+}
+:root.light .text-white\/70,
+:root.light .text-white\/80 {
+  color: #374151 !important;
+}
+:root.light .text-gray-200,
+:root.light .text-gray-300 {
+  color: #4b5563 !important;
+}
+:root.light .bg-white\/5,
+:root.light .bg-white\/10 {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+:root.light .border-white\/5,
+:root.light .border-white\/10 {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+:root.light .bg-\[\#121212\],
+:root.light .bg-\[\#18181b\],
+:root.light .bg-\[\#0e0e11\],
+:root.light .bg-\[\#050507\] {
+  background-color: #ffffff !important;
+}
+:root.light .bg-background {
+  background-color: #f8fafc !important;
+}
+:root.light h1, :root.light h2, :root.light h3, :root.light h4 {
+  color: #111827 !important;
+}
+
 /* Dark theme (explicit) */
 :root.dark {
   --tw-colors-background: #050507;
