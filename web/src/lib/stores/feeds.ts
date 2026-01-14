@@ -2,6 +2,7 @@
 import { writable, derived } from 'svelte/store';
 import type { Feed } from '$lib/types';
 import * as feedsApi from '$lib/api/feeds';
+import * as foldersApi from '$lib/api/folders';
 import { confirmDialog } from '$lib/stores/confirm';
 
 // State
@@ -132,12 +133,12 @@ export async function refreshAll(): Promise<void> {
 }
 
 export async function addToFolder(feedUrl: string, folderId: string): Promise<void> {
-    await feedsApi.addFeedToFolder(feedUrl, folderId);
+    await foldersApi.addFeedToFolder(feedUrl, folderId);
     await loadFeeds();
 }
 
 export async function removeFromFolder(feedUrl: string, folderId: string): Promise<void> {
-    await feedsApi.removeFeedFromFolder(feedUrl, folderId);
+    await foldersApi.removeFeedFromFolder(feedUrl, folderId);
     await loadFeeds();
 }
 
