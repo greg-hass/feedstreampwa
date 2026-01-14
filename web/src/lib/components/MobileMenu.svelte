@@ -664,14 +664,14 @@
       </button>
     </div>
   </aside>
-
-  <!-- Modals (Only render when menu is open/active to keep DOM light, or keep persistent if needed) -->
-  <AIRecommendationsModal
-    bind:isOpen={isAIRecommendationsOpen}
-    on:close={() => (isAIRecommendationsOpen = false)}
-  />
-
-  <FeedHealthModal bind:isOpen={isFeedHealthOpen} />
-
-  <DuplicatesModal bind:isOpen={isDuplicatesOpen} />
 {/if}
+
+<!-- Modals (outside the if block so they persist when menu closes) -->
+<AIRecommendationsModal
+  bind:isOpen={isAIRecommendationsOpen}
+  on:close={() => (isAIRecommendationsOpen = false)}
+/>
+
+<FeedHealthModal bind:isOpen={isFeedHealthOpen} />
+
+<DuplicatesModal bind:isOpen={isDuplicatesOpen} />

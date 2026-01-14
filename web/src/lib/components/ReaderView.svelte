@@ -614,7 +614,7 @@
 
 {#if $showReader}
   <div
-    class="reader-overlay"
+    class="reader-overlay {themeClass}"
     on:click={handleClose}
     on:keydown={handleOverlayKeydown}
     role="button"
@@ -940,6 +940,8 @@
     justify-content: center;
     overflow: hidden;
     animation: fadeIn 0.2s ease;
+    background-color: var(--bg, #121212);
+    color: var(--text, #e5e7eb);
   }
 
   .reader-container {
