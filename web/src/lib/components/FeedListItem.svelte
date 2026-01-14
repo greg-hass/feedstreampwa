@@ -434,15 +434,16 @@
             on:error={handleImageError}
           />
           <div class="absolute inset-0 flex items-center justify-center">
-            <!-- YouTube-style translucent play button -->
+            <!-- Official YouTube-style play button -->
             <div
-              class="w-16 h-16 md:w-12 md:h-12 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center shadow-xl scale-100 group-hover/video:scale-110 group-hover/video:bg-black/70 transition-all"
+              class="w-[68px] h-[48px] md:w-[52px] md:h-[36px] scale-100 group-hover/video:scale-110 transition-transform"
             >
-              <svg
-                viewBox="0 0 24 24"
-                class="w-8 h-8 md:w-6 md:h-6 text-white fill-current ml-1"
-              >
-                <path d="M8 5v14l11-7z" />
+              <svg viewBox="0 0 68 48" class="w-full h-full drop-shadow-lg">
+                <path
+                  d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z"
+                  fill="#FF0000"
+                />
+                <path d="M45 24L27 14v20" fill="#FFF" />
               </svg>
             </div>
           </div>
