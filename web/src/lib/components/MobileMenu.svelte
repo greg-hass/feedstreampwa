@@ -618,7 +618,10 @@
       <!-- AI Recommendations -->
       <button
         class="w-full flex items-center gap-3 px-3 py-2 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 hover:from-purple-500/20 hover:to-pink-500/20 transition-all text-white group"
-        on:click={() => (isAIRecommendationsOpen = true)}
+        on:click={() => {
+          closeMenu();
+          isAIRecommendationsOpen = true;
+        }}
       >
         <Sparkles
           size={24}
@@ -630,7 +633,10 @@
       <!-- Feed Health -->
       <button
         class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors text-white/60 hover:text-white"
-        on:click={() => (isFeedHealthOpen = true)}
+        on:click={() => {
+          closeMenu();
+          isFeedHealthOpen = true;
+        }}
       >
         <Activity size={24} />
         <span class="text-sm font-medium">Feed Health</span>
@@ -639,7 +645,10 @@
       <!-- Duplicates -->
       <button
         class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors text-white/60 hover:text-white"
-        on:click={() => (isDuplicatesOpen = true)}
+        on:click={() => {
+          closeMenu();
+          isDuplicatesOpen = true;
+        }}
       >
         <Copy size={24} class="text-orange-400 group-hover:text-orange-300" />
         <span class="text-sm font-medium">Duplicates</span>
