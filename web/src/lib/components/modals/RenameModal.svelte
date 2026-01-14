@@ -66,7 +66,7 @@
     tabindex="-1"
   >
     <div
-      class="bg-[#18181b] rounded-2xl border border-white/10 max-w-md w-full flex flex-col shadow-2xl overflow-hidden"
+      class="bg-[#18181b] rounded-2xl border border-accent/20 max-w-md w-full flex flex-col shadow-2xl overflow-hidden"
       on:click|stopPropagation
       on:keydown|stopPropagation
       role="dialog"
@@ -112,7 +112,7 @@
             type="text"
             bind:value={newName}
             placeholder="Enter new name..."
-            class="w-full bg-white/5 px-4 py-3.5 rounded-xl text-white placeholder-white/40 border border-white/10 hover:bg-white/10 focus:border-purple-500/50 transition-colors outline-none"
+            class="w-full bg-white/5 px-4 py-3.5 rounded-xl text-white placeholder-white/40 border border-white/10 hover:bg-white/10 focus:border-accent/50 transition-colors outline-none"
             maxlength="100"
             on:keydown={(e) => e.key === "Enter" && handleSubmit()}
             autofocus
@@ -140,7 +140,7 @@
           Cancel
         </button>
         <button
-          class="px-6 py-2 rounded-xl bg-purple-500 text-white hover:bg-purple-600 transition-colors shadow-lg shadow-purple-500/20 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-bold"
+          class="px-6 py-2 rounded-xl bg-accent text-white hover:brightness-110 transition-colors shadow-lg shadow-accent/20 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-bold"
           on:click={handleSubmit}
           disabled={loading || !newName.trim()}
         >

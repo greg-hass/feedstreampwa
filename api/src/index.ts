@@ -13,6 +13,7 @@ import feedRoutes from './routes/feeds.js';
 import itemRoutes from './routes/items.js';
 import folderRoutes from './routes/folders.js';
 import readerRoutes from './routes/reader.js';
+import refreshRoutes from './routes/refresh.js';
 
 // Import services
 import { aiRecommendationService } from './services/ai-recommendations.js';
@@ -163,6 +164,7 @@ const start = async () => {
         fastify.register(itemRoutes);
         fastify.register(folderRoutes);
         fastify.register(readerRoutes);
+        fastify.register(refreshRoutes);
 
         // --- Legacy/Misc Routes (to be refactored later) ---
 
