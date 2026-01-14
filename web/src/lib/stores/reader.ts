@@ -39,6 +39,27 @@ export async function openReader(item: any) {
     showReader.set(true);
     readerError.set(null);
 
+    // For Reddit items, use the RSS content directly (Reddit blocks fetch requests)
+    const isReddit = item.source === 'reddit' || item.feed_kind === 'reddit' || 
+                     (item.url && item.url.includes('reddit.com'));
+    
+    if (isReddit && (item.content || item.summary)) {
+        const formattedData: ReaderData = {
+            url: item.url,
+            title: item.title,
+            byline: item.author || null,
+            excerpt: item.summary || null,
+            siteName: 'Reddit',
+            imageUrl: item.media_thumbnail || null,
+            contentHtml: item.content || item.summary || '',
+            fromCache: false
+        };
+        readerData.set(formattedData);
+        readerCache.set(item.url, formattedData);
+        readerLoading.set(false);
+        return;
+    }
+
     // Check in-memory cache first
     const cached = readerCache.get(item.url);
     if (cached) {
