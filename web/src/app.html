@@ -52,6 +52,11 @@
           }
         }
 
+        var stamp = document.getElementById("build-stamp");
+        if (stamp) {
+          stamp.textContent = stamp.textContent + " | JS_OK";
+        }
+
         window.addEventListener("error", function (event) {
           var message = "Error: " + (event.message || "Unknown error");
           if (event.error && event.error.stack) {
@@ -59,6 +64,21 @@
           }
           showError(message);
         });
+
+        document.addEventListener(
+          "error",
+          function (event) {
+            var target = event.target;
+            if (!target) return;
+            var tag = target.tagName;
+            if (tag === "SCRIPT" && target.src) {
+              showError("Resource failed: " + target.src);
+            } else if (tag === "LINK" && target.href) {
+              showError("Resource failed: " + target.href);
+            }
+          },
+          true
+        );
 
         window.addEventListener("unhandledrejection", function (event) {
           var reason = event.reason;
