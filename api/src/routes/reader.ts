@@ -241,6 +241,7 @@ export default async function readerRoutes(fastify: any, options: any) {
                 
                 const allElements = document.querySelectorAll('*');
                 allElements.forEach((el: Element) => {
+                    const text = el.textContent?.trim() || '';
                     if (boilerplateTexts.some(bp => text === bp || text.startsWith(bp))) {
                         el.remove();
                     }
