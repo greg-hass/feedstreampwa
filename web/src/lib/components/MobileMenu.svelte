@@ -51,6 +51,7 @@
     formatUnreadTotal,
     libraryTotal,
     allArticlesUnread,
+    allArticlesTotal,
   } from "$lib/stores/counts";
   import { folders, createFolder } from "$lib/stores/folders";
   import { toast } from "$lib/stores/toast";
