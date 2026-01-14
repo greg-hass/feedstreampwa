@@ -1,6 +1,7 @@
 <script lang="ts">
   import { refreshState } from "$lib/stores/feeds";
   import { slide } from "svelte/transition";
+  import { X, RefreshCw } from "lucide-svelte";
 
   function close() {
     refreshState.update((s) => ({ ...s, isRefreshing: false }));
@@ -8,117 +9,59 @@
 </script>
 
 {#if $refreshState.isRefreshing}
-  <div class="refresh-toast" transition:slide={{ axis: "y" }}>
-    <div class="toast-content">
-      <div class="toast-header">
-        <span class="toast-title">Refreshing Feeds</span>
-        <button class="toast-close" on:click={close}>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path
-              d="M4 4l8 8M12 4l-8 8"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-            />
-          </svg>
+  <div
+    class="fixed left-1/2 -translate-x-1/2 z-[1500] min-w-[320px] max-w-[400px] bottom-toast"
+    transition:slide={{ axis: "y" }}
+  >
+    <div
+      class="bg-[#18181b] rounded-2xl border border-white/10 shadow-2xl overflow-hidden"
+    >
+      <!-- Header -->
+      <div class="px-5 pt-4 pb-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/20 flex items-center justify-center"
+          >
+            <RefreshCw size={16} class="text-purple-400 animate-spin" />
+          </div>
+          <span class="text-sm font-semibold text-white">Refreshing Feeds</span>
+        </div>
+        <button
+          class="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/40 hover:text-white"
+          on:click={close}
+          aria-label="Close"
+        >
+          <X size={16} />
         </button>
       </div>
-      <div class="toast-progress-text">
-        {$refreshState.current} / {$refreshState.total} • {$refreshState.message ||
-          "Starting..."}
-      </div>
-      <div class="progress-bar">
-        <div
-          class="progress-fill"
-          style="width: {$refreshState.total > 0
-            ? ($refreshState.current / $refreshState.total) * 100
-            : 0}%"
-        ></div>
+
+      <!-- Progress -->
+      <div class="px-5 pb-4 space-y-2">
+        <div class="text-xs text-white/40">
+          {$refreshState.current} / {$refreshState.total} • {$refreshState.message ||
+            "Starting..."}
+        </div>
+        <div class="h-1 bg-white/5 rounded-full overflow-hidden">
+          <div
+            class="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-300"
+            style="width: {$refreshState.total > 0
+              ? ($refreshState.current / $refreshState.total) * 100
+              : 0}%"
+          ></div>
+        </div>
       </div>
     </div>
   </div>
 {/if}
 
 <style>
-  .refresh-toast {
-    position: fixed;
+  .bottom-toast {
     bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    min-width: 320px;
-    max-width: 400px;
-    padding: 16px 20px;
-    z-index: 1500;
-
-    /* Improved visibility */
-    background: #18181b;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-  }
-
-  .toast-content {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .toast-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .toast-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text);
-  }
-
-  .toast-close {
-    width: 24px;
-    height: 24px;
-    padding: 0;
-    background: none;
-    border: none;
-    color: var(--muted);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    transition: all 0.2s;
-  }
-
-  .toast-close:hover {
-    background: var(--panel1);
-    color: var(--text);
-  }
-
-  .toast-progress-text {
-    font-size: 13px;
-    color: var(--muted);
-  }
-
-  .progress-bar {
-    height: 4px;
-    background: var(--panel1);
-    border-radius: 99px;
-    overflow: hidden;
-  }
-
-  .progress-fill {
-    height: 100%;
-    background: rgb(16 185 129); /* Emerald 500 */
-    border-radius: 99px;
-    transition: width 0.3s ease;
   }
 
   @media (max-width: 768px) {
-    .refresh-toast {
-      bottom: calc(
-        80px + env(safe-area-inset-bottom, 16px)
-      ); /* Above bottom nav on mobile */
+    .bottom-toast {
+      bottom: calc(80px + env(safe-area-inset-bottom, 16px));
     }
   }
 </style>
