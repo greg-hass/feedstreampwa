@@ -378,7 +378,9 @@
                               <span class="text-white/30">·</span>
                               <span class="text-xs text-white/40">
                                 {new Date(
-                                  item.published_at || item.created_at
+                                  item.published ||
+                                    item.published_at ||
+                                    item.created_at
                                 ).toLocaleDateString()}
                               </span>
                               {#if item.is_read}

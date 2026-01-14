@@ -156,6 +156,7 @@ const fastify = Fastify({
 // Initialize SQLite database
 const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
+db.pragma('foreign_keys = ON');
 
 // Helper: Check if a column exists in a table
 function columnExists(tableName: string, columnName: string): boolean {
@@ -194,6 +195,7 @@ db.exec(`
     content TEXT,
     published TEXT,
     updated TEXT,
+    read_at TEXT,
     media_thumbnail TEXT,
     media_duration_seconds INTEGER,
     external_id TEXT,
@@ -217,6 +219,23 @@ if (!columnExists('items', 'is_read')) {
 
 // Create index on is_read (safe to run multiple times)
 db.exec(`CREATE INDEX IF NOT EXISTS idx_items_is_read ON items(is_read)`);
+
+// Safe migration: Add read_at column if it doesn't exist
+if (!columnExists('items', 'read_at')) {
+    fastify.log.info('Adding read_at column to items table...');
+    db.exec(`ALTER TABLE items ADD COLUMN read_at TEXT`);
+    fastify.log.info('read_at column added successfully');
+}
+
+// Create index on read_at (safe to run multiple times)
+db.exec(`CREATE INDEX IF NOT EXISTS idx_items_read_at ON items(read_at)`);
+
+// Backfill read_at for already-read items if missing
+db.exec(`
+    UPDATE items
+    SET read_at = COALESCE(published, created_at)
+    WHERE is_read = 1 AND read_at IS NULL
+`);
 
 // Safe migration: Add is_starred column if it doesn't exist
 if (!columnExists('items', 'is_starred')) {
@@ -1639,11 +1658,13 @@ fastify.get('/feeds', async (request, reply) => {
         // Enhance feeds with smartFolder and folders
         const enhancedFeeds = feedsData.map((feed: any) => {
             // Derive smartFolder from kind
-            let smartFolder: 'rss' | 'youtube' | 'reddit' = 'rss';
+            let smartFolder: 'rss' | 'youtube' | 'reddit' | 'podcast' = 'rss';
             if (feed.kind === 'youtube') {
                 smartFolder = 'youtube';
             } else if (feed.kind === 'reddit') {
                 smartFolder = 'reddit';
+            } else if (feed.kind === 'podcast') {
+                smartFolder = 'podcast';
             }
 
             return {
@@ -2250,7 +2271,7 @@ fastify.get('/items', async (request, reply) => {
     }
 
     if (q) {
-        conditions.push('items_fts MATCH ?');
+        conditions.push('fts MATCH ?');
         params.push(q);
     }
 
@@ -2271,7 +2292,7 @@ fastify.get('/items', async (request, reply) => {
         SELECT 
             i.id, i.feed_url, i.source, i.title, i.url, i.author, i.summary, i.content,
             i.published, i.updated, i.media_thumbnail, i.media_duration_seconds,
-            i.external_id, i.raw_guid, i.created_at, i.is_read, i.is_starred, i.playback_position,
+            i.external_id, i.raw_guid, i.created_at, i.is_read, i.is_starred, i.playback_position, i.read_at,
             f.icon_url as feed_icon_url, COALESCE(f.custom_title, f.title) as feed_title
         ${fromClause}
         ${whereClause}
@@ -2303,10 +2324,11 @@ fastify.post('/items/:id/read', async (request, reply) => {
     }
 
     const isRead = body.read ? 1 : 0;
+    const readAt = body.read ? new Date().toISOString() : null;
 
     try {
-        const stmt = db.prepare('UPDATE items SET is_read = ? WHERE id = ?');
-        const result = stmt.run(isRead, id);
+        const stmt = db.prepare('UPDATE items SET is_read = ?, read_at = ? WHERE id = ?');
+        const result = stmt.run(isRead, readAt, id);
 
         if (result.changes === 0) {
             reply.code(404);
@@ -2347,11 +2369,11 @@ fastify.post('/items/mark-all-read', async (request, reply) => {
     const before = body.before || null;
 
     // Validate source if provided
-    if (source && !['generic', 'youtube', 'reddit'].includes(source)) {
+    if (source && !['generic', 'youtube', 'reddit', 'podcast'].includes(source)) {
         reply.code(400);
         return {
             ok: false,
-            error: 'Invalid source. Must be: generic, youtube, or reddit'
+            error: 'Invalid source. Must be: generic, youtube, reddit, or podcast'
         };
     }
 
@@ -2376,10 +2398,11 @@ fastify.post('/items/mark-all-read', async (request, reply) => {
         }
 
         const whereClause = conditions.join(' AND ');
-        const query = `UPDATE items SET is_read = 1 WHERE ${whereClause}`;
+        const now = new Date().toISOString();
+        const query = `UPDATE items SET is_read = 1, read_at = ? WHERE ${whereClause}`;
 
         const stmt = db.prepare(query);
-        const result = stmt.run(...params);
+        const result = stmt.run(now, ...params);
 
         return {
             ok: true,
@@ -2958,12 +2981,12 @@ fastify.get('/stats', async (request, reply) => {
         // Reading activity for last 7 days
         const readByDay = db.prepare(`
             SELECT 
-                DATE(updated_at) as day,
+                DATE(read_at) as day,
                 COUNT(*) as count
             FROM items
             WHERE is_read = 1 
-                AND updated_at >= datetime('now', '-7 days')
-            GROUP BY DATE(updated_at)
+                AND read_at >= datetime('now', '-7 days')
+            GROUP BY DATE(read_at)
             ORDER BY day DESC
             LIMIT 7
         `).all() as Array<{ day: string; count: number }>;
@@ -2981,7 +3004,7 @@ fastify.get('/stats', async (request, reply) => {
         // Calculate reading streak (consecutive days with at least one read article)
         let readingStreak = 0;
         const streakQuery = db.prepare(`
-            SELECT DISTINCT DATE(updated_at) as day
+            SELECT DISTINCT DATE(read_at) as day
             FROM items
             WHERE is_read = 1
             ORDER BY day DESC

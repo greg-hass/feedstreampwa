@@ -321,14 +321,16 @@ export function getPreferredItem(group: DuplicateGroup, keepPreference: Duplicat
   switch (keepPreference) {
     case 'oldest':
       return group.items.reduce((oldest, item) =>
-        new Date(item.published_at || item.created_at) < new Date(oldest.published_at || oldest.created_at)
+        new Date(item.published || item.published_at || item.created_at) <
+            new Date(oldest.published || oldest.published_at || oldest.created_at)
           ? item
           : oldest
       );
 
     case 'newest':
       return group.items.reduce((newest, item) =>
-        new Date(item.published_at || item.created_at) > new Date(newest.published_at || newest.created_at)
+        new Date(item.published || item.published_at || item.created_at) >
+            new Date(newest.published || newest.published_at || newest.created_at)
           ? item
           : newest
       );

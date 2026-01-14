@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
   import {
     readerSettings,
     isSpeaking,
@@ -101,6 +102,14 @@
     medium: "Medium",
     wide: "Wide",
   }[$readerSettings.readingWidth];
+
+  onDestroy(() => {
+    if (speechSynthesis) {
+      speechSynthesis.cancel();
+    }
+    isSpeaking.set(false);
+    currentUtterance = null;
+  });
 </script>
 
 <div class="reader-controls">

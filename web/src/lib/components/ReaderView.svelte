@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy, onMount } from "svelte";
   import {
     showReader,
     readerData,
@@ -89,23 +90,69 @@
   }
 
   // Share functionality
+  async function copyToClipboard(text: string): Promise<boolean> {
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+
+    if (typeof document === "undefined") return false;
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    textarea.style.pointerEvents = "none";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+
+    let copied = false;
+    try {
+      copied = document.execCommand("copy");
+    } catch (e) {
+      copied = false;
+    } finally {
+      document.body.removeChild(textarea);
+    }
+
+    return copied;
+  }
+
   async function handleShare() {
     if (!$currentItem && !$readerData?.url) return;
+
+    const shareUrl =
+      $readerData?.url ||
+      $currentItem?.url ||
+      (typeof window !== "undefined" ? window.location.href : "");
+
+    if (!shareUrl) return;
 
     const shareData = {
       title:
         $readerData?.title || $currentItem?.title || "Article from FeedStream",
       text: $readerData?.excerpt || $currentItem?.summary || undefined,
-      url: $readerData?.url || $currentItem?.url || window.location.href,
+      url: shareUrl,
     };
 
     try {
-      if (navigator.share && navigator.canShare(shareData)) {
+      const canShare =
+        typeof navigator !== "undefined" && typeof navigator.share === "function";
+      const supportsData =
+        canShare && typeof navigator.canShare === "function"
+          ? navigator.canShare(shareData)
+          : canShare;
+
+      if (supportsData) {
         await navigator.share(shareData);
       } else {
         // Fallback: copy to clipboard
-        await navigator.clipboard.writeText(shareData.url || "");
-        alert("Link copied to clipboard!");
+        const copied = await copyToClipboard(shareData.url || "");
+        if (copied) {
+          alert("Link copied to clipboard!");
+        } else {
+          alert(`Copy this link: ${shareData.url || ""}`);
+        }
       }
     } catch (e) {
       console.error("Failed to share:", e);
@@ -155,18 +202,18 @@
     }
   }
 
-  // Listen for PiP exit events
-  if (typeof document !== "undefined") {
-    document.addEventListener("leavepictureinpicture", () => {
-      isInPiP = false;
-    });
-  }
+  const handleLeavePiP = () => {
+    isInPiP = false;
+  };
 
   let ytPlayer: any = null;
   let ytProgressInterval: ReturnType<typeof setInterval> | null = null;
   let ytApiLoaded = false;
   let scrollContainer: HTMLElement | null = null;
   let readTime = 0;
+  let linkTargetTimeout: ReturnType<typeof setTimeout> | null = null;
+  let ytInitTimeout: ReturnType<typeof setTimeout> | null = null;
+  let isDestroyed = false;
 
   // Calculate read time when content changes
   $: if ($readerData?.contentHtml) {
@@ -241,7 +288,10 @@
   }
 
   $: if ($showReader && $readerData && typeof document !== "undefined") {
-    setTimeout(() => {
+    if (linkTargetTimeout) {
+      clearTimeout(linkTargetTimeout);
+    }
+    linkTargetTimeout = setTimeout(() => {
       const container = document.getElementById("reader-body-content");
       if (container) {
         container.querySelectorAll("a").forEach((link: HTMLAnchorElement) => {
@@ -271,7 +321,10 @@
 
     if (!videoId) return;
 
-    setTimeout(() => {
+    if (ytInitTimeout) {
+      clearTimeout(ytInitTimeout);
+    }
+    ytInitTimeout = setTimeout(() => {
       const container = document.getElementById("yt-player-container");
       if (!container) return;
 
@@ -314,6 +367,7 @@
     firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
 
     (window as any).onYouTubeIframeAPIReady = () => {
+      if (isDestroyed) return;
       ytApiLoaded = true;
       initYouTubePlayer();
     };
@@ -377,6 +431,40 @@
       handleClose();
     }
   }
+
+  onMount(() => {
+    if (typeof document === "undefined") return;
+    document.addEventListener("leavepictureinpicture", handleLeavePiP);
+    return () => {
+      document.removeEventListener("leavepictureinpicture", handleLeavePiP);
+    };
+  });
+
+  onDestroy(() => {
+    isDestroyed = true;
+    stopProgressSync();
+
+    if (linkTargetTimeout) {
+      clearTimeout(linkTargetTimeout);
+      linkTargetTimeout = null;
+    }
+
+    if (ytInitTimeout) {
+      clearTimeout(ytInitTimeout);
+      ytInitTimeout = null;
+    }
+
+    if (ytPlayer) {
+      try {
+        ytPlayer.destroy();
+      } catch (e) {}
+      ytPlayer = null;
+    }
+
+    if (typeof window !== "undefined" && (window as any).onYouTubeIframeAPIReady) {
+      (window as any).onYouTubeIframeAPIReady = null;
+    }
+  });
 
   function formatContent(html: string): string {
     if (!html) return "";
@@ -554,7 +642,7 @@
               <div class="article-meta-row">
                 <span class="article-date">
                   {formatDate(
-                    $currentItem?.published_at || $readerData.published_at
+                    $currentItem?.published || $currentItem?.published_at
                   )}
                 </span>
                 <div class="article-actions-mini">

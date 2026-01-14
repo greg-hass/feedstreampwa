@@ -48,6 +48,7 @@ export interface Item {
     is_read: number; // Backend returns 0/1
     is_starred: number; // Backend returns 0/1
     playback_position: number; // Required in backend, not optional
+    read_at?: string | null;
     feed_icon_url?: string;
     feed_title?: string;
     
