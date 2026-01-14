@@ -1,6 +1,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { RefreshCw, Plus, FolderPlus, LayoutGrid, Shuffle } from "lucide-svelte";
+  import {
+    RefreshCw,
+    Plus,
+    FolderPlus,
+    LayoutGrid,
+    Shuffle,
+  } from "lucide-svelte";
 
   // Components
   import MobileHeader from "$lib/components/MobileHeader.svelte";
@@ -269,7 +275,7 @@
         <h1 class="text-3xl font-bold text-white">{pageTitle}</h1>
         <div class="flex items-center gap-2">
           <button
-            class="p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 transition-all shadow-lg shadow-purple-500/20 text-white"
+            class="p-2.5 rounded-xl bg-[#3f3f46] hover:bg-[#52525b] transition-all shadow-lg shadow-black/20 text-white"
             on:click={refreshAll}
             class:spinning={$refreshState.isRefreshing}
             title="Refresh"
@@ -297,12 +303,14 @@
               ? 'ring-2 ring-white/50'
               : ''}"
             on:click={() => diversitySettings.toggle()}
-            title="Source Diversity: {$diversitySettings.enabled ? 'On' : 'Off'} - Highlight diverse sources"
+            title="Source Diversity: {$diversitySettings.enabled
+              ? 'On'
+              : 'Off'} - Highlight diverse sources"
           >
             <Shuffle size={20} />
           </button>
           <button
-            class="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 transition-all shadow-lg shadow-blue-500/20 text-white"
+            class="p-2.5 rounded-xl bg-[#fbbf24] hover:bg-[#f59e0b] transition-all shadow-lg shadow-black/20 text-zinc-900"
             on:click={() => isCreateFolderModalOpen.set(true)}
             title="Add Folder"
           >

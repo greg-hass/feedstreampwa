@@ -470,8 +470,13 @@
     document.addEventListener("leavepictureinpicture", handleLeavePiP);
     return () => {
       document.removeEventListener("leavepictureinpicture", handleLeavePiP);
+      document.body.style.overflow = "";
     };
   });
+
+  $: if (typeof document !== "undefined") {
+    document.body.style.overflow = $showReader ? "hidden" : "";
+  }
 
   onDestroy(() => {
     isDestroyed = true;
@@ -915,9 +920,10 @@
   .reader-scroll-container {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 24px 16px;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
+    overscroll-behavior: none;
   }
 
   @media (min-width: 769px) {
@@ -1170,6 +1176,10 @@
   .reader-body {
     line-height: 1.8;
     letter-spacing: 0.01em;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
   }
 
   .reader-body :global(p) {
