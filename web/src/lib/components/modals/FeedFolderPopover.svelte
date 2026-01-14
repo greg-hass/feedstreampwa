@@ -53,7 +53,6 @@
       close();
     }
   }
-</script>
 
   let windowWidth: number;
   let windowHeight: number;
@@ -67,13 +66,20 @@
 
   $: constrainedY = (() => {
     if (!windowHeight || !boxHeight) return $feedFolderPopover.position.y;
-    // Check if it fits below, otherwise flip to above? 
+    // Check if it fits below, otherwise flip to above?
     // For now, just ensuring it doesn't go off screen bottom
-    return Math.min($feedFolderPopover.position.y, windowHeight - boxHeight - 16);
+    return Math.min(
+      $feedFolderPopover.position.y,
+      windowHeight - boxHeight - 16
+    );
   })();
 </script>
 
-<svelte:window on:keydown={handleKeydown} bind:innerWidth={windowWidth} bind:innerHeight={windowHeight} />
+<svelte:window
+  on:keydown={handleKeydown}
+  bind:innerWidth={windowWidth}
+  bind:innerHeight={windowHeight}
+/>
 
 {#if $feedFolderPopover.isOpen && $feedFolderPopover.feed}
   <div
