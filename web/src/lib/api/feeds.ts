@@ -94,42 +94,6 @@ export async function refreshAllFeeds(): Promise<{ jobId: string }> {
     return response.json();
 }
 
-export async function addFeedToFolder(
-    feedUrl: string,
-    folderId: string
-): Promise<void> {
-    const response = await fetch(`${API_BASE}/folders/${folderId}/feeds`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ feedUrl })
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-            errorData.error || `HTTP ${response.status}: ${response.statusText}`
-        );
-    }
-}
-
-export async function removeFeedFromFolder(
-    feedUrl: string,
-    folderId: string
-): Promise<void> {
-    const response = await fetch(`${API_BASE}/folders/${folderId}/feeds`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ feedUrl })
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-            errorData.error || `HTTP ${response.status}: ${response.statusText}`
-        );
-    }
-}
-
 export interface FeedRecommendation {
     title: string;
     url: string;
