@@ -39,6 +39,11 @@ export async function openReader(item: any) {
     showReader.set(true);
     readerError.set(null);
 
+    // Enable pinch-to-zoom for images in reader view
+    if (typeof window !== 'undefined' && (window as any).setZoomEnabled) {
+        (window as any).setZoomEnabled(true);
+    }
+
     // For Reddit items, use the RSS content directly (Reddit blocks fetch requests)
     const isReddit = item.source === 'reddit' || item.feed_kind === 'reddit' || 
                      (item.url && item.url.includes('reddit.com'));
@@ -149,4 +154,9 @@ export function closeReader() {
     readerError.set(null);
     currentItemUrl.set(null);
     currentItem.set(null);
+
+    // Disable pinch-to-zoom when leaving reader
+    if (typeof window !== 'undefined' && (window as any).setZoomEnabled) {
+        (window as any).setZoomEnabled(false);
+    }
 }

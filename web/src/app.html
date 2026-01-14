@@ -9,9 +9,23 @@
     />
     <link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
     <meta
+      id="viewport-meta"
       name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
+    <script>
+      // Allow zoom control to be toggled by the app
+      window.setZoomEnabled = function(enabled) {
+        var meta = document.getElementById('viewport-meta');
+        if (meta) {
+          if (enabled) {
+            meta.content = 'width=device-width, initial-scale=1, viewport-fit=cover';
+          } else {
+            meta.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover';
+          }
+        }
+      };
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
