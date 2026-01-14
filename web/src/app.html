@@ -19,6 +19,57 @@
       rel="stylesheet"
     />
     <meta name="theme-color" content="#030304" />
+    <script>
+      (function () {
+        function showError(message) {
+          try {
+            var existing = document.getElementById("boot-error");
+            var el = existing || document.createElement("pre");
+            if (!existing) {
+              el.id = "boot-error";
+              el.style.position = "fixed";
+              el.style.zIndex = "99999";
+              el.style.top = "0";
+              el.style.left = "0";
+              el.style.right = "0";
+              el.style.maxHeight = "60vh";
+              el.style.overflow = "auto";
+              el.style.whiteSpace = "pre-wrap";
+              el.style.background = "#111827";
+              el.style.color = "#f87171";
+              el.style.padding = "12px 16px";
+              el.style.fontSize = "12px";
+              el.style.fontFamily = "monospace";
+              document.addEventListener("DOMContentLoaded", function () {
+                if (!document.getElementById("boot-error")) {
+                  document.body.appendChild(el);
+                }
+              });
+            }
+            el.textContent = message;
+          } catch (e) {
+            /* no-op */
+          }
+        }
+
+        window.addEventListener("error", function (event) {
+          var message = "Error: " + (event.message || "Unknown error");
+          if (event.error && event.error.stack) {
+            message += "\n" + event.error.stack;
+          }
+          showError(message);
+        });
+
+        window.addEventListener("unhandledrejection", function (event) {
+          var reason = event.reason;
+          var message = "Unhandled rejection: " + (reason && reason.message ? reason.message : String(reason));
+          if (reason && reason.stack) {
+            message += "\n" + reason.stack;
+          }
+          showError(message);
+        });
+      })();
+    </script>
     %sveltekit.head%
   </head>
 
