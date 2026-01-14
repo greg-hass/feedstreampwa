@@ -64,21 +64,6 @@
   on:touchend={handleTouchEnd}
 />
 
-{#if isPulling || isRefreshing}
-  <div
-    class="fixed top-[130px] left-0 right-0 flex items-center justify-center z-50 transition-all duration-200"
-    style="height: {pullDistance}px; opacity: {pullProgress}"
-  >
-    <div
-      class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30"
-      class:animate-spin={isRefreshing}
-      style="transform: rotate({pullProgress * 360}deg)"
-    >
-      <RefreshCw size={20} class="text-white" />
-    </div>
-  </div>
-{/if}
-
 <style>
   @keyframes spin {
     from {

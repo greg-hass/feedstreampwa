@@ -109,10 +109,10 @@
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <!-- Total Articles -->
             <div
-              class="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20"
+              class="p-4 rounded-xl bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20"
             >
               <div class="flex items-center gap-2 mb-2">
-                <Rss size={16} class="text-blue-400" />
+                <Rss size={16} class="text-accent" />
                 <span class="text-xs text-white/60">Total Articles</span>
               </div>
               <p class="text-3xl font-bold text-white">{stats.totalArticles}</p>
@@ -195,14 +195,14 @@
               <h3
                 class="text-lg font-bold text-white mb-4 flex items-center gap-2"
               >
-                <Clock size={20} class="text-blue-400" />
+                <Clock size={20} class="text-accent" />
                 Reading Activity (Last 7 Days)
               </h3>
               <div class="grid grid-cols-7 gap-2">
                 {#each stats.readByDay as day}
                   <div class="text-center">
                     <div
-                      class="h-20 rounded-lg bg-gradient-to-t from-blue-500/20 to-blue-500/5 border border-blue-500/20 flex items-end justify-center p-2 hover:from-blue-500/30 hover:to-blue-500/10 transition-all"
+                      class="h-20 rounded-lg bg-gradient-to-t from-accent/20 to-accent/5 border border-accent/20 flex items-end justify-center p-2 hover:from-accent/30 hover:to-accent/10 transition-all"
                       title="{day.day}: {day.count} articles"
                     >
                       <div

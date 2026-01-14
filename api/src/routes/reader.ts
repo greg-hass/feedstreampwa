@@ -241,11 +241,29 @@ export default async function readerRoutes(fastify: any, options: any) {
                 
                 const allElements = document.querySelectorAll('*');
                 allElements.forEach((el: Element) => {
-                    const text = (el as HTMLElement).textContent?.trim() || '';
                     if (boilerplateTexts.some(bp => text === bp || text.startsWith(bp))) {
                         el.remove();
                     }
+                    // Remove "submitted by /u/..."
+                    if (text.match(/^submitted by\s+\/u\//i)) {
+                        el.remove();
+                    }
                 });
+            }
+
+            // Clean raw URLs in text (common in Reddit RSS feeds)
+            const walker = document.createTreeWalker(document.body, 4); // SHOW_TEXT
+            let node;
+            while (node = walker.nextNode()) {
+                const val = node.nodeValue || '';
+                // Check for raw preview.redd.it or i.redd.it links
+                if (val.includes('preview.redd.it') || val.includes('i.redd.it')) {
+                     // If it's just a URL (possibly with query params), remove it
+                     // Matches: http(s)://(preview|i).redd.it/...
+                     if (val.trim().match(/^https?:\/\/(preview|i)\.redd\.it\/.+/)) {
+                         node.nodeValue = '';
+                     }
+                }
             }
 
             // Run Readability

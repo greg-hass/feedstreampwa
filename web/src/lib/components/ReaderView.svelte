@@ -694,9 +694,6 @@
                   )}
                 </span>
                 <div class="article-actions-mini">
-                  <button class="meta-action-btn" title="Mark as Read">
-                    <BookOpen size={18} class="text-emerald-400" />
-                  </button>
                   {#if $readerData.url}
                     <a
                       href={$readerData.url}
@@ -752,7 +749,7 @@
                     class="meta-sep">•</span
                   >{/if}
                 {#if $readerData.fromCache}
-                  <span class="flex items-center gap-1 text-emerald-400">
+                  <span class="flex items-center gap-1 text-accent">
                     <Database size={12} />
                     Offline
                   </span>
@@ -988,7 +985,7 @@
   }
 
   .theme-circle.active {
-    border-color: #a855f7;
+    border-color: var(--accent-color);
     transform: scale(1.15);
   }
 
@@ -1202,7 +1199,7 @@
   }
 
   .reader-body :global(blockquote) {
-    border-left: 4px solid #a855f7;
+    border-left: 4px solid var(--accent-color);
     padding-left: 1.5em;
     margin: 2em 0;
     font-style: italic;
@@ -1250,7 +1247,7 @@
     width: 32px;
     height: 32px;
     border: 3px solid rgba(128, 128, 128, 0.2);
-    border-top-color: #a855f7;
+    border-top-color: var(--accent-color);
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }

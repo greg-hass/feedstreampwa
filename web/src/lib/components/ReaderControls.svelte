@@ -144,7 +144,7 @@
           <Type size={16} />
           <span class="text-sm font-medium">Size</span>
         </div>
-        <span class="text-xs font-bold text-purple-400">{fontSizeLabel}</span>
+        <span class="text-xs font-bold text-accent">{fontSizeLabel}</span>
       </button>
 
       <!-- Font Family -->
@@ -157,7 +157,7 @@
           <Type size={16} />
           <span class="text-sm font-medium">Font</span>
         </div>
-        <span class="text-xs font-bold text-blue-400">{fontFamilyLabel}</span>
+        <span class="text-xs font-bold text-accent">{fontFamilyLabel}</span>
       </button>
 
       <!-- Reading Width -->
@@ -170,7 +170,7 @@
           <AlignLeft size={16} />
           <span class="text-sm font-medium">Width</span>
         </div>
-        <span class="text-xs font-bold text-cyan-400">{widthLabel}</span>
+        <span class="text-xs font-bold text-accent">{widthLabel}</span>
       </button>
 
       <!-- Text to Speech -->

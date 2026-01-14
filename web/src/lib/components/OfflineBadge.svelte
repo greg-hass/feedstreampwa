@@ -16,7 +16,9 @@
 </script>
 
 <div
-  class="inline-flex items-center rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium {sizeClasses[size]}"
+  class="inline-flex items-center rounded-full bg-accent/10 border border-accent/20 text-accent font-medium {sizeClasses[
+    size
+  ]}"
   title="Saved for offline reading"
 >
   <Database size={iconSize[size]} />

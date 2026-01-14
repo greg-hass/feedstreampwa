@@ -63,10 +63,11 @@
   }
 
   .chip.active {
-    background: white;
-    color: black;
-    border-color: white;
+    background: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
     font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 
   /* Mobile Filter Chips */

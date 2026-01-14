@@ -10,9 +10,13 @@
   let loading = false;
   let error: string | null = null;
 
-  $: if ($renameModal.isOpen) {
+  let wasOpen = false;
+  $: if ($renameModal.isOpen && !wasOpen) {
     newName = $renameModal.currentName;
     error = null;
+    wasOpen = true;
+  } else if (!$renameModal.isOpen) {
+    wasOpen = false;
   }
 
   async function handleSubmit() {

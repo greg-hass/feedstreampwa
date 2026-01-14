@@ -31,13 +31,13 @@
   const colors = {
     danger: "text-red-400",
     warning: "text-yellow-400",
-    info: "text-blue-400",
+    info: "text-accent",
   };
 
   const bgs = {
     danger: "bg-red-500/10 border-red-500/20",
     warning: "bg-yellow-500/10 border-yellow-500/20",
-    info: "bg-blue-500/10 border-blue-500/20",
+    info: "bg-accent/10 border-accent/20",
   };
 </script>
 

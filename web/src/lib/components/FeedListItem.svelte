@@ -153,7 +153,7 @@
       icon: Radio,
     },
     rss: {
-      color: "text-emerald-400",
+      color: "text-accent",
       icon: Rss,
     },
   };
@@ -283,7 +283,7 @@
 
     <!-- Feed Title + Timestamp + Read Time -->
     <div class="flex-1 min-w-0 flex items-center gap-2 text-sm pt-1 flex-wrap">
-      <span class="font-bold text-indigo-400 truncate">{item.feed_title}</span>
+      <span class="font-bold text-accent truncate">{item.feed_title}</span>
       {#if isCached}
         <OfflineBadge size="sm" showText={false} />
       {/if}

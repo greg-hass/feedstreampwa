@@ -21,7 +21,8 @@
 
   $: backgroundColor = (() => {
     if (!isSwiping) return "transparent";
-    if (swipeDistance > 0) return `rgba(16, 185, 129, ${swipeProgress * 0.3})`;
+    if (swipeDistance > 0)
+      return `rgba(var(--accent-color-rgb), ${swipeProgress * 0.3})`;
     if (swipeDistance < 0) return `rgba(251, 146, 60, ${swipeProgress * 0.3})`;
     return "transparent";
   })();
@@ -160,8 +161,8 @@
     {#if isSwiping && swipeDistance > 0}
       <!-- Mark as Read indicator (right swipe) -->
       <div class="swipe-indicator left" style="opacity: {swipeProgress}">
-        <CheckCircle2 size={24} class="text-emerald-400" />
-        <span class="text-sm font-semibold text-emerald-400">Mark Read</span>
+        <CheckCircle2 size={24} class="text-accent" />
+        <span class="text-sm font-semibold text-accent">Mark Read</span>
       </div>
     {:else if isSwiping && swipeDistance < 0}
       <!-- Bookmark indicator (left swipe) -->

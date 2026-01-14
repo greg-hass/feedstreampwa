@@ -59,7 +59,6 @@
 
 {#if $feedFolderPopover.isOpen && $feedFolderPopover.feed}
   <div
-    <div
     class="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4 md:bg-transparent md:z-[2000]"
     on:click={close}
     on:keydown={(e) => e.key === "Enter" && close()}
