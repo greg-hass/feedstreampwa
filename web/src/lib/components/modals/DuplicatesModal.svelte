@@ -10,7 +10,6 @@
     Settings2,
     RefreshCw,
   } from "lucide-svelte";
-  import { isDuplicatesModalOpen } from "$lib/stores/ui";
   import {
     duplicates,
     duplicateSettings,
@@ -23,11 +22,13 @@
   import { toggleRead, toggleStar } from "$lib/stores/items";
   import { toast } from "$lib/stores/toast";
 
+  export let isOpen = false;
+
   let showSettings = false;
   let scanning = false;
 
   function closeModal() {
-    isDuplicatesModalOpen.set(false);
+    isOpen = false;
   }
 
   async function scanForDuplicates() {
@@ -88,7 +89,7 @@
   }
 </script>
 
-{#if $isDuplicatesModalOpen}
+{#if isOpen}
   <div
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
   >
