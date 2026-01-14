@@ -147,7 +147,7 @@
       class="text-2xl font-bold tracking-tight text-white flex items-center gap-2"
     >
       <div
-        class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/20"
+        class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20"
       >
         <Rss size={18} class="text-white" />
       </div>
