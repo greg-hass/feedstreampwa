@@ -85,7 +85,7 @@
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-      const res = await fetch("http://localhost:3000/rules", {
+      const res = await fetch("/api/rules", {
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
@@ -107,7 +107,7 @@
   async function handleCreateRule() {
     if (!newRule.keyword) return;
     try {
-      await fetch("http://localhost:3000/rules", {
+      await fetch("/api/rules", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newRule),
@@ -121,7 +121,7 @@
 
   async function handleDeleteRule(id: string) {
     try {
-      await fetch(`http://localhost:3000/rules/${id}`, { method: "DELETE" });
+      await fetch(`/api/rules/${id}`, { method: "DELETE" });
       await loadRules();
     } catch (e) {
       console.error("Failed to delete rule:", e);
@@ -143,7 +143,7 @@
 
   async function loadBackups() {
     try {
-      const res = await fetch(`http://localhost:3000/backups`);
+      const res = await fetch(`/api/backups`);
       const data = await res.json();
       if (data.ok) {
         backups = data.backups;
@@ -471,38 +471,14 @@
         {#if activeTab === "general"}
           <!-- General Settings -->
           <div class="space-y-8">
-            <!-- Theme Mode -->
+            <!-- Appearance - Accent Color -->
             <div class="space-y-3">
               <span
                 class="text-sm font-semibold text-white flex items-center gap-2"
               >
                 <Palette size={16} />
-                Appearance
+                Accent Color
               </span>
-
-              <!-- Light/Dark/System -->
-              <div class="grid grid-cols-3 gap-3">
-                {#each ["light", "dark", "system"] as mode}
-                  {@const isActive = $theme.mode === mode}
-                  {@const icon =
-                    mode === "light" ? Sun : mode === "dark" ? Moon : Monitor}
-                  <button
-                    type="button"
-                    class="p-3 rounded-xl border transition-all text-left flex items-center gap-2 {isActive
-                      ? 'bg-accent/10 border-accent text-white'
-                      : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:border-white/20'}"
-                    on:click={() => handleThemeChange(mode)}
-                  >
-                    <svelte:component this={icon} size={18} />
-                    <div>
-                      <div class="font-medium text-sm capitalize">{mode}</div>
-                      <div class="text-[11px] opacity-60">
-                        {mode === "system" ? "Follow system" : `${mode} mode`}
-                      </div>
-                    </div>
-                  </button>
-                {/each}
-              </div>
             </div>
 
             <!-- Color Schemes -->
