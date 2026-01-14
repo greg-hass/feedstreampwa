@@ -641,19 +641,6 @@
         </div>
 
         <div class="header-controls-row">
-          <div class="theme-picker">
-            {#each themes as t}
-              <button
-                class="theme-circle {$readerSettings.theme === t.id
-                  ? 'active'
-                  : ''}"
-                style="background-color: {t.color}"
-                on:click={() => readerSettings.setTheme(t.id)}
-                title={t.label}
-              ></button>
-            {/each}
-          </div>
-
           <div class="zoom-controls">
             <button on:click={decreaseFontSize} title="Decrease Font Size">
               <ZoomOut size={18} />
