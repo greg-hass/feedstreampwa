@@ -2512,6 +2512,25 @@ fastify.patch('/items/:id/playback-position', async (request, reply) => {
     }
 });
 
+// Delete a single item
+fastify.delete('/items/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    try {
+        const result = db.prepare('DELETE FROM items WHERE id = ?').run(id);
+        if (result.changes === 0) {
+            reply.code(404);
+            return { ok: false, error: 'Item not found' };
+        }
+        fastify.log.info(`Deleted item: ${id}`);
+        return { ok: true, deleted: id };
+    } catch (error: any) {
+        fastify.log.error(error);
+        reply.code(500);
+        return { ok: false, error: 'Database error' };
+    }
+});
+
 // Helper: Normalize and resolve absolute URLs
 function normalizeUrl(url: string, baseUrl?: string): string {
     try {
