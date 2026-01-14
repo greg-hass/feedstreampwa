@@ -54,7 +54,9 @@
   <main
     class="relative w-full min-h-screen md:pl-[280px] pb-[140px] md:pb-0 transition-all duration-300 ease-out overflow-x-hidden"
   >
-    <div class="w-full max-w-[1600px] mx-auto p-2 md:p-6 lg:p-8">
+    <div
+      class="w-full max-w-[1600px] mx-auto p-2 md:px-6 md:pt-6 lg:px-8 lg:pt-6"
+    >
       <ErrorBoundary>
         <slot />
       </ErrorBoundary>
