@@ -147,7 +147,7 @@
     } else if ($viewMode === "unread") {
       return "Unread";
     } else if ($viewMode === "bookmarks") {
-      return "Starred";
+      return "Bookmarks";
     }
     return "All Articles";
   })();
