@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { page } from "$app/stores";
   import {
     LayoutDashboard,
@@ -51,6 +52,7 @@
     formatCount,
     feedsTree,
     folderUnreadCounts,
+    fetchBookmarksTotal,
   } from "$lib/stores/counts";
   import { loadFolders, folders, createFolder } from "$lib/stores/folders";
   import { loadFeeds, feeds } from "$lib/stores/feeds";
@@ -62,6 +64,10 @@
   let isFeedHealthOpen = false;
   let isDuplicatesOpen = false;
   import { toast } from "$lib/stores/toast";
+
+  onMount(() => {
+    fetchBookmarksTotal();
+  });
 
   // Navigation Items
   const navItems = [

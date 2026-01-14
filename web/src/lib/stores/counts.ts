@@ -1,9 +1,24 @@
 // Counts store - derived counts for navigation badges
-import { derived, get } from 'svelte/store';
+import { derived, get, writable } from 'svelte/store';
 import { feeds, totalUnread, rssUnread, youtubeUnread, redditUnread, podcastUnread } from './feeds';
 import { items, bookmarkedCount } from './items';
 import { folders } from './folders';
 import type { Feed } from '$lib/types';
+
+// True bookmark count from API (not just loaded items)
+export const bookmarksTotalFromAPI = writable<number>(0);
+
+export async function fetchBookmarksTotal() {
+  try {
+    const response = await fetch('/api/items?starredOnly=1&limit=1');
+    const data = await response.json();
+    if (data.ok && typeof data.total === 'number') {
+      bookmarksTotalFromAPI.set(data.total);
+    }
+  } catch (e) {
+    console.error('Failed to fetch bookmarks total:', e);
+  }
+}
 
 // Feed type to smart folder mapping
 const feedTypeToSmartFolder: Record<string, 'rss' | 'youtube' | 'reddit' | 'podcast'> = {
@@ -33,8 +48,11 @@ export const allArticlesTotal = derived(feeds, ($feeds) =>
   }, 0)
 );
 
-// Library: total bookmarked items
-export const libraryTotal = derived(bookmarkedCount, ($bookmarkedCount) => $bookmarkedCount);
+// Library: total bookmarked items (prefer API count, fallback to local)
+export const libraryTotal = derived(
+  [bookmarksTotalFromAPI, bookmarkedCount],
+  ([$apiTotal, $localCount]) => $apiTotal > 0 ? $apiTotal : $localCount
+);
 
 // Smart Folders: unread/total for each
 export const smartFolderCounts = derived(
