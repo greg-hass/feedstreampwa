@@ -1082,6 +1082,7 @@ async function fetchFeed(url: string, force: boolean): Promise<any> {
 
         // Process items
         const items = feed.items || [];
+        const seenItemIds = new Set<string>();
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
             const normalized = normalizeItem(item, kind);
@@ -1099,6 +1100,7 @@ async function fetchFeed(url: string, force: boolean): Promise<any> {
             // Generate stable ID
             const idSource = normalized.external_id || normalized.raw_guid || normalized.url || normalized.title || `${url}-${i}`;
             const id = createHash('sha256').update(`${url}|${idSource}`).digest('hex');
+            seenItemIds.add(id);
 
             try {
                 upsertItem.run(
@@ -1137,6 +1139,27 @@ async function fetchFeed(url: string, force: boolean): Promise<any> {
         const afterCount = (countItemsByFeed.get(url) as any)?.count || 0;
         const newItems = afterCount - beforeCount;
 
+        // Clean up orphaned items with future dates that are no longer in the feed
+        let orphanedCount = 0;
+        if (seenItemIds.size > 0) {
+            const placeholders = [...seenItemIds].map(() => '?').join(',');
+            const orphanedItems = db.prepare(`
+                SELECT id, title FROM items 
+                WHERE feed_url = ? 
+                  AND published > ?
+                  AND id NOT IN (${placeholders})
+            `).all(url, now, ...seenItemIds) as { id: string; title: string }[];
+
+            if (orphanedItems.length > 0) {
+                const deleteStmt = db.prepare('DELETE FROM items WHERE id = ?');
+                for (const orphan of orphanedItems) {
+                    deleteStmt.run(orphan.id);
+                    fastify.log.info(`Cleaned up orphaned future-dated item: ${orphan.title}`);
+                }
+                orphanedCount = orphanedItems.length;
+            }
+        }
+
         return {
             url,
             kind,
@@ -1144,7 +1167,8 @@ async function fetchFeed(url: string, force: boolean): Promise<any> {
             title,
             newItems,
             totalItemsParsed: items.length,
-            totalItemsStored: afterCount,
+            totalItemsStored: afterCount - orphanedCount,
+            orphanedRemoved: orphanedCount,
             error: null
         };
     } catch (error: any) {
