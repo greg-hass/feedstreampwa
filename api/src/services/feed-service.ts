@@ -71,7 +71,7 @@ const rssParser = new Parser({
             ['itunes:author', 'itunesAuthor'],
             ['itunes:summary', 'itunesSummary'],
             ['itunes:category', 'itunesCategory']
-        ],
+        ] as any,
         item: [
             ['media:thumbnail', 'mediaThumbnail'],
             ['media:content', 'mediaContent'],
@@ -81,7 +81,7 @@ const rssParser = new Parser({
             ['itunes:image', 'itunesImage'],
             ['itunes:duration', 'itunesDuration'],
             ['content:encoded', 'contentEncoded']
-        ]
+        ] as any
     }
 });
 

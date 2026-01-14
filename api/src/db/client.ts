@@ -1,10 +1,12 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
+import type { Database as DatabaseType } from 'better-sqlite3';
+
 const DB_PATH = process.env.DB_PATH || '/data/feedstream.sqlite';
 
 // Initialize SQLite database
-const db = new Database(DB_PATH);
+const db: DatabaseType = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
