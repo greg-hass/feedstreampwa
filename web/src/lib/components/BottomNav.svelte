@@ -153,6 +153,6 @@
 
 <style>
   .safe-bottom {
-    padding-bottom: calc(8px + env(safe-area-inset-bottom, 20px));
+    padding-bottom: calc(4px + env(safe-area-inset-bottom, 16px));
   }
 </style>

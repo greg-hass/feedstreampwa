@@ -116,7 +116,9 @@
 
   @media (max-width: 768px) {
     .refresh-toast {
-      bottom: 96px; /* Above bottom nav on mobile */
+      bottom: calc(
+        80px + env(safe-area-inset-bottom, 16px)
+      ); /* Above bottom nav on mobile */
     }
   }
 </style>
