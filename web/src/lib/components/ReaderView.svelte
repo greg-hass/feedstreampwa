@@ -93,6 +93,39 @@
     showDiscussions = !showDiscussions;
   }
 
+  let heroImageError = false;
+
+  function handleHeroImageError() {
+    heroImageError = true;
+  }
+
+  // Reset hero error when item changes
+  $: if ($currentItem?.id) {
+    heroImageError = false;
+  }
+
+  // Handle broken images in content
+  afterUpdate(() => {
+    if (typeof document === "undefined") return;
+
+    const contentImages = document.querySelectorAll("#reader-body-content img");
+    contentImages.forEach((img) => {
+      // Remove existing listener to avoid duplicates if possible, or just rely on idempotency
+      // Better: check if we already processed it
+      if (img.getAttribute("data-error-handled")) return;
+
+      img.addEventListener("error", function () {
+        this.style.display = "none";
+        // Also try to hide parent figure if it exists and has no other content
+        if (this.parentElement && this.parentElement.tagName === "FIGURE") {
+          this.parentElement.style.display = "none";
+        }
+      });
+
+      img.setAttribute("data-error-handled", "true");
+    });
+  });
+
   async function handleDelete() {
     if (!$currentItem) return;
     const itemId = $currentItem.id;
@@ -769,8 +802,13 @@
               </div>
             {/if}
 
-            {#if $readerData.imageUrl && !($readerData.url && ($readerData.url.includes("youtube.com/watch") || $readerData.url.includes("youtu.be/")))}
-              <img src={$readerData.imageUrl} alt="" class="reader-hero" />
+            {#if $readerData.imageUrl && !heroImageError && !($readerData.url && ($readerData.url.includes("youtube.com/watch") || $readerData.url.includes("youtu.be/")))}
+              <img
+                src={$readerData.imageUrl}
+                alt=""
+                class="reader-hero"
+                on:error={handleHeroImageError}
+              />
             {/if}
             <div
               class="reader-body {fontSizeClass} {fontFamilyClass} {maxWidthClass} mx-auto"

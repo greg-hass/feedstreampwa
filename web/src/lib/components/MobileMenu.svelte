@@ -211,11 +211,6 @@
             {formatUnreadTotal($allArticlesUnread, $allArticlesTotal)}
           </span>
         {/if}
-        {#if $viewMode === "all"}
-          <div
-            class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(var(--accent-color-rgb),0.5)]"
-          ></div>
-        {/if}
       </button>
 
       <!-- Unread Button -->
@@ -246,11 +241,6 @@
           >
             {$allArticlesUnread}
           </span>
-        {/if}
-        {#if $viewMode === "unread"}
-          <div
-            class="absolute inset-y-0 left-0 w-1 bg-blue-400 rounded-r-full shadow-[0_0_10px_2px_rgba(96,165,250,0.5)]"
-          ></div>
         {/if}
       </button>
 
@@ -283,11 +273,6 @@
           >
             {$libraryTotal}
           </span>
-        {/if}
-        {#if $viewMode === "bookmarks"}
-          <div
-            class="absolute inset-y-0 left-0 w-1 bg-[#FF9500] rounded-r-full shadow-[0_0_10px_2px_rgba(255,149,0,0.5)]"
-          ></div>
         {/if}
       </button>
 
@@ -327,11 +312,6 @@
             {formatUnreadTotal($rssCount.unread, $rssCount.total)}
           </span>
         {/if}
-        {#if $viewMode === "smart" && $activeSmartFolder === "rss"}
-          <div
-            class="absolute inset-y-0 left-0 w-1 bg-emerald-400 rounded-r-full shadow-[0_0_10px_2px_rgba(52,211,153,0.5)]"
-          ></div>
-        {/if}
       </button>
 
       <button
@@ -362,11 +342,6 @@
           >
             {formatUnreadTotal($youtubeCount.unread, $youtubeCount.total)}
           </span>
-        {/if}
-        {#if $viewMode === "smart" && $activeSmartFolder === "youtube"}
-          <div
-            class="absolute inset-y-0 left-0 w-1 bg-red-500 rounded-r-full shadow-[0_0_10px_2px_rgba(239,68,68,0.5)]"
-          ></div>
         {/if}
       </button>
 
@@ -399,11 +374,6 @@
             {formatUnreadTotal($redditCount.unread, $redditCount.total)}
           </span>
         {/if}
-        {#if $viewMode === "smart" && $activeSmartFolder === "reddit"}
-          <div
-            class="absolute inset-y-0 left-0 w-1 bg-orange-400 rounded-r-full shadow-[0_0_10px_2px_rgba(251,146,60,0.5)]"
-          ></div>
-        {/if}
       </button>
 
       <button
@@ -434,11 +404,6 @@
           >
             {formatUnreadTotal($podcastCount.unread, $podcastCount.total)}
           </span>
-        {/if}
-        {#if $viewMode === "smart" && $activeSmartFolder === "podcast"}
-          <div
-            class="absolute inset-y-0 left-0 w-1 bg-indigo-400 rounded-r-full shadow-[0_0_10px_2px_rgba(129,140,248,0.5)]"
-          ></div>
         {/if}
       </button>
 
@@ -523,11 +488,6 @@
                   </span>
                 {/if}
               </div>
-              {#if $viewMode === "folder" && $activeFolderId === folder.id}
-                <div
-                  class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(var(--accent-color-rgb),0.5)]"
-                ></div>
-              {/if}
             </button>
 
             <!-- Nested Feeds -->
@@ -646,11 +606,6 @@
                 </span>
               {/if}
             </div>
-            {#if $viewMode === "feed" && $selectedFeedUrl === feed.url}
-              <div
-                class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(var(--accent-color-rgb),0.5)]"
-              ></div>
-            {/if}
           </button>
         {/each}
       {/if}

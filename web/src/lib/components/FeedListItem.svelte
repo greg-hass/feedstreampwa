@@ -246,10 +246,21 @@
       longPressTimer = null;
     }
   }
+  // Track image loading errors
+  let imageError = false;
+
+  function handleImageError() {
+    imageError = true;
+  }
+
+  // Reset error state when item changes
+  $: if (item.id) {
+    imageError = false;
+  }
 </script>
 
 <article
-  class="group relative flex flex-col {densityClasses.padding} border-b transition-all duration-200 cursor-pointer overflow-hidden
+  class="group relative flex flex-col md:flex-row {densityClasses.padding} border-b transition-all duration-200 cursor-pointer overflow-hidden
   {isSelected
     ? 'bg-blue-500/10 border-blue-500/30'
     : 'border-white/5 hover:bg-white/[0.02] hover:border-white/10'}"
@@ -262,62 +273,132 @@
   tabindex="0"
   role="button"
 >
-  <!-- Header: Feed Icon + Feed Title + Timestamp -->
-  <div class="flex items-start gap-3 {densityClasses.headerSpacing}">
-    <!-- Feed Icon -->
-    <div class="flex-shrink-0">
+  <!-- Left Column: Content -->
+  <div class="flex-1 min-w-0 flex flex-col">
+    <!-- Header: Feed Icon + Feed Title + Timestamp -->
+    <div class="flex items-start gap-3 {densityClasses.headerSpacing}">
+      <!-- Feed Icon -->
+      <div class="flex-shrink-0">
+        <div
+          class="{densityClasses.iconSize} rounded-full bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-white/10 transition-colors"
+        >
+          {#if item.feed_icon_url}
+            <img
+              src={item.feed_icon_url}
+              alt=""
+              class="{densityClasses.iconInnerSize} object-contain opacity-80"
+            />
+          {:else}
+            <svelte:component
+              this={Icon}
+              size={20}
+              class={currentStyle.color}
+            />
+          {/if}
+        </div>
+      </div>
+
+      <!-- Feed Title + Timestamp + Read Time -->
       <div
-        class="{densityClasses.iconSize} rounded-full bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-white/10 transition-colors"
+        class="flex-1 min-w-0 flex items-center gap-2 text-sm pt-1 flex-wrap"
       >
-        {#if item.feed_icon_url}
-          <img
-            src={item.feed_icon_url}
-            alt=""
-            class="{densityClasses.iconInnerSize} object-contain opacity-80"
-          />
-        {:else}
-          <svelte:component this={Icon} size={20} class={currentStyle.color} />
+        <span class="font-bold text-accent truncate">{item.feed_title}</span>
+        {#if isCached}
+          <OfflineBadge size="sm" showText={false} />
+        {/if}
+        {#if showDiversityBadge}
+          <span
+            class="px-1.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-[8px] font-semibold text-cyan-400"
+            title="New source - explore diverse content">NEW</span
+          >
+        {/if}
+        <span class="text-white/30">•</span>
+        <span class="text-orange-400 whitespace-nowrap">{timeAgo}</span>
+        {#if readTimeText}
+          <span class="text-white/30">•</span>
+          <span class="text-white/40 whitespace-nowrap flex items-center gap-1">
+            <Clock size={12} />
+            {readTimeText}
+          </span>
         {/if}
       </div>
     </div>
 
-    <!-- Feed Title + Timestamp + Read Time -->
-    <div class="flex-1 min-w-0 flex items-center gap-2 text-sm pt-1 flex-wrap">
-      <span class="font-bold text-accent truncate">{item.feed_title}</span>
-      {#if isCached}
-        <OfflineBadge size="sm" showText={false} />
-      {/if}
-      {#if showDiversityBadge}
-        <span
-          class="px-1.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-[8px] font-semibold text-cyan-400"
-          title="New source - explore diverse content">NEW</span
+    <!-- Article Title (Full Width) -->
+    <h3
+      class="{densityClasses.titleSize} font-semibold leading-snug transition-colors {densityClasses.spacing} {item.is_read
+        ? 'text-gray-400 font-normal'
+        : 'text-white'}"
+    >
+      {item.title}
+    </h3>
+
+    <!-- Actions Bar -->
+    <div class="flex items-center justify-between pt-2 mt-auto">
+      <div class="flex items-center gap-4">
+        <button
+          class="p-1.5 -ml-1.5 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-1.5 {item.is_read
+            ? 'text-emerald-400'
+            : 'text-white/40 hover:text-white'}"
+          on:click={handleRead}
+          title={item.is_read ? "Mark as Unread" : "Mark as Read"}
         >
-      {/if}
-      <span class="text-white/30">•</span>
-      <span class="text-orange-400 whitespace-nowrap">{timeAgo}</span>
-      {#if readTimeText}
-        <span class="text-white/30">•</span>
-        <span class="text-white/40 whitespace-nowrap flex items-center gap-1">
-          <Clock size={12} />
-          {readTimeText}
-        </span>
-      {/if}
+          {#if item.is_read}
+            <CheckCircle2 size={18} />
+          {:else}
+            <div
+              class="w-[18px] h-[18px] border-2 border-current rounded-full"
+            ></div>
+          {/if}
+        </button>
+
+        <button
+          class="p-1.5 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-1.5 {item.is_starred
+            ? 'text-orange-400'
+            : 'text-white/40 hover:text-white'}"
+          on:click={handleStar}
+          title="Bookmark"
+        >
+          <Bookmark size={18} class={item.is_starred ? "fill-current" : ""} />
+        </button>
+
+        {#if isPlayable}
+          <button
+            class="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/40 hover:text-accent"
+            on:click={handlePlay}
+            title="Play"
+          >
+            <PlayCircle size={18} />
+          </button>
+        {/if}
+
+        <button
+          class="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-blue-400 transition-colors"
+          on:click={handleShare}
+          title="Share"
+        >
+          <Share2 size={18} />
+        </button>
+
+        <a
+          href={item.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-blue-400 transition-colors"
+          on:click|stopPropagation
+          title="Open Link"
+        >
+          <ExternalLink size={18} />
+        </a>
+      </div>
     </div>
   </div>
 
-  <!-- Article Title (Full Width) -->
-  <h3
-    class="{densityClasses.titleSize} font-semibold leading-snug transition-colors {densityClasses.spacing} {item.is_read
-      ? 'text-gray-400 font-normal'
-      : 'text-white'}"
-  >
-    {item.title}
-  </h3>
-
-  <!-- Media (Image or Video) - Full Width Below Title -->
+  <!-- Right Column: Media (Thumbnail on Desktop) -->
   {#if youtubeVideoId}
+    <!-- YouTube: Full width on mobile/tablet, Thumbnail on desktop -->
     <div
-      class="w-full aspect-video rounded-xl overflow-hidden bg-black {densityClasses.mediaSpacing} border border-white/10"
+      class="w-full aspect-video md:w-48 md:h-32 md:aspect-auto md:flex-shrink-0 md:ml-4 rounded-xl overflow-hidden bg-black {densityClasses.mediaSpacing} md:mb-0 border border-white/10 mt-3 md:mt-0"
       on:click|stopPropagation
       role="none"
     >
@@ -343,93 +424,38 @@
             alt={item.title}
             class="w-full h-full object-cover opacity-100 transition-opacity"
             loading="lazy"
+            on:error={handleImageError}
           />
           <div
             class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover/video:bg-black/10 transition-colors"
           >
+            <!-- Start button smaller on desktop? Or relying on scaling -->
             <div
-              class="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-2xl scale-100 group-hover/video:scale-110 transition-transform"
+              class="w-14 h-14 md:w-10 md:h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-2xl scale-100 group-hover/video:scale-110 transition-transform"
             >
-              <PlayCircle size={32} class="text-white fill-white/20" />
+              <PlayCircle
+                size={32}
+                class="text-white fill-white/20 md:w-6 md:h-6"
+              />
             </div>
           </div>
         </div>
       {/if}
     </div>
-  {:else if thumbnailUrl}
+  {:else if thumbnailUrl && !imageError}
+    <!-- Image: Full width on mobile, Thumbnail on desktop -->
     <div
-      class="w-full aspect-video sm:aspect-[2/1] rounded-xl overflow-hidden bg-white/5 {densityClasses.mediaSpacing} border border-white/5"
+      class="w-full aspect-video sm:aspect-[2/1] md:w-48 md:h-32 md:aspect-auto md:flex-shrink-0 md:ml-4 rounded-xl overflow-hidden bg-white/5 {densityClasses.mediaSpacing} md:mb-0 border border-white/5 mt-3 md:mt-0"
     >
       <img
         src={thumbnailUrl}
         alt={item.title}
         class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
         loading="lazy"
+        on:error={handleImageError}
       />
     </div>
   {/if}
-
-  <!-- Actions Bar -->
-  <div
-    class="flex items-center justify-between pt-2 mt-1 border-t border-white/5"
-  >
-    <div class="flex items-center gap-4">
-      <button
-        class="p-1.5 -ml-1.5 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-1.5 {item.is_read
-          ? 'text-emerald-400'
-          : 'text-white/40 hover:text-white'}"
-        on:click={handleRead}
-        title={item.is_read ? "Mark as Unread" : "Mark as Read"}
-      >
-        {#if item.is_read}
-          <CheckCircle2 size={18} />
-        {:else}
-          <div
-            class="w-[18px] h-[18px] border-2 border-current rounded-full"
-          ></div>
-        {/if}
-      </button>
-
-      <button
-        class="p-1.5 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-1.5 {item.is_starred
-          ? 'text-orange-400'
-          : 'text-white/40 hover:text-white'}"
-        on:click={handleStar}
-        title="Bookmark"
-      >
-        <Bookmark size={18} class={item.is_starred ? "fill-current" : ""} />
-      </button>
-
-      {#if isPlayable}
-        <button
-          class="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/40 hover:text-accent"
-          on:click={handlePlay}
-          title="Play"
-        >
-          <PlayCircle size={18} />
-        </button>
-      {/if}
-
-      <button
-        class="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-blue-400 transition-colors"
-        on:click={handleShare}
-        title="Share"
-      >
-        <Share2 size={18} />
-      </button>
-
-      <a
-        href={item.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        class="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-blue-400 transition-colors"
-        on:click|stopPropagation
-        title="Open Link"
-      >
-        <ExternalLink size={18} />
-      </a>
-    </div>
-  </div>
 </article>
 
 <style>
