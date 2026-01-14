@@ -10,7 +10,7 @@ export const itemsLoading = writable(false);
 export const itemsError = writable<string | null>(null);
 export const itemsTotal = writable(0);
 export const searchQuery = writable('');
-export const timeFilter = writable<TimeFilter>('today');
+export const timeFilter = writable<TimeFilter>('all');
 
 export const hasMore = writable(true);
 export const currentOffset = writable(0);

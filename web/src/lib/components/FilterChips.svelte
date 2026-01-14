@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
 
-  export let timeFilter = "today"; // today, 24h, week, all
+  export let timeFilter = "all"; // all, today, 24h, week
 
   const dispatch = createEventDispatcher();
 
@@ -11,6 +11,11 @@
 </script>
 
 <div class="filter-chips">
+  <button
+    class="chip"
+    class:active={timeFilter === "all"}
+    on:click={() => setFilter("all")}>All</button
+  >
   <button
     class="chip"
     class:active={timeFilter === "today"}
@@ -25,11 +30,6 @@
     class="chip"
     class:active={timeFilter === "week"}
     on:click={() => setFilter("week")}>Week</button
-  >
-  <button
-    class="chip"
-    class:active={timeFilter === "all"}
-    on:click={() => setFilter("all")}>All</button
   >
 </div>
 
