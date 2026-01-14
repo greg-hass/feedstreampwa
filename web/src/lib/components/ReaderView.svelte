@@ -345,12 +345,63 @@
     { id: "black", color: "#000000", label: "Black" },
   ];
 
+  // Text-to-Speech state
+  let ttsActive = false;
+  let speechSynthesis: SpeechSynthesis | null = null;
+  let currentUtterance: SpeechSynthesisUtterance | null = null;
+
+  $: if (typeof window !== "undefined") {
+    speechSynthesis = window.speechSynthesis;
+  }
+
   function toggleTTS() {
-    // We'll reuse the logic from ReaderControls or trigger it
-    const controlsElement = document.querySelector(
-      ".tts-trigger"
-    ) as HTMLButtonElement;
-    if (controlsElement) controlsElement.click();
+    if (!speechSynthesis) {
+      alert("Text-to-speech is not supported in this browser.");
+      return;
+    }
+
+    if (ttsActive) {
+      // Stop speaking
+      speechSynthesis.cancel();
+      ttsActive = false;
+      currentUtterance = null;
+    } else {
+      // Start speaking - get article text content
+      const contentHtml = $readerData?.contentHtml || "";
+      const text = contentHtml
+        .replace(/<[^>]*>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      if (!text) {
+        alert("No content to read.");
+        return;
+      }
+
+      currentUtterance = new SpeechSynthesisUtterance(text);
+      currentUtterance.rate = 1.0;
+      currentUtterance.pitch = 1.0;
+      currentUtterance.volume = 1.0;
+
+      currentUtterance.onend = () => {
+        ttsActive = false;
+        currentUtterance = null;
+      };
+
+      currentUtterance.onerror = () => {
+        ttsActive = false;
+        currentUtterance = null;
+      };
+
+      ttsActive = true;
+      speechSynthesis.speak(currentUtterance);
+    }
+  }
+
+  // Stop TTS when reader closes
+  $: if (!$showReader && speechSynthesis) {
+    speechSynthesis.cancel();
+    ttsActive = false;
   }
 
   $: if ($showReader && $readerData && typeof document !== "undefined") {
