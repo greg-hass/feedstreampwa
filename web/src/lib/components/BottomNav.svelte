@@ -30,7 +30,7 @@
       <Menu
         size={22}
         class="transition-colors duration-300 {$isMobileMenuOpen
-          ? 'text-emerald-400'
+          ? 'text-accent'
           : 'text-white/40'}"
         strokeWidth={$isMobileMenuOpen ? 2.5 : 2}
       />
@@ -58,7 +58,7 @@
       <LayoutDashboard
         size={22}
         class="transition-colors duration-300 {$viewMode === 'all'
-          ? 'text-emerald-400'
+          ? 'text-accent'
           : 'text-white/40'}"
         strokeWidth={$viewMode === "all" ? 2.5 : 2}
       />
@@ -93,7 +93,7 @@
       <Eye
         size={22}
         class="transition-colors duration-300 {$viewMode === 'unread'
-          ? 'text-emerald-400'
+          ? 'text-accent'
           : 'text-white/40'}"
         strokeWidth={$viewMode === "unread" ? 2.5 : 2}
       />
@@ -153,6 +153,6 @@
 
 <style>
   .safe-bottom {
-    padding-bottom: calc(4px + env(safe-area-inset-bottom, 16px));
+    padding-bottom: env(safe-area-inset-bottom, 16px);
   }
 </style>

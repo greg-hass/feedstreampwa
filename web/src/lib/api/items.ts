@@ -143,6 +143,10 @@ export async function deleteItem(itemId: string | number): Promise<void> {
         method: 'DELETE',
     });
 
+    if (response.status === 404) {
+        return;
+    }
+
     if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }

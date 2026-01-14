@@ -20,9 +20,9 @@
       <div class="px-5 pt-4 pb-3 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <div
-            class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/20 flex items-center justify-center"
+            class="w-8 h-8 rounded-lg bg-gradient-to-br from-accent/20 to-accent/10 border border-accent/20 flex items-center justify-center"
           >
-            <RefreshCw size={16} class="text-purple-400 animate-spin" />
+            <RefreshCw size={16} class="text-accent animate-spin" />
           </div>
           <span class="text-sm font-semibold text-white">Refreshing Feeds</span>
         </div>
@@ -43,7 +43,7 @@
         </div>
         <div class="h-1 bg-white/5 rounded-full overflow-hidden">
           <div
-            class="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-300"
+            class="h-full bg-gradient-to-r from-accent to-accent/80 rounded-full transition-all duration-300"
             style="width: {$refreshState.total > 0
               ? ($refreshState.current / $refreshState.total) * 100
               : 0}%"

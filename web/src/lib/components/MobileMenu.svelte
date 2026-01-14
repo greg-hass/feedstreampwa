@@ -213,7 +213,7 @@
         {/if}
         {#if $viewMode === "all"}
           <div
-            class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
+            class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(var(--accent-color-rgb),0.5)]"
           ></div>
         {/if}
       </button>
@@ -525,7 +525,7 @@
               </div>
               {#if $viewMode === "folder" && $activeFolderId === folder.id}
                 <div
-                  class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
+                  class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(var(--accent-color-rgb),0.5)]"
                 ></div>
               {/if}
             </button>
@@ -648,7 +648,7 @@
             </div>
             {#if $viewMode === "feed" && $selectedFeedUrl === feed.url}
               <div
-                class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(16,185,129,0.5)]"
+                class="absolute inset-y-0 left-0 w-1 bg-accent rounded-r-full shadow-[0_0_10px_2px_rgba(var(--accent-color-rgb),0.5)]"
               ></div>
             {/if}
           </button>

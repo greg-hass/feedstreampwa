@@ -80,27 +80,27 @@
   // Source Styling
   const styles = {
     youtube: {
-      color: "text-youtube",
-      border: "group-hover:border-youtube/30",
-      glow: "group-hover:shadow-[0_0_20px_-5px_rgba(255,0,0,0.3)]",
+      color: "text-accent",
+      border: "group-hover:border-accent/30",
+      glow: "group-hover:shadow-[0_0_20px_-5px_rgba(var(--accent-color-rgb),0.3)]",
       icon: PlayCircle,
     },
     reddit: {
-      color: "text-reddit",
-      border: "group-hover:border-reddit/30",
-      glow: "group-hover:shadow-[0_0_20px_-5px_rgba(255,69,0,0.3)]",
+      color: "text-accent",
+      border: "group-hover:border-accent/30",
+      glow: "group-hover:shadow-[0_0_20px_-5px_rgba(var(--accent-color-rgb),0.3)]",
       icon: Hash,
     },
     podcast: {
-      color: "text-podcast",
-      border: "group-hover:border-podcast/30",
-      glow: "group-hover:shadow-[0_0_20px_-5px_rgba(139,92,246,0.3)]",
+      color: "text-accent",
+      border: "group-hover:border-accent/30",
+      glow: "group-hover:shadow-[0_0_20px_-5px_rgba(var(--accent-color-rgb),0.3)]",
       icon: Radio,
     },
     rss: {
-      color: "text-emerald-400",
-      border: "group-hover:border-emerald-500/30",
-      glow: "group-hover:shadow-[0_0_20px_-5px_rgba(16,185,129,0.3)]",
+      color: "text-accent",
+      border: "group-hover:border-accent/30",
+      glow: "group-hover:shadow-[0_0_20px_-5px_rgba(var(--accent-color-rgb),0.3)]",
       icon: Rss,
     },
   };
@@ -304,7 +304,7 @@
 
       <!-- Title -->
       <h3
-        class="text-base font-semibold text-emerald-400 leading-tight line-clamp-2 md:line-clamp-3 mb-2 group-hover:text-emerald-300 transition-colors {item.is_read
+        class="text-base font-semibold text-accent leading-tight line-clamp-2 md:line-clamp-3 mb-2 group-hover:text-accent/80 transition-colors {item.is_read
           ? 'text-white/50'
           : ''}"
       >

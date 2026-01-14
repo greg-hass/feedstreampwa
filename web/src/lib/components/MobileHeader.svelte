@@ -44,7 +44,7 @@
     <!-- Action Buttons (Matched to Desktop) -->
     <button
       on:click={onRefresh}
-      class="p-2 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white active:scale-95 transition-all flex-shrink-0"
+      class="p-2 rounded-xl bg-gradient-to-br from-accent to-accent/80 text-white active:scale-95 transition-all flex-shrink-0"
       class:animate-spin={isRefreshing}
       aria-label="Refresh"
     >
@@ -53,7 +53,7 @@
 
     <button
       on:click={() => isCreateFolderModalOpen.set(true)}
-      class="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 text-white active:scale-95 transition-all flex-shrink-0"
+      class="p-2 rounded-xl bg-gradient-to-br from-accent to-accent/80 text-white active:scale-95 transition-all flex-shrink-0"
       aria-label="Add folder"
     >
       <FolderPlus size={20} />

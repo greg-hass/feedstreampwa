@@ -79,12 +79,12 @@
       >
         <div class="flex items-center gap-3">
           <div
-            class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/20 flex items-center justify-center"
+            class="w-10 h-10 rounded-xl bg-gradient-to-br from-accent/20 to-accent/10 border border-accent/20 flex items-center justify-center"
           >
             {#if $renameModal.type === "folder"}
-              <FolderOpen size={20} class="text-purple-400" />
+              <FolderOpen size={20} class="text-accent" />
             {:else}
-              <Edit2 size={20} class="text-purple-400" />
+              <Edit2 size={20} class="text-accent" />
             {/if}
           </div>
           <h2 class="text-xl font-semibold text-white">

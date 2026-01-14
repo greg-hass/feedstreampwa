@@ -95,6 +95,7 @@
 
   async function handleDelete() {
     if (!$currentItem) return;
+    const itemId = $currentItem.id;
 
     const confirmed = await confirmDialog.confirm({
       title: "Delete Article",
@@ -107,7 +108,7 @@
     if (!confirmed) return;
 
     try {
-      await itemsApi.deleteItem($currentItem.id);
+      await itemsApi.deleteItem(itemId);
       toast.success("Article deleted");
       handleClose();
       // Force reload of feed list if possible, or just let users refresh
@@ -1094,6 +1095,22 @@
   .reader-container {
     background: inherit;
     color: inherit;
+  }
+
+  /* Reader Overlay - Immediate Opacity */
+  .reader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(5, 5, 7, 0.98);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    animation: fadeIn 0.2s ease-out;
   }
 
   /* Article Header */

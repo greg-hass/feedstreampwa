@@ -12,6 +12,7 @@
   --tw-colors-raised: #16161a;
   --tw-colors-stroke: #1f1f23;
   --tw-colors-accent: #10B981;
+  --text-base: #e5e7eb; /* gray-200 */
 
   /* Light theme (overridden when .light class is applied) */
 }
@@ -23,6 +24,7 @@
   --tw-colors-raised: #f1f5f9;
   --tw-colors-stroke: #e2e8f0;
   --tw-colors-accent: #10B981;
+  --text-base: #1f2937; /* gray-800 */
 }
 
 /* Dark theme (explicit) */
@@ -32,6 +34,7 @@
   --tw-colors-raised: #16161a;
   --tw-colors-stroke: #1f1f23;
   --tw-colors-accent: #10B981;
+  --text-base: #e5e7eb; /* gray-200 */
 }
 
 /* Custom theme colors (when user sets custom colors) */
@@ -65,7 +68,8 @@
 
 @layer base {
   body {
-    @apply bg-background text-gray-200 antialiased font-sans overflow-x-hidden min-h-screen;
+    @apply bg-background antialiased font-sans overflow-x-hidden min-h-screen;
+    color: var(--text-base);
     scrollbar-gutter: stable;
   }
 
