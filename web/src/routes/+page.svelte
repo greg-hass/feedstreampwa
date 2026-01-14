@@ -436,10 +436,8 @@
     top: 0;
     z-index: 20;
     background: theme("colors.background");
-    padding: 12px 16px;
+    padding: 0 0 12px 0; /* Remove top padding, let parent handle alignment */
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    /* Negative margin to span parent padding if desired, or keep contained. 
-       Keeping contained is safer for preventing overflow. */
   }
 
   /* Mobile Fixed Filter Chips */
