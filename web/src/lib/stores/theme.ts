@@ -152,12 +152,19 @@ function hexToRgb(hex: string): string {
 
 // Listen for system theme changes
 if (typeof window !== 'undefined') {
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  const handleSystemThemeChange = () => {
     const currentTheme = get(theme);
     if (currentTheme.mode === 'system') {
       applyTheme(currentTheme);
     }
-  });
+  };
+
+  if ('addEventListener' in mediaQuery) {
+    mediaQuery.addEventListener('change', handleSystemThemeChange);
+  } else if ('addListener' in mediaQuery) {
+    mediaQuery.addListener(handleSystemThemeChange);
+  }
 
   // Apply theme on load
   applyTheme(get(theme));
