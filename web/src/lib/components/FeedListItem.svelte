@@ -101,8 +101,12 @@
     ? `https://img.youtube.com/vi/${youtubeVideoId}/mqdefault.jpg`
     : null;
 
-  // Use YouTube thumbnail if available, otherwise use media_thumbnail
-  $: thumbnailUrl = youtubeThumbnail || item.media_thumbnail;
+  // Use YouTube thumbnail if available, otherwise use media_thumbnail.
+  // For podcasts, fallback to feed icon (usually high-res cover art) if no episode image.
+  $: thumbnailUrl =
+    youtubeThumbnail ||
+    item.media_thumbnail ||
+    (feedType === "podcast" ? item.feed_icon_url : null);
 
   // Format Date
   let dateStr = "";
@@ -205,11 +209,11 @@
   }
 
   // Check if item is playable (podcast or video)
+  // Strictly require enclosure URL for podcasts/audio
   $: isPlayable =
-    feedType === "podcast" ||
-    feedType === "youtube" ||
-    item.enclosure ||
-    item.external_id;
+    (item.enclosure?.url &&
+      (feedType === "podcast" || Boolean(item.enclosure))) ||
+    youtubeVideoId;
 
   // Track whether YouTube video should be loaded/played
   let playYouTubeVideo = false;

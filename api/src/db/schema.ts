@@ -139,6 +139,11 @@ export function applyMigrations(database: any): void {
     database.exec(`ALTER TABLE feeds ADD COLUMN next_retry_after TEXT`);
   }
 
+  // Migration: Add enclosure column to items
+  if (!columnExists(database, 'items', 'enclosure')) {
+    database.exec(`ALTER TABLE items ADD COLUMN enclosure TEXT`);
+  }
+
   // Migration: Normalize dates
   const migrationCheck = database.prepare('SELECT completed_at FROM _migration_status WHERE name = ?').get('normalize_dates');
   if (!migrationCheck) {
