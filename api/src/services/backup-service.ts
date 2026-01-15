@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { db } from '../db/client.js';
+import logger from '../utils/logger.js';
 
 const BACKUP_DIR = path.join(process.cwd(), 'data', 'backups');
 
@@ -35,7 +36,7 @@ export function listBackups(): BackupResult[] {
             })
             .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     } catch (e) {
-        console.error('Failed to list backups:', e);
+        logger.error('Failed to list backups:', e);
         return [];
     }
 }

@@ -3,9 +3,24 @@ import Parser from 'rss-parser';
 import { createHash } from 'crypto';
 import { detectFeedKind } from '../utils/feed-utils.js';
 import { Feed, FeedKind, Item } from '../types/schemas.js';
+import logger from '../utils/logger.js';
 
+// Configuration Constants
 const FETCH_TIMEOUT_MS = parseInt(process.env.FETCH_TIMEOUT_MS || '12000', 10);
 const BROWSER_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+// URL Tracking Parameters to Strip
+const TRACKING_PARAMS = [
+    'utm_source',
+    'utm_medium',
+    'utm_campaign',
+    'utm_term',
+    'utm_content',
+    'fbclid',
+    'gclid',
+    'ref',
+    'source'
+] as const;
 
 // Parsed Interfaces
 interface ParsedFeedItem {
@@ -50,22 +65,27 @@ interface NormalizedItem {
     external_id: string | null;
 }
 
-// Regex constants
-const REDDIT_SUBMITTED_BY = /<span[^>]*>.*?submitted by.*?to.*?<\/span>/gi;
-const REDDIT_SUBMITTED_BY_BR = /submitted by.*?to.*?<br\s*\/?>/gi;
-const REDDIT_LINK_ANCHOR = /<a[^>]*>\[link\]<\/a>/gi;
-const REDDIT_COMMENTS_ANCHOR = /<a[^>]*>\[comments\]<\/a>/gi;
-const REDDIT_VIDEO_ANCHOR = /<a[^>]*>https?:\/\/v\.redd\.it\/[^<]*<\/a>/gi;
-const REDDIT_DOUBLE_BR = /(<br\s*\/?>\s*){2,}/gi;
-const REDDIT_EMPTY_ANCHOR = /<a[^>]*><\/a>/gi;
-const REDDIT_EMPTY_SPAN = /<span[^>]*><\/span>/gi;
-const IMG_SRC_REGEX = /<img[^>]+src="([^"]+)"/i;
-const OG_IMAGE_REGEX = /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i;
-const TWITTER_IMAGE_REGEX = /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i;
-const IMG_TAG_REGEX = /<img[^>]+src=["']([^"']+)["'][^>]*>/i;
-const YOUTUBE_VIDEO_ID_REGEX = /[?&]v=([^&]+)/;
-const YOUTUBE_CHANNEL_ID_PARAM = /channel_id=([^&]+)/;
-const REDDIT_SUBREDDIT_REGEX = /reddit\.com\/r\/([^/?#.]+)/;
+// Regex Constants for Content Cleaning and Parsing
+// Reddit feed content cleanup patterns
+const REDDIT_SUBMITTED_BY = /<span[^>]*>.*?submitted by.*?to.*?<\/span>/gi; // Remove "submitted by X to Y" text
+const REDDIT_SUBMITTED_BY_BR = /submitted by.*?to.*?<br\s*\/?>/gi; // Remove "submitted by" with line break
+const REDDIT_LINK_ANCHOR = /<a[^>]*>\[link\]<\/a>/gi; // Remove [link] anchors
+const REDDIT_COMMENTS_ANCHOR = /<a[^>]*>\[comments\]<\/a>/gi; // Remove [comments] anchors
+const REDDIT_VIDEO_ANCHOR = /<a[^>]*>https?:\/\/v\.redd\.it\/[^<]*<\/a>/gi; // Remove v.redd.it video links
+const REDDIT_DOUBLE_BR = /(<br\s*\/?>\s*){2,}/gi; // Collapse multiple line breaks
+const REDDIT_EMPTY_ANCHOR = /<a[^>]*><\/a>/gi; // Remove empty anchor tags
+const REDDIT_EMPTY_SPAN = /<span[^>]*><\/span>/gi; // Remove empty span tags
+
+// Image and metadata extraction patterns
+const IMG_SRC_REGEX = /<img[^>]+src="([^"]+)"/i; // Extract img src attribute
+const OG_IMAGE_REGEX = /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i; // Extract OpenGraph image
+const TWITTER_IMAGE_REGEX = /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i; // Extract Twitter Card image
+const IMG_TAG_REGEX = /<img[^>]+src=["']([^"']+)["'][^>]*>/i; // Extract first image tag
+
+// YouTube and Reddit URL parsing patterns
+const YOUTUBE_VIDEO_ID_REGEX = /[?&]v=([^&]+)/; // Extract YouTube video ID from URL
+const YOUTUBE_CHANNEL_ID_PARAM = /channel_id=([^&]+)/; // Extract YouTube channel ID from URL parameter
+const REDDIT_SUBREDDIT_REGEX = /reddit\.com\/r\/([^/?#.]+)/; // Extract subreddit name from URL
 
 const getFeed = db.prepare(`
   SELECT url, kind, etag, last_modified, next_retry_after, title, icon_url FROM feeds WHERE url = ?
@@ -154,7 +174,7 @@ function normalizeUrlString(url: string | null): string | null {
     try {
         const u = new URL(url);
         // Strip common tracking params
-        ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'gclid', 'ref', 'source'].forEach(p => u.searchParams.delete(p));
+        TRACKING_PARAMS.forEach(p => u.searchParams.delete(p));
         return u.toString();
     } catch {
         return url;
@@ -211,7 +231,7 @@ export async function fetchFeedIcon(feedUrl: string, kind: string, siteUrl?: str
                         }
                     }
                 } catch (e) {
-                    console.error(`Failed to scrape YT avatar for ${channelId}: ${e}`);
+                    logger.error(`Failed to scrape YT avatar for ${channelId}: ${e}`);
                 }
             }
         } else if (kind === 'reddit') {
@@ -226,7 +246,7 @@ export async function fetchFeedIcon(feedUrl: string, kind: string, siteUrl?: str
                         if (icon) return icon.replace(/&amp;/g, '&');
                     }
                 } catch (e) {
-                    console.error(`Failed to fetch Reddit icon for ${subreddit}: ${e}`);
+                    logger.error(`Failed to fetch Reddit icon for ${subreddit}: ${e}`);
                 }
             }
         } else if (kind === 'podcast') {
@@ -249,7 +269,7 @@ export async function fetchFeedIcon(feedUrl: string, kind: string, siteUrl?: str
             return null;
         }
     } catch (e) {
-        console.error(`Failed to fetch icon for ${feedUrl}:`, e);
+        logger.error(`Failed to fetch icon for ${feedUrl}:`, e);
     }
     return null;
 }
@@ -501,7 +521,7 @@ export async function fetchFeed(url: string, force: boolean): Promise<any> {
         try {
              parsed = await rssParser.parseString(text);
         } catch (e) {
-             console.error("RSS Parsing failed", e);
+             logger.error("RSS Parsing failed", e);
              throw new Error("Failed to parse RSS feed");
         }
 
@@ -564,7 +584,7 @@ export async function fetchFeed(url: string, force: boolean): Promise<any> {
                      
                      if (isNew) count++;
                  } catch (e) {
-                     console.error("Item insert error", e);
+                     logger.error("Item insert error", e);
                  }
             });
             return count;

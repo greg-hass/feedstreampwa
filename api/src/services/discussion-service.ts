@@ -1,5 +1,6 @@
 
 import { URL } from 'url';
+import logger from '../utils/logger.js';
 
 export interface Discussion {
     source: 'hackernews' | 'reddit';
@@ -55,7 +56,7 @@ async function searchHackerNews(url: string): Promise<Discussion[]> {
             author: hit.author
         }));
     } catch (e) {
-        console.error('HN Search error', e);
+        logger.error('HN Search error', e);
         return [];
     }
 }
@@ -85,7 +86,7 @@ async function searchReddit(url: string): Promise<Discussion[]> {
             };
         });
     } catch (e) {
-        console.error('Reddit Search error', e); 
+        logger.error('Reddit Search error', e); 
         return [];
     }
 }

@@ -5,8 +5,9 @@ import cors from '@fastify/cors';
 import compress from '@fastify/compress';
 
 // Configuration and Database
-import { env } from './config/index.js';
+import { env, isDevelopment } from './config/index.js';
 import { db } from './db/client.js';
+import { setupRateLimiting } from './middleware/rate-limit.js';
 
 // Route imports
 import feedRoutes from './routes/feeds.js';
@@ -43,24 +44,35 @@ const start = async () => {
             },
         });
 
+        // CORS Configuration - restrictive in production, permissive in development
+        const allowedOrigins = env.ALLOWED_ORIGINS
+            ? env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+            : [];
+
         await fastify.register(cors, {
-            origin: true,
+            origin: (origin, callback) => {
+                // In development, allow all origins
+                if (isDevelopment) {
+                    callback(null, true);
+                    return;
+                }
+
+                // In production, only allow configured origins
+                if (!origin || allowedOrigins.includes(origin)) {
+                    callback(null, true);
+                } else {
+                    callback(new Error('Not allowed by CORS'), false);
+                }
+            },
             credentials: true,
         });
 
         await fastify.register(compress);
 
-        await fastify.register(rateLimit, {
-            max: 100,
-            timeWindow: '1 minute',
-            errorResponseBuilder: () => ({
-                ok: false,
-                error: 'Rate limit exceeded. Please try again later.',
-                statusCode: 429,
-            }),
-        });
+        // Per-route rate limiting (configured in middleware/rate-limit.ts)
+        await setupRateLimiting(fastify);
 
-        fastify.log.info('Security middleware registered');
+        fastify.log.info('Security middleware registered (including per-route rate limiting)');
 
         // Register Routes
         fastify.register(feedRoutes);

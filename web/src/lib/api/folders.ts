@@ -1,10 +1,11 @@
 // API utilities for folders
 import type { Folder } from '$lib/types';
+import { fetchWithTimeout } from '$lib/utils/fetch';
 
 const API_BASE = '/api';
 
 export async function fetchFolders(): Promise<Folder[]> {
-    const response = await fetch(`${API_BASE}/folders`);
+    const response = await fetchWithTimeout(`${API_BASE}/folders`);
 
     if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -15,7 +16,7 @@ export async function fetchFolders(): Promise<Folder[]> {
 }
 
 export async function createFolder(name: string): Promise<void> {
-    const response = await fetch(`${API_BASE}/folders`, {
+    const response = await fetchWithTimeout(`${API_BASE}/folders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name }),
@@ -30,7 +31,7 @@ export async function createFolder(name: string): Promise<void> {
 }
 
 export async function renameFolder(id: string, name: string): Promise<void> {
-    const response = await fetch(`${API_BASE}/folders/${id}`, {
+    const response = await fetchWithTimeout(`${API_BASE}/folders/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name }),
@@ -45,7 +46,7 @@ export async function renameFolder(id: string, name: string): Promise<void> {
 }
 
 export async function deleteFolder(id: string): Promise<void> {
-    const response = await fetch(`${API_BASE}/folders/${id}`, {
+    const response = await fetchWithTimeout(`${API_BASE}/folders/${id}`, {
         method: 'DELETE',
     });
 
@@ -61,7 +62,7 @@ export async function addFeedToFolder(
     feedUrl: string,
     folderId: string
 ): Promise<void> {
-    const response = await fetch(`${API_BASE}/folders/${folderId}/feeds`, {
+    const response = await fetchWithTimeout(`${API_BASE}/folders/${folderId}/feeds`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ feedUrl })
@@ -79,7 +80,7 @@ export async function removeFeedFromFolder(
     feedUrl: string,
     folderId: string
 ): Promise<void> {
-    const response = await fetch(`${API_BASE}/folders/${folderId}/feeds`, {
+    const response = await fetchWithTimeout(`${API_BASE}/folders/${folderId}/feeds`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ feedUrl })

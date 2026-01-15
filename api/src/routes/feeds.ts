@@ -15,8 +15,9 @@ export default async function feedRoutes(fastify: FastifyInstance, options: any)
     // Get feeds endpoint
     fastify.get('/feeds', async (request: FastifyRequest, reply: FastifyReply) => {
         try {
+            // Optimized query using JOINs instead of subqueries to avoid N+1 problem
             const feedsData = db.prepare(`
-                SELECT 
+                SELECT
                     f.url,
                     f.kind,
                     f.title,
@@ -26,9 +27,13 @@ export default async function feedRoutes(fastify: FastifyInstance, options: any)
                     f.last_error,
                     f.icon_url,
                     f.custom_title,
-                    (SELECT COUNT(*) FROM items i WHERE i.feed_url = f.url AND i.is_read = 0) as unreadCount,
-                    (SELECT GROUP_CONCAT(folder_id) FROM folder_feeds ff WHERE ff.feed_url = f.url) as folderIds
+                    COUNT(CASE WHEN i.is_read = 0 THEN 1 END) as unreadCount,
+                    GROUP_CONCAT(DISTINCT ff.folder_id) as folderIds
                 FROM feeds f
+                LEFT JOIN items i ON i.feed_url = f.url
+                LEFT JOIN folder_feeds ff ON ff.feed_url = f.url
+                GROUP BY f.url, f.kind, f.title, f.site_url, f.last_checked,
+                         f.last_status, f.last_error, f.icon_url, f.custom_title
                 ORDER BY f.title ASC
             `).all() as any[];
 
@@ -66,7 +71,15 @@ export default async function feedRoutes(fastify: FastifyInstance, options: any)
     });
 
     // Feed search endpoint
-    fastify.get('/feeds/search', async (request: FastifyRequest, reply: FastifyReply) => {
+    // Feed search - expensive operation, moderate rate limit
+    fastify.get('/feeds/search', {
+        config: {
+            rateLimit: {
+                max: 20,
+                timeWindow: '1 minute'
+            }
+        }
+    }, async (request: FastifyRequest, reply: FastifyReply) => {
         const result = SearchFeedsQuerySchema.safeParse(request.query);
         
         if (!result.success) {
@@ -128,8 +141,15 @@ export default async function feedRoutes(fastify: FastifyInstance, options: any)
         }
     });
 
-    // AI-powered feed recommendations
-    fastify.get('/feeds/recommendations', async (request: FastifyRequest, reply: FastifyReply) => {
+    // AI-powered feed recommendations - expensive AI operation, strict rate limit
+    fastify.get('/feeds/recommendations', {
+        config: {
+            rateLimit: {
+                max: 10,
+                timeWindow: '1 minute'
+            }
+        }
+    }, async (request: FastifyRequest, reply: FastifyReply) => {
         const query = request.query as any;
         const limit = Math.min(parseInt(query?.limit || '5', 10), 10); // Max 10 recommendations
 
@@ -310,9 +330,9 @@ export default async function feedRoutes(fastify: FastifyInstance, options: any)
 
             return { ok: true };
         } catch (error: any) {
-            fastify.log.error(error);
+            fastify.log.error({ error, url, title }, 'Failed to update feed title');
             reply.code(500);
-            return { ok: false, error: 'Database error' };
+            return { ok: false, error: 'Failed to update feed title in database' };
         }
     });
 
@@ -332,13 +352,20 @@ export default async function feedRoutes(fastify: FastifyInstance, options: any)
         }
 
         try {
-            // Delete items first (foreign key constraint)
-            const deleteItems = db.prepare('DELETE FROM items WHERE feed_url = ?');
-            deleteItems.run(url);
+            // Wrap multi-table deletion in transaction for atomicity
+            const result = db.transaction(() => {
+                // Delete items first (foreign key constraint)
+                const deleteItems = db.prepare('DELETE FROM items WHERE feed_url = ?');
+                deleteItems.run(url);
 
-            // Delete feed
-            const deleteFeed = db.prepare('DELETE FROM feeds WHERE url = ?');
-            const result = deleteFeed.run(url);
+                // Delete folder associations
+                const deleteFolderFeeds = db.prepare('DELETE FROM folder_feeds WHERE feed_url = ?');
+                deleteFolderFeeds.run(url);
+
+                // Delete feed
+                const deleteFeed = db.prepare('DELETE FROM feeds WHERE url = ?');
+                return deleteFeed.run(url);
+            })();
 
             if (result.changes === 0) {
                 reply.code(404);
@@ -348,15 +375,16 @@ export default async function feedRoutes(fastify: FastifyInstance, options: any)
                 };
             }
 
+            fastify.log.info({ url }, 'Successfully deleted feed and associated data');
             return {
                 ok: true
             };
         } catch (error: any) {
-            fastify.log.error(error);
+            fastify.log.error({ error, url }, 'Failed to delete feed');
             reply.code(500);
             return {
                 ok: false,
-                error: 'Database error'
+                error: 'Failed to delete feed from database'
             };
         }
     });

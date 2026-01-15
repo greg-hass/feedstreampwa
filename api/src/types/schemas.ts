@@ -42,6 +42,14 @@ export const SearchFeedsQuerySchema = z.object({
     type: z.string().optional().default('all')
 });
 
+export const RefreshFeedsSchema = z.object({
+    urls: z.array(z.string().url()).optional()
+});
+
+export const RefreshStatusQuerySchema = z.object({
+    jobId: z.string().min(1)
+});
+
 // System Schemas
 export const SettingsSchema = z.record(z.string(), z.string());
 

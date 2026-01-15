@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { env } from '../config/index.js';
 import type { Database } from 'better-sqlite3';
+import logger from '../utils/logger.js';
 
 export interface FeedRecommendation {
     title: string;
@@ -89,7 +90,7 @@ export class AIRecommendationService {
             const recommendations = this.parseRecommendations(text);
             return recommendations.slice(0, limit);
         } catch (error) {
-            console.error('Error generating recommendations:', error);
+            logger.error('Error generating recommendations:', error);
             throw new Error('Failed to generate feed recommendations');
         }
     }
@@ -186,8 +187,8 @@ Example format:
                     confidence: Math.max(0, Math.min(1, rec.confidence))
                 }));
         } catch (error) {
-            console.error('Error parsing recommendations:', error);
-            console.error('Raw text:', text);
+            logger.error('Error parsing recommendations:', error);
+            logger.error('Raw text:', text);
             return [];
         }
     }

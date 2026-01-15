@@ -1,10 +1,12 @@
 // API utilities for feeds
 import type { Feed } from '$lib/types';
+import { fetchWithTimeout } from '$lib/utils/fetch';
 
 const API_BASE = '/api';
+const API_TIMEOUT = 30000; // 30 seconds
 
 export async function fetchFeeds(): Promise<Feed[]> {
-    const response = await fetch(`${API_BASE}/feeds`);
+    const response = await fetchWithTimeout(`${API_BASE}/feeds`);
     if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
@@ -17,7 +19,7 @@ export async function createFeed(
     folderIds: string[] = [],
     title?: string
 ): Promise<void> {
-    const response = await fetch(`${API_BASE}/feeds`, {
+    const response = await fetchWithTimeout(`${API_BASE}/feeds`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url, folderIds, title }),
@@ -32,7 +34,7 @@ export async function createFeed(
 }
 
 export async function update(url: string, data: { title?: string }): Promise<void> {
-    const response = await fetch(`${API_BASE}/feeds`, {
+    const response = await fetchWithTimeout(`${API_BASE}/feeds`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url, ...data }),
@@ -47,7 +49,7 @@ export async function update(url: string, data: { title?: string }): Promise<voi
 }
 
 export async function deleteFeed(url: string): Promise<void> {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
         `${API_BASE}/feeds?url=${encodeURIComponent(url)}`,
         { method: 'DELETE' }
     );
@@ -61,7 +63,7 @@ export async function deleteFeed(url: string): Promise<void> {
 }
 
 export async function refreshFeed(url: string): Promise<{ jobId: string }> {
-    const response = await fetch(`${API_BASE}/refresh/start`, {
+    const response = await fetchWithTimeout(`${API_BASE}/refresh/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ urls: [url] }),
@@ -78,7 +80,7 @@ export async function refreshFeed(url: string): Promise<{ jobId: string }> {
 }
 
 export async function refreshAllFeeds(): Promise<{ jobId: string }> {
-    const response = await fetch(`${API_BASE}/refresh/start`, {
+    const response = await fetchWithTimeout(`${API_BASE}/refresh/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
@@ -104,7 +106,7 @@ export interface FeedRecommendation {
 }
 
 export async function getFeedRecommendations(limit: number = 5): Promise<FeedRecommendation[]> {
-    const response = await fetch(`${API_BASE}/feeds/recommendations?limit=${limit}`);
+    const response = await fetchWithTimeout(`${API_BASE}/feeds/recommendations?limit=${limit}`);
     
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

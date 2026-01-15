@@ -22,7 +22,9 @@ export const env = {
   LAST_SYNC_KEY: process.env.LAST_SYNC_KEY || 'last_global_sync',
   LAST_BACKUP_KEY: process.env.LAST_BACKUP_KEY || 'last_auto_backup',
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
-  NODE_ENV: parseEnum(process.env.NODE_ENV, ['development', 'production', 'test'] as const, 'development')
+  NODE_ENV: parseEnum(process.env.NODE_ENV, ['development', 'production', 'test'] as const, 'development'),
+  // CORS configuration - comma-separated list of allowed origins
+  ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS || ''
 } as const;
 
 export const isDevelopment = env.NODE_ENV === 'development';

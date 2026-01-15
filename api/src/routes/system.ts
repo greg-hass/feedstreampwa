@@ -133,9 +133,9 @@ export default async function systemRoutes(fastify: FastifyInstance, options: an
             if (!config[env.SYNC_INTERVAL_KEY]) config[env.SYNC_INTERVAL_KEY] = 'off';
             return { ok: true, settings: config };
         } catch (error: any) {
-            fastify.log.error(error);
+            fastify.log.error({ error }, 'Failed to fetch settings from database');
             reply.code(500);
-            return { ok: false, error: 'Database error' };
+            return { ok: false, error: 'Failed to retrieve settings from database' };
         }
     });
 
@@ -159,14 +159,21 @@ export default async function systemRoutes(fastify: FastifyInstance, options: an
             })();
             return { ok: true };
         } catch (error: any) {
-            fastify.log.error(error);
+            fastify.log.error({ error, settings: result.data }, 'Failed to update settings');
             reply.code(500);
-            return { ok: false, error: 'Database error' };
+            return { ok: false, error: 'Failed to save settings to database' };
         }
     });
 
-    // AI Summarization
-    fastify.post('/ai/summarize', async (request: FastifyRequest, reply: FastifyReply) => {
+    // AI Summarization - expensive operation, strict rate limit
+    fastify.post('/ai/summarize', {
+        config: {
+            rateLimit: {
+                max: 10,
+                timeWindow: '1 minute'
+            }
+        }
+    }, async (request: FastifyRequest, reply: FastifyReply) => {
         const result = SummarizeItemSchema.safeParse(request.body);
         
         if (!result.success) {
@@ -228,9 +235,9 @@ export default async function systemRoutes(fastify: FastifyInstance, options: an
                 .run(id, name, keyword, field, action, feed_url, new Date().toISOString());
             return { ok: true, id };
         } catch (error: any) {
-            fastify.log.error(error);
+            fastify.log.error({ error, rule: { name, keyword, field, action, feed_url } }, 'Failed to create automation rule');
             reply.code(500);
-            return { ok: false, error: 'Database error' };
+            return { ok: false, error: 'Failed to create automation rule in database' };
         }
     });
 

@@ -1,10 +1,11 @@
 // API utilities for settings and feed search
 import type { Settings, FeedSearchResult } from '$lib/types';
+import { fetchWithTimeout } from '$lib/utils/fetch';
 
 const API_BASE = '/api';
 
 export async function fetchSettings(): Promise<Settings> {
-    const response = await fetch(`${API_BASE}/settings`);
+    const response = await fetchWithTimeout(`${API_BASE}/settings`);
 
     if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -15,7 +16,7 @@ export async function fetchSettings(): Promise<Settings> {
 }
 
 export async function updateSettings(settings: Partial<Settings>): Promise<void> {
-    const response = await fetch(`${API_BASE}/settings`, {
+    const response = await fetchWithTimeout(`${API_BASE}/settings`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),
@@ -30,7 +31,7 @@ export async function updateSettings(settings: Partial<Settings>): Promise<void>
 }
 
 export async function searchFeeds(query: string): Promise<FeedSearchResult[]> {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
         `${API_BASE}/feeds/search?q=${encodeURIComponent(query)}`
     );
 

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import logger from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,7 +18,7 @@ export function applyMigrations(db: any): void {
 
     const migrationsDir = path.join(__dirname, 'migrations');
     if (!fs.existsSync(migrationsDir)) {
-        console.error('CRITICAL: Migration directory not found. Schema may be outdated.');
+        logger.error('CRITICAL: Migration directory not found. Schema may be outdated.');
         throw new Error(`Migration directory missing at ${migrationsDir}. Ensure build process copies .sql files.`);
     }
 
@@ -30,7 +31,7 @@ export function applyMigrations(db: any): void {
 
     for (const file of files) {
         if (!appliedNames.has(file)) {
-            console.log(`Applying migration: ${file}`);
+            logger.info(`Applying migration: ${file}`);
             const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
             
             try {
@@ -39,9 +40,9 @@ export function applyMigrations(db: any): void {
                     db.prepare('INSERT INTO _migrations (name, applied_at) VALUES (?, ?)')
                         .run(file, new Date().toISOString());
                 })();
-                console.log(`Successfully applied migration: ${file}`);
+                logger.info(`Successfully applied migration: ${file}`);
             } catch (error) {
-                console.error(`Failed to apply migration ${file}:`, error);
+                logger.error(`Failed to apply migration ${file}:`, error);
                 throw error;
             }
         }
@@ -64,7 +65,7 @@ function runLegacyMigrations(db: any) {
     const check = db.prepare('SELECT completed_at FROM _migration_status WHERE name = ?').get(name);
     
     if (!check) {
-        console.log('Running legacy date normalization migration...');
+        logger.info('Running legacy date normalization migration...');
         const items = db.prepare('SELECT id, published, updated FROM items').all() as any[];
         const updateStmt = db.prepare('UPDATE items SET published = ?, updated = ? WHERE id = ?');
 
@@ -82,7 +83,7 @@ function runLegacyMigrations(db: any) {
 
         db.prepare('INSERT INTO _migration_status (name, completed_at) VALUES (?, ?)')
             .run(name, new Date().toISOString());
-        console.log('Legacy date normalization complete.');
+        logger.info('Legacy date normalization complete.');
     }
 }
 

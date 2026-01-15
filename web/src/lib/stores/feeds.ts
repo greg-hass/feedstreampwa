@@ -14,7 +14,8 @@ export const refreshState = writable({
     isRefreshing: false,
     current: 0,
     total: 0,
-    message: ''
+    message: '',
+    error: null as string | null
 });
 
 // Derived stores
@@ -90,27 +91,40 @@ export async function removeFeed(url: string): Promise<void> {
 }
 
 // Refresh logic
-let refreshPollTimer: ReturnType<typeof setInterval> | null = null;
+const MAX_POLL_ATTEMPTS = 300; // 5 minutes max (with exponential backoff)
+const INITIAL_POLL_INTERVAL = 1000; // Start with 1 second
+const MAX_POLL_INTERVAL = 5000; // Max 5 seconds between polls
+
+let refreshPollTimer: ReturnType<typeof setTimeout> | null = null;
 let activeJobId: string | null = null;
+let pollAttempts = 0;
 
 async function pollRefreshStatus(jobId: string) {
     // If already polling for this job, ignore
     if (activeJobId === jobId && refreshPollTimer) return;
-    
+
     // If polling for a different job, stop the old one
     if (refreshPollTimer) {
-        clearInterval(refreshPollTimer);
+        clearTimeout(refreshPollTimer);
         refreshPollTimer = null;
     }
 
     activeJobId = jobId;
-    refreshState.update(s => ({ ...s, isRefreshing: true, message: 'Starting refresh...' }));
+    pollAttempts = 0;
+    refreshState.update(s => ({ ...s, isRefreshing: true, message: 'Starting refresh...', error: null }));
 
     const poll = async () => {
         try {
+            pollAttempts++;
+
+            // Timeout after max attempts
+            if (pollAttempts > MAX_POLL_ATTEMPTS) {
+                throw new Error('Refresh polling timeout - exceeded maximum attempts');
+            }
+
             const response = await fetch(`/api/refresh/status?jobId=${encodeURIComponent(jobId)}`);
             if (!response.ok) throw new Error('Status check failed');
-            
+
             const data = await response.json();
 
             if (data.status === 'done' || data.status === 'error') {
@@ -123,47 +137,69 @@ async function pollRefreshStatus(jobId: string) {
                 ...s,
                 current: data.current,
                 total: data.total,
-                message: data.message || `Refreshing... ${data.current}/${data.total}`
+                message: data.message || `Refreshing... ${data.current}/${data.total}`,
+                error: null
             }));
+
+            // Continue polling if still active - use exponential backoff
+            if (activeJobId === jobId) {
+                // Exponential backoff: min(INITIAL * 1.5^attempt, MAX)
+                const backoffInterval = Math.min(
+                    INITIAL_POLL_INTERVAL * Math.pow(1.5, Math.min(pollAttempts / 10, 5)),
+                    MAX_POLL_INTERVAL
+                );
+                refreshPollTimer = setTimeout(poll, backoffInterval);
+            }
         } catch (e) {
             console.error('Polling error:', e);
+            const errorMsg = e instanceof Error ? e.message : 'Polling error during refresh';
+            refreshState.update(s => ({
+                ...s,
+                error: errorMsg,
+                isRefreshing: false
+            }));
             stopPolling();
         }
     };
 
     function stopPolling() {
         if (refreshPollTimer) {
-            clearInterval(refreshPollTimer);
+            clearTimeout(refreshPollTimer);
             refreshPollTimer = null;
         }
         activeJobId = null;
+        pollAttempts = 0;
         refreshState.update(s => ({ ...s, isRefreshing: false }));
     }
 
-    // Immediate first poll
+    // Start immediate first poll
     await poll();
-    
-    // Only continue polling if still active
-    if (activeJobId === jobId) {
-        refreshPollTimer = setInterval(poll, 1000); // 1s interval is more reasonable than 500ms
-    }
 }
 
 export async function refreshFeed(url: string): Promise<void> {
     try {
         const { jobId } = await feedsApi.refreshFeed(url);
-        if (jobId) pollRefreshStatus(jobId);
+        if (!jobId) {
+            throw new Error('No feed refresh job started');
+        }
+        pollRefreshStatus(jobId);
     } catch (e) {
         console.error('Failed to start refresh:', e);
+        throw e;
     }
 }
 
 export async function refreshAll(): Promise<void> {
     try {
-        const { jobId } = await feedsApi.refreshAllFeeds();
-        if (jobId) pollRefreshStatus(jobId);
+        const response = await feedsApi.refreshAllFeeds();
+        const { jobId } = response;
+        if (!jobId) {
+            throw new Error('No feeds to refresh or failed to start refresh');
+        }
+        pollRefreshStatus(jobId);
     } catch (e) {
         console.error('Failed to start all-refresh:', e);
+        throw e;
     }
 }
 

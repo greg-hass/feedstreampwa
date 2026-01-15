@@ -247,11 +247,11 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
                 ok: true
             };
         } catch (error: any) {
-            fastify.log.error(error);
+            fastify.log.error({ error, id, isStarred }, 'Failed to update item star status');
             reply.code(500);
             return {
                 ok: false,
-                error: 'Database error'
+                error: 'Failed to update bookmark status in database'
             };
         }
     });
@@ -273,9 +273,9 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
             }
             return { ok: true, playback_position: result.data.position };
         } catch (error: any) {
-            fastify.log.error(error);
+            fastify.log.error({ error, id, position: result.data.position }, 'Failed to update playback position');
             reply.code(500);
-            return { ok: false, error: 'Database error' };
+            return { ok: false, error: 'Failed to update playback position in database' };
         }
     });
 
@@ -292,9 +292,9 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
             fastify.log.info(`Deleted item: ${id}`);
             return { ok: true, deleted: id };
         } catch (error: any) {
-            fastify.log.error(error);
+            fastify.log.error({ error, id }, 'Failed to delete item');
             reply.code(500);
-            return { ok: false, error: 'Database error' };
+            return { ok: false, error: 'Failed to delete item from database' };
         }
     });
 }

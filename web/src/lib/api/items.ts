@@ -1,5 +1,6 @@
 // API utilities for articles/items
 import type { Article, ReaderData } from '../types';
+import { fetchWithTimeout } from '$lib/utils/fetch';
 
 const API_BASE = '/api';
 
@@ -28,7 +29,7 @@ export async function fetchItems(params: FetchItemsParams = {}): Promise<{
     if (params.limit) searchParams.set('limit', params.limit.toString());
     if (params.offset) searchParams.set('offset', params.offset.toString());
 
-    const response = await fetch(`${API_BASE}/items?${searchParams}`);
+    const response = await fetchWithTimeout(`${API_BASE}/items?${searchParams}`);
 
     if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -51,7 +52,7 @@ export async function searchItems(query: string, limit = 100, offset = 0): Promi
         offset: offset.toString(),
     });
 
-    const response = await fetch(`${API_BASE}/items?${params}`);
+    const response = await fetchWithTimeout(`${API_BASE}/items?${params}`);
 
     if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -65,7 +66,7 @@ export async function searchItems(query: string, limit = 100, offset = 0): Promi
 }
 
 export async function toggleItemRead(itemId: string, newReadState: boolean): Promise<void> {
-    const response = await fetch(`${API_BASE}/items/${itemId}/read`, {
+    const response = await fetchWithTimeout(`${API_BASE}/items/${itemId}/read`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ read: newReadState }),
@@ -80,7 +81,7 @@ export async function toggleItemRead(itemId: string, newReadState: boolean): Pro
 }
 
 export async function toggleItemStar(itemId: string, newStarredState: boolean): Promise<void> {
-    const response = await fetch(`${API_BASE}/items/${itemId}/star`, {
+    const response = await fetchWithTimeout(`${API_BASE}/items/${itemId}/star`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ starred: newStarredState }),
@@ -95,7 +96,7 @@ export async function toggleItemStar(itemId: string, newStarredState: boolean): 
 }
 
 export async function markAllAsRead(feedUrl?: string): Promise<void> {
-    const response = await fetch(`${API_BASE}/items/mark-all-read`, {
+    const response = await fetchWithTimeout(`${API_BASE}/items/mark-all-read`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ feedUrl }),
@@ -110,7 +111,7 @@ export async function markAllAsRead(feedUrl?: string): Promise<void> {
 }
 
 export async function fetchReaderContent(url: string): Promise<ReaderData> {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
         `${API_BASE}/reader?url=${encodeURIComponent(url)}`
     );
 
@@ -126,7 +127,7 @@ export async function updateVideoProgress(
     itemId: string,
     progress: number
 ): Promise<void> {
-    const response = await fetch(`${API_BASE}/items/${itemId}/playback-position`, {
+    const response = await fetchWithTimeout(`${API_BASE}/items/${itemId}/playback-position`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ position: progress }),
@@ -141,7 +142,7 @@ export async function updateVideoProgress(
 }
 
 export async function deleteItem(itemId: string): Promise<void> {
-    const response = await fetch(`${API_BASE}/items/${itemId}`, {
+    const response = await fetchWithTimeout(`${API_BASE}/items/${itemId}`, {
         method: 'DELETE',
     });
 
