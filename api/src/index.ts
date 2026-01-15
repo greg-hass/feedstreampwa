@@ -19,6 +19,10 @@ import refreshRoutes from './routes/refresh.js';
 import systemRoutes from './routes/system.js';
 import opmlRoutes from './routes/opml.js';
 
+// Middleware imports
+import { setupRateLimiting } from './middleware/rate-limit.js';
+import { validateBody, validateQuery, validateFeedUrlMiddleware, sanitizeHtmlMiddleware, validateRequestSizeMiddleware, validateSearchQueryMiddleware } from './middleware/validation.js';
+
 // Service imports
 import { initBackupService } from './services/backup-service.js';
 import { startBackgroundSync, stopBackgroundSync } from './services/scheduler.js';
@@ -75,15 +79,15 @@ const start = async () => {
 
         fastify.log.info('Security middleware registered (including per-route rate limiting)');
 
-        // Register Routes with /api prefix
-        fastify.register(authRoutes, { prefix: '/api' });
-        fastify.register(feedRoutes, { prefix: '/api' });
-        fastify.register(itemRoutes, { prefix: '/api' });
-        fastify.register(folderRoutes, { prefix: '/api' });
-        fastify.register(readerRoutes, { prefix: '/api' });
-        fastify.register(refreshRoutes, { prefix: '/api' });
-        fastify.register(systemRoutes, { prefix: '/api' });
-        fastify.register(opmlRoutes, { prefix: '/api' });
+        // Register Routes (Caddy strips /api prefix before proxying)
+        fastify.register(authRoutes);
+        fastify.register(feedRoutes);
+        fastify.register(itemRoutes);
+        fastify.register(folderRoutes);
+        fastify.register(readerRoutes);
+        fastify.register(refreshRoutes);
+        fastify.register(systemRoutes);
+        fastify.register(opmlRoutes);
 
         await fastify.listen({ port: env.PORT, host: '0.0.0.0' });
         fastify.log.info(`Server listening on http://0.0.0.0:${env.PORT}`);
