@@ -44,7 +44,6 @@ process.on('SIGINT', () => clearInterval(cleanupInterval));
 export default async function refreshRoutes(fastify: any, options: any) {
     // Start refresh job - expensive operation, stricter rate limit
     fastify.post('/refresh/start', {
-        onRequest: [authenticateToken],
         config: {
             rateLimit: {
                 max: 10,
