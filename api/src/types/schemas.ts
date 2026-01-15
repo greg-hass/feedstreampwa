@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { FeedUrlSchema, SearchQuerySchema as SearchQueryValidator } from '../utils/validator.js';
 
 // Feed kinds
 export const FeedKindSchema = z.enum(['generic', 'youtube', 'reddit', 'podcast']);
@@ -26,24 +27,24 @@ export type Feed = z.infer<typeof FeedSchema>;
 
 // API Request Schemas
 export const AddFeedSchema = z.object({
-    url: z.string().url(),
+    url: FeedUrlSchema,
     refresh: z.boolean().optional().default(false),
     folderIds: z.array(z.string()).optional().default([]),
-    title: z.string().optional().nullable()
+    title: z.string().max(500, 'Title too long (max 500 characters)').optional().nullable()
 });
 
 export const RenameFeedSchema = z.object({
-    url: z.string().url(),
-    title: z.string().min(1)
+    url: FeedUrlSchema,
+    title: z.string().min(1).max(500, 'Title too long (max 500 characters)')
 });
 
 export const SearchFeedsQuerySchema = z.object({
-    q: z.string().min(1),
+    q: SearchQueryValidator,
     type: z.string().optional().default('all')
 });
 
 export const RefreshFeedsSchema = z.object({
-    urls: z.array(z.string().url()).optional()
+    urls: z.array(FeedUrlSchema).optional()
 });
 
 export const RefreshStatusQuerySchema = z.object({
@@ -88,7 +89,7 @@ export const GetItemsQuerySchema = z.object({
     starredOnly: z.enum(['true', 'false']).transform(v => v === 'true').optional(),
     limit: z.string().transform(Number).optional().default(20),
     offset: z.string().transform(Number).optional().default(0),
-    q: z.string().optional()
+    q: SearchQueryValidator.optional()
 });
 
 export const MarkReadSchema = z.object({
@@ -119,18 +120,18 @@ export const FolderSchema = z.object({
 export type Folder = z.infer<typeof FolderSchema>;
 
 export const CreateFolderSchema = z.object({
-    name: z.string().min(1).max(60)
+    name: z.string().min(1, 'Folder name is required').max(100, 'Folder name too long (max 100 characters)')
 });
 
 export const UpdateFolderSchema = CreateFolderSchema;
 
 export const FolderFeedSchema = z.object({
-    feedUrl: z.string().url()
+    feedUrl: FeedUrlSchema
 });
 
 // Reader Schemas
 export const ReaderQuerySchema = z.object({
-    url: z.string().url()
+    url: FeedUrlSchema
 });
 
 export const PurgeReaderSchema = z.object({
@@ -163,6 +164,17 @@ export const SummarizeItemSchema = z.object({
 });
 
 export const DiscussionQuerySchema = z.object({
-    url: z.string().url()
+    url: FeedUrlSchema
+});
+
+// Auth Schemas
+export const RegisterSchema = z.object({
+    email: z.string().email('Invalid email format'),
+    password: z.string().min(8, 'Password must be at least 8 characters')
+});
+
+export const LoginSchema = z.object({
+    email: z.string().email('Invalid email format'),
+    password: z.string().min(1, 'Password is required')
 });
 
