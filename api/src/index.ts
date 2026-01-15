@@ -48,20 +48,22 @@ const start = async () => {
             },
         });
 
-        // CORS Configuration - restrictive in production, permissive in development
+        // CORS Configuration
+        // If ALLOWED_ORIGINS is set, restrict to those origins
+        // Otherwise, allow all origins (suitable for personal/single-user deployments)
         const allowedOrigins = env.ALLOWED_ORIGINS
             ? env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
-            : [];
+            : null;
 
         await fastify.register(cors, {
             origin: (origin, callback) => {
-                // In development, allow all origins
-                if (isDevelopment) {
+                // If no allowed origins configured, allow all (personal use mode)
+                if (!allowedOrigins) {
                     callback(null, true);
                     return;
                 }
 
-                // In production, only allow configured origins
+                // Otherwise, check against the allowed list
                 if (!origin || allowedOrigins.includes(origin)) {
                     callback(null, true);
                 } else {
