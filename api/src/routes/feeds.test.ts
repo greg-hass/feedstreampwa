@@ -5,27 +5,22 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vites
 import Database from 'better-sqlite3';
 import { initializeSchema, applyMigrations } from '../db/schema.js';
 
-// Create test database using vi.hoisted to make it available to the mock
-const { sharedDb } = vi.hoisted(() => {
-    // Create in-memory test database before any imports
-    const db = new (require('better-sqlite3').default)(':memory:');
-    db.pragma('journal_mode = WAL');
-    db.pragma('foreign_keys = ON');
-    return { sharedDb: db };
-});
+// Create in-memory test database that will be shared with the mock
+const testDb = new Database(':memory:');
+testDb.pragma('journal_mode = WAL');
+testDb.pragma('foreign_keys = ON');
 
 // Mock the db client to use our test database
-vi.mock('../db/client.js', () => ({
-    db: sharedDb
-}));
+vi.mock('../db/client.js', async () => {
+    return { db: testDb };
+});
 
 import Fastify, { FastifyInstance } from 'fastify';
 import feedRoutes from './feeds.js';
 
 describe('Feeds Routes', () => {
     let app: FastifyInstance;
-    // Use the shared test database
-    const db = sharedDb;
+    const db = testDb;
 
     beforeAll(async () => {
         // Initialize schema on the shared database
