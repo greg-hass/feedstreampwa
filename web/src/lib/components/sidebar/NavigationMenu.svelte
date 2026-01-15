@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { page } from "$app/stores";
   import {
     LayoutDashboard,
     Eye,
@@ -17,8 +16,6 @@
     libraryTotal,
     formatUnreadTotal,
   } from "$lib/stores/counts";
-
-  $: activeUrl = $page.url.pathname;
 </script>
 
 <div class="space-y-1">
@@ -29,18 +26,17 @@
   </div>
 
   <!-- All Articles Button -->
-  <a
-    href="/"
+  <button
     on:click={() => setViewAll()}
-    class="flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 group relative overflow-hidden
-    {activeUrl === '/'
+    class="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 group relative overflow-hidden
+    {$viewMode === 'all'
       ? 'bg-white/10 text-white shadow-inner border border-white/5'
       : 'text-white/60 hover:text-white hover:bg-white/5'}"
   >
     <div class="flex items-center gap-3">
       <LayoutDashboard
         size={24}
-        class={activeUrl === "/"
+        class={$viewMode === 'all'
           ? "text-accent"
           : "text-current group-hover:text-white"}
       />
@@ -49,14 +45,14 @@
 
     {#if $allArticlesTotal > 0}
       <span
-        class="text-xs font-medium {activeUrl === '/'
+        class="text-xs font-medium {$viewMode === 'all'
           ? 'text-white/70'
           : 'text-white/40'}"
       >
         {formatUnreadTotal($allArticlesUnread, $allArticlesTotal)}
       </span>
     {/if}
-  </a>
+  </button>
 
   <!-- Unread -->
   <button
