@@ -20,7 +20,6 @@ import systemRoutes from './routes/system.js';
 import opmlRoutes from './routes/opml.js';
 
 // Middleware imports
-import { setupRateLimiting } from './middleware/rate-limit.js';
 import { validateBody, validateQuery, validateFeedUrlMiddleware, sanitizeHtmlMiddleware, validateRequestSizeMiddleware, validateSearchQueryMiddleware } from './middleware/validation.js';
 
 // Service imports
