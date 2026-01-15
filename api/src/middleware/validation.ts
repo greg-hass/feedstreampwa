@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { 
-  validateFeedUrl, 
+import {
+  validateFeedUrl,
   validateRequestSize,
   isValidEmail,
   validatePassword,
@@ -10,6 +10,7 @@ import {
   EmailSchema,
   PasswordSchema
 } from '../utils/validator.js';
+import { RegisterSchema, LoginSchema, AddFeedSchema } from '../types/schemas.js';
 import { z } from 'zod';
 
 /**
@@ -19,7 +20,7 @@ import { z } from 'zod';
 export function validateBody<T>(schema: z.ZodSchema<T>) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     const result = schema.safeParse(request.body);
-    
+
     if (!result.success) {
       reply.code(400);
       return {
@@ -27,7 +28,7 @@ export function validateBody<T>(schema: z.ZodSchema<T>) {
         error: result.error.issues[0].message
       };
     }
-    
+
     // Attach validated data to request
     (request as any).validatedBody = result.data;
   };
@@ -39,7 +40,7 @@ export function validateBody<T>(schema: z.ZodSchema<T>) {
 export function validateQuery<T>(schema: z.ZodSchema<T>) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     const result = schema.safeParse(request.query);
-    
+
     if (!result.success) {
       reply.code(400);
       return {
@@ -47,7 +48,7 @@ export function validateQuery<T>(schema: z.ZodSchema<T>) {
         error: result.error.issues[0].message
       };
     }
-    
+
     // Attach validated data to request
     (request as any).validatedQuery = result.data;
   };
@@ -61,7 +62,7 @@ export async function validateFeedUrlMiddleware(
   reply: FastifyReply
 ): Promise<void> {
   const body = request.body as any;
-  
+
   if (!body.url) {
     reply.code(400);
     reply.send({
@@ -72,7 +73,7 @@ export async function validateFeedUrlMiddleware(
   }
 
   const validation = validateFeedUrl(body.url);
-  
+
   if (!validation.valid) {
     reply.code(400);
     reply.send({
@@ -82,22 +83,20 @@ export async function validateFeedUrlMiddleware(
     return;
   }
 
-  // Attach sanitized URL
-  (request as any).sanitizedUrl = validation.sanitized || body.url;
+  // Attach sanitized URL (use original URL as validation already confirmed it's valid)
+  (request as any).sanitizedUrl = body.url;
 }
 
 /**
  * Validate and sanitize HTML content
  */
 export function sanitizeHtmlMiddleware() {
-  return async (request: FastifyRequest, reply: FastifyReply, next: () => void) => {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as any;
-    
+
     if (body.html) {
       (request as any).sanitizedHtml = sanitizeHtml(body.html);
     }
-    
-    await next();
   };
 }
 
@@ -107,10 +106,10 @@ export function sanitizeHtmlMiddleware() {
 export function validateRequestSizeMiddleware(maxSize: number = 10 * 1024 * 1024) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     const contentLength = request.headers['content-length'];
-    
+
     if (contentLength) {
       const size = parseInt(contentLength, 10);
-      
+
       if (size > maxSize) {
         reply.code(413);
         reply.send({
@@ -120,8 +119,6 @@ export function validateRequestSizeMiddleware(maxSize: number = 10 * 1024 * 1024
         return;
       }
     }
-    
-    await next();
   };
 }
 
@@ -131,7 +128,7 @@ export function validateRequestSizeMiddleware(maxSize: number = 10 * 1024 * 1024
 export function validateSearchQueryMiddleware() {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     const query = request.query as any;
-    
+
     if (!query.q) {
       reply.code(400);
       reply.send({
@@ -142,7 +139,7 @@ export function validateSearchQueryMiddleware() {
     }
 
     const validation = SearchQuerySchema.safeParse(query);
-    
+
     if (!validation.success) {
       reply.code(400);
       reply.send({
@@ -154,7 +151,6 @@ export function validateSearchQueryMiddleware() {
 
     // Attach validated query
     (request as any).validatedQuery = validation.data;
-    await next();
   };
 }
 
