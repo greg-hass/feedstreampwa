@@ -4,10 +4,8 @@
     Sparkles,
     Activity,
     Copy,
-    LogIn,
   } from "lucide-svelte";
   import { isSettingsModalOpen } from "$lib/stores/ui";
-  import { isLoggedIn } from "$lib/stores/auth";
   import AIRecommendationsModal from "$lib/components/modals/AIRecommendationsModal.svelte";
   import FeedHealthModal from "$lib/components/modals/FeedHealthModal.svelte";
   import DuplicatesModal from "$lib/components/modals/DuplicatesModal.svelte";
@@ -44,25 +42,6 @@
     <Copy size={24} class="text-orange-400 group-hover:text-orange-300" />
     <span class="text-sm font-medium">Duplicates</span>
   </button>
-
-  <!-- Login/Logout -->
-  {#if !$isLoggedIn}
-    <button
-      class="w-full flex items-center gap-3 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 transition-all text-white"
-      on:click={() => document.dispatchEvent(new CustomEvent('open-auth'))}
-    >
-      <LogIn size={24} />
-      <span class="text-sm font-medium">Sign In</span>
-    </button>
-  {:else}
-    <button
-      class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors text-white/60 hover:text-white"
-      on:click={() => document.dispatchEvent(new CustomEvent('logout'))}
-    >
-      <LogIn size={24} />
-      <span class="text-sm font-medium">Sign Out</span>
-    </button>
-  {/if}
 
   <!-- Settings -->
   <button
