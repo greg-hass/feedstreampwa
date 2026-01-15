@@ -183,8 +183,7 @@ export default async function feedRoutes(fastify: FastifyInstance, options: any)
     });
 
     // Add feed endpoint
-    fastify.post('/feeds', {
-    }, async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.post('/feeds', async (request: FastifyRequest, reply: FastifyReply) => {
         const result = AddFeedSchema.safeParse(request.body);
 
         if (!result.success) {
@@ -307,8 +306,7 @@ export default async function feedRoutes(fastify: FastifyInstance, options: any)
     });
 
     // Rename feed endpoint
-    fastify.patch('/feeds', {
-    }, async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.patch('/feeds', async (request: FastifyRequest, reply: FastifyReply) => {
         const result = RenameFeedSchema.safeParse(request.body);
 
         if (!result.success) {
@@ -340,8 +338,7 @@ export default async function feedRoutes(fastify: FastifyInstance, options: any)
     });
 
     // Delete feed endpoint
-    fastify.delete('/feeds', {
-    }, async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.delete('/feeds', async (request: FastifyRequest, reply: FastifyReply) => {
         const query = request.query as any;
         const body = request.body as any;
 
