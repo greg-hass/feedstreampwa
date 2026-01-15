@@ -52,18 +52,7 @@
         : density === "spacious"
           ? "px-4 py-6"
           : "px-4 py-4",
-    iconSize:
-      density === "compact"
-        ? "w-8 h-8"
-        : density === "spacious"
-          ? "w-14 h-14"
-          : "w-10 h-10 sm:w-12 sm:h-12",
-    iconInnerSize:
-      density === "compact"
-        ? "w-4 h-4"
-        : density === "spacious"
-          ? "w-8 h-8"
-          : "w-6 h-6 sm:w-7 sm:h-7",
+    iconSize: "w-5 h-5", // Fixed 20px regardless of density
     titleSize:
       density === "compact"
         ? "text-sm"
