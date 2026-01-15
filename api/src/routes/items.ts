@@ -144,7 +144,6 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
 
     // Mark item as read/unread
     fastify.post('/items/:id/read', {
-        onRequest: [authenticateToken]
     }, async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
         const result = MarkReadSchema.safeParse(request.body);
@@ -187,7 +186,6 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
 
     // Mark all items as read with optional filters
     fastify.post('/items/mark-all-read', {
-        onRequest: [authenticateToken]
     }, async (request: FastifyRequest, reply: FastifyReply) => {
         const result = MarkAllReadSchema.safeParse(request.body);
 
@@ -253,7 +251,6 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
 
     // Star/unstar item
     fastify.post('/items/:id/star', {
-        onRequest: [authenticateToken]
     }, async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
         const result = StarItemSchema.safeParse(request.body);
@@ -294,7 +291,6 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
     });
 
     fastify.patch('/items/:id/playback-position', {
-        onRequest: [authenticateToken]
     }, async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
         const result = PlaybackPositionSchema.safeParse(request.body);
@@ -320,7 +316,6 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
 
     // Delete a single item
     fastify.delete('/items/:id', {
-        onRequest: [authenticateToken]
     }, async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
 

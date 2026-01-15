@@ -184,7 +184,6 @@ export default async function feedRoutes(fastify: FastifyInstance, options: any)
 
     // Add feed endpoint
     fastify.post('/feeds', {
-        onRequest: [authenticateToken]
     }, async (request: FastifyRequest, reply: FastifyReply) => {
         const result = AddFeedSchema.safeParse(request.body);
 
@@ -309,7 +308,6 @@ export default async function feedRoutes(fastify: FastifyInstance, options: any)
 
     // Rename feed endpoint
     fastify.patch('/feeds', {
-        onRequest: [authenticateToken]
     }, async (request: FastifyRequest, reply: FastifyReply) => {
         const result = RenameFeedSchema.safeParse(request.body);
 
@@ -343,7 +341,6 @@ export default async function feedRoutes(fastify: FastifyInstance, options: any)
 
     // Delete feed endpoint
     fastify.delete('/feeds', {
-        onRequest: [authenticateToken]
     }, async (request: FastifyRequest, reply: FastifyReply) => {
         const query = request.query as any;
         const body = request.body as any;

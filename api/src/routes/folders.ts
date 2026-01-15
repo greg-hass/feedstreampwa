@@ -39,7 +39,6 @@ export default async function folderRoutes(fastify: FastifyInstance, options: an
 
     // Create a new custom folder
     fastify.post('/folders', {
-        onRequest: [authenticateToken]
     }, async (request: FastifyRequest, reply: FastifyReply) => {
         const result = CreateFolderSchema.safeParse(request.body);
 
@@ -85,7 +84,6 @@ export default async function folderRoutes(fastify: FastifyInstance, options: an
 
     // Rename a custom folder
     fastify.patch('/folders/:id', {
-        onRequest: [authenticateToken]
     }, async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
         const result = UpdateFolderSchema.safeParse(request.body);
@@ -131,7 +129,6 @@ export default async function folderRoutes(fastify: FastifyInstance, options: an
 
     // Delete a custom folder
     fastify.delete('/folders/:id', {
-        onRequest: [authenticateToken]
     }, async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
 
@@ -170,7 +167,6 @@ export default async function folderRoutes(fastify: FastifyInstance, options: an
 
     // Add feed to custom folder
     fastify.post('/folders/:id/feeds', {
-        onRequest: [authenticateToken]
     }, async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
         const result = FolderFeedSchema.safeParse(request.body);
@@ -226,7 +222,6 @@ export default async function folderRoutes(fastify: FastifyInstance, options: an
 
     // Remove feed from custom folder
     fastify.delete('/folders/:id/feeds', {
-        onRequest: [authenticateToken]
     }, async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
         const result = FolderFeedSchema.safeParse(request.body);

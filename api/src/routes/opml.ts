@@ -11,7 +11,6 @@ const ImportOpmlSchema = z.object({
 export default async function opmlRoutes(fastify: FastifyInstance, options: any) {
     // Import OPML
     fastify.post('/opml', {
-        onRequest: [authenticateToken]
     }, async (request: FastifyRequest, reply: FastifyReply) => {
         const result = ImportOpmlSchema.safeParse(request.body);
         if (!result.success) {
