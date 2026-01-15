@@ -14,7 +14,9 @@
   import DataSettings from "./settings/DataSettings.svelte";
   import AutomationSettings from "./settings/AutomationSettings.svelte";
 
-  let localSettings: Settings = { ...$settings };
+  // Ensure all settings fields have defaults
+  const defaultSettings: Settings = { sync_interval: 'off', gemini_api_key: '' };
+  let localSettings: Settings = { ...defaultSettings, ...$settings };
   let saving = false;
   let error: string | null = null;
   let successMessage = false;
@@ -168,7 +170,7 @@
 
   // Lifecycle
   $: if ($isSettingsModalOpen) {
-    localSettings = { ...$settings };
+    localSettings = { ...defaultSettings, ...$settings };
     activeTab = "general";
   }
 

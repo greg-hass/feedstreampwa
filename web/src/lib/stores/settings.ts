@@ -3,10 +3,19 @@ import { writable } from 'svelte/store';
 import type { Settings } from '../types';
 import * as settingsApi from '../api/settings';
 
-// State
-export const settings = writable<Settings>({ theme: 'system', sync_interval: 'off' });
+// State - include all settings fields with defaults
+export const settings = writable<Settings>({
+    sync_interval: 'off',
+    gemini_api_key: ''
+});
 export const settingsLoading = writable(false);
 export const settingsError = writable<string | null>(null);
+
+// Default settings
+const defaultSettings: Settings = {
+    sync_interval: 'off',
+    gemini_api_key: ''
+};
 
 // Actions
 export async function loadSettings(): Promise<void> {
@@ -15,7 +24,8 @@ export async function loadSettings(): Promise<void> {
 
     try {
         const data = await settingsApi.fetchSettings();
-        settings.set(data);
+        // Merge with defaults to ensure all fields exist
+        settings.set({ ...defaultSettings, ...data });
     } catch (err) {
         settingsError.set(err instanceof Error ? err.message : 'Unknown error occurred');
     } finally {
