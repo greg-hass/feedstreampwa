@@ -13,7 +13,7 @@ function parseEnum<T extends string>(value: string | undefined, values: readonly
 
 export const env = {
   PORT: parseNumber(process.env.PORT || '3000', 3000),
-  DB_PATH: process.env.DB_PATH || '/data/feedstream.sqlite',
+  DB_PATH: process.env.DB_PATH || (process.env.NODE_ENV === 'production' ? '/data/feedstream.sqlite' : './data/feedstream.sqlite'),
   FETCH_TIMEOUT_MS: parseNumber(process.env.FETCH_TIMEOUT_MS || '12000', 12000),
   MAX_CONCURRENCY: parseNumber(process.env.MAX_CONCURRENCY || '6', 6),
   READER_CACHE_TTL_HOURS: parseNumber(process.env.READER_CACHE_TTL_HOURS || '168', 168),

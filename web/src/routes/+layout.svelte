@@ -15,19 +15,41 @@
   import FeedFolderPopover from "$lib/components/modals/FeedFolderPopover.svelte";
   import ContextMenu from "$lib/components/ContextMenu.svelte";
   import RefreshToast from "$lib/components/RefreshToast.svelte";
+  import AuthModal from "$lib/components/AuthModal.svelte";
+  import { initAuth, isLoggedIn } from "$lib/stores/auth";
   import { currentMedia, mediaType } from "$lib/stores/media";
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { loadFeeds } from "$lib/stores/feeds";
   import { loadFolders } from "$lib/stores/folders";
   import { loadSettings } from "$lib/stores/settings";
 
+  let showAuthModal = false;
+
   // Show player only when there's media loaded and it's not a video
   $: isMediaVisible = $currentMedia !== null && $mediaType !== "video";
 
+  function handleOpenAuth() {
+    showAuthModal = true;
+  }
+
+  function handleLogout() {
+    document.dispatchEvent(new CustomEvent('logout'));
+  }
+
   onMount(() => {
+    initAuth();
     loadFeeds();
     loadFolders();
     loadSettings();
+
+    // Listen for auth events
+    window.addEventListener('open-auth', handleOpenAuth);
+    window.addEventListener('logout', handleLogout);
+  });
+
+  onDestroy(() => {
+    window.removeEventListener('open-auth', handleOpenAuth);
+    window.removeEventListener('logout', handleLogout);
   });
 </script>
 
@@ -104,6 +126,7 @@
   <FeedFolderPopover />
   <ContextMenu />
   <RefreshToast />
+  <AuthModal bind:isOpen={showAuthModal} />
 </div>
 
 <style>

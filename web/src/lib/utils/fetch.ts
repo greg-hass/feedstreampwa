@@ -37,4 +37,30 @@ export async function fetchWithTimeout(
     }
 }
 
+/**
+ * Fetch with authentication token
+ * @param url - The URL to fetch
+ * @param options - Fetch options
+ * @returns Promise<Response>
+ */
+export async function fetchWithAuth(
+    url: string,
+    options: RequestInit = {}
+): Promise<Response> {
+    const token = localStorage.getItem('auth_token');
+    
+    const headers: HeadersInit = {
+        ...options.headers,
+    };
+    
+    if (token) {
+        (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return fetchWithTimeout(url, {
+        ...options,
+        headers,
+    });
+}
+
 export default fetchWithTimeout;

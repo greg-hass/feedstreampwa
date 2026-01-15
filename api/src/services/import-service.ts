@@ -84,7 +84,7 @@ async function processImport(jobId: string, parsed: any) {
 
             // Single node
             const text = node.text || node.title || '';
-            const xmlUrl = node.xmlUrl || '';
+            const xmlUrl = node.xmlUrl || node.url || ''; // Support both standard and non-standard
 
             if (xmlUrl) {
                 // It's a feed
@@ -152,14 +152,10 @@ async function processImport(jobId: string, parsed: any) {
 
         job.total = actions.length;
 
-        // Execute actions with slight delay to allow UI updates if needed, 
-        // but mainly just run them.
+        // Execute actions
         for (let i = 0; i < actions.length; i++) {
             actions[i]();
             job.current = i + 1;
-            
-            // Artificial delay for small lists so user sees the bar?
-            // No, speed is better.
             
             // Yield every 50 items to not block event loop
             if (i % 50 === 0) await new Promise(r => setImmediate(r));
