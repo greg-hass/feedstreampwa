@@ -34,12 +34,14 @@
       : 'text-white/60 hover:text-white hover:bg-white/5'}"
   >
     <div class="flex items-center gap-3">
-      <LayoutDashboard
-        size={24}
-        class={$viewMode === 'all'
-          ? "text-accent"
-          : "text-current group-hover:text-white"}
-      />
+      <div class="w-6 flex items-center justify-center">
+        <LayoutDashboard
+          size={24}
+          class={$viewMode === 'all'
+            ? "text-accent"
+            : "text-current group-hover:text-white"}
+        />
+      </div>
       All Articles
     </div>
 
@@ -63,12 +65,14 @@
     on:click={setViewUnread}
   >
     <div class="flex items-center gap-3">
-      <Eye
-        size={24}
-        class={$viewMode === "unread"
-          ? "text-blue-400"
-          : "text-current group-hover:text-white"}
-      />
+      <div class="w-6 flex items-center justify-center">
+        <Eye
+          size={24}
+          class={$viewMode === "unread"
+            ? "text-blue-400"
+            : "text-current group-hover:text-white"}
+        />
+      </div>
       Unread
     </div>
 
@@ -92,13 +96,15 @@
     on:click={setViewBookmarks}
   >
     <div class="flex items-center gap-3">
-      <Bookmark
-        size={24}
-        class={$viewMode === "bookmarks"
-          ? "text-[#FF9500]"
-          : "text-current group-hover:text-white"}
-        fill={$viewMode === "bookmarks" ? "currentColor" : "none"}
-      />
+      <div class="w-6 flex items-center justify-center">
+        <Bookmark
+          size={24}
+          class={$viewMode === "bookmarks"
+            ? "text-[#FF9500]"
+            : "text-current group-hover:text-white"}
+          fill={$viewMode === "bookmarks" ? "currentColor" : "none"}
+        />
+      </div>
       Bookmarks
     </div>
 
