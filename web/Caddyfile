@@ -3,7 +3,9 @@
 	https_port 443
 }
 
-{$DOMAIN_NAME:https://ubuntu.swallow-cliff.ts.net:443} {
+# Accept any hostname (local IP, Tailscale, etc.)
+:443 {
+	tls internal
 	# API reverse proxy - strip /api prefix
 	handle /api/* {
 		uri strip_prefix /api
