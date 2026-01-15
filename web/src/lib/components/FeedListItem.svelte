@@ -295,23 +295,23 @@
     <div class="flex items-start gap-3 {densityClasses.headerSpacing}">
       <!-- Feed Icon -->
       <div class="flex-shrink-0">
-        <div
-          class="{densityClasses.iconSize} rounded-full bg-white/5 flex items-center justify-center border border-white/5 group-hover:border-white/10 transition-colors"
-        >
-          {#if item.feed_icon_url}
-            <img
-              src={item.feed_icon_url}
-              alt=""
-              class="{densityClasses.iconInnerSize} object-contain opacity-80"
-            />
-          {:else}
+        {#if item.feed_icon_url}
+          <img
+            src={item.feed_icon_url}
+            alt=""
+            class="{densityClasses.iconSize} rounded-lg object-cover"
+          />
+        {:else}
+          <div
+            class="{densityClasses.iconSize} rounded-lg bg-white/5 flex items-center justify-center"
+          >
             <svelte:component
               this={Icon}
               size={20}
               class={currentStyle.color}
             />
-          {/if}
-        </div>
+          </div>
+        {/if}
       </div>
 
       <!-- Feed Title + Timestamp + Read Time -->
