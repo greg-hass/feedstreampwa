@@ -10,6 +10,7 @@ import { db } from './db/client.js';
 import { setupRateLimiting } from './middleware/rate-limit.js';
 
 // Route imports
+import authRoutes from './routes/auth.js';
 import feedRoutes from './routes/feeds.js';
 import itemRoutes from './routes/items.js';
 import folderRoutes from './routes/folders.js';
@@ -39,7 +40,7 @@ const start = async () => {
                     styleSrc: ["'self'", "'unsafe-inline'"],
                     scriptSrc: ["'self'"],
                     imgSrc: ["'self'", "data:", "https:"],
-                    frameSrc: ["'self'", "https://www.youtube.com"], 
+                    frameSrc: ["'self'", "https://www.youtube.com"],
                 },
             },
         });
@@ -74,14 +75,15 @@ const start = async () => {
 
         fastify.log.info('Security middleware registered (including per-route rate limiting)');
 
-        // Register Routes
-        fastify.register(feedRoutes);
-        fastify.register(itemRoutes);
-        fastify.register(folderRoutes);
-        fastify.register(readerRoutes);
-        fastify.register(refreshRoutes);
-        fastify.register(systemRoutes);
-        fastify.register(opmlRoutes);
+        // Register Routes with /api prefix
+        fastify.register(authRoutes, { prefix: '/api' });
+        fastify.register(feedRoutes, { prefix: '/api' });
+        fastify.register(itemRoutes, { prefix: '/api' });
+        fastify.register(folderRoutes, { prefix: '/api' });
+        fastify.register(readerRoutes, { prefix: '/api' });
+        fastify.register(refreshRoutes, { prefix: '/api' });
+        fastify.register(systemRoutes, { prefix: '/api' });
+        fastify.register(opmlRoutes, { prefix: '/api' });
 
         await fastify.listen({ port: env.PORT, host: '0.0.0.0' });
         fastify.log.info(`Server listening on http://0.0.0.0:${env.PORT}`);
