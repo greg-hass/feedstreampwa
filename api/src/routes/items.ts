@@ -35,59 +35,89 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
         const offset = query.offset;
         const q = query.q ? query.q.trim() : null;
 
-        // Build WHERE clause
-        const conditions: string[] = [];
-        const params: any[] = [];
-
-        if (feed) {
-            conditions.push('i.feed_url = ?');
-            params.push(feed);
+        // Build WHERE clause using safe query builder pattern
+        interface QueryCondition {
+            clause: string;
+            params: any[];
         }
 
-        if (source && ['generic', 'youtube', 'reddit', 'podcast'].includes(source)) {
-            conditions.push('i.source = ?');
-            params.push(source);
+        const conditions: QueryCondition[] = [];
+
+        // Whitelist and validate filter parameters
+        const ALLOWED_SOURCES = ['generic', 'youtube', 'reddit', 'podcast'] as const;
+        const ALLOWED_SMART_FOLDERS = ['rss', 'youtube', 'reddit', 'podcast'] as const;
+
+        if (feed) {
+            conditions.push({
+                clause: 'i.feed_url = ?',
+                params: [feed]
+            });
+        }
+
+        if (source && ALLOWED_SOURCES.includes(source as any)) {
+            conditions.push({
+                clause: 'i.source = ?',
+                params: [source]
+            });
         }
 
         // Smart folder filter (by feed kind)
-        if (smartFolder && ['rss', 'youtube', 'reddit', 'podcast'].includes(smartFolder)) {
-            let kindValue = 'generic';
-            if (smartFolder === 'youtube') kindValue = 'youtube';
-            if (smartFolder === 'reddit') kindValue = 'reddit';
-            if (smartFolder === 'podcast') kindValue = 'podcast';
-            conditions.push('f.kind = ?');
-            params.push(kindValue);
+        if (smartFolder && ALLOWED_SMART_FOLDERS.includes(smartFolder as any)) {
+            const kindMap: Record<string, string> = {
+                'rss': 'generic',
+                'youtube': 'youtube',
+                'reddit': 'reddit',
+                'podcast': 'podcast'
+            };
+            conditions.push({
+                clause: 'f.kind = ?',
+                params: [kindMap[smartFolder]]
+            });
         }
 
         // Custom folder filter
         if (folderId) {
-            conditions.push('i.feed_url IN (SELECT feed_url FROM folder_feeds WHERE folder_id = ?)');
-            params.push(folderId);
+            conditions.push({
+                clause: 'i.feed_url IN (SELECT feed_url FROM folder_feeds WHERE folder_id = ?)',
+                params: [folderId]
+            });
         }
 
         if (unreadOnly) {
-            conditions.push('i.is_read = 0');
+            conditions.push({
+                clause: 'i.is_read = 0',
+                params: []
+            });
         }
 
         if (starredOnly) {
-            conditions.push('i.is_starred = 1');
+            conditions.push({
+                clause: 'i.is_starred = 1',
+                params: []
+            });
         }
 
         if (q) {
-            conditions.push('fts MATCH ?');
-            params.push(q);
+            conditions.push({
+                clause: 'fts MATCH ?',
+                params: [q]
+            });
         }
+
+        // Build final WHERE clause and params array
+        const whereClauses = conditions.map(c => c.clause);
+        const whereParams = conditions.flatMap(c => c.params);
+        const whereClause = whereClauses.length > 0 ? 'WHERE ' + whereClauses.join(' AND ') : '';
 
         // Need to join feeds table if filtering by smartFolder
         const baseFromClause = 'FROM items i INNER JOIN feeds f ON i.feed_url = f.url';
         const fromClause = q
             ? `${baseFromClause} INNER JOIN items_fts fts ON i.rowid = fts.rowid`
             : baseFromClause;
-        const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
 
         // Get total count
         const countQuery = `SELECT COUNT(*) as total ${fromClause} ${whereClause}`;
-        const countResult = db.prepare(countQuery).get(...params) as any;
+        const countResult = db.prepare(countQuery).get(...whereParams) as any;
         const total = countResult.total;
 
         // Get items
@@ -103,7 +133,7 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
             LIMIT ? OFFSET ?
         `;
 
-        const items = db.prepare(itemsQuery).all(...params, limit, offset);
+        const items = db.prepare(itemsQuery).all(...whereParams, limit, offset);
 
         return {
             ok: true,
