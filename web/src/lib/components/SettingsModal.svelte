@@ -168,10 +168,15 @@
     }, 500);
   }
 
-  // Lifecycle
-  $: if ($isSettingsModalOpen) {
-    localSettings = { ...defaultSettings, ...$settings };
-    activeTab = "general";
+  // Lifecycle - only reset when modal opens, not on every $settings change
+  let wasOpen = false;
+  $: {
+    if ($isSettingsModalOpen && !wasOpen) {
+      // Modal just opened - reset to current settings
+      localSettings = { ...defaultSettings, ...$settings };
+      activeTab = "general";
+    }
+    wasOpen = $isSettingsModalOpen;
   }
 
   $: if (activeTab === "data") {
