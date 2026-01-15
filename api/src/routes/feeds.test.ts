@@ -1,25 +1,40 @@
 /**
  * Integration tests for feeds routes
  */
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
+import Database from 'better-sqlite3';
+import { initializeSchema, applyMigrations } from '../db/schema.js';
+
+// Create test database using vi.hoisted to make it available to the mock
+const { sharedDb } = vi.hoisted(() => {
+    // Create in-memory test database before any imports
+    const db = new (require('better-sqlite3').default)(':memory:');
+    db.pragma('journal_mode = WAL');
+    db.pragma('foreign_keys = ON');
+    return { sharedDb: db };
+});
+
+// Mock the db client to use our test database
+vi.mock('../db/client.js', () => ({
+    db: sharedDb
+}));
+
 import Fastify, { FastifyInstance } from 'fastify';
 import feedRoutes from './feeds.js';
-import { createTestDb, cleanupTestDb, seedTestDb } from '../test/setup.js';
-import Database from 'better-sqlite3';
 
 describe('Feeds Routes', () => {
     let app: FastifyInstance;
-    let db: Database.Database;
+    // Use the shared test database
+    const db = sharedDb;
 
     beforeAll(async () => {
-        // Create test database
-        db = createTestDb();
+        // Initialize schema on the shared database
+        initializeSchema(db);
+        applyMigrations(db);
 
         // Create Fastify instance
         app = Fastify({ logger: false });
 
-        // Override the db import for testing
-        // Note: In real implementation, you'd use dependency injection
         await app.register(feedRoutes, { prefix: '/api' });
 
         await app.ready();
@@ -27,7 +42,7 @@ describe('Feeds Routes', () => {
 
     afterAll(async () => {
         await app.close();
-        cleanupTestDb(db);
+        db.close();
     });
 
     beforeEach(() => {

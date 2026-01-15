@@ -1,7 +1,7 @@
 /**
  * Unit tests for feed-service
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createTestDb, cleanupTestDb } from '../test/setup.js';
 import Database from 'better-sqlite3';
 
@@ -143,17 +143,30 @@ describe('Feed Service', () => {
         });
 
         it('should reject invalid URLs', () => {
+            // These are malformed URLs that cannot be parsed at all
             const invalidUrls = [
                 'not-a-url',
-                'ftp://example.com/feed',
-                'javascript:alert(1)',
-                ''
+                '',
+                '://missing-scheme.com'
             ];
 
             invalidUrls.forEach(url => {
                 expect(() => {
                     new URL(url);
                 }).toThrow();
+            });
+        });
+
+        it('should identify non-HTTP schemes', () => {
+            // These are valid URLs but not http/https - useful for scheme validation
+            const nonHttpUrls = [
+                'ftp://example.com/feed',
+                'javascript:alert(1)'
+            ];
+
+            nonHttpUrls.forEach(url => {
+                const parsed = new URL(url);
+                expect(['http:', 'https:']).not.toContain(parsed.protocol);
             });
         });
     });
