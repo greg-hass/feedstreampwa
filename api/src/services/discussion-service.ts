@@ -56,7 +56,7 @@ async function searchHackerNews(url: string): Promise<Discussion[]> {
             author: hit.author
         }));
     } catch (e) {
-        logger.error('HN Search error', e);
+        logger.error({ err: e }, 'HN Search error');
         return [];
     }
 }
@@ -86,7 +86,7 @@ async function searchReddit(url: string): Promise<Discussion[]> {
             };
         });
     } catch (e) {
-        logger.error('Reddit Search error', e); 
+        logger.error({ err: e }, 'Reddit Search error'); 
         return [];
     }
 }

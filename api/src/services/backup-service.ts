@@ -36,7 +36,7 @@ export function listBackups(): BackupResult[] {
             })
             .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     } catch (e) {
-        logger.error('Failed to list backups:', e);
+        logger.error({ err: e }, 'Failed to list backups');
         return [];
     }
 }

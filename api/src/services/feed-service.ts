@@ -269,7 +269,7 @@ export async function fetchFeedIcon(feedUrl: string, kind: string, siteUrl?: str
             return null;
         }
     } catch (e) {
-        logger.error(`Failed to fetch icon for ${feedUrl}:`, e);
+        logger.error({ err: e }, `Failed to fetch icon for ${feedUrl}`);
     }
     return null;
 }
@@ -521,7 +521,7 @@ export async function fetchFeed(url: string, force: boolean): Promise<any> {
         try {
              parsed = await rssParser.parseString(text);
         } catch (e) {
-             logger.error("RSS Parsing failed", e);
+             logger.error({ err: e }, "RSS Parsing failed");
              throw new Error("Failed to parse RSS feed");
         }
 
@@ -584,7 +584,7 @@ export async function fetchFeed(url: string, force: boolean): Promise<any> {
                      
                      if (isNew) count++;
                  } catch (e) {
-                     logger.error("Item insert error", e);
+                     logger.error({ err: e }, "Item insert error");
                  }
             });
             return count;

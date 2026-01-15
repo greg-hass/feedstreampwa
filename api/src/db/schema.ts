@@ -42,7 +42,7 @@ export function applyMigrations(db: any): void {
                 })();
                 logger.info(`Successfully applied migration: ${file}`);
             } catch (error) {
-                logger.error(`Failed to apply migration ${file}:`, error);
+                logger.error({ err: error }, `Failed to apply migration ${file}`);
                 throw error;
             }
         }

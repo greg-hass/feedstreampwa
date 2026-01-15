@@ -90,7 +90,7 @@ export class AIRecommendationService {
             const recommendations = this.parseRecommendations(text);
             return recommendations.slice(0, limit);
         } catch (error) {
-            logger.error('Error generating recommendations:', error);
+            logger.error({ err: error }, 'Error generating recommendations');
             throw new Error('Failed to generate feed recommendations');
         }
     }
@@ -187,8 +187,8 @@ Example format:
                     confidence: Math.max(0, Math.min(1, rec.confidence))
                 }));
         } catch (error) {
-            logger.error('Error parsing recommendations:', error);
-            logger.error('Raw text:', text);
+            logger.error({ err: error }, 'Error parsing recommendations');
+            logger.error({ text }, 'Raw text');
             return [];
         }
     }
