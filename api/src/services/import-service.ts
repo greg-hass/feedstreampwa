@@ -1,5 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
-import { getDatabase } from '../db/connection.js';
+import { db } from '../db/client.js';
 import { detectFeedKind } from '../utils/feed-utils.js';
 import { randomUUID } from 'crypto';
 
@@ -70,7 +70,6 @@ async function processImport(jobId: string, parsed: any) {
             throw new Error('No outlines found in OPML');
         }
 
-        const db = getDatabase();
         const actions: Array<() => void> = [];
 
         // Recursive function to traverse and build actions

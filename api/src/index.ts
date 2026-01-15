@@ -15,6 +15,7 @@ import folderRoutes from './routes/folders.js';
 import readerRoutes from './routes/reader.js';
 import refreshRoutes from './routes/refresh.js';
 import systemRoutes from './routes/system.js';
+import opmlRoutes from './routes/opml.js';
 
 // Service imports
 import { initBackupService } from './services/backup-service.js';
@@ -68,6 +69,7 @@ const start = async () => {
         fastify.register(readerRoutes);
         fastify.register(refreshRoutes);
         fastify.register(systemRoutes);
+        fastify.register(opmlRoutes);
 
         await fastify.listen({ port: env.PORT, host: '0.0.0.0' });
         fastify.log.info(`Server listening on http://0.0.0.0:${env.PORT}`);

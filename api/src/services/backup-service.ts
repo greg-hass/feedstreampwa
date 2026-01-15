@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { getDatabase } from '../db/connection.js';
+import { db } from '../db/client.js';
 
 const BACKUP_DIR = path.join(process.cwd(), 'data', 'backups');
 
@@ -41,7 +41,6 @@ export function listBackups(): BackupResult[] {
 }
 
 export function generateOpml(): string {
-    const db = getDatabase();
     
     // Get all folders
     const folders = db.prepare('SELECT id, name FROM folders ORDER BY name').all() as {id: string, name: string}[];
@@ -89,7 +88,6 @@ export function generateOpml(): string {
 }
 
 export function generateSettingsJson(): string {
-    const db = getDatabase();
     // Export meta table (settings)
     const settings = db.prepare('SELECT key, value FROM meta').all();
     return JSON.stringify(settings, null, 2);
