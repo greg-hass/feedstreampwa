@@ -2,6 +2,7 @@
 import { db } from '../db/client.js';
 import { fetchFeed } from '../services/feed-service.js';
 import { RefreshFeedsSchema, RefreshStatusQuerySchema } from '../types/schemas.js';
+import { authenticateToken } from '../middleware/auth.js';
 import logger from '../utils/logger.js';
 import pLimit from 'p-limit';
 
@@ -43,6 +44,7 @@ process.on('SIGINT', () => clearInterval(cleanupInterval));
 export default async function refreshRoutes(fastify: any, options: any) {
     // Start refresh job - expensive operation, stricter rate limit
     fastify.post('/refresh/start', {
+        onRequest: [authenticateToken],
         config: {
             rateLimit: {
                 max: 10,
@@ -154,7 +156,7 @@ export default async function refreshRoutes(fastify: any, options: any) {
         const limit = pLimit(6); // Concurrency
 
         let completed = 0;
-        
+
         try {
             await Promise.all(urls.map(url => limit(async () => {
                 try {

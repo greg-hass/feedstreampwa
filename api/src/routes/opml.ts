@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { createImportJob, getJobStatus } from '../services/import-service.js';
 import { generateOpml } from '../services/backup-service.js';
+import { authenticateToken } from '../middleware/auth.js';
 import { z } from 'zod';
 
 const ImportOpmlSchema = z.object({
@@ -9,7 +10,9 @@ const ImportOpmlSchema = z.object({
 
 export default async function opmlRoutes(fastify: FastifyInstance, options: any) {
     // Import OPML
-    fastify.post('/opml', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.post('/opml', {
+        onRequest: [authenticateToken]
+    }, async (request: FastifyRequest, reply: FastifyReply) => {
         const result = ImportOpmlSchema.safeParse(request.body);
         if (!result.success) {
             reply.code(400);
@@ -30,7 +33,7 @@ export default async function opmlRoutes(fastify: FastifyInstance, options: any)
     fastify.get('/opml/status/:id', async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
         const status = getJobStatus(id);
-        
+
         if (!status) {
             reply.code(404);
             return { ok: false, error: 'Job not found' };

@@ -1,9 +1,10 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../db/client.js';
-import { 
-    CreateFolderSchema, 
-    UpdateFolderSchema, 
-    FolderFeedSchema 
+import { authenticateToken } from '../middleware/auth.js';
+import {
+    CreateFolderSchema,
+    UpdateFolderSchema,
+    FolderFeedSchema
 } from '../types/schemas.js';
 
 export default async function folderRoutes(fastify: FastifyInstance, options: any) {
@@ -37,7 +38,9 @@ export default async function folderRoutes(fastify: FastifyInstance, options: an
     });
 
     // Create a new custom folder
-    fastify.post('/folders', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.post('/folders', {
+        onRequest: [authenticateToken]
+    }, async (request: FastifyRequest, reply: FastifyReply) => {
         const result = CreateFolderSchema.safeParse(request.body);
 
         if (!result.success) {
@@ -81,7 +84,9 @@ export default async function folderRoutes(fastify: FastifyInstance, options: an
     });
 
     // Rename a custom folder
-    fastify.patch('/folders/:id', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.patch('/folders/:id', {
+        onRequest: [authenticateToken]
+    }, async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
         const result = UpdateFolderSchema.safeParse(request.body);
 
@@ -125,7 +130,9 @@ export default async function folderRoutes(fastify: FastifyInstance, options: an
     });
 
     // Delete a custom folder
-    fastify.delete('/folders/:id', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.delete('/folders/:id', {
+        onRequest: [authenticateToken]
+    }, async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
 
         try {
@@ -162,7 +169,9 @@ export default async function folderRoutes(fastify: FastifyInstance, options: an
     });
 
     // Add feed to custom folder
-    fastify.post('/folders/:id/feeds', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.post('/folders/:id/feeds', {
+        onRequest: [authenticateToken]
+    }, async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
         const result = FolderFeedSchema.safeParse(request.body);
 
@@ -216,7 +225,9 @@ export default async function folderRoutes(fastify: FastifyInstance, options: an
     });
 
     // Remove feed from custom folder
-    fastify.delete('/folders/:id/feeds', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.delete('/folders/:id/feeds', {
+        onRequest: [authenticateToken]
+    }, async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
         const result = FolderFeedSchema.safeParse(request.body);
 

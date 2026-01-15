@@ -1,18 +1,19 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../db/client.js';
-import { 
-    GetItemsQuerySchema, 
-    MarkReadSchema, 
-    MarkAllReadSchema, 
-    StarItemSchema, 
-    PlaybackPositionSchema 
+import { authenticateToken } from '../middleware/auth.js';
+import {
+    GetItemsQuerySchema,
+    MarkReadSchema,
+    MarkAllReadSchema,
+    StarItemSchema,
+    PlaybackPositionSchema
 } from '../types/schemas.js';
 
 export default async function itemRoutes(fastify: FastifyInstance, options: any) {
     // Get items endpoint
     fastify.get('/items', async (request: FastifyRequest, reply: FastifyReply) => {
         const result = GetItemsQuerySchema.safeParse(request.query);
-        
+
         if (!result.success) {
             reply.code(400);
             return {
@@ -79,7 +80,7 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
 
         // Need to join feeds table if filtering by smartFolder
         const baseFromClause = 'FROM items i INNER JOIN feeds f ON i.feed_url = f.url';
-        const fromClause = q 
+        const fromClause = q
             ? `${baseFromClause} INNER JOIN items_fts fts ON i.rowid = fts.rowid`
             : baseFromClause;
         const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
@@ -112,7 +113,9 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
     });
 
     // Mark item as read/unread
-    fastify.post('/items/:id/read', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.post('/items/:id/read', {
+        onRequest: [authenticateToken]
+    }, async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
         const result = MarkReadSchema.safeParse(request.body);
 
@@ -153,7 +156,9 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
     });
 
     // Mark all items as read with optional filters
-    fastify.post('/items/mark-all-read', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.post('/items/mark-all-read', {
+        onRequest: [authenticateToken]
+    }, async (request: FastifyRequest, reply: FastifyReply) => {
         const result = MarkAllReadSchema.safeParse(request.body);
 
         if (!result.success) {
@@ -217,7 +222,9 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
     });
 
     // Star/unstar item
-    fastify.post('/items/:id/star', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.post('/items/:id/star', {
+        onRequest: [authenticateToken]
+    }, async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
         const result = StarItemSchema.safeParse(request.body);
 
@@ -256,7 +263,9 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
         }
     });
 
-    fastify.patch('/items/:id/playback-position', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.patch('/items/:id/playback-position', {
+        onRequest: [authenticateToken]
+    }, async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
         const result = PlaybackPositionSchema.safeParse(request.body);
 
@@ -280,7 +289,9 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
     });
 
     // Delete a single item
-    fastify.delete('/items/:id', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.delete('/items/:id', {
+        onRequest: [authenticateToken]
+    }, async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
 
         try {
