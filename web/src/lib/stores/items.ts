@@ -25,14 +25,6 @@ export const unreadCount = derived(items, ($items) =>
     $items.filter((i) => i.is_read === 0).length
 );
 
-// Helper to safely parse dates for sorting
-const getDate = (dateStr: string | null | undefined): number => {
-    if (!dateStr) return 0;
-    const date = new Date(dateStr);
-    const time = date.getTime();
-    return isNaN(time) ? 0 : time;
-};
-
 // Actions
 export async function loadItems(params: {
     feedUrl?: string;
@@ -40,17 +32,17 @@ export async function loadItems(params: {
     smartFolder?: 'rss' | 'youtube' | 'reddit' | 'podcast';
     unreadOnly?: boolean;
     starredOnly?: boolean;
-    refresh?: boolean; // New param to force reset
+    refresh?: boolean;
 } = {}): Promise<void> {
-    const isRefresh = params.refresh !== false; // Default to true if not specified, usually we call loadItems() to reset
+    const isRefresh = params.refresh !== false;
     
-    // If not refreshing (appending), check if we are already loading
     if (!isRefresh && get(itemsLoading)) return;
 
     itemsLoading.set(true);
     if (isRefresh) {
         itemsError.set(null);
-        items.set([]);
+        // Don't clear items immediately to avoid flash
+        // items.set([]); 
         currentOffset.set(0);
         hasMore.set(true);
     }
@@ -59,36 +51,26 @@ export async function loadItems(params: {
         const query = get(searchQuery);
         const offset = get(currentOffset);
 
-        // If searching, use search endpoint
+        let data;
         if (query.trim()) {
-            const data = await itemsApi.searchItems(query, PAGE_SIZE, offset);
-            
-            if (isRefresh) {
-                items.set(data.items.sort((a, b) => getDate(b.published) - getDate(a.published)));
-            } else {
-                items.update(current => [...current, ...data.items].sort((a, b) => getDate(b.published) - getDate(a.published)));
-            }
-            
-            itemsTotal.set(data.total);
-            hasMore.set(data.items.length === PAGE_SIZE);
-            currentOffset.update(n => n + PAGE_SIZE);
+            data = await itemsApi.searchItems(query, PAGE_SIZE, offset);
         } else {
-            const data = await itemsApi.fetchItems({
+            data = await itemsApi.fetchItems({
                 ...params,
                 limit: PAGE_SIZE,
                 offset: offset,
             });
-            
-            if (isRefresh) {
-                items.set(data.items.sort((a, b) => getDate(b.published) - getDate(a.published)));
-            } else {
-                items.update(current => [...current, ...data.items].sort((a, b) => getDate(b.published) - getDate(a.published)));
-            }
-            
-            itemsTotal.set(data.total);
-            hasMore.set(data.items.length === PAGE_SIZE);
-            currentOffset.update(n => n + PAGE_SIZE);
         }
+        
+        if (isRefresh) {
+            items.set(data.items);
+        } else {
+            items.update(current => [...current, ...data.items]);
+        }
+        
+        itemsTotal.set(data.total);
+        hasMore.set(data.items.length === PAGE_SIZE);
+        currentOffset.update(n => n + PAGE_SIZE);
     } catch (err) {
         itemsError.set(err instanceof Error ? err.message : 'Unknown error occurred');
     } finally {
@@ -97,7 +79,6 @@ export async function loadItems(params: {
 }
 
 export async function toggleRead(item: Article): Promise<void> {
-    // Calculate new state
     const newReadState = item.is_read === 0;
 
     // Optimistic update
@@ -121,7 +102,6 @@ export async function toggleRead(item: Article): Promise<void> {
 }
 
 export async function toggleStar(item: Article): Promise<void> {
-    // Calculate new state
     const newStarredState = item.is_starred === 0;
 
     // Optimistic update
@@ -134,12 +114,9 @@ export async function toggleStar(item: Article): Promise<void> {
     try {
         await itemsApi.toggleItemStar(item.id, newStarredState);
 
-        // Offline caching: Cache article when starred, remove when unstarred
         if (newStarredState) {
-            // Cache for offline reading
             cacheArticle(item).catch(console.error);
         } else {
-            // Remove from offline cache
             removeCachedArticle(item.id).catch(console.error);
         }
     } catch (err) {

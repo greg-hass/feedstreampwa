@@ -1,7 +1,9 @@
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../db/client.js';
 import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
 import sanitizeHtml from 'sanitize-html';
+import { ReaderQuerySchema, PurgeReaderSchema } from '../types/schemas.js';
 
 const FETCH_TIMEOUT_MS = parseInt(process.env.FETCH_TIMEOUT_MS || '12000', 10);
 const READER_CACHE_TTL_HOURS = 168; // 7 days
@@ -44,19 +46,20 @@ function isUsableImage(src: string): boolean {
     return true;
 }
 
-export default async function readerRoutes(fastify: any, options: any) {
+export default async function readerRoutes(fastify: FastifyInstance, options: any) {
     // Reader View endpoint with caching and sanitization
-    fastify.get('/reader', async (request: any, reply: any) => {
-        const query = request.query as any;
-        const targetUrl = query.url;
-
-        if (!targetUrl || typeof targetUrl !== 'string') {
+    fastify.get('/reader', async (request: FastifyRequest, reply: FastifyReply) => {
+        const result = ReaderQuerySchema.safeParse(request.query);
+        
+        if (!result.success) {
             reply.code(400);
             return {
                 ok: false,
-                error: 'Missing or invalid url parameter'
+                error: result.error.issues[0].message
             };
         }
+
+        const targetUrl = result.data.url;
 
         // Validate URL is http/https
         try {
@@ -385,19 +388,28 @@ export default async function readerRoutes(fastify: any, options: any) {
     });
 
     // Purge old reader cache entries
-    fastify.post('/reader/purge', async (request: any, reply: any) => {
-        const body = request.body as any || {};
-        const olderThanHours = body.olderThanHours ?? 720; // 30 days default
+    fastify.post('/reader/purge', async (request: FastifyRequest, reply: FastifyReply) => {
+        const result = PurgeReaderSchema.safeParse(request.body);
+        
+        if (!result.success) {
+            reply.code(400);
+            return {
+                ok: false,
+                error: result.error.issues[0].message
+            };
+        }
+
+        const olderThanHours = result.data.olderThanHours || 720; // 30 days default
 
         try {
             const cutoff = new Date(Date.now() - olderThanHours * 60 * 60 * 1000).toISOString();
-            const result = db.prepare(`
+            const deleteResult = db.prepare(`
                 DELETE FROM reader_cache WHERE updated_at < ?
             `).run(cutoff);
 
             return {
                 ok: true,
-                deleted: result.changes
+                deleted: deleteResult.changes
             };
         } catch (error: any) {
             fastify.log.error(error);

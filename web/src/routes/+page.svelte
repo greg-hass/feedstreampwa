@@ -173,7 +173,7 @@
 
     return $items.filter((item) => {
       const itemDate = new Date(
-        item.published || item.published_at || item.created_at
+        item.published || item.created_at
       );
       return itemDate >= cutoffDate;
     });

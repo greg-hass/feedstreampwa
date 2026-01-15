@@ -4,7 +4,7 @@ export interface SearchResult {
     title: string;
     url: string;
     description: string;
-    type: 'rss' | 'youtube' | 'reddit';
+    type: 'rss' | 'youtube' | 'reddit' | 'podcast';
     thumbnail?: string;
     site_url?: string;
 }

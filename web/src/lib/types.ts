@@ -3,75 +3,57 @@
 export type FeedKind = 'youtube' | 'reddit' | 'podcast' | 'generic';
 
 export interface Feed {
-    // Backend fields
     url: string;
     kind: FeedKind;
     title: string | null;
     site_url: string | null;
     last_checked: string | null;
-    last_status: number;
+    last_status: number | null;
     last_error: string | null;
     icon_url: string | null;
     custom_title: string | null;
-    
-    // Frontend-specific fields (added by API or computed)
-    id?: number; // May be added by frontend
-    description?: string | null; // Legacy field
-    folder?: string; // Legacy field
-    type?: 'rss' | 'youtube' | 'reddit' | 'podcast'; // Alias for kind
-    error_count?: number; // Legacy field
-    unreachable?: boolean; // Legacy field
-    created_at?: string;
-    updated_at?: string;
     unreadCount?: number;
     smartFolder?: 'rss' | 'youtube' | 'reddit' | 'podcast';
     folders?: string[];
+    // Aliases for compatibility
+    type?: FeedKind;
 }
 
 export interface Item {
-    // Backend fields (source of truth)
-    id: string; // Changed from number to match backend
+    id: string;
     feed_url: string;
-    source: string; // Added - was missing!
+    source: string;
     title: string | null;
     url: string | null;
     author: string | null;
     summary: string | null;
     content: string | null;
-    published: string | null; // Changed from published_at to match backend
+    published: string | null;
     updated: string | null;
     media_thumbnail: string | null;
     media_duration_seconds: number | null;
     external_id: string | null;
-    raw_guid: string | null; // Backend uses raw_guid, not guid
+    raw_guid: string | null;
     created_at: string;
-    is_read: number; // Backend returns 0/1
-    is_starred: number; // Backend returns 0/1
-    playback_position: number; // Required in backend, not optional
+    is_read: number; // 0 or 1
+    is_starred: number; // 0 or 1
+    playback_position: number;
     read_at?: string | null;
     feed_icon_url?: string;
     feed_title?: string;
-    
-    // Frontend-specific fields (for compatibility)
-    feed_id?: number; // Legacy field
-    guid?: string; // Alias for raw_guid
-    published_at?: string; // Alias for published
-    enclosure?: {
-        url: string;
-        type?: string;
-        length?: string;
-    };
+    enclosure?: string | { url: string; type?: string; length?: string } | null;
+    // Aliases for compatibility
+    published_at?: string | null;
+    feed_id?: string;
 }
+
+export type Article = Item;
 
 export interface Folder {
     id: string;
     name: string;
-    created_at?: string;
+    created_at: string;
     feedCount?: number;
-    // Frontend-specific fields
-    feeds?: Feed[];
-    unreadCount?: number;
-    isOpen?: boolean;
 }
 
 export interface SearchResult {
@@ -83,16 +65,27 @@ export interface SearchResult {
 }
 
 export type FeedSearchResult = SearchResult;
-export type Article = Item;
 
 export interface Settings {
-    theme: 'light' | 'dark' | 'system';
     sync_interval: string;
     gemini_api_key?: string;
+    [key: string]: string | undefined;
+}
+
+export type ThemeMode = 'light' | 'dark' | 'system';
+export type FontSize = 'small' | 'medium' | 'large' | 'xlarge';
+export type FontFamily = 'sans' | 'serif' | 'mono';
+export type ReadingWidth = 'narrow' | 'medium' | 'wide';
+export type ReaderTheme = 'light' | 'sepia' | 'dark' | 'black';
+
+export interface ReaderSettings {
+    theme: ReaderTheme;
+    fontSize: FontSize;
+    fontFamily: FontFamily;
+    readingWidth: ReadingWidth;
 }
 
 export type TimeFilter = 'all' | 'today' | '24h' | 'week';
-
 export type ViewMode = 'all' | 'unread' | 'bookmarks' | 'smart' | 'folder' | 'feed';
 export type SmartFolder = 'rss' | 'youtube' | 'reddit' | 'podcast';
 
@@ -103,7 +96,6 @@ export interface ImportResult {
 }
 
 export interface ReaderData {
-    // Backend fields (source of truth)
     url: string;
     title: string | null;
     byline: string | null;
@@ -112,11 +104,6 @@ export interface ReaderData {
     imageUrl: string | null;
     contentHtml: string;
     fromCache: boolean;
-    
-    // Frontend-specific fields (for compatibility)
-    content?: string; // Alias for contentHtml
-    textContent?: string;
-    length?: number;
 }
 
 export interface RefreshJob {

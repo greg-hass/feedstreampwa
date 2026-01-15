@@ -1,29 +1,19 @@
 import { writable, get } from 'svelte/store';
 import * as itemsApi from '$lib/api/items';
+import type { Item, ReaderData } from '$lib/types';
 import { toggleRead } from './items';
 import { cacheArticleContent, getCachedContent, isOffline } from './offlineArticles';
-
-export interface ReaderData {
-    url: string;
-    title: string | null;
-    byline: string | null;
-    excerpt: string | null;
-    siteName: string | null;
-    imageUrl: string | null;
-    contentHtml: string;
-    fromCache: boolean;
-}
 
 export const showReader = writable(false);
 export const readerLoading = writable(false);
 export const readerError = writable<string | null>(null);
 export const readerData = writable<ReaderData | null>(null);
 export const currentItemUrl = writable<string | null>(null);
-export const currentItem = writable<any>(null);
+export const currentItem = writable<Item | null>(null);
 
 const readerCache = new Map<string, ReaderData>();
 
-export async function openReader(item: any) {
+export async function openReader(item: Item) {
     if (!item.url) {
         console.error('No URL for item, opening nothing');
         return;
@@ -45,8 +35,7 @@ export async function openReader(item: any) {
     }
 
     // For Reddit items, use the RSS content directly (Reddit blocks fetch requests)
-    const isReddit = item.source === 'reddit' || item.feed_kind === 'reddit' || 
-                     (item.url && item.url.includes('reddit.com'));
+    const isReddit = item.source === 'reddit' || (item.url && item.url.includes('reddit.com'));
     
     if (isReddit && (item.content || item.summary)) {
         const formattedData: ReaderData = {
@@ -132,10 +121,6 @@ export async function openReader(item: any) {
     } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "Failed to load reader";
         console.error('Reader error:', errorMessage, 'for URL:', item.url);
-        
-        // For ANY error, fall back to opening the original URL in a new tab
-        // This ensures the user can always access the article
-        console.log('Opening original URL due to reader error:', errorMessage);
         openOriginalUrl(item.url);
     } finally {
         readerLoading.set(false);

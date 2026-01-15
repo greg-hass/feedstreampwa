@@ -19,7 +19,7 @@
     type DuplicateSettings,
   } from "$lib/stores/duplicates";
   import { items } from "$lib/stores/items";
-  import { toggleRead, toggleStar } from "$lib/stores/items";
+  import { toggleRead } from "$lib/stores/items";
   import { toast } from "$lib/stores/toast";
 
   export let isOpen = false;
@@ -39,7 +39,7 @@
       duplicates.scan($items);
     } catch (e) {
       console.error("Error scanning for duplicates:", e);
-      toast.show("Failed to scan for duplicates", "error");
+      toast.error("Failed to scan for duplicates");
     } finally {
       scanning = false;
     }
@@ -57,7 +57,7 @@
         toggleRead(item);
       }
     }
-    toast.show(`Marked ${group.items.length} items as read`, "success");
+    toast.success(`Marked ${group.items.length} items as read`);
   }
 
   async function removeDuplicates(group: any) {
@@ -74,18 +74,36 @@
       }
     }
 
-    toast.show(
-      `Removed ${removed} duplicate${removed !== 1 ? "s" : ""}`,
-      "success"
-    );
+    toast.success(`Removed ${removed} duplicate${removed !== 1 ? "s" : ""}`);
 
     // Refresh the scan
     scanForDuplicates();
   }
 
   function openItem(item: any) {
-    // Open the item in reader
     window.open(item.url, "_blank");
+  }
+
+  function setMethod(method: string) {
+    duplicateSettings.setMethod(method as any);
+  }
+
+  function setAutoAction(action: string) {
+    duplicateSettings.setAutoAction(action as any);
+  }
+
+  function setKeepInFeed(keepInFeed: string) {
+    duplicateSettings.setKeepInFeed(keepInFeed as any);
+  }
+
+  function handleKeepInFeedChange(e: Event) {
+    const value = (e.target as HTMLSelectElement).value;
+    setKeepInFeed(value);
+  }
+
+  function handleSensitivityInput(e: Event) {
+    const value = (e.target as HTMLInputElement).value;
+    duplicateSettings.setSensitivity(parseInt(value));
   }
 </script>
 
@@ -179,7 +197,7 @@
                     method
                       ? 'border-accent bg-accent/10'
                       : 'border-white/10 bg-white/5 hover:bg-white/10'}"
-                    on:click={() => duplicateSettings.setMethod(method)}
+                    on:click={() => setMethod(method)}
                   >
                     <div class="text-sm font-medium text-white capitalize">
                       {method}
@@ -212,8 +230,7 @@
                   min="50"
                   max="100"
                   bind:value={$duplicateSettings.sensitivity}
-                  on:input={(e) =>
-                    duplicateSettings.setSensitivity(parseInt(e.target.value))}
+                  on:input={handleSensitivityInput}
                   class="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-accent"
                 />
                 <div class="flex justify-between text-xs text-white/40">
@@ -230,8 +247,7 @@
               >
               <select
                 value={$duplicateSettings.keepInFeed}
-                on:change={(e) =>
-                  duplicateSettings.setKeepInFeed(e.target.value)}
+                on:change={handleKeepInFeedChange}
                 class="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none focus:border-accent/50"
               >
                 <option value="first_subscribed"
@@ -254,7 +270,7 @@
                     action
                       ? 'border-accent bg-accent/10'
                       : 'border-white/10 bg-white/5 hover:bg-white/10'}"
-                    on:click={() => duplicateSettings.setAutoAction(action)}
+                    on:click={() => setAutoAction(action)}
                   >
                     <div class="text-sm font-medium text-white capitalize">
                       {action === "none" ? "None" : action.replace("_", " ")}
@@ -380,7 +396,6 @@
                               <span class="text-xs text-white/40">
                                 {new Date(
                                   item.published ||
-                                    item.published_at ||
                                     item.created_at
                                 ).toLocaleDateString()}
                               </span>

@@ -91,20 +91,30 @@ export async function removeFeed(url: string): Promise<void> {
 
 // Refresh logic
 let refreshPollTimer: ReturnType<typeof setInterval> | null = null;
+let activeJobId: string | null = null;
 
 async function pollRefreshStatus(jobId: string) {
-    if (refreshPollTimer) clearInterval(refreshPollTimer);
+    // If already polling for this job, ignore
+    if (activeJobId === jobId && refreshPollTimer) return;
+    
+    // If polling for a different job, stop the old one
+    if (refreshPollTimer) {
+        clearInterval(refreshPollTimer);
+        refreshPollTimer = null;
+    }
 
-    refreshState.update(s => ({ ...s, isRefreshing: true }));
+    activeJobId = jobId;
+    refreshState.update(s => ({ ...s, isRefreshing: true, message: 'Starting refresh...' }));
 
-    refreshPollTimer = setInterval(async () => {
+    const poll = async () => {
         try {
             const response = await fetch(`/api/refresh/status?jobId=${encodeURIComponent(jobId)}`);
+            if (!response.ok) throw new Error('Status check failed');
+            
             const data = await response.json();
 
-            if (!response.ok || data.status === 'done' || data.status === 'error') {
-                if (refreshPollTimer) clearInterval(refreshPollTimer);
-                refreshState.update(s => ({ ...s, isRefreshing: false }));
+            if (data.status === 'done' || data.status === 'error') {
+                stopPolling();
                 await loadFeeds();
                 return;
             }
@@ -113,23 +123,48 @@ async function pollRefreshStatus(jobId: string) {
                 ...s,
                 current: data.current,
                 total: data.total,
-                message: data.message
+                message: data.message || `Refreshing... ${data.current}/${data.total}`
             }));
         } catch (e) {
-            if (refreshPollTimer) clearInterval(refreshPollTimer);
-            refreshState.update(s => ({ ...s, isRefreshing: false }));
+            console.error('Polling error:', e);
+            stopPolling();
         }
-    }, 500);
+    };
+
+    function stopPolling() {
+        if (refreshPollTimer) {
+            clearInterval(refreshPollTimer);
+            refreshPollTimer = null;
+        }
+        activeJobId = null;
+        refreshState.update(s => ({ ...s, isRefreshing: false }));
+    }
+
+    // Immediate first poll
+    await poll();
+    
+    // Only continue polling if still active
+    if (activeJobId === jobId) {
+        refreshPollTimer = setInterval(poll, 1000); // 1s interval is more reasonable than 500ms
+    }
 }
 
 export async function refreshFeed(url: string): Promise<void> {
-    const { jobId } = await feedsApi.refreshFeed(url);
-    pollRefreshStatus(jobId);
+    try {
+        const { jobId } = await feedsApi.refreshFeed(url);
+        if (jobId) pollRefreshStatus(jobId);
+    } catch (e) {
+        console.error('Failed to start refresh:', e);
+    }
 }
 
 export async function refreshAll(): Promise<void> {
-    const { jobId } = await feedsApi.refreshAllFeeds();
-    pollRefreshStatus(jobId);
+    try {
+        const { jobId } = await feedsApi.refreshAllFeeds();
+        if (jobId) pollRefreshStatus(jobId);
+    } catch (e) {
+        console.error('Failed to start all-refresh:', e);
+    }
 }
 
 export async function addToFolder(feedUrl: string, folderId: string): Promise<void> {

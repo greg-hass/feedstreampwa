@@ -1,8 +1,14 @@
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../db/client.js';
+import { 
+    CreateFolderSchema, 
+    UpdateFolderSchema, 
+    FolderFeedSchema 
+} from '../types/schemas.js';
 
-export default async function folderRoutes(fastify: any, options: any) {
+export default async function folderRoutes(fastify: FastifyInstance, options: any) {
     // Get all custom folders with feed counts
-    fastify.get('/folders', async (request: any, reply: any) => {
+    fastify.get('/folders', async (request: FastifyRequest, reply: FastifyReply) => {
         try {
             const folders = db.prepare(`
                 SELECT 
@@ -31,17 +37,18 @@ export default async function folderRoutes(fastify: any, options: any) {
     });
 
     // Create a new custom folder
-    fastify.post('/folders', async (request: any, reply: any) => {
-        const body = request.body as any;
-        const name = body?.name?.trim();
+    fastify.post('/folders', async (request: FastifyRequest, reply: FastifyReply) => {
+        const result = CreateFolderSchema.safeParse(request.body);
 
-        if (!name || name.length < 1 || name.length > 60) {
+        if (!result.success) {
             reply.code(400);
             return {
                 ok: false,
-                error: 'Folder name must be between 1 and 60 characters'
+                error: result.error.issues[0].message
             };
         }
+
+        const { name } = result.data;
 
         try {
             const id = `folder_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -74,25 +81,24 @@ export default async function folderRoutes(fastify: any, options: any) {
     });
 
     // Rename a custom folder
-    fastify.patch('/folders/:id', async (request: any, reply: any) => {
-        const { id } = request.params as any;
-        const body = request.body as any;
-        const name = body?.name?.trim();
+    fastify.patch('/folders/:id', async (request: FastifyRequest, reply: FastifyReply) => {
+        const { id } = request.params as { id: string };
+        const result = UpdateFolderSchema.safeParse(request.body);
 
-        if (!name || name.length < 1 || name.length > 60) {
+        if (!result.success) {
             reply.code(400);
             return {
                 ok: false,
-                error: 'Folder name must be between 1 and 60 characters'
+                error: result.error.issues[0].message
             };
         }
 
         try {
-            const result = db.prepare(`
+            const updateResult = db.prepare(`
                 UPDATE folders SET name = ? WHERE id = ?
-            `).run(name, id);
+            `).run(result.data.name, id);
 
-            if (result.changes === 0) {
+            if (updateResult.changes === 0) {
                 reply.code(404);
                 return {
                     ok: false,
@@ -119,8 +125,8 @@ export default async function folderRoutes(fastify: any, options: any) {
     });
 
     // Delete a custom folder
-    fastify.delete('/folders/:id', async (request: any, reply: any) => {
-        const { id } = request.params as any;
+    fastify.delete('/folders/:id', async (request: FastifyRequest, reply: FastifyReply) => {
+        const { id } = request.params as { id: string };
 
         try {
             // Count associations before deletion
@@ -129,11 +135,11 @@ export default async function folderRoutes(fastify: any, options: any) {
             `).get(id) as any;
 
             // Delete folder (CASCADE will delete associations)
-            const result = db.prepare(`
+            const deleteResult = db.prepare(`
                 DELETE FROM folders WHERE id = ?
             `).run(id);
 
-            if (result.changes === 0) {
+            if (deleteResult.changes === 0) {
                 reply.code(404);
                 return {
                     ok: false,
@@ -156,18 +162,19 @@ export default async function folderRoutes(fastify: any, options: any) {
     });
 
     // Add feed to custom folder
-    fastify.post('/folders/:id/feeds', async (request: any, reply: any) => {
-        const { id } = request.params as any;
-        const body = request.body as any;
-        const feedUrl = body?.feedUrl;
+    fastify.post('/folders/:id/feeds', async (request: FastifyRequest, reply: FastifyReply) => {
+        const { id } = request.params as { id: string };
+        const result = FolderFeedSchema.safeParse(request.body);
 
-        if (!feedUrl || typeof feedUrl !== 'string') {
+        if (!result.success) {
             reply.code(400);
             return {
                 ok: false,
-                error: 'feedUrl is required'
+                error: result.error.issues[0].message
             };
         }
+
+        const { feedUrl } = result.data;
 
         try {
             // Verify folder exists
@@ -209,27 +216,26 @@ export default async function folderRoutes(fastify: any, options: any) {
     });
 
     // Remove feed from custom folder
-    fastify.delete('/folders/:id/feeds', async (request: any, reply: any) => {
-        const { id } = request.params as any;
-        const body = request.body as any;
-        const feedUrl = body?.feedUrl;
+    fastify.delete('/folders/:id/feeds', async (request: FastifyRequest, reply: FastifyReply) => {
+        const { id } = request.params as { id: string };
+        const result = FolderFeedSchema.safeParse(request.body);
 
-        if (!feedUrl || typeof feedUrl !== 'string') {
+        if (!result.success) {
             reply.code(400);
             return {
                 ok: false,
-                error: 'feedUrl is required'
+                error: result.error.issues[0].message
             };
         }
 
         try {
-            const result = db.prepare(`
+            const deleteResult = db.prepare(`
                 DELETE FROM folder_feeds WHERE folder_id = ? AND feed_url = ?
-            `).run(id, feedUrl);
+            `).run(id, result.data.feedUrl);
 
             return {
                 ok: true,
-                removed: result.changes
+                removed: deleteResult.changes
             };
         } catch (error: any) {
             fastify.log.error(error);

@@ -20,6 +20,7 @@ export const env = {
   MAX_JOBS: parseNumber(process.env.MAX_JOBS || '5', 5),
   SYNC_INTERVAL_KEY: process.env.SYNC_INTERVAL_KEY || 'sync_interval',
   LAST_SYNC_KEY: process.env.LAST_SYNC_KEY || 'last_global_sync',
+  LAST_BACKUP_KEY: process.env.LAST_BACKUP_KEY || 'last_auto_backup',
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
   NODE_ENV: parseEnum(process.env.NODE_ENV, ['development', 'production', 'test'] as const, 'development')
 } as const;

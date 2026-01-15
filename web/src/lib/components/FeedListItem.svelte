@@ -218,8 +218,12 @@
 
   // Check if item is playable (podcast or video)
   // Strictly require enclosure URL for podcasts/audio
+  $: enclosureUrl = typeof item.enclosure === 'string' 
+    ? item.enclosure 
+    : (item.enclosure && typeof item.enclosure === 'object' ? item.enclosure.url : null);
+
   $: isPlayable =
-    (item.enclosure?.url &&
+    (enclosureUrl &&
       (feedType === "podcast" || Boolean(item.enclosure))) ||
     youtubeVideoId;
 

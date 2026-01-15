@@ -1,5 +1,4 @@
-// Source diversity tracking - helps users discover content from varied sources
-import { derived, writable, get } from 'svelte/store';
+import { derived, writable, get, type Readable } from 'svelte/store';
 import type { Item } from '$lib/types';
 
 export interface DiversitySettings {
@@ -85,7 +84,7 @@ function calculateFeedDistribution(items: Item[]): Map<string, number> {
   const distribution = new Map<string, number>();
 
   for (const item of items) {
-    const feedId = item.feed_id || 'unknown';
+    const feedId = item.feed_url || 'unknown';
     distribution.set(feedId, (distribution.get(feedId) || 0) + 1);
   }
 
@@ -101,7 +100,7 @@ function calculateDiversityScore(
 ): number {
   if (totalItems === 0) return 0;
 
-  const feedId = item.feed_id || 'unknown';
+  const feedId = item.feed_url || 'unknown';
   const feedCount = distribution.get(feedId) || 0;
   const feedPercentage = (feedCount / totalItems) * 100;
 
@@ -111,7 +110,7 @@ function calculateDiversityScore(
 }
 
 // Derived store that adds diversity information to items
-export function createDiversityEnrichedItems(itemsStore: any) {
+export function createDiversityEnrichedItems(itemsStore: Readable<Item[]>) {
   return derived([itemsStore, diversitySettings], ([$items, $settings]) => {
     if (!$settings.enabled || !$items || $items.length === 0) {
       return $items;
@@ -126,7 +125,7 @@ export function createDiversityEnrichedItems(itemsStore: any) {
 
     // Enrich items with diversity information
     return $items.map((item: Item): ItemWithDiversity => {
-      const feedId = item.feed_id || 'unknown';
+      const feedId = item.feed_url || 'unknown';
       const feedCount = distribution.get(feedId) || 0;
       const diversityScore = calculateDiversityScore(item, distribution, totalItems);
 

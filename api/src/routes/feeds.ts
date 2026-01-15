@@ -1,12 +1,19 @@
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../db/client.js';
 import { searchFeeds, searchRSS, SearchResult } from '../feed-search.js';
 import { aiRecommendationService } from '../services/ai-recommendations.js';
 import { fetchFeed, fetchFeedIcon } from '../services/feed-service.js';
 import { detectFeedKind } from '../utils/feed-utils.js';
+import { 
+    AddFeedSchema, 
+    RenameFeedSchema, 
+    SearchFeedsQuerySchema,
+    FeedSchema 
+} from '../types/schemas.js';
 
-export default async function feedRoutes(fastify: any, options: any) {
+export default async function feedRoutes(fastify: FastifyInstance, options: any) {
     // Get feeds endpoint
-    fastify.get('/feeds', async (request: any, reply: any) => {
+    fastify.get('/feeds', async (request: FastifyRequest, reply: FastifyReply) => {
         try {
             const feedsData = db.prepare(`
                 SELECT 
@@ -19,34 +26,14 @@ export default async function feedRoutes(fastify: any, options: any) {
                     f.last_error,
                     f.icon_url,
                     f.custom_title,
-                    COUNT(CASE WHEN i.is_read = 0 THEN 1 END) as unreadCount
+                    (SELECT COUNT(*) FROM items i WHERE i.feed_url = f.url AND i.is_read = 0) as unreadCount,
+                    (SELECT GROUP_CONCAT(folder_id) FROM folder_feeds ff WHERE ff.feed_url = f.url) as folderIds
                 FROM feeds f
-                LEFT JOIN items i ON f.url = i.feed_url
-                GROUP BY f.url
                 ORDER BY f.title ASC
             `).all() as any[];
 
-            // Get all folder associations for these feeds
-            const feedUrls = feedsData.map((f: any) => f.url);
-            const associations = feedUrls.length > 0
-                ? db.prepare(`
-                    SELECT feed_url, folder_id
-                    FROM folder_feeds
-                    WHERE feed_url IN (${feedUrls.map(() => '?').join(',')})
-                `).all(...feedUrls) as any[]
-                : [];
-
-            // Map associations by feed_url
-            const foldersByFeed = new Map<string, string[]>();
-            for (const assoc of associations) {
-                if (!foldersByFeed.has(assoc.feed_url)) {
-                    foldersByFeed.set(assoc.feed_url, []);
-                }
-                foldersByFeed.get(assoc.feed_url)!.push(assoc.folder_id);
-            }
-
             // Enhance feeds with smartFolder and folders
-            const enhancedFeeds = feedsData.map((feed: any) => {
+            const enhancedFeeds = feedsData.map((feed) => {
                 // Derive smartFolder from kind
                 let smartFolder: 'rss' | 'youtube' | 'reddit' | 'podcast' = 'rss';
                 if (feed.kind === 'youtube') {
@@ -60,7 +47,7 @@ export default async function feedRoutes(fastify: any, options: any) {
                 return {
                     ...feed,
                     smartFolder,
-                    folders: foldersByFeed.get(feed.url) || []
+                    folders: feed.folderIds ? feed.folderIds.split(',') : []
                 };
             });
 
@@ -79,23 +66,23 @@ export default async function feedRoutes(fastify: any, options: any) {
     });
 
     // Feed search endpoint
-    fastify.get('/feeds/search', async (request: any, reply: any) => {
-        const query = request.query as any;
-        const searchQuery = query?.q?.trim();
-        const searchType = query?.type || 'all';
-
-        if (!searchQuery) {
+    fastify.get('/feeds/search', async (request: FastifyRequest, reply: FastifyReply) => {
+        const result = SearchFeedsQuerySchema.safeParse(request.query);
+        
+        if (!result.success) {
             reply.code(400);
             return {
                 ok: false,
-                error: 'Missing search query parameter "q"'
+                error: result.error.issues[0].message
             };
         }
+
+        const { q: searchQuery, type: searchType } = result.data;
 
         // Handle multiple types (comma-separated)
         let typesToSearch: ('rss' | 'youtube' | 'reddit' | 'podcast')[] = [];
 
-        if (searchType === 'all' || !searchType) {
+        if (searchType === 'all') {
             typesToSearch = ['rss', 'youtube', 'reddit', 'podcast'];
         } else {
             // Split comma-separated types
@@ -142,7 +129,7 @@ export default async function feedRoutes(fastify: any, options: any) {
     });
 
     // AI-powered feed recommendations
-    fastify.get('/feeds/recommendations', async (request: any, reply: any) => {
+    fastify.get('/feeds/recommendations', async (request: FastifyRequest, reply: FastifyReply) => {
         const query = request.query as any;
         const limit = Math.min(parseInt(query?.limit || '5', 10), 10); // Max 10 recommendations
 
@@ -165,7 +152,7 @@ export default async function feedRoutes(fastify: any, options: any) {
                 count: recommendations.length
             };
         } catch (error: any) {
-            console.error('Error generating recommendations:', error);
+            fastify.log.error('Error generating recommendations:', error);
             return {
                 ok: false,
                 error: error.message || 'Failed to generate recommendations',
@@ -175,21 +162,18 @@ export default async function feedRoutes(fastify: any, options: any) {
     });
 
     // Add feed endpoint
-    fastify.post('/feeds', async (request: any, reply: any) => {
-        const body = request.body as any;
-
-        if (!body || typeof body.url !== 'string') {
+    fastify.post('/feeds', async (request: FastifyRequest, reply: FastifyReply) => {
+        const result = AddFeedSchema.safeParse(request.body);
+        
+        if (!result.success) {
             reply.code(400);
             return {
                 ok: false,
-                error: 'Body must contain "url" string'
+                error: result.error.issues[0].message
             };
         }
 
-        let url = body.url.trim();
-        const refresh = body.refresh === true;
-        const folderIds = Array.isArray(body.folderIds) ? body.folderIds : [];
-        const providedTitle = typeof body.title === 'string' ? body.title.trim() : null;
+        let { url, refresh, folderIds, title: providedTitle } = result.data;
 
         // YouTube URL conversion: handle/channel to RSS
         let extractedTitle: string | null = providedTitle || null;
@@ -248,15 +232,6 @@ export default async function feedRoutes(fastify: any, options: any) {
             url = url.replace(/\/$/, '') + '.rss';
         }
 
-        // Validate URL
-        if (!url.match(/^https?:\/\/.+/)) {
-            reply.code(400);
-            return {
-                ok: false,
-                error: 'Invalid URL format'
-            };
-        }
-
         try {
             // Detect feed kind and fetch initial icon
             const kind = detectFeedKind(url);
@@ -273,7 +248,7 @@ export default async function feedRoutes(fastify: any, options: any) {
             stmt.run(url, kind, extractedTitle, icon_url);
 
             // Add to custom folders if provided
-            if (folderIds.length > 0) {
+            if (folderIds && folderIds.length > 0) {
                 const created_at = new Date().toISOString();
                 const insertAssoc = db.prepare(`
                     INSERT OR IGNORE INTO folder_feeds (folder_id, feed_url, created_at)
@@ -310,27 +285,25 @@ export default async function feedRoutes(fastify: any, options: any) {
     });
 
     // Rename feed endpoint
-    fastify.patch('/feeds', async (request: any, reply: any) => {
-        const body = request.body as any;
-        const url = body?.url;
-        const title = body?.title?.trim();
-
-        if (!url || typeof url !== 'string') {
+    fastify.patch('/feeds', async (request: FastifyRequest, reply: FastifyReply) => {
+        const result = RenameFeedSchema.safeParse(request.body);
+        
+        if (!result.success) {
             reply.code(400);
-            return { ok: false, error: 'url is required' };
+            return {
+                ok: false,
+                error: result.error.issues[0].message
+            };
         }
 
-        if (title === undefined) {
-            reply.code(400);
-            return { ok: false, error: 'title is required' };
-        }
+        const { url, title } = result.data;
 
         try {
-            const result = db.prepare(`
+            const updateResult = db.prepare(`
                 UPDATE feeds SET custom_title = ?, title = COALESCE(?, title) WHERE url = ?
-            `).run(title || null, title || null, url);
+            `).run(title, title, url);
 
-            if (result.changes === 0) {
+            if (updateResult.changes === 0) {
                 reply.code(404);
                 return { ok: false, error: 'Feed not found' };
             }
@@ -344,7 +317,7 @@ export default async function feedRoutes(fastify: any, options: any) {
     });
 
     // Delete feed endpoint
-    fastify.delete('/feeds', async (request: any, reply: any) => {
+    fastify.delete('/feeds', async (request: FastifyRequest, reply: FastifyReply) => {
         const query = request.query as any;
         const body = request.body as any;
 

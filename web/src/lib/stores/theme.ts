@@ -160,10 +160,10 @@ if (typeof window !== 'undefined') {
     }
   };
 
-  if ('addEventListener' in mediaQuery) {
+  if (mediaQuery.addEventListener) {
     mediaQuery.addEventListener('change', handleSystemThemeChange);
-  } else if ('addListener' in mediaQuery) {
-    mediaQuery.addListener(handleSystemThemeChange);
+  } else if ((mediaQuery as any).addListener) {
+    (mediaQuery as any).addListener(handleSystemThemeChange);
   }
 
   // Apply theme on load

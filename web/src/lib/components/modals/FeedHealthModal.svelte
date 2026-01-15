@@ -33,7 +33,7 @@
       url: string;
       title: string | null;
       kind: "youtube" | "reddit" | "podcast" | "generic";
-      last_status: number;
+      last_status: number | null;
       last_error: string | null;
       last_checked: string | null;
       unreadCount?: number;
@@ -54,14 +54,14 @@
 
   // Get health status for a feed
   function getHealthStatus(feed: {
-    last_status: number;
+    last_status: number | null;
     last_error: string | null;
     last_checked: string | null;
   }): HealthStatus {
     if (!feed.last_checked) return "never";
-    if (feed.last_error || feed.last_status >= 400) return "error";
+    if (feed.last_error || (feed.last_status && feed.last_status >= 400)) return "error";
     if (isStale(feed.last_checked)) return "stale";
-    if (feed.last_status >= 200 && feed.last_status < 300) return "healthy";
+    if (feed.last_status && feed.last_status >= 200 && feed.last_status < 300) return "healthy";
     return "error";
   }
 

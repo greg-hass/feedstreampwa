@@ -1,19 +1,37 @@
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../db/client.js';
+import { 
+    GetItemsQuerySchema, 
+    MarkReadSchema, 
+    MarkAllReadSchema, 
+    StarItemSchema, 
+    PlaybackPositionSchema 
+} from '../types/schemas.js';
 
-export default async function itemRoutes(fastify: any, options: any) {
+export default async function itemRoutes(fastify: FastifyInstance, options: any) {
     // Get items endpoint
-    fastify.get('/items', async (request: any, reply: any) => {
-        const query = request.query as any;
+    fastify.get('/items', async (request: FastifyRequest, reply: FastifyReply) => {
+        const result = GetItemsQuerySchema.safeParse(request.query);
+        
+        if (!result.success) {
+            reply.code(400);
+            return {
+                ok: false,
+                error: result.error.issues[0].message
+            };
+        }
+
+        const query = result.data;
 
         // Parse query parameters
         const feed = query.feed || null;
         const source = query.source || null;
         const smartFolder = query.smartFolder || null;
         const folderId = query.folderId || null;
-        const unreadOnly = query.unreadOnly === 'true';
-        const starredOnly = query.starredOnly === '1' || query.starredOnly === 'true';
-        const limit = Math.min(parseInt(query.limit || '50', 10), 200);
-        const offset = parseInt(query.offset || '0', 10);
+        const unreadOnly = query.unreadOnly === true;
+        const starredOnly = query.starredOnly === true;
+        const limit = Math.min(query.limit || 20, 200) || 20;
+        const offset = query.offset;
         const q = query.q ? query.q.trim() : null;
 
         // Build WHERE clause
@@ -80,8 +98,7 @@ export default async function itemRoutes(fastify: any, options: any) {
                 f.icon_url as feed_icon_url, COALESCE(f.custom_title, f.title) as feed_title
             ${fromClause}
             ${whereClause}
-            ORDER BY 
-                CASE WHEN i.published IS NOT NULL THEN i.published ELSE i.created_at END DESC
+            ORDER BY i.published DESC
             LIMIT ? OFFSET ?
         `;
 
@@ -95,26 +112,26 @@ export default async function itemRoutes(fastify: any, options: any) {
     });
 
     // Mark item as read/unread
-    fastify.post('/items/:id/read', async (request: any, reply: any) => {
+    fastify.post('/items/:id/read', async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
-        const body = request.body as any;
+        const result = MarkReadSchema.safeParse(request.body);
 
-        if (typeof body.read !== 'boolean') {
+        if (!result.success) {
             reply.code(400);
             return {
                 ok: false,
-                error: 'Body must contain "read" boolean'
+                error: result.error.issues[0].message
             };
         }
 
-        const isRead = body.read ? 1 : 0;
-        const readAt = body.read ? new Date().toISOString() : null;
+        const isRead = result.data.read ? 1 : 0;
+        const readAt = result.data.read ? new Date().toISOString() : null;
 
         try {
             const stmt = db.prepare('UPDATE items SET is_read = ?, read_at = ? WHERE id = ?');
-            const result = stmt.run(isRead, readAt, id);
+            const runResult = stmt.run(isRead, readAt, id);
 
-            if (result.changes === 0) {
+            if (runResult.changes === 0) {
                 reply.code(404);
                 return {
                     ok: false,
@@ -136,21 +153,18 @@ export default async function itemRoutes(fastify: any, options: any) {
     });
 
     // Mark all items as read with optional filters
-    fastify.post('/items/mark-all-read', async (request: any, reply: any) => {
-        const body = request.body as any;
+    fastify.post('/items/mark-all-read', async (request: FastifyRequest, reply: FastifyReply) => {
+        const result = MarkAllReadSchema.safeParse(request.body);
 
-        // Validate body is an object
-        if (!body || typeof body !== 'object') {
+        if (!result.success) {
             reply.code(400);
             return {
                 ok: false,
-                error: 'Request body must be a JSON object'
+                error: result.error.issues[0].message
             };
         }
 
-        const feedUrl = body.feedUrl || null;
-        const source = body.source || null;
-        const before = body.before || null;
+        const { feedUrl, source, before } = result.data;
 
         // Validate source if provided
         if (source && !['generic', 'youtube', 'reddit', 'podcast'].includes(source)) {
@@ -186,11 +200,11 @@ export default async function itemRoutes(fastify: any, options: any) {
             const query = `UPDATE items SET is_read = 1, read_at = ? WHERE ${whereClause}`;
 
             const stmt = db.prepare(query);
-            const result = stmt.run(now, ...params);
+            const runResult = stmt.run(now, ...params);
 
             return {
                 ok: true,
-                updated: result.changes
+                updated: runResult.changes
             };
         } catch (error: any) {
             fastify.log.error(error);
@@ -203,25 +217,25 @@ export default async function itemRoutes(fastify: any, options: any) {
     });
 
     // Star/unstar item
-    fastify.post('/items/:id/star', async (request: any, reply: any) => {
+    fastify.post('/items/:id/star', async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
-        const body = request.body as any;
+        const result = StarItemSchema.safeParse(request.body);
 
-        if (typeof body.starred !== 'boolean') {
+        if (!result.success) {
             reply.code(400);
             return {
                 ok: false,
-                error: 'Body must contain "starred" boolean'
+                error: result.error.issues[0].message
             };
         }
 
-        const isStarred = body.starred ? 1 : 0;
+        const isStarred = result.data.starred ? 1 : 0;
 
         try {
             const stmt = db.prepare('UPDATE items SET is_starred = ? WHERE id = ?');
-            const result = stmt.run(isStarred, id);
+            const runResult = stmt.run(isStarred, id);
 
-            if (result.changes === 0) {
+            if (runResult.changes === 0) {
                 reply.code(404);
                 return {
                     ok: false,
@@ -242,22 +256,22 @@ export default async function itemRoutes(fastify: any, options: any) {
         }
     });
 
-    fastify.patch('/items/:id/playback-position', async (request: any, reply: any) => {
+    fastify.patch('/items/:id/playback-position', async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
-        const body = request.body as any;
+        const result = PlaybackPositionSchema.safeParse(request.body);
 
-        if (body.position === undefined || typeof body.position !== 'number') {
+        if (!result.success) {
             reply.code(400);
-            return { ok: false, error: 'Missing or invalid "position" number' };
+            return { ok: false, error: result.error.issues[0].message };
         }
 
         try {
-            const result = db.prepare('UPDATE items SET playback_position = ? WHERE id = ?').run(body.position, id);
-            if (result.changes === 0) {
+            const runResult = db.prepare('UPDATE items SET playback_position = ? WHERE id = ?').run(result.data.position, id);
+            if (runResult.changes === 0) {
                 reply.code(404);
                 return { ok: false, error: 'Item not found' };
             }
-            return { ok: true, playback_position: body.position };
+            return { ok: true, playback_position: result.data.position };
         } catch (error: any) {
             fastify.log.error(error);
             reply.code(500);
@@ -266,7 +280,7 @@ export default async function itemRoutes(fastify: any, options: any) {
     });
 
     // Delete a single item
-    fastify.delete('/items/:id', async (request: any, reply: any) => {
+    fastify.delete('/items/:id', async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };
 
         try {

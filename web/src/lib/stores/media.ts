@@ -46,8 +46,13 @@ export const mediaUrl = derived(currentMedia, ($currentMedia) => {
     }
 
     // Podcast/audio enclosure
-    if ($currentMedia.enclosure?.url) {
-        return $currentMedia.enclosure.url;
+    if ($currentMedia.enclosure) {
+        if (typeof $currentMedia.enclosure === 'string') {
+            return $currentMedia.enclosure;
+        }
+        if (typeof $currentMedia.enclosure === 'object' && 'url' in $currentMedia.enclosure) {
+            return $currentMedia.enclosure.url;
+        }
     }
 
     return null;

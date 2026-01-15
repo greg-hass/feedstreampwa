@@ -73,11 +73,7 @@
     }
   }
 
-  $: if (isOpen) {
-    loadRecommendations();
-  }
-
-  $: categoryColor = {
+  const categoryColor: Record<string, string> = {
     technology: "from-blue-500/20 to-cyan-500/20 border-blue-500/30",
     news: "from-red-500/20 to-orange-500/20 border-red-500/30",
     entertainment: "from-purple-500/20 to-pink-500/20 border-purple-500/30",
@@ -87,6 +83,10 @@
     sports: "from-orange-500/20 to-red-500/20 border-orange-500/30",
     other: "from-gray-500/20 to-slate-500/20 border-gray-500/30",
   };
+
+  $: if (isOpen) {
+    loadRecommendations();
+  }
 </script>
 
 <svelte:window on:keydown={handleKeydown} />

@@ -194,7 +194,7 @@ function findDuplicatesFuzzy(items: Item[], sensitivity: number): DuplicateGroup
     if (similarItems.length > 1) {
       const avgSimilarity = Math.round(
         similarItems.reduce((acc, item) =>
-          acc + calculateSimilarity(item1.title, item.title!), 0
+          acc + calculateSimilarity(item1.title!, item.title!), 0
         ) / similarItems.length
       );
 
@@ -321,25 +321,25 @@ export function getPreferredItem(group: DuplicateGroup, keepPreference: Duplicat
   switch (keepPreference) {
     case 'oldest':
       return group.items.reduce((oldest, item) =>
-        new Date(item.published || item.published_at || item.created_at) <
-            new Date(oldest.published || oldest.published_at || oldest.created_at)
+        new Date(item.published || item.created_at) <
+            new Date(oldest.published || oldest.created_at)
           ? item
           : oldest
       );
 
     case 'newest':
       return group.items.reduce((newest, item) =>
-        new Date(item.published || item.published_at || item.created_at) >
-            new Date(newest.published || newest.published_at || newest.created_at)
+        new Date(item.published || item.created_at) >
+            new Date(newest.published || newest.created_at)
           ? item
           : newest
       );
 
     case 'first_subscribed':
     default:
-      // Sort by feed_id - assuming lower feed_id means subscribed first
+      // Sort by feed_url - assuming it's a stable identifier
       return group.items.reduce((first, item) =>
-        (item.feed_id || '') < (first.feed_id || '') ? item : first
+        (item.feed_url || '') < (first.feed_url || '') ? item : first
       );
   }
 }

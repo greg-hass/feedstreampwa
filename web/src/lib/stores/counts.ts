@@ -33,7 +33,10 @@ const feedTypeToSmartFolder: Record<string, 'rss' | 'youtube' | 'reddit' | 'podc
 function getTotalForFeedType(type: 'rss' | 'youtube' | 'reddit' | 'podcast'): number {
   const $feeds = get(feeds);
   return $feeds
-    .filter((f) => f.type === type || f.kind === type)
+    .filter((f) => {
+      const feedKind = f.kind === 'generic' ? 'rss' : f.kind;
+      return feedKind === type;
+    })
     .reduce((sum, feed) => sum + (feed.unreadCount || 0), 0);
 }
 
