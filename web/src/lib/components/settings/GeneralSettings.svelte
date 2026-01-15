@@ -137,51 +137,48 @@
   </div>
 
   <div class="space-y-3">
-    <label class="block">
-      <span class="text-sm font-semibold text-white mb-3 block">Auto-sync Interval</span>
-      <select
-        bind:value={localSettings.sync_interval}
-        class="w-full bg-white/5 px-4 py-3 rounded-xl text-white border border-white/10 hover:bg-white/10 focus:border-accent/50 transition-colors outline-none text-sm"
-      >
-        {#each syncIntervalOptions as option}
-          <option value={option.value}>{option.label}</option>
-        {/each}
-      </select>
-    </label>
+    <span class="text-sm font-semibold text-white mb-3 block">Auto-sync Interval</span>
+    <select
+      bind:value={localSettings.sync_interval}
+      class="w-full bg-white/5 px-4 py-3 rounded-xl text-white border border-white/10 hover:bg-white/10 focus:border-accent/50 transition-colors outline-none text-sm appearance-none"
+      style="-webkit-appearance: none;"
+    >
+      {#each syncIntervalOptions as option}
+        <option value={option.value} class="bg-zinc-900 text-white">{option.label}</option>
+      {/each}
+    </select>
   </div>
 
   <div class="space-y-3">
-    <label class="block">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-sm font-semibold text-white flex items-center gap-2">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M12 2L2 7l10 5 10-5-10-5z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M2 17l10 5 10-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M2 12l10 5 10-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-          Gemini API Key
-        </span>
-        <span class="text-xs text-white/40">Optional</span>
-      </div>
-      <input
-        type="text"
-        bind:value={localSettings.gemini_api_key}
-        placeholder="Enter your Gemini API key..."
-        autocomplete="off"
-        class="w-full bg-white/5 px-4 py-3 rounded-xl text-white border border-white/10 hover:bg-white/10 focus:border-purple-500/50 transition-colors outline-none text-sm font-mono"
-      />
-      <p class="text-xs text-white/40 mt-2">
-        Enable AI-powered feed recommendations. Get your API key from
-        <a
-          href="https://aistudio.google.com/app/apikey"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-purple-400 hover:text-purple-300 underline"
-        >
-          Google AI Studio
-        </a>
-        . Your key is stored securely on the server and never exposed to the browser.
-      </p>
-    </label>
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-sm font-semibold text-white flex items-center gap-2">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M12 2L2 7l10 5 10-5-10-5z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M2 17l10 5 10-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M2 12l10 5 10-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        Gemini API Key
+      </span>
+      <span class="text-xs text-white/40">Optional</span>
+    </div>
+    <input
+      type="text"
+      bind:value={localSettings.gemini_api_key}
+      placeholder="Enter your Gemini API key..."
+      autocomplete="off"
+      class="w-full bg-white/5 px-4 py-3 rounded-xl text-white border border-white/10 hover:bg-white/10 focus:border-purple-500/50 transition-colors outline-none text-sm font-mono"
+    />
+    <p class="text-xs text-white/40 mt-2">
+      Enable AI-powered feed recommendations. Get your API key from
+      <a
+        href="https://aistudio.google.com/app/apikey"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-purple-400 hover:text-purple-300 underline"
+      >
+        Google AI Studio
+      </a>
+      . Your key is stored securely on the server and never exposed to the browser.
+    </p>
   </div>
 </div>
