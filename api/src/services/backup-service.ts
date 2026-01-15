@@ -1,9 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import { db } from '../db/client.js';
+import { env } from '../config/index.js';
 import logger from '../utils/logger.js';
 
-const BACKUP_DIR = path.join(process.cwd(), 'data', 'backups');
+// Use the same data directory as the database (derived from DB_PATH)
+const BACKUP_DIR = path.join(path.dirname(env.DB_PATH), 'backups');
 
 export function initBackupService() {
     if (!fs.existsSync(BACKUP_DIR)) {
