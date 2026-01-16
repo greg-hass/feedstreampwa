@@ -4,6 +4,7 @@ import { fetchWithTimeout } from '$lib/utils/fetch';
 
 const API_BASE = '/api';
 const API_TIMEOUT = 30000; // 30 seconds
+const AI_RECOMMENDATIONS_TIMEOUT = 60000; // 60 seconds
 
 export async function fetchFeeds(): Promise<Feed[]> {
     const response = await fetchWithTimeout(`${API_BASE}/feeds`);
@@ -121,7 +122,10 @@ export interface FeedRecommendationsDebug {
 }
 
 export async function getFeedRecommendations(limit: number = 5): Promise<FeedRecommendation[]> {
-    const response = await fetchWithTimeout(`${API_BASE}/feeds/recommendations?limit=${limit}`);
+    const response = await fetchWithTimeout(
+        `${API_BASE}/feeds/recommendations?limit=${limit}`,
+        { timeout: AI_RECOMMENDATIONS_TIMEOUT }
+    );
     
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -141,7 +145,8 @@ export async function getFeedRecommendationsDebug(
     limit: number = 5
 ): Promise<{ recommendations: FeedRecommendation[]; debug: FeedRecommendationsDebug | null }> {
     const response = await fetchWithTimeout(
-        `${API_BASE}/feeds/recommendations?limit=${limit}&debug=true&dryRun=true`
+        `${API_BASE}/feeds/recommendations?limit=${limit}&debug=true&dryRun=true`,
+        { timeout: AI_RECOMMENDATIONS_TIMEOUT }
     );
 
     if (!response.ok) {

@@ -96,26 +96,47 @@
     }
   }
 
+  async function copyToClipboard(text: string, successMessage: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(successMessage);
+      return;
+    } catch (err) {
+      // Fallback for non-secure contexts or denied permissions.
+    }
+
+    try {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "true");
+      textarea.style.position = "fixed";
+      textarea.style.top = "-9999px";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      const copied = document.execCommand("copy");
+      document.body.removeChild(textarea);
+      if (copied) {
+        toast.success(successMessage);
+        return;
+      }
+    } catch (err) {
+      // Ignore and fall through to error toast.
+    }
+
+    toast.error("Failed to copy");
+  }
+
   async function copyPrompt() {
     const text = debugInfo?.promptPreview;
     if (!text) return;
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success("Prompt copied");
-    } catch (err) {
-      toast.error("Failed to copy prompt");
-    }
+    await copyToClipboard(text, "Prompt copied");
   }
 
   async function copyError() {
     const text = debugInfo?.lastError;
     if (!text) return;
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success("Error copied");
-    } catch (err) {
-      toast.error("Failed to copy error");
-    }
+    await copyToClipboard(text, "Error copied");
   }
 
   function handleBackdropClick(event: MouseEvent) {
