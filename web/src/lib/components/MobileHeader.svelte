@@ -119,10 +119,9 @@
 
   <div class="mobile-search" class:open={isSearchOpen}>
     <div class="relative px-3 pb-2">
-      <Search
-        size={18}
-        class="absolute left-6 top-1/2 -translate-y-1/2 text-white/40"
-      />
+      <span class="mobile-search-icon" aria-hidden="true">
+        <Search size={18} />
+      </span>
       <input
         bind:this={searchInput}
         type="search"
@@ -135,7 +134,7 @@
       {#if searchQuery}
         <button
           on:click={handleSearchClear}
-          class="absolute right-6 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+          class="mobile-search-clear"
           aria-label="Clear search"
         >
           <X size={16} />
@@ -149,15 +148,53 @@
   .mobile-search {
     max-height: 0;
     opacity: 0;
-    transform: translateY(-4px);
+    transform: translateY(-8px);
     overflow: hidden;
-    transition: max-height 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+    transition: max-height 0.3s ease, opacity 0.2s ease, transform 0.25s ease;
+    will-change: max-height, opacity, transform;
   }
 
   .mobile-search.open {
-    max-height: 72px;
+    max-height: 80px;
     opacity: 1;
     transform: translateY(0);
+  }
+
+  .mobile-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.4);
+    pointer-events: none;
+  }
+
+  .mobile-search-clear {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.4);
+    background: none;
+    border: none;
+    padding: 0;
+    border-radius: 999px;
+    line-height: 0;
+    cursor: pointer;
+  }
+
+  .mobile-search-clear:hover {
+    color: rgba(255, 255, 255, 0.85);
   }
 
 </style>

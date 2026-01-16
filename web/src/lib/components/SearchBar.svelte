@@ -46,7 +46,13 @@
   }
 
   .search-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    line-height: 0;
   }
 
   .search-box:focus-within {
@@ -76,10 +82,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 4px;
-    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border-radius: 999px;
     transition: color 0.2s;
     flex-shrink: 0;
+    line-height: 0;
   }
 
   .search-clear:hover {
