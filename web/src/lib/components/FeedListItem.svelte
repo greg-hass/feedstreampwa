@@ -236,8 +236,13 @@
     ? item.enclosure 
     : (item.enclosure && typeof item.enclosure === 'object' ? item.enclosure.url : null);
 
+  $: fallbackAudioUrl =
+    item.url && /\.(mp3|m4a|aac|ogg|opus|wav|flac)(\?|#|$)/i.test(item.url)
+      ? item.url
+      : null;
+
   $: isPlayable =
-    (enclosureUrl &&
+    ((enclosureUrl || fallbackAudioUrl) &&
       (feedType === "podcast" || Boolean(item.enclosure))) ||
     youtubeVideoId;
 

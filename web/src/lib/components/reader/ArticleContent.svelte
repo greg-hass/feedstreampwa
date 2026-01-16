@@ -81,8 +81,10 @@
         readerData.url.includes("youtu.be/")));
   $: isPodcast = item?.source === "podcast" || Boolean(item?.enclosure);
   $: coverImage = readerData?.imageUrl || item?.media_thumbnail || null;
-  $: coverUrl = heroImageError ? item?.feed_icon_url || null : coverImage || item?.feed_icon_url || null;
-  $: heroStyle = coverImage && !heroImageError ? `--hero-image: url("${coverImage}")` : "";
+  $: coverUrl = heroImageError
+    ? item?.feed_icon_url || null
+    : coverImage || item?.feed_icon_url || null;
+  $: heroStyle = coverUrl ? `--hero-image: url("${coverUrl}")` : "";
   $: feedTitle = item?.feed_title || readerData?.siteName || "FeedStream";
   $: displayAuthor = readerData?.byline || item?.author || null;
   $: displayDate = formatDate(item?.published || item?.created_at || null);
@@ -113,79 +115,74 @@
 
 <article class="reader-content {themeClass}">
   <header class="studio-hero" style={heroStyle}>
-    <div class="studio-hero-content">
-      <div class="hero-cover">
+    <div class="hero-overlay">
+      <div class="hero-chips">
         {#if coverUrl}
           <img
             src={coverUrl}
             alt=""
-            class="hero-cover-img"
+            class="hero-badge"
             on:error={handleHeroImageError}
           />
         {:else}
-          <div class="hero-cover-fallback">
-            <Radio size={22} class="text-white/40" />
+          <div class="hero-badge hero-badge-fallback">
+            <Radio size={16} class="text-white/50" />
           </div>
+        {/if}
+        <span class="hero-chip">{feedTitle}</span>
+        {#if isPodcast}
+          <span class="hero-chip hero-chip-accent">
+            <Radio size={12} />
+            Podcast
+          </span>
+        {/if}
+        {#if readerData?.fromCache}
+          <span class="hero-chip hero-chip-muted">
+            <Database size={12} />
+            Offline
+          </span>
         {/if}
       </div>
 
-      <div class="hero-text">
-        <div class="hero-chips">
-          <span class="hero-chip">{feedTitle}</span>
-          {#if isPodcast}
-            <span class="hero-chip hero-chip-accent">
-              <Radio size={12} />
-              Podcast
-            </span>
-          {/if}
-          {#if readerData?.fromCache}
-            <span class="hero-chip hero-chip-muted">
-              <Database size={12} />
-              Offline
-            </span>
-          {/if}
-        </div>
+      <h1 class="hero-title" id="reader-title">
+        {readerData.title || "Untitled"}
+      </h1>
 
-        <h1 class="hero-title" id="reader-title">
-          {readerData.title || "Untitled"}
-        </h1>
-
-        {#if metaParts.length}
-          <div class="hero-meta">
-            {#each metaParts as part, index}
-              <span class="hero-meta-item">
-                {#if part === readTimeLabel}
-                  <Clock size={12} />
-                {/if}
-                {part}
-              </span>
-              {#if index < metaParts.length - 1}
-                <span class="hero-meta-dot">•</span>
+      {#if metaParts.length}
+        <div class="hero-meta">
+          {#each metaParts as part, index}
+            <span class="hero-meta-item">
+              {#if part === readTimeLabel}
+                <Clock size={12} />
               {/if}
-            {/each}
-          </div>
-        {/if}
-
-        <div class="hero-actions">
-          {#if isPodcast && onPlay}
-            <button class="hero-action hero-action-primary" on:click={onPlay}>
-              <Play size={16} class="fill-current" />
-              {playLabel}
-            </button>
-          {/if}
-          {#if readerData.url}
-            <a
-              href={readerData.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="hero-action hero-action-ghost"
-              title="Open Original"
-            >
-              <ExternalLink size={16} />
-              Open Original
-            </a>
-          {/if}
+              {part}
+            </span>
+            {#if index < metaParts.length - 1}
+              <span class="hero-meta-dot">•</span>
+            {/if}
+          {/each}
         </div>
+      {/if}
+
+      <div class="hero-actions">
+        {#if isPodcast && onPlay}
+          <button class="hero-action hero-action-primary" on:click={onPlay}>
+            <Play size={16} class="fill-current" />
+            {playLabel}
+          </button>
+        {/if}
+        {#if readerData.url}
+          <a
+            href={readerData.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="hero-action hero-action-ghost"
+            title="Open Original"
+          >
+            <ExternalLink size={16} />
+            Open Original
+          </a>
+        {/if}
       </div>
     </div>
   </header>
@@ -213,7 +210,7 @@
   {/if}
 
   <div
-    class="reader-body {fontSizeClass} {fontFamilyClass} {maxWidthClass} mx-auto"
+    class="reader-body {fontSizeClass} {fontFamilyClass} mx-auto"
     id="reader-body-content"
   >
     {#if !isYouTube}
@@ -234,9 +231,7 @@
     border-radius: 24px;
     overflow: hidden;
     border: 1px solid var(--divider, rgba(255, 255, 255, 0.1));
-    background:
-      linear-gradient(120deg, rgba(7, 7, 10, 0.9), rgba(9, 12, 20, 0.75)),
-      var(--hero-image, none);
+    background: rgba(10, 12, 18, 0.85);
     background-size: cover;
     background-position: center;
     box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
@@ -246,55 +241,37 @@
     content: "";
     position: absolute;
     inset: 0;
+    background-image: var(--hero-image, none);
+    background-size: cover;
+    background-position: center;
+    filter: blur(22px);
+    transform: scale(1.08);
+    opacity: 0.7;
+  }
+
+  .studio-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
     background:
       radial-gradient(600px circle at 15% 10%, rgba(var(--accent-color-rgb, 56, 189, 248), 0.2), transparent 60%),
-      linear-gradient(180deg, rgba(10, 10, 15, 0.1), rgba(10, 10, 15, 0.6));
+      linear-gradient(180deg, rgba(10, 10, 15, 0.2), rgba(10, 10, 15, 0.75));
   }
 
-  .studio-hero-content {
+  .hero-overlay {
     position: relative;
-    display: grid;
-    gap: 20px;
-    padding: 22px;
-    align-items: center;
-  }
-
-  .hero-cover {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    border-radius: 18px;
-    overflow: hidden;
-    background: rgba(10, 10, 12, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
-    max-width: 220px;
-    margin: 0 auto;
-  }
-
-  .hero-cover-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .hero-cover-fallback {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.6));
-  }
-
-  .hero-text {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    padding: 26px;
+    z-index: 1;
   }
 
   .hero-chips {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+    align-items: center;
   }
 
   .hero-chip {
@@ -393,16 +370,27 @@
     background: rgba(255, 255, 255, 0.14);
   }
 
-  @media (min-width: 768px) {
-    .studio-hero-content {
-      grid-template-columns: 170px 1fr;
-      padding: 32px;
-      gap: 28px;
-    }
+  .hero-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+    flex-shrink: 0;
+  }
 
-    .hero-cover {
-      max-width: none;
-      margin: 0;
+  .hero-badge-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  @media (min-width: 768px) {
+    .hero-overlay {
+      padding: 34px 38px;
+      gap: 16px;
     }
   }
 
@@ -413,6 +401,12 @@
     word-wrap: break-word;
     word-break: break-word;
     hyphens: auto;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .reader-body :global(h1) {
+    display: none;
   }
 
   .reader-body :global(p) {

@@ -174,7 +174,15 @@
         ? item.enclosure.url
         : null;
 
-  $: isPlayable = Boolean(enclosureUrl) || feedType === "youtube" || item.external_id;
+  $: fallbackAudioUrl =
+    item.url && /\.(mp3|m4a|aac|ogg|opus|wav|flac)(\?|#|$)/i.test(item.url)
+      ? item.url
+      : null;
+
+  $: isPlayable =
+    Boolean(enclosureUrl || fallbackAudioUrl) ||
+    feedType === "youtube" ||
+    item.external_id;
 
   // Swipe Gestures
   let touchStartX = 0;
