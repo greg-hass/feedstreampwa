@@ -136,6 +136,7 @@
   let liveRefreshInFlight = false;
   let liveInsertResetTimer: ReturnType<typeof setTimeout> | null = null;
   let liveInsertIds = new Set<string>();
+  let mobileFiltersHeight = 0;
 
   const LAST_SYNC_KEY = "last_global_sync";
   let syncIntervalMs: number | null = null;
@@ -173,6 +174,13 @@
   }
 
   $: $refreshState.isRefreshing, updateRefreshCountdown();
+
+  $: if (typeof document !== "undefined" && mobileFiltersHeight > 0) {
+    document.documentElement.style.setProperty(
+      "--mobile-filters-height",
+      `${mobileFiltersHeight}px`
+    );
+  }
 
   // Derived
   $: pageTitle = (() => {
@@ -557,7 +565,7 @@
   />
 
   <!-- Sticky Filter Chips for Mobile -->
-  <div class="mobile-sticky-filters">
+  <div class="mobile-sticky-filters" bind:clientHeight={mobileFiltersHeight}>
     <FilterChips
       timeFilter={$timeFilter}
       on:change={(e) => setTimeFilter(e.detail)}
@@ -641,7 +649,7 @@
   /* Mobile Fixed Filter Chips */
   .mobile-sticky-filters {
     position: fixed;
-    top: 52px; /* Height of MobileHeader */
+    top: var(--mobile-header-height, 52px);
     left: 0;
     right: 0;
     z-index: 25;
@@ -706,7 +714,10 @@
     }
 
     .articles-list {
-      padding-top: 96px; /* Space for fixed mobile header + filters */
+      padding-top: calc(
+        var(--mobile-header-height, 52px) +
+          var(--mobile-filters-height, 60px)
+      );
     }
   }
 </style>
