@@ -5,6 +5,7 @@ import { aiRecommendationService } from '../services/ai-recommendations.js';
 import { fetchFeed, fetchFeedIcon } from '../services/feed-service.js';
 import { detectFeedKind } from '../utils/feed-utils.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { env } from '../config/index.js';
 import {
     AddFeedSchema,
     RenameFeedSchema,

@@ -109,7 +109,7 @@ export class AIRecommendationService {
             // Parse the JSON response
             const recommendations = this.parseRecommendations(text);
             const existingUrls = new Set(
-                currentFeeds.map((feed) => feed.url.toLowerCase())
+                feeds.map((feed) => feed.url.toLowerCase())
             );
             const uniqueRecommendations = recommendations.filter(
                 (rec) => !existingUrls.has(rec.url.toLowerCase())
