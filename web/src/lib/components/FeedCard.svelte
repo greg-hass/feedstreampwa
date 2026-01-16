@@ -57,8 +57,11 @@
   // Use YouTube thumbnail if available, otherwise use media_thumbnail (but skip Reddit videos)
   $: thumbnailUrl =
     youtubeThumbnail ||
-    (isRedditVideo ? null : item.media_thumbnail) ||
-    (feedType === "podcast" ? item.feed_icon_url : null);
+    (feedType === "podcast"
+      ? item.feed_icon_url || item.media_thumbnail
+      : isRedditVideo
+        ? null
+        : item.media_thumbnail);
 
   $: isPodcast = feedType === "podcast";
   $: durationSeconds = item.media_duration_seconds ?? null;

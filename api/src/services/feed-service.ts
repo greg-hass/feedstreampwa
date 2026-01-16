@@ -238,6 +238,10 @@ function extractMediaContentUrl(mediaContent: ParsedFeedItem['mediaContent']): s
     return null;
 }
 
+function isLikelyAudioUrl(url: string): boolean {
+    return /\.(mp3|m4a|aac|ogg|opus|wav|flac)(\?|#|$)/i.test(url);
+}
+
 function parseDurationToSeconds(raw: unknown): number | null {
     if (raw === null || raw === undefined) return null;
     if (typeof raw === 'number' && Number.isFinite(raw)) {
@@ -540,7 +544,10 @@ function normalizeItem(item: ParsedFeedItem, kind: FeedKind): NormalizedItem {
         normalized.media_thumbnail = extractHeroImage(item);
     }
 
-    const enclosureUrl = extractEnclosureUrl(item);
+    let enclosureUrl = extractEnclosureUrl(item);
+    if (!enclosureUrl && item.link && isLikelyAudioUrl(item.link)) {
+        enclosureUrl = item.link;
+    }
     if (enclosureUrl) {
         normalized.enclosure = enclosureUrl;
     }

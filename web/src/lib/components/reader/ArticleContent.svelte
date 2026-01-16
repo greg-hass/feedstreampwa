@@ -1,8 +1,18 @@
 <script lang="ts">
-  import { Sparkles, Database, ExternalLink, Play, Clock, Radio } from "lucide-svelte";
+  import { Sparkles, Database, ExternalLink, Play, Clock, Radio, Pause } from "lucide-svelte";
   import type { Item } from "$lib/types";
   import { calculateReadTime, formatReadTime } from "$lib/utils/readTime";
   import { formatDuration } from "$lib/utils/formatDuration";
+  import {
+    currentMedia,
+    isPlaying,
+    progress,
+    formattedCurrentTime,
+    formattedDuration,
+    duration,
+    seek,
+    togglePlayPause,
+  } from "$lib/stores/media";
 
   export let readerData: any;
   export let item: Item | null;
@@ -80,7 +90,9 @@
       (readerData.url.includes("youtube.com/watch") ||
         readerData.url.includes("youtu.be/")));
   $: isPodcast = item?.source === "podcast" || Boolean(item?.enclosure);
-  $: coverImage = readerData?.imageUrl || item?.media_thumbnail || null;
+  $: coverImage = isPodcast
+    ? item?.feed_icon_url || readerData?.imageUrl || item?.media_thumbnail || null
+    : readerData?.imageUrl || item?.media_thumbnail || null;
   $: coverUrl = heroImageError
     ? item?.feed_icon_url || null
     : coverImage || item?.feed_icon_url || null;
@@ -110,6 +122,21 @@
 
   $: if (item?.id) {
     heroImageError = false;
+  }
+
+  $: isCurrentPodcast =
+    Boolean(item?.id) && $currentMedia?.id === item?.id && isPodcast;
+
+  function handleHeroSeek(event: MouseEvent) {
+    const target = event.currentTarget as HTMLDivElement | null;
+    if (!target || !$currentMedia || !$currentMedia.id) return;
+    const rect = target.getBoundingClientRect();
+    const percent = Math.min(Math.max((event.clientX - rect.left) / rect.width, 0), 1);
+    const total = $duration || $currentMedia.media_duration_seconds || 0;
+    const newTime = percent * total;
+    if (newTime > 0 && total > 0) {
+      seek(newTime);
+    }
   }
 </script>
 
@@ -184,6 +211,30 @@
           </a>
         {/if}
       </div>
+
+      {#if isCurrentPodcast}
+        <div class="hero-player">
+          <button class="hero-player-btn" on:click={togglePlayPause}>
+            {#if $isPlaying}
+              <Pause size={16} class="fill-current" />
+            {:else}
+              <Play size={16} class="fill-current" />
+            {/if}
+            <span>{$isPlaying ? "Pause" : "Play"}</span>
+          </button>
+          <div class="hero-player-progress" on:click={handleHeroSeek}>
+            <div
+              class="hero-player-progress-fill"
+              style="width: {$progress}%"
+            ></div>
+          </div>
+          <div class="hero-player-time">
+            <span>{$formattedCurrentTime}</span>
+            <span>/</span>
+            <span>{$formattedDuration}</span>
+          </div>
+        </div>
+      {/if}
     </div>
   </header>
 
@@ -370,6 +421,57 @@
   .hero-action-ghost:hover {
     transform: translateY(-1px);
     background: rgba(255, 255, 255, 0.14);
+  }
+
+  .hero-player {
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: rgba(6, 8, 12, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+  }
+
+  .hero-player-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(var(--accent-color-rgb, 56, 189, 248), 0.2);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    border: 1px solid rgba(var(--accent-color-rgb, 56, 189, 248), 0.4);
+  }
+
+  .hero-player-progress {
+    flex: 1;
+    min-width: 140px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .hero-player-progress-fill {
+    height: 100%;
+    background: var(--accent-color);
+  }
+
+  .hero-player-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    font-variant-numeric: tabular-nums;
   }
 
   .hero-badge {

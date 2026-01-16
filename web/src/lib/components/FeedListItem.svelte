@@ -104,8 +104,9 @@
   // For podcasts, fallback to feed icon (usually high-res cover art) if no episode image.
   $: thumbnailUrl =
     youtubeThumbnail ||
-    item.media_thumbnail ||
-    (feedType === "podcast" ? item.feed_icon_url : null);
+    (feedType === "podcast"
+      ? item.feed_icon_url || item.media_thumbnail
+      : item.media_thumbnail);
 
   $: isPodcast = feedType === "podcast";
   $: durationSeconds = item.media_duration_seconds ?? null;
