@@ -31,6 +31,12 @@ export function applyMigrations(db: any): void {
 
     for (const file of files) {
         if (!appliedNames.has(file)) {
+            if (file === '006_add_enclosure_column.sql' && columnExists(db, 'items', 'enclosure')) {
+                logger.info(`Skipping migration (already applied): ${file}`);
+                db.prepare('INSERT INTO _migrations (name, applied_at) VALUES (?, ?)')
+                    .run(file, new Date().toISOString());
+                continue;
+            }
             logger.info(`Applying migration: ${file}`);
             const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
             
@@ -84,6 +90,16 @@ function runLegacyMigrations(db: any) {
         db.prepare('INSERT INTO _migration_status (name, completed_at) VALUES (?, ?)')
             .run(name, new Date().toISOString());
         logger.info('Legacy date normalization complete.');
+    }
+}
+
+function columnExists(db: any, tableName: string, columnName: string): boolean {
+    try {
+        const columns = db.prepare(`PRAGMA table_info(${tableName})`).all() as { name: string }[];
+        return columns.some((col) => col.name === columnName);
+    } catch (error) {
+        logger.warn({ err: error }, `Failed to check column ${columnName} on ${tableName}`);
+        return false;
     }
 }
 
