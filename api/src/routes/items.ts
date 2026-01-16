@@ -98,12 +98,10 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
             });
         }
 
-        if (q) {
-            conditions.push({
-                clause: 'fts MATCH ?',
-                params: [q]
-            });
-        }
+        const hasFts = Boolean(
+            db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='items_fts'").get()
+        );
+        let useFts = Boolean(q) && hasFts;
 
         if (timeFilter && timeFilter !== 'all') {
             const dayMs = 24 * 60 * 60 * 1000;
@@ -120,42 +118,74 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
             });
         }
 
-        // Build final WHERE clause and params array
-        const whereClauses = conditions.map(c => c.clause);
-        const whereParams = conditions.flatMap(c => c.params);
-        const whereClause = whereClauses.length > 0 ? 'WHERE ' + whereClauses.join(' AND ') : '';
+        const buildQueryParts = (useFullText: boolean) => {
+            const searchConditions: QueryCondition[] = [];
+            if (q) {
+                if (useFullText) {
+                    searchConditions.push({
+                        clause: 'fts MATCH ?',
+                        params: [q]
+                    });
+                } else {
+                    const likeQuery = `%${q}%`;
+                    searchConditions.push({
+                        clause: '(i.title LIKE ? OR i.summary LIKE ? OR i.content LIKE ?)',
+                        params: [likeQuery, likeQuery, likeQuery]
+                    });
+                }
+            }
 
-        // Need to join feeds table if filtering by smartFolder
-        const baseFromClause = 'FROM items i INNER JOIN feeds f ON i.feed_url = f.url';
-        const fromClause = q
-            ? `${baseFromClause} INNER JOIN items_fts fts ON i.rowid = fts.rowid`
-            : baseFromClause;
+            const allConditions = [...conditions, ...searchConditions];
+            const whereClauses = allConditions.map(c => c.clause);
+            const whereParams = allConditions.flatMap(c => c.params);
+            const whereClause = whereClauses.length > 0 ? 'WHERE ' + whereClauses.join(' AND ') : '';
 
-        // Get total count
-        const countQuery = `SELECT COUNT(*) as total ${fromClause} ${whereClause}`;
-        const countResult = db.prepare(countQuery).get(...whereParams) as any;
-        const total = countResult.total;
+            const baseFromClause = 'FROM items i INNER JOIN feeds f ON i.feed_url = f.url';
+            const fromClause = useFullText
+                ? `${baseFromClause} INNER JOIN items_fts fts ON i.rowid = fts.rowid`
+                : baseFromClause;
 
-        // Get items
-        const itemsQuery = `
-            SELECT 
-                i.id, i.feed_url, i.source, i.title, i.url, i.author, i.summary, i.content,
-                i.published, i.updated, i.media_thumbnail, i.media_duration_seconds,
-                i.external_id, i.raw_guid, i.created_at, i.is_read, i.is_starred, i.playback_position, i.read_at,
-                f.icon_url as feed_icon_url, COALESCE(f.custom_title, f.title) as feed_title
-            ${fromClause}
-            ${whereClause}
-            ORDER BY i.published DESC
-            LIMIT ? OFFSET ?
-        `;
-
-        const items = db.prepare(itemsQuery).all(...whereParams, limit, offset);
-
-        return {
-            ok: true,
-            total,
-            items
+            return { fromClause, whereClause, whereParams };
         };
+
+        const runQuery = (useFullText: boolean) => {
+            const { fromClause, whereClause, whereParams } = buildQueryParts(useFullText);
+
+            const countQuery = `SELECT COUNT(*) as total ${fromClause} ${whereClause}`;
+            const countResult = db.prepare(countQuery).get(...whereParams) as any;
+            const total = countResult.total;
+
+            const itemsQuery = `
+                SELECT 
+                    i.id, i.feed_url, i.source, i.title, i.url, i.author, i.summary, i.content,
+                    i.published, i.updated, i.media_thumbnail, i.media_duration_seconds,
+                    i.external_id, i.raw_guid, i.created_at, i.is_read, i.is_starred, i.playback_position, i.read_at,
+                    f.icon_url as feed_icon_url, COALESCE(f.custom_title, f.title) as feed_title
+                ${fromClause}
+                ${whereClause}
+                ORDER BY i.published DESC
+                LIMIT ? OFFSET ?
+            `;
+
+            const items = db.prepare(itemsQuery).all(...whereParams, limit, offset);
+
+            return { total, items };
+        };
+
+        try {
+            const { total, items } = runQuery(useFts);
+            return { ok: true, total, items };
+        } catch (error) {
+            if (useFts) {
+                fastify.log.warn({ err: error }, 'FTS query failed, falling back to LIKE search');
+                useFts = false;
+            } else {
+                throw error;
+            }
+        }
+
+        const { total, items } = runQuery(useFts);
+        return { ok: true, total, items };
     });
 
     // Mark item as read/unread
