@@ -73,7 +73,13 @@
       duration.set(audioElement.duration);
       // Start from saved position
       if ($currentMedia?.playback_position) {
-        audioElement.currentTime = $currentMedia.playback_position;
+        audioElement.currentTime = Math.min(
+          $currentMedia.playback_position,
+          audioElement.duration || $currentMedia.playback_position
+        );
+      }
+      if ($isPlaying) {
+        audioElement.play().catch((err) => console.error("Playback error:", err));
       }
     }
   }
@@ -203,6 +209,26 @@
       window.open($currentMedia.url, "_blank");
     }
   }
+
+  function handleTogglePlayback() {
+    if (!audioElement) {
+      togglePlayPause();
+      return;
+    }
+
+    if ($isPlaying) {
+      audioElement.pause();
+      isPlaying.set(false);
+    } else {
+      audioElement
+        .play()
+        .then(() => isPlaying.set(true))
+        .catch((err) => {
+          console.error("Playback error:", err);
+          isPlaying.set(false);
+        });
+    }
+  }
 </script>
 
 <!-- Hidden audio element for podcast playback -->
@@ -220,12 +246,12 @@
 
 {#if $currentMedia && $mediaType !== "video"}
   <div
-    class="glass border-t border-white/10 p-3 flex items-center gap-3 md:gap-4 w-full relative z-50 transition-all duration-300"
+    class="bg-[#0b0d11] border-t border-zinc-800 p-3 flex items-center gap-3 md:gap-4 w-full relative z-50 transition-all duration-300"
   >
     <!-- Progress Bar (Top Edge) -->
     <div
       bind:this={progressBarElement}
-      class="absolute top-0 left-0 right-0 h-[2px] bg-white/5 cursor-pointer group"
+      class="absolute top-0 left-0 right-0 h-[3px] bg-white/10 cursor-pointer group"
       on:click={handleProgressClick}
       on:keydown={handleProgressKeydown}
       role="slider"
@@ -236,7 +262,7 @@
       aria-valuenow={$currentTime}
     >
       <div
-        class="h-full bg-accent/80 group-hover:bg-accent transition-all relative"
+        class="h-full bg-accent transition-all relative"
         style="width: {$progress}%"
       >
         <div
@@ -292,7 +318,7 @@
 
       <button
         class="h-10 w-10 md:h-12 md:w-12 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 hover:bg-gray-200 transition-all shadow-lg shadow-white/10 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-        on:click={togglePlayPause}
+        on:click={handleTogglePlayback}
         disabled={!$mediaUrl}
         title={$isPlaying ? "Pause" : "Play"}
       >
@@ -390,7 +416,7 @@
 {:else}
   <!-- Empty state when no media is playing -->
   <div
-    class="glass border-t border-white/10 p-3 flex items-center justify-center w-full relative z-50 text-white/40 text-sm"
+    class="bg-[#0b0d11] border-t border-zinc-800 p-3 flex items-center justify-center w-full relative z-50 text-white/50 text-sm"
   >
     No media playing
   </div>

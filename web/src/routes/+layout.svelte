@@ -37,15 +37,7 @@
   class="min-h-screen bg-background text-gray-200 font-sans selection:bg-accent selection:text-white"
 >
   <!-- Desktop Sidebar (Fixed Left) -->
-  <Sidebar>
-    <!-- Inject Player into Sidebar Slot for Desktop -->
-    <div slot="player" class="mt-auto border-t border-white/5">
-      {#if isMediaVisible}
-        <!-- Condensed version for Sidebar could be passed via props, but CSS response works too -->
-        <MediaPlayer />
-      {/if}
-    </div>
-  </Sidebar>
+  <Sidebar />
 
   <!-- Main Content Area -->
   <!--
@@ -54,7 +46,7 @@
     md:pb-0: No bottom padding needed on desktop (Player in sidebar)
   -->
   <main
-    class="relative w-full min-h-screen md:pl-[280px] pb-[140px] md:pb-0 transition-all duration-300 ease-out overflow-x-hidden"
+    class={`relative w-full min-h-screen md:pl-[280px] pb-[140px] ${isMediaVisible ? "md:pb-[96px]" : "md:pb-0"} transition-all duration-300 ease-out overflow-x-hidden`}
   >
     <div
       class="w-full max-w-[1600px] mx-auto p-2 md:px-6 md:pt-6 lg:px-8 lg:pt-6"
@@ -65,23 +57,20 @@
     </div>
   </main>
 
-  <!-- Mobile Floating Elements (Fixed Bottom) -->
-  <div
-    class="md:hidden fixed bottom-0 left-0 right-0 z-50 flex flex-col items-stretch pointer-events-none"
-  >
-    <!-- Mobile Media Player (Above Nav) -->
-    {#if isMediaVisible}
-      <div
-        class="w-full transition-transform duration-300 slide-in-from-bottom-10 pointer-events-auto bg-[#121212]/95 backdrop-blur-md border-t border-white/10"
-      >
-        <MediaPlayer />
-      </div>
-    {/if}
-
-    <!-- Mobile Navigation (Stacked Bottom) -->
-    <div class="w-full pointer-events-auto">
-      <BottomNav />
+  <!-- Full-width Media Player (All sizes) -->
+  <!-- Desktop Media Player (Full width) -->
+  {#if isMediaVisible}
+    <div class="hidden md:block fixed bottom-0 left-0 right-0 z-50 pointer-events-auto">
+      <MediaPlayer />
     </div>
+  {/if}
+
+  <!-- Mobile Bottom Stack -->
+  <div class="md:hidden fixed bottom-0 left-0 right-0 z-50 w-full pointer-events-auto">
+    {#if isMediaVisible}
+      <MediaPlayer />
+    {/if}
+    <BottomNav />
   </div>
 
   <!-- Mobile Menu (Slide-in Drawer) -->

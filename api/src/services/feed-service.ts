@@ -42,7 +42,15 @@ interface ParsedFeedItem {
     enclosure?: { url?: string; type?: string; length?: string; '@_url'?: string } | string;
     enclosures?: { url?: string; type?: string; length?: string; '@_url'?: string }[];
     itunesDuration?: string;
-    mediaContent?: { duration?: string | number } | { duration?: string | number }[];
+    mediaContent?: {
+        duration?: string | number;
+        url?: string;
+        '@_url'?: string;
+    } | {
+        duration?: string | number;
+        url?: string;
+        '@_url'?: string;
+    }[];
     
     // YouTube specific
     ytVideoId?: string;
@@ -202,6 +210,9 @@ function extractEnclosureUrl(item: ParsedFeedItem): string | null {
         if (candidate['@_url']) return candidate['@_url'];
     }
 
+    const mediaContentUrl = extractMediaContentUrl(item.mediaContent);
+    if (mediaContentUrl) return mediaContentUrl;
+
     return null;
 }
 
@@ -209,6 +220,21 @@ function extractMediaContentDuration(mediaContent: ParsedFeedItem['mediaContent'
     if (!mediaContent) return null;
     if (Array.isArray(mediaContent)) return mediaContent[0]?.duration ?? null;
     if (typeof mediaContent === 'object' && 'duration' in mediaContent) return mediaContent.duration;
+    return null;
+}
+
+function extractMediaContentUrl(mediaContent: ParsedFeedItem['mediaContent']): string | null {
+    if (!mediaContent) return null;
+    if (Array.isArray(mediaContent)) {
+        const candidate = mediaContent[0];
+        if (candidate?.url) return candidate.url;
+        if (candidate && '@_url' in candidate && candidate['@_url']) return candidate['@_url'];
+        return null;
+    }
+    if (typeof mediaContent === 'object') {
+        if (mediaContent.url) return mediaContent.url;
+        if ('@_url' in mediaContent && mediaContent['@_url']) return mediaContent['@_url'];
+    }
     return null;
 }
 
