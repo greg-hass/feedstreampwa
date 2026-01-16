@@ -45,8 +45,17 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
         const folderId = query.folderId || null;
         const unreadOnly = query.unreadOnly === true;
         const starredOnly = query.starredOnly === true;
-        const limit = Math.min(query.limit || 20, 200) || 20;
-        const offset = query.offset;
+        let isPodcastRequest =
+            smartFolder === 'podcast' ||
+            source === 'podcast';
+        if (!isPodcastRequest && feed) {
+            const feedRow = db.prepare('SELECT kind FROM feeds WHERE url = ?').get(feed) as { kind?: string } | undefined;
+            if (feedRow?.kind === 'podcast') isPodcastRequest = true;
+        }
+        const maxLimit = isPodcastRequest ? 10 : 200;
+        const fallbackLimit = isPodcastRequest ? 10 : 20;
+        const limit = Math.min(query.limit || fallbackLimit, maxLimit) || fallbackLimit;
+        const offset = isPodcastRequest ? 0 : query.offset;
         const q = query.q ? query.q.trim() : null;
         const timeFilter = query.timeFilter || 'all';
 

@@ -209,14 +209,16 @@
     </div>
   {/if}
 
-  <div
-    class="reader-body {fontSizeClass} {fontFamilyClass} mx-auto"
-    id="reader-body-content"
-  >
-    {#if !isYouTube}
-      {@html formatContent(readerData.contentHtml)}
-    {/if}
-  </div>
+  {#if !isPodcast}
+    <div
+      class="reader-body {fontSizeClass} {fontFamilyClass} mx-auto"
+      id="reader-body-content"
+    >
+      {#if !isYouTube}
+        {@html formatContent(readerData.contentHtml)}
+      {/if}
+    </div>
+  {/if}
 </article>
 
 <style>

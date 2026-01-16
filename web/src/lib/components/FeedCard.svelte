@@ -180,6 +180,7 @@
       : null;
 
   $: isPlayable =
+    (feedType === "podcast" && (enclosureUrl || fallbackAudioUrl || item.url)) ||
     Boolean(enclosureUrl || fallbackAudioUrl) ||
     feedType === "youtube" ||
     item.external_id;

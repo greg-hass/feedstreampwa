@@ -242,8 +242,8 @@
       : null;
 
   $: isPlayable =
-    ((enclosureUrl || fallbackAudioUrl) &&
-      (feedType === "podcast" || Boolean(item.enclosure))) ||
+    (feedType === "podcast" && (enclosureUrl || fallbackAudioUrl || item.url)) ||
+    ((enclosureUrl || fallbackAudioUrl) && Boolean(item.enclosure)) ||
     youtubeVideoId;
 
   $: isSelected = $selectedItemIds.has(item.id);

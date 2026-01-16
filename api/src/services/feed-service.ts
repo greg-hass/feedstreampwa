@@ -39,7 +39,8 @@ interface ParsedFeedItem {
     author?: string | { name: string };
     summary?: string;
     'content:encoded'?: string;
-    enclosure?: { url: string; type?: string; length?: string } | string;
+    enclosure?: { url?: string; type?: string; length?: string; '@_url'?: string } | string;
+    enclosures?: { url?: string; type?: string; length?: string; '@_url'?: string }[];
     itunesDuration?: string;
     mediaContent?: { duration?: string | number } | { duration?: string | number }[];
     
@@ -187,9 +188,20 @@ function normalizeUrlString(url: string | null): string | null {
 
 function extractEnclosureUrl(item: ParsedFeedItem): string | null {
     const enclosure = item.enclosure;
-    if (!enclosure) return null;
-    if (typeof enclosure === 'string') return enclosure;
-    if (typeof enclosure === 'object' && enclosure.url) return enclosure.url;
+    if (enclosure) {
+        if (typeof enclosure === 'string') return enclosure;
+        if (typeof enclosure === 'object') {
+            if (enclosure.url) return enclosure.url;
+            if (enclosure['@_url']) return enclosure['@_url'];
+        }
+    }
+
+    if (item.enclosures && item.enclosures.length > 0) {
+        const candidate = item.enclosures[0];
+        if (candidate.url) return candidate.url;
+        if (candidate['@_url']) return candidate['@_url'];
+    }
+
     return null;
 }
 

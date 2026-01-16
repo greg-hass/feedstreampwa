@@ -55,7 +55,7 @@ export const mediaUrl = derived(currentMedia, ($currentMedia) => {
         }
     }
 
-    if ($currentMedia.source === 'podcast' && $currentMedia.url && isLikelyAudioUrl($currentMedia.url)) {
+    if ($currentMedia.source === 'podcast' && $currentMedia.url) {
         return $currentMedia.url;
     }
 
@@ -147,8 +147,4 @@ function formatTime(seconds: number): string {
     }
 
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
-}
-
-function isLikelyAudioUrl(url: string): boolean {
-    return /\.(mp3|m4a|aac|ogg|opus|wav|flac)(\?|#|$)/i.test(url);
 }
