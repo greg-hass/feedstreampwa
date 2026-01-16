@@ -13,6 +13,7 @@
   import * as itemsApi from "$lib/api/items";
   import { toast } from "$lib/stores/toast";
   import { confirmDialog } from "$lib/stores/confirm";
+  import { playMedia } from "$lib/stores/media";
 
   // Sub-components
   import ReaderHeader from "./reader/ReaderHeader.svelte";
@@ -127,6 +128,12 @@
     closeReader();
   }
 
+  function handlePlayMedia() {
+    if ($currentItem) {
+      playMedia($currentItem);
+    }
+  }
+
   // Lifecycle & Watchers
   $: if ($currentItem?.id) {
     summary = null;
@@ -218,7 +225,8 @@
             {fontSizeClass} 
             {fontFamilyClass} 
             {maxWidthClass} 
-            {themeClass} 
+            {themeClass}
+            onPlay={handlePlayMedia}
           />
         {/if}
       </div>
@@ -241,6 +249,9 @@
     display: flex;
     justify-content: center;
     background-color: var(--bg, #121212);
+    background-image:
+      radial-gradient(1200px circle at 20% -10%, rgba(var(--accent-color-rgb, 56, 189, 248), 0.12), transparent 60%),
+      radial-gradient(900px circle at 90% 10%, rgba(255, 255, 255, 0.06), transparent 55%);
     color: var(--text, #e5e7eb);
     backdrop-filter: blur(10px);
     animation: fadeIn 0.2s ease-out;
@@ -248,23 +259,23 @@
 
   .reader-container {
     width: 100%;
-    max-width: 720px;
+    max-width: 1100px;
     height: 100vh;
     display: flex;
     flex-direction: column;
-    background: inherit;
+    background: transparent;
     animation: scaleIn 0.25s ease-out;
   }
 
   .reader-scroll-container {
     flex: 1;
     overflow-y: auto;
-    padding: 24px 16px;
+    padding: 28px 18px 80px;
     -webkit-overflow-scrolling: touch;
   }
 
   @media (min-width: 769px) {
-    .reader-scroll-container { padding: 32px 40px; }
+    .reader-scroll-container { padding: 36px 48px 90px; }
   }
 
   /* Theme Definitions */

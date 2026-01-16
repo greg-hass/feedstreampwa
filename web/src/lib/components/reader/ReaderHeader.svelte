@@ -89,14 +89,15 @@
 <style>
   .reader-header-new {
     flex-shrink: 0;
-    padding: 12px 20px;
-    background: inherit;
-    border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+    padding: 12px 18px;
+    background: rgba(8, 10, 14, 0.75);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
     z-index: 50;
   }
 
   .header-top {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
   }
 
   .back-button {
@@ -104,7 +105,7 @@
     align-items: center;
     gap: 4px;
     color: inherit;
-    opacity: 0.6;
+    opacity: 0.7;
     font-size: 14px;
     font-weight: 500;
     background: none;
@@ -122,14 +123,19 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    gap: 12px;
+    flex-wrap: wrap;
   }
 
   .zoom-controls {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     color: inherit;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .zoom-controls button {
@@ -152,31 +158,56 @@
     font-weight: 600;
     min-width: 45px;
     text-align: center;
-    opacity: 0.8;
+    opacity: 0.85;
   }
 
   .control-divider {
     width: 1px;
     height: 20px;
-    background: rgba(128, 128, 128, 0.2);
+    background: rgba(255, 255, 255, 0.12);
   }
 
   .action-buttons {
     display: flex;
-    gap: 20px;
+    gap: 12px;
   }
 
   .action-buttons button {
-    background: none;
-    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     color: inherit;
-    padding: 4px;
+    padding: 6px;
     cursor: pointer;
-    opacity: 0.7;
+    opacity: 0.8;
+    border-radius: 999px;
     transition: opacity 0.2s;
   }
 
   .action-buttons button:hover {
     opacity: 1;
+  }
+
+  @media (max-width: 640px) {
+    .reader-header-new {
+      padding: 10px 12px;
+    }
+
+    .header-top {
+      margin-bottom: 8px;
+    }
+
+    .zoom-controls {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .action-buttons {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .control-divider {
+      display: none;
+    }
   }
 </style>

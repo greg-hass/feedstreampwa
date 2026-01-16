@@ -1,6 +1,8 @@
 <script lang="ts">
-  import { Sparkles, Database, ExternalLink } from "lucide-svelte";
+  import { Sparkles, Database, ExternalLink, Play, Clock, Radio } from "lucide-svelte";
   import type { Item } from "$lib/types";
+  import { calculateReadTime, formatReadTime } from "$lib/utils/readTime";
+  import { formatDuration } from "$lib/utils/formatDuration";
 
   export let readerData: any;
   export let item: Item | null;
@@ -10,6 +12,7 @@
   export let fontFamilyClass: string;
   export let maxWidthClass: string;
   export let themeClass: string;
+  export let onPlay: (() => void) | null = null;
 
   let heroImageError = false;
 
@@ -71,35 +74,121 @@
       .join("");
   }
 
-  $: isYouTube = readerData?.url && (readerData.url.includes("youtube.com/watch") || readerData.url.includes("youtu.be/"));
+  $: isYouTube =
+    item?.source === "youtube" ||
+    (readerData?.url &&
+      (readerData.url.includes("youtube.com/watch") ||
+        readerData.url.includes("youtu.be/")));
+  $: isPodcast = item?.source === "podcast" || Boolean(item?.enclosure);
+  $: coverImage = readerData?.imageUrl || item?.media_thumbnail || null;
+  $: coverUrl = heroImageError ? item?.feed_icon_url || null : coverImage || item?.feed_icon_url || null;
+  $: heroStyle = coverImage && !heroImageError ? `--hero-image: url("${coverImage}")` : "";
+  $: feedTitle = item?.feed_title || readerData?.siteName || "FeedStream";
+  $: displayAuthor = readerData?.byline || item?.author || null;
+  $: displayDate = formatDate(item?.published || item?.created_at || null);
+  $: readingMinutes = readerData?.contentHtml
+    ? calculateReadTime(readerData.contentHtml)
+    : 0;
+  $: readTimeLabel =
+    !isPodcast && !isYouTube && readingMinutes
+      ? formatReadTime(readingMinutes)
+      : null;
+  $: durationLabel =
+    isPodcast && item?.media_duration_seconds
+      ? formatDuration(item.media_duration_seconds)
+      : null;
+  $: hasProgress = isPodcast && (item?.playback_position || 0) > 5;
+  $: playLabel = isPodcast ? (hasProgress ? "Resume" : "Listen") : "Play";
+  $: metaParts = [
+    displayAuthor,
+    displayDate,
+    readTimeLabel,
+    durationLabel
+  ].filter((part): part is string => Boolean(part));
+
+  $: if (item?.id) {
+    heroImageError = false;
+  }
 </script>
 
 <article class="reader-content {themeClass}">
-  <div class="article-header">
-    <h1 class="reader-title-new" id="reader-title">
-      {readerData.title || "Untitled"}
-    </h1>
-
-    <div class="article-meta-row">
-      <span class="article-date">
-        {formatDate(item?.published)}
-      </span>
-      <div class="article-actions-mini">
-        {#if readerData.url}
-          <a
-            href={readerData.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="meta-action-btn"
-            title="Open Original"
-          >
-            <ExternalLink size={18} />
-          </a>
+  <header class="studio-hero" style={heroStyle}>
+    <div class="studio-hero-content">
+      <div class="hero-cover">
+        {#if coverUrl}
+          <img
+            src={coverUrl}
+            alt=""
+            class="hero-cover-img"
+            on:error={handleHeroImageError}
+          />
+        {:else}
+          <div class="hero-cover-fallback">
+            <Radio size={22} class="text-white/40" />
+          </div>
         {/if}
       </div>
+
+      <div class="hero-text">
+        <div class="hero-chips">
+          <span class="hero-chip">{feedTitle}</span>
+          {#if isPodcast}
+            <span class="hero-chip hero-chip-accent">
+              <Radio size={12} />
+              Podcast
+            </span>
+          {/if}
+          {#if readerData?.fromCache}
+            <span class="hero-chip hero-chip-muted">
+              <Database size={12} />
+              Offline
+            </span>
+          {/if}
+        </div>
+
+        <h1 class="hero-title" id="reader-title">
+          {readerData.title || "Untitled"}
+        </h1>
+
+        {#if metaParts.length}
+          <div class="hero-meta">
+            {#each metaParts as part, index}
+              <span class="hero-meta-item">
+                {#if part === readTimeLabel}
+                  <Clock size={12} />
+                {/if}
+                {part}
+              </span>
+              {#if index < metaParts.length - 1}
+                <span class="hero-meta-dot">•</span>
+              {/if}
+            {/each}
+          </div>
+        {/if}
+
+        <div class="hero-actions">
+          {#if isPodcast && onPlay}
+            <button class="hero-action hero-action-primary" on:click={onPlay}>
+              <Play size={16} class="fill-current" />
+              {playLabel}
+            </button>
+          {/if}
+          {#if readerData.url}
+            <a
+              href={readerData.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="hero-action hero-action-ghost"
+              title="Open Original"
+            >
+              <ExternalLink size={16} />
+              Open Original
+            </a>
+          {/if}
+        </div>
+      </div>
     </div>
-    <div class="article-divider"></div>
-  </div>
+  </header>
 
   {#if summary}
     <div class="mb-10 p-6 bg-accent/10 border border-accent/20 rounded-xl relative overflow-hidden group">
@@ -123,30 +212,6 @@
     </div>
   {/if}
 
-  {#if readerData.byline || readerData.siteName || readerData.fromCache}
-    <div class="reader-meta">
-      {#if readerData.byline}<span>{readerData.byline}</span>{/if}
-      {#if readerData.byline && readerData.siteName}<span class="meta-sep">•</span>{/if}
-      {#if readerData.siteName}<span>{readerData.siteName}</span>{/if}
-      {#if (readerData.byline || readerData.siteName) && readerData.fromCache}<span class="meta-sep">•</span>{/if}
-      {#if readerData.fromCache}
-        <span class="flex items-center gap-1 text-accent">
-          <Database size={12} />
-          Offline
-        </span>
-      {/if}
-    </div>
-  {/if}
-
-  {#if readerData.imageUrl && !heroImageError && !isYouTube}
-    <img
-      src={readerData.imageUrl}
-      alt=""
-      class="reader-hero"
-      on:error={handleHeroImageError}
-    />
-  {/if}
-
   <div
     class="reader-body {fontSizeClass} {fontFamilyClass} {maxWidthClass} mx-auto"
     id="reader-body-content"
@@ -158,77 +223,187 @@
 </article>
 
 <style>
-  .article-header {
-    margin-bottom: 40px;
+  .reader-content {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
   }
 
-  .reader-title-new {
-    font-size: 32px;
-    font-weight: 800;
-    line-height: 1.25;
-    margin-bottom: 24px;
-    letter-spacing: -0.02em;
-    color: inherit;
+  .studio-hero {
+    position: relative;
+    border-radius: 24px;
+    overflow: hidden;
+    border: 1px solid var(--divider, rgba(255, 255, 255, 0.1));
+    background:
+      linear-gradient(120deg, rgba(7, 7, 10, 0.9), rgba(9, 12, 20, 0.75)),
+      var(--hero-image, none);
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
   }
 
-  .article-meta-row {
+  .studio-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(600px circle at 15% 10%, rgba(var(--accent-color-rgb, 56, 189, 248), 0.2), transparent 60%),
+      linear-gradient(180deg, rgba(10, 10, 15, 0.1), rgba(10, 10, 15, 0.6));
+  }
+
+  .studio-hero-content {
+    position: relative;
+    display: grid;
+    gap: 20px;
+    padding: 22px;
+    align-items: center;
+  }
+
+  .hero-cover {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 18px;
+    overflow: hidden;
+    background: rgba(10, 10, 12, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+    max-width: 220px;
+    margin: 0 auto;
+  }
+
+  .hero-cover-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .hero-cover-fallback {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24px;
+    justify-content: center;
+    height: 100%;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.6));
   }
 
-  .article-date {
-    font-size: 15px;
-    opacity: 0.6;
+  .hero-text {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .hero-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .hero-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .hero-chip-accent {
+    background: rgba(var(--accent-color-rgb, 56, 189, 248), 0.18);
+    border-color: rgba(var(--accent-color-rgb, 56, 189, 248), 0.5);
+    color: #fff;
+  }
+
+  .hero-chip-muted {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .hero-title {
+    font-size: clamp(26px, 4vw, 38px);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+
+  .hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
     font-weight: 500;
   }
 
-  .article-actions-mini {
+  .hero-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .hero-meta-dot {
+    opacity: 0.4;
+  }
+
+  .hero-actions {
+    margin-top: 6px;
     display: flex;
-    gap: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
   }
 
-  .meta-action-btn {
-    background: none;
-    border: none;
-    color: inherit;
-    padding: 4px;
-    cursor: pointer;
-    opacity: 0.6;
-    transition: all 0.2s;
-  }
-
-  .meta-action-btn:hover {
-    opacity: 1;
-    transform: scale(1.1);
-  }
-
-  .article-divider {
-    height: 1px;
-    background: var(--divider, rgba(128, 128, 128, 0.1));
-    width: 100%;
-  }
-
-  .reader-meta {
-    display: flex;
+  .hero-action {
+    display: inline-flex;
     align-items: center;
     gap: 8px;
-    font-size: 14px;
-    opacity: 0.6;
-    margin-bottom: 32px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
   }
 
-  .meta-sep {
-    opacity: 0.3;
+  .hero-action-primary {
+    background: var(--accent-color);
+    color: #fff;
+    box-shadow: 0 12px 24px rgba(var(--accent-color-rgb, 56, 189, 248), 0.28);
   }
 
-  .reader-hero {
-    width: 100%;
-    max-height: 400px;
-    object-fit: cover;
-    border-radius: 12px;
-    margin-bottom: 32px;
+  .hero-action-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 32px rgba(var(--accent-color-rgb, 56, 189, 248), 0.35);
+  }
+
+  .hero-action-ghost {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .hero-action-ghost:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  @media (min-width: 768px) {
+    .studio-hero-content {
+      grid-template-columns: 170px 1fr;
+      padding: 32px;
+      gap: 28px;
+    }
+
+    .hero-cover {
+      max-width: none;
+      margin: 0;
+    }
   }
 
   .reader-body {
