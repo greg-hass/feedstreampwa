@@ -3,6 +3,7 @@
   import type { Item } from "$lib/types";
   import type { ViewDensity } from "$lib/stores/ui";
   import { calculateReadTime, formatReadTime } from "$lib/utils/readTime";
+  import { formatDuration } from "$lib/utils/formatDuration";
   import {
     Bookmark,
     ExternalLink,
@@ -105,6 +106,19 @@
     youtubeThumbnail ||
     item.media_thumbnail ||
     (feedType === "podcast" ? item.feed_icon_url : null);
+
+  $: isPodcast = feedType === "podcast";
+  $: durationSeconds = item.media_duration_seconds ?? null;
+  $: hasDuration = typeof durationSeconds === "number" && durationSeconds > 0;
+  $: progressSeconds = Math.max(0, item.playback_position || 0);
+  $: hasProgress = progressSeconds > 5;
+  $: progressPercent = hasDuration
+    ? Math.min(100, (progressSeconds / durationSeconds) * 100)
+    : 0;
+  $: remainingSeconds = hasDuration
+    ? Math.max(0, durationSeconds - progressSeconds)
+    : null;
+  $: playLabel = isPodcast ? (hasProgress ? "Resume" : "Listen") : "Play";
 
   // Format Date
   const dateFormatterWithYear = new Intl.DateTimeFormat("en-US", {
@@ -341,6 +355,38 @@
       {item.title}
     </h3>
 
+    {#if isPodcast}
+      <div class="flex flex-col gap-2 {densityClasses.spacing}">
+        <div class="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
+          <span
+            class="inline-flex items-center gap-1 rounded-full bg-zinc-800/80 border border-zinc-700 px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase text-zinc-200"
+          >
+            <Radio size={12} class="text-accent" />
+            Podcast
+          </span>
+          {#if hasDuration}
+            <span class="text-zinc-500">
+              {hasProgress
+                ? `${formatDuration(remainingSeconds)} left`
+                : formatDuration(durationSeconds)}
+            </span>
+          {:else if hasProgress}
+            <span class="text-zinc-500">
+              Resume at {formatDuration(progressSeconds)}
+            </span>
+          {/if}
+        </div>
+        {#if hasDuration}
+          <div class="h-1.5 w-full rounded-full bg-white/5">
+            <div
+              class="h-full rounded-full bg-accent/80 transition-all"
+              style="width: {progressPercent}%"
+            ></div>
+          </div>
+        {/if}
+      </div>
+    {/if}
+
     <!-- Actions Bar -->
     <div class="flex items-center justify-between pt-2 mt-auto">
       <div class="flex items-center gap-4">
@@ -375,10 +421,10 @@
             <button
               class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white font-medium text-xs transition-colors border border-zinc-700"
               on:click={handlePlay}
-              title="Play Episode"
+              title={isPodcast ? (hasProgress ? "Resume Episode" : "Play Episode") : "Play"}
             >
               <PlayCircle size={14} class="fill-current text-accent" />
-              <span>Play</span>
+              <span>{playLabel}</span>
             </button>
           </div>
         {/if}

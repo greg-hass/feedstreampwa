@@ -174,7 +174,7 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
                 SELECT 
                     i.id, i.feed_url, i.source, i.title, i.url, i.author, i.summary, i.content,
                     i.published, i.updated, i.media_thumbnail, i.media_duration_seconds,
-                    i.external_id, i.raw_guid, i.created_at, i.is_read, i.is_starred, i.playback_position, i.read_at,
+                    i.external_id, i.raw_guid, i.created_at, i.is_read, i.is_starred, i.playback_position, i.read_at, i.enclosure,
                     f.icon_url as feed_icon_url, COALESCE(f.custom_title, f.title) as feed_title
                 ${fromClause}
                 ${whereClause}

@@ -197,6 +197,12 @@
       );
     }
   }
+
+  function openEpisode() {
+    if ($currentMedia?.url) {
+      window.open($currentMedia.url, "_blank");
+    }
+  }
 </script>
 
 <!-- Hidden audio element for podcast playback -->
@@ -248,6 +254,12 @@
           <img
             src={$currentMedia.media_thumbnail}
             alt="Album art"
+            class="w-full h-full object-cover"
+          />
+        {:else if $currentMedia.feed_icon_url}
+          <img
+            src={$currentMedia.feed_icon_url}
+            alt="Show artwork"
             class="w-full h-full object-cover"
           />
         {:else}
@@ -354,6 +366,16 @@
           ></div>
         </div>
       </div>
+
+      {#if $currentMedia?.url}
+        <button
+          class="text-white/40 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-full"
+          on:click={openEpisode}
+          title="Open episode page"
+        >
+          <ExternalLink size={18} />
+        </button>
+      {/if}
 
       <!-- Close Button -->
       <button

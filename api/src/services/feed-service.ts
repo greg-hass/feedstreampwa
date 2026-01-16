@@ -39,7 +39,9 @@ interface ParsedFeedItem {
     author?: string | { name: string };
     summary?: string;
     'content:encoded'?: string;
-    enclosure?: { url: string; type?: string; length?: string };
+    enclosure?: { url: string; type?: string; length?: string } | string;
+    itunesDuration?: string;
+    mediaContent?: { duration?: string | number } | { duration?: string | number }[];
     
     // YouTube specific
     ytVideoId?: string;
@@ -63,6 +65,7 @@ interface NormalizedItem {
     media_thumbnail: string | null;
     media_duration_seconds: number | null;
     external_id: string | null;
+    enclosure: string | null;
 }
 
 // Regex Constants for Content Cleaning and Parsing
@@ -116,9 +119,9 @@ const upsertItem = db.prepare(`
   INSERT INTO items (
     id, feed_url, source, title, url, author, summary, content, 
     published, updated, media_thumbnail, media_duration_seconds, 
-    external_id, raw_guid, created_at
+    external_id, raw_guid, created_at, enclosure
   )
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(id) DO UPDATE SET
     title = excluded.title,
     url = excluded.url,
@@ -130,7 +133,8 @@ const upsertItem = db.prepare(`
     media_thumbnail = excluded.media_thumbnail,
     media_duration_seconds = excluded.media_duration_seconds,
     external_id = excluded.external_id,
-    raw_guid = excluded.raw_guid
+    raw_guid = excluded.raw_guid,
+    enclosure = excluded.enclosure
 `);
 
 const countItemsByFeed = db.prepare(`
@@ -181,9 +185,54 @@ function normalizeUrlString(url: string | null): string | null {
     }
 }
 
+function extractEnclosureUrl(item: ParsedFeedItem): string | null {
+    const enclosure = item.enclosure;
+    if (!enclosure) return null;
+    if (typeof enclosure === 'string') return enclosure;
+    if (typeof enclosure === 'object' && enclosure.url) return enclosure.url;
+    return null;
+}
+
+function extractMediaContentDuration(mediaContent: ParsedFeedItem['mediaContent']): unknown {
+    if (!mediaContent) return null;
+    if (Array.isArray(mediaContent)) return mediaContent[0]?.duration ?? null;
+    if (typeof mediaContent === 'object' && 'duration' in mediaContent) return mediaContent.duration;
+    return null;
+}
+
+function parseDurationToSeconds(raw: unknown): number | null {
+    if (raw === null || raw === undefined) return null;
+    if (typeof raw === 'number' && Number.isFinite(raw)) {
+        return Math.max(0, Math.round(raw));
+    }
+    if (typeof raw !== 'string') return null;
+
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+
+    if (/^\d+$/.test(trimmed)) {
+        return Math.max(0, parseInt(trimmed, 10));
+    }
+
+    const parts = trimmed.split(':').map((part) => part.trim()).filter(Boolean);
+    if (parts.length === 0 || parts.length > 3) return null;
+
+    const numbers = parts.map((part) => Number(part));
+    if (numbers.some((n) => Number.isNaN(n))) return null;
+
+    if (numbers.length === 3) {
+        return Math.max(0, Math.round(numbers[0] * 3600 + numbers[1] * 60 + numbers[2]));
+    }
+    if (numbers.length === 2) {
+        return Math.max(0, Math.round(numbers[0] * 60 + numbers[1]));
+    }
+    return Math.max(0, Math.round(numbers[0]));
+}
+
 function extractItemUrl(item: ParsedFeedItem): string | null {
     if (item.link) return item.link;
-    if (item.enclosure && item.enclosure.url) return item.enclosure.url;
+    const enclosureUrl = extractEnclosureUrl(item);
+    if (enclosureUrl) return enclosureUrl;
     return null;
 }
 
@@ -435,7 +484,8 @@ function normalizeItem(item: ParsedFeedItem, kind: FeedKind): NormalizedItem {
         source: kind,
         media_thumbnail: null,
         media_duration_seconds: null,
-        external_id: null
+        external_id: null,
+        enclosure: null
     };
 
     if (kind === 'youtube') {
@@ -450,6 +500,17 @@ function normalizeItem(item: ParsedFeedItem, kind: FeedKind): NormalizedItem {
 
     if (!normalized.media_thumbnail) {
         normalized.media_thumbnail = extractHeroImage(item);
+    }
+
+    const enclosureUrl = extractEnclosureUrl(item);
+    if (enclosureUrl) {
+        normalized.enclosure = enclosureUrl;
+    }
+
+    const durationSeconds = parseDurationToSeconds(item.itunesDuration)
+        ?? parseDurationToSeconds(extractMediaContentDuration(item.mediaContent));
+    if (durationSeconds && durationSeconds > 0) {
+        normalized.media_duration_seconds = durationSeconds;
     }
 
     return normalized;
@@ -585,7 +646,8 @@ export async function fetchFeed(url: string, force: boolean): Promise<any> {
                         normalized.media_duration_seconds,
                         normalized.external_id,
                         normalized.raw_guid,
-                        now 
+                        now,
+                        normalized.enclosure
                      );
                      
                      if (isNew) count++;

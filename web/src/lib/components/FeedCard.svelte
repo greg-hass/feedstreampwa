@@ -11,6 +11,7 @@
     CheckCircle2,
     Share2,
   } from "lucide-svelte";
+  import { formatDuration } from "$lib/utils/formatDuration";
   import OfflineBadge from "$lib/components/OfflineBadge.svelte";
   import { offlineArticles } from "$lib/stores/offlineArticles";
   import { diversitySettings } from "$lib/stores/diversity";
@@ -55,7 +56,21 @@
 
   // Use YouTube thumbnail if available, otherwise use media_thumbnail (but skip Reddit videos)
   $: thumbnailUrl =
-    youtubeThumbnail || (isRedditVideo ? null : item.media_thumbnail);
+    youtubeThumbnail ||
+    (isRedditVideo ? null : item.media_thumbnail) ||
+    (feedType === "podcast" ? item.feed_icon_url : null);
+
+  $: isPodcast = feedType === "podcast";
+  $: durationSeconds = item.media_duration_seconds ?? null;
+  $: hasDuration = typeof durationSeconds === "number" && durationSeconds > 0;
+  $: progressSeconds = Math.max(0, item.playback_position || 0);
+  $: hasProgress = progressSeconds > 5;
+  $: progressPercent = hasDuration
+    ? Math.min(100, (progressSeconds / durationSeconds) * 100)
+    : 0;
+  $: remainingSeconds = hasDuration
+    ? Math.max(0, durationSeconds - progressSeconds)
+    : null;
 
   // Format Date
   // Format Date
@@ -152,11 +167,14 @@
   }
 
   // Check if item is playable (podcast or video)
-  $: isPlayable =
-    feedType === "podcast" ||
-    feedType === "youtube" ||
-    item.enclosure ||
-    item.external_id;
+  $: enclosureUrl =
+    typeof item.enclosure === "string"
+      ? item.enclosure
+      : item.enclosure && typeof item.enclosure === "object"
+        ? item.enclosure.url
+        : null;
+
+  $: isPlayable = Boolean(enclosureUrl) || feedType === "youtube" || item.external_id;
 
   // Swipe Gestures
   let touchStartX = 0;
@@ -311,6 +329,38 @@
         {item.title}
       </h3>
 
+      {#if isPodcast}
+        <div class="mb-3 flex flex-col gap-2">
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-400">
+            <span
+              class="inline-flex items-center gap-1 rounded-full bg-zinc-800/80 border border-zinc-700 px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase text-zinc-200"
+            >
+              <Radio size={12} class="text-accent" />
+              Podcast
+            </span>
+            {#if hasDuration}
+              <span class="text-zinc-500">
+                {hasProgress
+                  ? `${formatDuration(remainingSeconds)} left`
+                  : formatDuration(durationSeconds)}
+              </span>
+            {:else if hasProgress}
+              <span class="text-zinc-500">
+                Resume at {formatDuration(progressSeconds)}
+              </span>
+            {/if}
+          </div>
+          {#if hasDuration}
+            <div class="h-1.5 w-full rounded-full bg-white/5">
+              <div
+                class="h-full rounded-full bg-accent/80 transition-all"
+                style="width: {progressPercent}%"
+              ></div>
+            </div>
+          {/if}
+        </div>
+      {/if}
+
       <!-- Summary (Optional / Desktop only mostly) -->
       {#if item.summary}
         <p
@@ -350,7 +400,7 @@
           {#if isPlayable}
             <button
               class="p-2 rounded-full hover:bg-zinc-800 text-zinc-500 hover:text-accent transition-colors"
-              title="Play"
+              title={isPodcast ? (hasProgress ? "Resume Episode" : "Play Episode") : "Play"}
               on:click={handlePlay}
             >
               <PlayCircle size={18} />

@@ -13,6 +13,11 @@
 
   // Simple helper to visualize the "Premium" accents based on available data
   function guessType(item: Item): "rss" | "youtube" | "reddit" | "podcast" {
+    const source = (item.source || "").toLowerCase();
+    if (source === "youtube" || source === "reddit" || source === "podcast") {
+      return source;
+    }
+
     const t = (item.feed_title || "").toLowerCase();
     const u = (item.url || "").toLowerCase();
 
