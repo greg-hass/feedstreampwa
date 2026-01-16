@@ -265,7 +265,7 @@
 </script>
 
 <article
-  class="group relative flex flex-col md:flex-row {densityClasses.padding} border-b transition-all duration-200 cursor-pointer overflow-hidden
+  class="group flex flex-col md:flex-row {densityClasses.padding} border-b transition-all duration-200 cursor-pointer overflow-hidden
   {isSelected
     ? 'bg-blue-500/10 border-blue-500/30'
     : 'border-white/5 hover:bg-white/[0.02] hover:border-white/10'}"
@@ -278,9 +278,6 @@
   tabindex="0"
   role="button"
 >
-  {#if item.is_read === 0}
-    <span class="unread-dot" aria-hidden="true"></span>
-  {/if}
   <!-- Left Column: Content -->
   <div class="flex-1 min-w-0 flex flex-col">
     <!-- Header: Feed Icon + Feed Title + Timestamp -->
@@ -310,7 +307,15 @@
       <div
         class="flex-1 min-w-0 flex items-center gap-2 text-sm pt-1 flex-wrap"
       >
-        <span class="font-bold text-accent truncate">{item.feed_title}</span>
+        <span class="flex items-center gap-2 min-w-0">
+          {#if item.is_read === 0}
+            <span
+              class="h-2 w-2 rounded-full bg-current {currentStyle.color} shrink-0"
+              aria-hidden="true"
+            ></span>
+          {/if}
+          <span class="font-bold text-accent truncate">{item.feed_title}</span>
+        </span>
         {#if isCached}
           <OfflineBadge size="sm" showText={false} />
         {/if}
@@ -475,15 +480,4 @@
     scroll-margin-top: 80px;
   }
 
-  .unread-dot {
-    position: absolute;
-    left: 8px;
-    top: 50%;
-    width: 8px;
-    height: 8px;
-    border-radius: 9999px;
-    transform: translateY(-50%);
-    background: var(--accent-color);
-    box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb), 0.12);
-  }
 </style>
