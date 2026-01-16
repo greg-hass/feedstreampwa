@@ -1,5 +1,15 @@
 <script lang="ts">
-  import { Sparkles, Database, ExternalLink, Play, Clock, Radio, Pause } from "lucide-svelte";
+  import {
+    Sparkles,
+    Database,
+    ExternalLink,
+    Play,
+    Clock,
+    Radio,
+    Pause,
+    SkipBack,
+    SkipForward,
+  } from "lucide-svelte";
   import type { Item } from "$lib/types";
   import { calculateReadTime, formatReadTime } from "$lib/utils/readTime";
   import { formatDuration } from "$lib/utils/formatDuration";
@@ -10,8 +20,11 @@
     formattedCurrentTime,
     formattedDuration,
     duration,
+    playbackSpeed,
     seek,
+    skip,
     togglePlayPause,
+    setPlaybackSpeed,
   } from "$lib/stores/media";
 
   export let readerData: any;
@@ -138,6 +151,14 @@
       seek(newTime);
     }
   }
+
+  const speedOptions = [1, 1.25, 1.5, 2];
+
+  function cycleHeroSpeed() {
+    const current = speedOptions.indexOf($playbackSpeed);
+    const next = speedOptions[(current + 1) % speedOptions.length];
+    setPlaybackSpeed(next);
+  }
 </script>
 
 <article class="reader-content {themeClass}">
@@ -214,14 +235,25 @@
 
       {#if isCurrentPodcast}
         <div class="hero-player">
-          <button class="hero-player-btn" on:click={togglePlayPause}>
-            {#if $isPlaying}
-              <Pause size={16} class="fill-current" />
-            {:else}
-              <Play size={16} class="fill-current" />
-            {/if}
-            <span>{$isPlaying ? "Pause" : "Play"}</span>
-          </button>
+          <div class="hero-player-controls">
+            <button class="hero-player-icon" on:click={() => skip(-15)} title="Rewind 15s">
+              <SkipBack size={16} />
+            </button>
+            <button class="hero-player-btn" on:click={togglePlayPause}>
+              {#if $isPlaying}
+                <Pause size={16} class="fill-current" />
+              {:else}
+                <Play size={16} class="fill-current" />
+              {/if}
+              <span>{$isPlaying ? "Pause" : "Play"}</span>
+            </button>
+            <button class="hero-player-icon" on:click={() => skip(30)} title="Forward 30s">
+              <SkipForward size={16} />
+            </button>
+            <button class="hero-player-speed" on:click={cycleHeroSpeed}>
+              {$playbackSpeed}x
+            </button>
+          </div>
           <div class="hero-player-progress" on:click={handleHeroSeek}>
             <div
               class="hero-player-progress-fill"
@@ -436,6 +468,25 @@
     backdrop-filter: blur(8px);
   }
 
+  .hero-player-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .hero-player-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .hero-player-btn {
     display: inline-flex;
     align-items: center;
@@ -448,6 +499,17 @@
     font-weight: 700;
     letter-spacing: 0.03em;
     border: 1px solid rgba(var(--accent-color-rgb, 56, 189, 248), 0.4);
+  }
+
+  .hero-player-speed {
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
   }
 
   .hero-player-progress {

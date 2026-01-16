@@ -61,6 +61,19 @@
     audioElement.playbackRate = $playbackSpeed;
   }
 
+  $: if (audioElement) {
+    const media = audioElement as any;
+    if (typeof media.preservesPitch !== "undefined") {
+      media.preservesPitch = true;
+    }
+    if (typeof media.webkitPreservesPitch !== "undefined") {
+      media.webkitPreservesPitch = true;
+    }
+    if (typeof media.mozPreservesPitch !== "undefined") {
+      media.mozPreservesPitch = true;
+    }
+  }
+
   // Audio event handlers
   function handleTimeUpdate() {
     if (audioElement) {

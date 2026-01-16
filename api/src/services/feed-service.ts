@@ -638,7 +638,11 @@ export async function fetchFeed(url: string, force: boolean): Promise<any> {
         }
 
         const title = parsed.title || feedRecord?.title || url;
-        const icon_url = feedRecord?.icon_url || null; // Could fetch icon here if missing
+        let icon_url = feedRecord?.icon_url || null;
+        if (kind === 'podcast') {
+            const podcastIcon = await fetchFeedIcon(url, kind, siteUrl, parsed);
+            if (podcastIcon) icon_url = podcastIcon;
+        }
 
         upsertFeed.run(
             url,
