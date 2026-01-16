@@ -214,6 +214,18 @@
     if (e.key === "Escape") handleCancel();
   }
 
+  function handleBackdropClick(event: MouseEvent) {
+    if (event.currentTarget !== event.target) return;
+    handleCancel();
+  }
+
+  function handleBackdropKeydown(e: KeyboardEvent) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleCancel();
+    }
+  }
+
   function setTab(tab: string) {
     activeTab = tab as Tab;
   }
@@ -222,19 +234,19 @@
 <svelte:window on:keydown={handleKeydown} />
 
 {#if $isSettingsModalOpen}
-  <!-- svelte-ignore a11y-click-events-have-key-events -->
-  <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div
     class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
-    on:click|self={handleCancel}
+    on:click={handleBackdropClick}
+    on:keydown={handleBackdropKeydown}
+    role="button"
+    aria-label="Close dialog"
+    tabindex="0"
   >
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <!-- svelte-ignore a11y-no-static-element-interactions -->
     <div
       class="bg-[#18181b] rounded-2xl border border-white/10 max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
-      on:click|stopPropagation={() => {}}
       role="dialog"
       aria-modal="true"
+      tabindex="-1"
     >
       <!-- Header -->
       <div class="bg-[#18181b] border-b border-white/10 px-6 pt-6 pb-0 flex-shrink-0">
@@ -277,7 +289,6 @@
             bind:importingOpml 
             bind:importStatus 
             bind:importResults 
-            bind:error 
             {backups} 
             {backupLoading} 
             {handleCreateBackup} 

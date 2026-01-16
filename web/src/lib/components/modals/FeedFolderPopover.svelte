@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from "svelte";
   import { feedFolderPopover } from "$lib/stores/ui";
   import { folders } from "$lib/stores/folders";
   import { addToFolder, removeFromFolder } from "$lib/stores/feeds";
@@ -8,6 +9,7 @@
 
   let showCreateFolder = false;
   let newFolderName = "";
+  let inputEl: HTMLInputElement | null = null;
 
   async function handleToggle(folderId: string, isChecked: boolean) {
     if (!$feedFolderPopover.feed) return;
@@ -54,6 +56,18 @@
     }
   }
 
+  function handleBackdropClick(event: MouseEvent) {
+    if (event.currentTarget !== event.target) return;
+    close();
+  }
+
+  function handleBackdropKeydown(e: KeyboardEvent) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      close();
+    }
+  }
+
   let windowWidth: number;
   let windowHeight: number;
   let boxWidth: number;
@@ -73,6 +87,10 @@
       windowHeight - boxHeight - 16
     );
   })();
+
+  $: if (showCreateFolder) {
+    tick().then(() => inputEl?.focus());
+  }
 </script>
 
 <svelte:window
@@ -84,18 +102,17 @@
 {#if $feedFolderPopover.isOpen && $feedFolderPopover.feed}
   <div
     class="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4 md:bg-transparent md:z-[2000]"
-    on:click={close}
-    on:keydown={(e) => e.key === "Enter" && close()}
+    on:click={handleBackdropClick}
+    on:keydown={handleBackdropKeydown}
     role="button"
-    tabindex="-1"
+    aria-label="Close dialog"
+    tabindex="0"
   >
     <div
       bind:clientWidth={boxWidth}
       bind:clientHeight={boxHeight}
       class="bg-[#18181b] rounded-2xl border border-white/10 w-full max-w-sm flex flex-col shadow-2xl overflow-hidden fixed"
       style="left: {constrainedX}px; top: {constrainedY}px;"
-      on:click|stopPropagation
-      on:keydown|stopPropagation
       role="dialog"
       aria-modal="true"
       tabindex="-1"
@@ -163,12 +180,12 @@
             <div class="flex gap-2">
               <input
                 type="text"
+                bind:this={inputEl}
                 bind:value={newFolderName}
                 placeholder="Folder name"
                 class="flex-1 bg-white/5 px-3 py-2 rounded-lg text-white placeholder-white/40 border border-white/10 focus:border-accent/50 transition-colors outline-none text-sm"
                 maxlength="60"
                 on:keydown={(e) => e.key === "Enter" && handleCreateFolder()}
-                autofocus
               />
               <button
                 class="px-4 py-2 rounded-lg bg-accent text-white hover:brightness-110 transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"

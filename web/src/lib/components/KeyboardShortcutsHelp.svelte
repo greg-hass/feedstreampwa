@@ -9,6 +9,18 @@
     showShortcutsHelp.set(false);
   }
 
+  function handleBackdropClick(event: MouseEvent) {
+    if (event.currentTarget !== event.target) return;
+    close();
+  }
+
+  function handleBackdropKeydown(e: KeyboardEvent) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      close();
+    }
+  }
+
   function formatKey(shortcut: KeyboardShortcut): string {
     const parts: string[] = [];
     const isMac = navigator.platform.includes("Mac");
@@ -54,15 +66,14 @@
 {#if $showShortcutsHelp}
   <div
     class="fixed inset-0 bg-black/90 z-[9999] flex items-center justify-center p-4 animate-fade-in"
-    on:click={close}
-    on:keydown={(e) => e.key === "Escape" && close()}
+    on:click={handleBackdropClick}
+    on:keydown={handleBackdropKeydown}
     role="button"
-    tabindex="-1"
+    aria-label="Close dialog"
+    tabindex="0"
   >
     <div
       class="bg-[#18181b] rounded-2xl border border-white/10 max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-2xl"
-      on:click|stopPropagation
-      on:keydown|stopPropagation
       role="dialog"
       aria-modal="true"
       tabindex="-1"

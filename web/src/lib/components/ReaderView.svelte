@@ -171,12 +171,17 @@
 {#if $showReader}
   <div
     class="reader-overlay {themeClass}"
-    on:click={handleClose}
-    on:keydown={(e) => (e.key === "Enter" || e.key === " ") && handleClose()}
+    on:click={(e) => e.currentTarget === e.target && handleClose()}
+    on:keydown={(e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleClose();
+      }
+    }}
     role="button"
     tabindex="0"
   >
-    <div class="reader-container" on:click|stopPropagation role="dialog" aria-modal="true">
+    <div class="reader-container" role="dialog" aria-modal="true" tabindex="-1">
       <ReadingProgress {scrollContainer} />
 
       <ReaderHeader 

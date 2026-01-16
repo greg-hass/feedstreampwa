@@ -11,9 +11,16 @@
     confirmDialog.close(false);
   }
 
-  function handleBackdropClick() {
-    // Close on backdrop click (same as cancel)
+  function handleBackdropClick(event: MouseEvent) {
+    if (event.currentTarget !== event.target) return;
     handleCancel();
+  }
+
+  function handleBackdropKeydown(e: KeyboardEvent) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleCancel();
+    }
   }
 
   function handleKeydown(e: KeyboardEvent) {
@@ -51,15 +58,18 @@
   <div
     class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
     on:click={handleBackdropClick}
-    role="dialog"
-    aria-modal="true"
+    on:keydown={handleBackdropKeydown}
+    role="button"
+    aria-label="Close dialog"
+    tabindex="0"
     transition:fade={{ duration: 150 }}
   >
     <div
       class="confirm-dialog bg-[#18181b] rounded-2xl border border-white/10 max-w-md w-full shadow-2xl"
-      on:click|stopPropagation
       transition:fly={{ duration: 250, y: 50 }}
-      role="document"
+      role="dialog"
+      aria-modal="true"
+      tabindex="-1"
     >
       <!-- Header -->
       <div class="flex items-start gap-4 p-6 pb-4">

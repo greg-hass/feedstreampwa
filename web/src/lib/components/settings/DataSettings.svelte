@@ -7,7 +7,6 @@
   export let importingOpml = false;
   export let importStatus: any = null;
   export let importResults: ImportResult | null = null;
-  export let error: string | null = null;
   export let backups: any[] = [];
   export let backupLoading = false;
   export let handleCreateBackup: () => Promise<void>;

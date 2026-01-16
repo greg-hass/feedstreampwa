@@ -9,7 +9,9 @@
 </script>
 
 <div class="search-box">
-  <Search size={18} class="search-icon" />
+  <span class="search-icon" aria-hidden="true">
+    <Search size={18} />
+  </span>
   <input
     type="text"
     placeholder={placeholder}

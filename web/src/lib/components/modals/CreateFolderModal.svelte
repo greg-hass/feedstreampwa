@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from "svelte";
   import { isCreateFolderModalOpen } from "$lib/stores/ui";
   import { createFolder } from "$lib/stores/folders";
   import { toast } from "$lib/stores/toast";
@@ -7,6 +8,8 @@
   let folderName = "";
   let loading = false;
   let error: string | null = null;
+  let inputEl: HTMLInputElement | null = null;
+  let wasOpen = false;
 
   async function handleSubmit() {
     const name = folderName.trim();
@@ -40,6 +43,25 @@
       close();
     }
   }
+
+  function handleBackdropClick(event: MouseEvent) {
+    if (event.currentTarget !== event.target) return;
+    close();
+  }
+
+  function handleBackdropKeydown(e: KeyboardEvent) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      close();
+    }
+  }
+
+  $: if ($isCreateFolderModalOpen && !wasOpen) {
+    wasOpen = true;
+    tick().then(() => inputEl?.focus());
+  } else if (!$isCreateFolderModalOpen && wasOpen) {
+    wasOpen = false;
+  }
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -47,15 +69,14 @@
 {#if $isCreateFolderModalOpen}
   <div
     class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
-    on:click={close}
-    on:keydown={(e) => e.key === "Enter" && close()}
+    on:click={handleBackdropClick}
+    on:keydown={handleBackdropKeydown}
     role="button"
-    tabindex="-1"
+    aria-label="Close dialog"
+    tabindex="0"
   >
     <div
       class="bg-[#18181b] rounded-2xl border border-accent/20 max-w-md w-full flex flex-col shadow-2xl overflow-hidden"
-      on:click|stopPropagation
-      on:keydown|stopPropagation
       role="dialog"
       aria-modal="true"
       tabindex="-1"
@@ -91,12 +112,12 @@
           </span>
           <input
             type="text"
+            bind:this={inputEl}
             bind:value={folderName}
             placeholder="Enter folder name..."
             class="w-full bg-white/5 px-4 py-3.5 rounded-xl text-white placeholder-white/40 border border-white/10 hover:bg-white/10 focus:border-accent/50 transition-colors outline-none"
             maxlength="60"
             on:keydown={(e) => e.key === "Enter" && handleSubmit()}
-            autofocus
           />
         </label>
 

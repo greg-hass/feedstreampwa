@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from "svelte";
   import { renameModal } from "$lib/stores/ui";
   import { renameFolder } from "$lib/stores/folders";
   import * as feedsApi from "$lib/api/feeds";
@@ -9,12 +10,14 @@
   let newName = "";
   let loading = false;
   let error: string | null = null;
+  let inputEl: HTMLInputElement | null = null;
 
   let wasOpen = false;
   $: if ($renameModal.isOpen && !wasOpen) {
     newName = $renameModal.currentName;
     error = null;
     wasOpen = true;
+    tick().then(() => inputEl?.focus());
   } else if (!$renameModal.isOpen) {
     wasOpen = false;
   }
@@ -57,6 +60,18 @@
       close();
     }
   }
+
+  function handleBackdropClick(event: MouseEvent) {
+    if (event.currentTarget !== event.target) return;
+    close();
+  }
+
+  function handleBackdropKeydown(e: KeyboardEvent) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      close();
+    }
+  }
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -64,15 +79,14 @@
 {#if $renameModal.isOpen}
   <div
     class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
-    on:click={close}
-    on:keydown={(e) => e.key === "Enter" && close()}
+    on:click={handleBackdropClick}
+    on:keydown={handleBackdropKeydown}
     role="button"
-    tabindex="-1"
+    aria-label="Close dialog"
+    tabindex="0"
   >
     <div
       class="bg-[#18181b] rounded-2xl border border-accent/20 max-w-md w-full flex flex-col shadow-2xl overflow-hidden"
-      on:click|stopPropagation
-      on:keydown|stopPropagation
       role="dialog"
       aria-modal="true"
       tabindex="-1"
@@ -114,12 +128,12 @@
           </span>
           <input
             type="text"
+            bind:this={inputEl}
             bind:value={newName}
             placeholder="Enter new name..."
             class="w-full bg-white/5 px-4 py-3.5 rounded-xl text-white placeholder-white/40 border border-white/10 hover:bg-white/10 focus:border-accent/50 transition-colors outline-none"
             maxlength="100"
             on:keydown={(e) => e.key === "Enter" && handleSubmit()}
-            autofocus
           />
         </label>
 

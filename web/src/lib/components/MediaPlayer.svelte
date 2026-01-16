@@ -103,6 +103,43 @@
     }
   }
 
+  function updateCurrentTime(newTime: number) {
+    if (!$duration) return;
+    const clampedTime = Math.max(0, Math.min($duration, newTime));
+    seek(clampedTime);
+    if (audioElement) {
+      audioElement.currentTime = clampedTime;
+    }
+  }
+
+  function handleProgressKeydown(e: KeyboardEvent) {
+    if (!$duration) return;
+    const step = 5;
+    let nextTime = $currentTime;
+    let handled = true;
+
+    switch (e.key) {
+      case "ArrowRight":
+        nextTime += step;
+        break;
+      case "ArrowLeft":
+        nextTime -= step;
+        break;
+      case "Home":
+        nextTime = 0;
+        break;
+      case "End":
+        nextTime = $duration;
+        break;
+      default:
+        handled = false;
+    }
+
+    if (!handled) return;
+    e.preventDefault();
+    updateCurrentTime(nextTime);
+  }
+
   // Volume slider
   let volumeSliderElement: HTMLDivElement | null = null;
 
@@ -115,6 +152,38 @@
 
     setVolume(newVolume);
     if ($isMuted) {
+      isMuted.set(false);
+    }
+  }
+
+  function handleVolumeKeydown(e: KeyboardEvent) {
+    const step = 0.05;
+    let nextVolume = $volume;
+    let handled = true;
+
+    switch (e.key) {
+      case "ArrowRight":
+      case "ArrowUp":
+        nextVolume += step;
+        break;
+      case "ArrowLeft":
+      case "ArrowDown":
+        nextVolume -= step;
+        break;
+      case "Home":
+        nextVolume = 0;
+        break;
+      case "End":
+        nextVolume = 1;
+        break;
+      default:
+        handled = false;
+    }
+
+    if (!handled) return;
+    e.preventDefault();
+    setVolume(nextVolume);
+    if ($isMuted && nextVolume > 0) {
       isMuted.set(false);
     }
   }
@@ -152,6 +221,7 @@
       bind:this={progressBarElement}
       class="absolute top-0 left-0 right-0 h-[2px] bg-white/5 cursor-pointer group"
       on:click={handleProgressClick}
+      on:keydown={handleProgressKeydown}
       role="slider"
       tabindex="0"
       aria-label="Seek slider"
@@ -270,6 +340,7 @@
           bind:this={volumeSliderElement}
           class="w-20 h-1 bg-white/10 rounded-full overflow-hidden cursor-pointer"
           on:click={handleVolumeClick}
+          on:keydown={handleVolumeKeydown}
           role="slider"
           tabindex="0"
           aria-label="Volume"

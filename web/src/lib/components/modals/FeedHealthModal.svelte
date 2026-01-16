@@ -194,18 +194,38 @@
         return "text-emerald-400";
     }
   }
+
+  function close() {
+    isOpen = false;
+  }
+
+  function handleBackdropClick(event: MouseEvent) {
+    if (event.currentTarget !== event.target) return;
+    close();
+  }
+
+  function handleBackdropKeydown(e: KeyboardEvent) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      close();
+    }
+  }
 </script>
 
 {#if isOpen}
   <div
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-    on:click={() => (isOpen = false)}
-    role="dialog"
-    aria-modal="true"
+    on:click={handleBackdropClick}
+    on:keydown={handleBackdropKeydown}
+    role="button"
+    aria-label="Close dialog"
+    tabindex="0"
   >
     <div
       class="bg-[#18181b] rounded-2xl border border-white/10 max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden"
-      on:click|stopPropagation
+      role="dialog"
+      aria-modal="true"
+      tabindex="-1"
     >
       <!-- Header -->
       <div

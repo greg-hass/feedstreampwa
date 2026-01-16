@@ -45,6 +45,18 @@
     isOpen = false;
   }
 
+  function handleBackdropClick(event: MouseEvent) {
+    if (event.currentTarget !== event.target) return;
+    close();
+  }
+
+  function handleBackdropKeydown(e: KeyboardEvent) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      close();
+    }
+  }
+
   $: if (isOpen) {
     loadStats();
   }
@@ -57,15 +69,14 @@
 {#if isOpen}
   <div
     class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 animate-fade-in"
-    on:click={close}
-    on:keydown={(e) => e.key === "Escape" && close()}
+    on:click={handleBackdropClick}
+    on:keydown={handleBackdropKeydown}
     role="button"
-    tabindex="-1"
+    aria-label="Close dialog"
+    tabindex="0"
   >
     <div
       class="bg-[#18181b] rounded-2xl border border-white/10 max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
-      on:click|stopPropagation
-      on:keydown|stopPropagation
       role="dialog"
       aria-modal="true"
       tabindex="-1"
@@ -241,17 +252,7 @@
     }
   }
 
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
   .animate-fade-in {
     animation: fade-in 0.2s ease-out;
-  }
-
-  .animate-spin {
-    animation: spin 1s linear infinite;
   }
 </style>

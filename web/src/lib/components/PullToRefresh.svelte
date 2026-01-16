@@ -63,18 +63,3 @@
   on:touchmove={handleTouchMove}
   on:touchend={handleTouchEnd}
 />
-
-<style>
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  .animate-spin {
-    animation: spin 1s linear infinite;
-  }
-</style>

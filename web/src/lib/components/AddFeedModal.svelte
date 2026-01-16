@@ -259,6 +259,18 @@
     }
   }
 
+  function handleBackdropClick(event: MouseEvent) {
+    if (event.currentTarget !== event.target) return;
+    closeModal();
+  }
+
+  function handleBackdropKeydown(e: KeyboardEvent) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      closeModal();
+    }
+  }
+
   async function retryRefresh() {
     if (!lastRefreshUrl || refreshing) return;
 
@@ -296,16 +308,15 @@
   <!-- Modal Backdrop -->
   <div
     class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
-    on:click={closeModal}
-    on:keydown={(e) => e.key === "Enter" && closeModal()}
+    on:click={handleBackdropClick}
+    on:keydown={handleBackdropKeydown}
     role="button"
-    tabindex="-1"
+    aria-label="Close dialog"
+    tabindex="0"
   >
     <!-- Modal Content -->
     <div
       class="bg-[#18181b] rounded-2xl border border-white/10 max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden"
-      on:click|stopPropagation
-      on:keydown|stopPropagation
       role="dialog"
       aria-modal="true"
       tabindex="-1"

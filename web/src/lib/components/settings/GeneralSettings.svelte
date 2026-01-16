@@ -80,46 +80,90 @@
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div class="space-y-1">
-            <label class="text-xs text-white/60">Primary Accent</label>
+            <span
+              id="custom-primary-label"
+              class="text-xs text-white/60"
+            >
+              Primary Accent
+            </span>
             <div class="flex items-center gap-2">
-              <input type="color" bind:value={customColors.primary} class="w-8 h-8 rounded cursor-pointer" />
+              <input
+                type="color"
+                bind:value={customColors.primary}
+                class="w-8 h-8 rounded cursor-pointer"
+                aria-labelledby="custom-primary-label"
+              />
               <input
                 type="text"
                 bind:value={customColors.primary}
                 class="flex-1 bg-white/5 px-2 py-1 rounded text-sm text-white border border-white/10"
+                aria-labelledby="custom-primary-label"
               />
             </div>
           </div>
           <div class="space-y-1">
-            <label class="text-xs text-white/60">Background</label>
+            <span
+              id="custom-background-label"
+              class="text-xs text-white/60"
+            >
+              Background
+            </span>
             <div class="flex items-center gap-2">
-              <input type="color" bind:value={customColors.background} class="w-8 h-8 rounded cursor-pointer" />
+              <input
+                type="color"
+                bind:value={customColors.background}
+                class="w-8 h-8 rounded cursor-pointer"
+                aria-labelledby="custom-background-label"
+              />
               <input
                 type="text"
                 bind:value={customColors.background}
                 class="flex-1 bg-white/5 px-2 py-1 rounded text-sm text-white border border-white/10"
+                aria-labelledby="custom-background-label"
               />
             </div>
           </div>
           <div class="space-y-1">
-            <label class="text-xs text-white/60">Surface</label>
+            <span
+              id="custom-surface-label"
+              class="text-xs text-white/60"
+            >
+              Surface
+            </span>
             <div class="flex items-center gap-2">
-              <input type="color" bind:value={customColors.surface} class="w-8 h-8 rounded cursor-pointer" />
+              <input
+                type="color"
+                bind:value={customColors.surface}
+                class="w-8 h-8 rounded cursor-pointer"
+                aria-labelledby="custom-surface-label"
+              />
               <input
                 type="text"
                 bind:value={customColors.surface}
                 class="flex-1 bg-white/5 px-2 py-1 rounded text-sm text-white border border-white/10"
+                aria-labelledby="custom-surface-label"
               />
             </div>
           </div>
           <div class="space-y-1">
-            <label class="text-xs text-white/60">Raised</label>
+            <span
+              id="custom-raised-label"
+              class="text-xs text-white/60"
+            >
+              Raised
+            </span>
             <div class="flex items-center gap-2">
-              <input type="color" bind:value={customColors.raised} class="w-8 h-8 rounded cursor-pointer" />
+              <input
+                type="color"
+                bind:value={customColors.raised}
+                class="w-8 h-8 rounded cursor-pointer"
+                aria-labelledby="custom-raised-label"
+              />
               <input
                 type="text"
                 bind:value={customColors.raised}
                 class="flex-1 bg-white/5 px-2 py-1 rounded text-sm text-white border border-white/10"
+                aria-labelledby="custom-raised-label"
               />
             </div>
           </div>
@@ -137,8 +181,14 @@
   </div>
 
   <div class="space-y-3">
-    <span class="text-sm font-semibold text-white mb-3 block">Auto-sync Interval</span>
+    <label
+      class="text-sm font-semibold text-white mb-3 block"
+      for="sync-interval"
+    >
+      Auto-sync Interval
+    </label>
     <select
+      id="sync-interval"
       bind:value={localSettings.sync_interval}
       class="w-full bg-white/5 px-4 py-3 rounded-xl text-white border border-white/10 hover:bg-white/10 focus:border-accent/50 transition-colors outline-none text-sm appearance-none"
       style="-webkit-appearance: none;"
@@ -151,17 +201,21 @@
 
   <div class="space-y-3">
     <div class="flex items-center justify-between mb-3">
-      <span class="text-sm font-semibold text-white flex items-center gap-2">
+      <label
+        class="text-sm font-semibold text-white flex items-center gap-2"
+        for="gemini-api-key"
+      >
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path d="M12 2L2 7l10 5 10-5-10-5z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
           <path d="M2 17l10 5 10-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
           <path d="M2 12l10 5 10-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
         Gemini API Key
-      </span>
+      </label>
       <span class="text-xs text-white/40">Optional</span>
     </div>
     <input
+      id="gemini-api-key"
       type="text"
       bind:value={localSettings.gemini_api_key}
       placeholder="Enter your Gemini API key..."

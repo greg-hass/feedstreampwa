@@ -49,23 +49,35 @@
     }
     close();
   }
+
+  function handleBackdropClick(event: MouseEvent) {
+    if (event.currentTarget !== event.target) return;
+    close();
+  }
+
+  function handleBackdropKeydown(e: KeyboardEvent) {
+    if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      close();
+    }
+  }
 </script>
 
 {#if $contextMenu.isOpen}
   <div
     class="modal-overlay"
-    on:click={close}
-    on:keydown={(e) => e.key === "Escape" && close()}
+    on:click={handleBackdropClick}
+    on:keydown={handleBackdropKeydown}
     role="button"
+    aria-label="Close menu"
     tabindex="0"
   >
     <div
       class="context-menu glass-panel"
       style="left: {$contextMenu.position.x}px; top: {$contextMenu.position
         .y}px;"
-      on:click|stopPropagation
       role="menu"
-      tabindex="0"
+      tabindex="-1"
     >
       <button class="menu-item" on:click={handleRename}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">

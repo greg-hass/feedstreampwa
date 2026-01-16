@@ -143,7 +143,7 @@
               <div
                 class="relative w-32 h-32 rounded-3xl bg-gradient-to-br {step.gradient} p-8 shadow-2xl"
               >
-                <Icon size={64} class="text-white" />
+                <svelte:component this={Icon} size={64} class="text-white" />
               </div>
             </div>
           </div>

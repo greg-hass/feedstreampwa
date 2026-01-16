@@ -3,6 +3,7 @@
 </script>
 
 <script lang="ts">
+  import { tick } from "svelte";
   import { page } from "$app/stores";
   import {
     X,
@@ -66,10 +67,19 @@
   let isCreatingInline = false;
   let inlineFolderName = "";
   let isSubmitting = false;
+  let inlineInputEl: HTMLInputElement | null = null;
+  let wasCreatingInline = false;
 
   let isAIRecommendationsOpen = false;
   let isFeedHealthOpen = false;
   let isDuplicatesOpen = false;
+
+  $: if (isCreatingInline && !wasCreatingInline) {
+    wasCreatingInline = true;
+    tick().then(() => inlineInputEl?.focus());
+  } else if (!isCreatingInline) {
+    wasCreatingInline = false;
+  }
 
   function toggleFolder(e: MouseEvent, id: string) {
     e.stopPropagation();
@@ -431,11 +441,11 @@
           <input
             type="text"
             bind:value={inlineFolderName}
+            bind:this={inlineInputEl}
             placeholder="Folder name..."
             class="w-full bg-raised border border-accent/30 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent shadow-[0_0_10px_rgba(16,185,129,0.1)]"
             on:keydown={(e) => e.key === "Enter" && handleInlineSubmit()}
             on:blur={() => !inlineFolderName && (isCreatingInline = false)}
-            autofocus
           />
         </div>
       {/if}

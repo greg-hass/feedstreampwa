@@ -187,9 +187,9 @@
 
             <!-- Detection Method -->
             <div class="space-y-3">
-              <label class="text-sm font-semibold text-white"
-                >Detection Method</label
-              >
+              <div class="text-sm font-semibold text-white">
+                Detection Method
+              </div>
               <div class="grid grid-cols-3 gap-3">
                 {#each ["url", "title", "fuzzy"] as method}
                   <button
@@ -218,14 +218,18 @@
             {#if $duplicateSettings.method === "fuzzy"}
               <div class="space-y-3">
                 <div class="flex items-center justify-between">
-                  <label class="text-sm font-semibold text-white"
-                    >Sensitivity</label
+                  <label
+                    class="text-sm font-semibold text-white"
+                    for="duplicate-sensitivity"
                   >
+                    Sensitivity
+                  </label>
                   <span class="text-sm text-accent"
                     >{$duplicateSettings.sensitivity}%</span
                   >
                 </div>
                 <input
+                  id="duplicate-sensitivity"
                   type="range"
                   min="50"
                   max="100"
@@ -242,10 +246,14 @@
 
             <!-- Keep Preference -->
             <div class="space-y-3">
-              <label class="text-sm font-semibold text-white"
-                >Which duplicate to keep?</label
+              <label
+                class="text-sm font-semibold text-white"
+                for="duplicate-keep-in-feed"
               >
+                Which duplicate to keep?
+              </label>
               <select
+                id="duplicate-keep-in-feed"
                 value={$duplicateSettings.keepInFeed}
                 on:change={handleKeepInFeedChange}
                 class="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white outline-none focus:border-accent/50"
@@ -260,9 +268,9 @@
 
             <!-- Auto Action -->
             <div class="space-y-3">
-              <label class="text-sm font-semibold text-white"
-                >Auto-action for duplicates</label
-              >
+              <div class="text-sm font-semibold text-white">
+                Auto-action for duplicates
+              </div>
               <div class="grid grid-cols-3 gap-3">
                 {#each ["none", "mark_read", "hide"] as action}
                   <button

@@ -94,7 +94,9 @@
         <span class="text-[11px] font-semibold text-white/70">
           {refreshCountdown}
         </span>
-        <RefreshCw size={20} class={isRefreshing ? "animate-spin" : ""} />
+        <span class={isRefreshing ? "animate-spin" : ""} aria-hidden="true">
+          <RefreshCw size={20} />
+        </span>
       </button>
 
       <button
@@ -144,10 +146,6 @@
 </header>
 
 <style>
-  .animate-spin {
-    animation: spin 1s linear infinite;
-  }
-
   .mobile-search {
     max-height: 0;
     opacity: 0;
@@ -162,12 +160,4 @@
     transform: translateY(0);
   }
 
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
 </style>

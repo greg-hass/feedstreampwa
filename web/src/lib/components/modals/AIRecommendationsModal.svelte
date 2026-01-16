@@ -67,6 +67,19 @@
     dispatch("close");
   }
 
+  function handleBackdropClick(event: MouseEvent) {
+    if (event.currentTarget === event.target) {
+      close();
+    }
+  }
+
+  function handleBackdropKeydown(event: KeyboardEvent) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      close();
+    }
+  }
+
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === "Escape") {
       close();
@@ -94,15 +107,14 @@
 {#if isOpen}
   <div
     class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
-    on:click={close}
-    on:keydown={(e) => e.key === "Enter" && close()}
+    on:click={handleBackdropClick}
+    on:keydown={handleBackdropKeydown}
     role="button"
-    tabindex="-1"
+    aria-label="Close dialog"
+    tabindex="0"
   >
     <div
       class="bg-[#18181b] rounded-2xl border border-white/10 max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
-      on:click|stopPropagation
-      on:keydown|stopPropagation
       role="dialog"
       aria-modal="true"
       tabindex="-1"
@@ -255,18 +267,3 @@
     </div>
   </div>
 {/if}
-
-<style>
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  .animate-spin {
-    animation: spin 1s linear infinite;
-  }
-</style>

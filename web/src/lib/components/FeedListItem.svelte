@@ -264,8 +264,8 @@
   }
 </script>
 
-<article
-  class="group flex flex-col md:flex-row {densityClasses.padding} border-b transition-all duration-200 cursor-pointer overflow-hidden
+<div
+  class="feed-item group flex flex-col md:flex-row {densityClasses.padding} border-b transition-all duration-200 cursor-pointer overflow-hidden
   {isSelected
     ? 'bg-blue-500/10 border-blue-500/30'
     : 'border-white/5 hover:bg-white/[0.02] hover:border-white/10'}"
@@ -473,10 +473,10 @@
       />
     </div>
   {/if}
-</article>
+</div>
 
 <style>
-  article {
+  .feed-item {
     scroll-margin-top: 80px;
   }
 
