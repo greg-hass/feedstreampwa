@@ -94,7 +94,7 @@
         <span class="text-[11px] font-semibold text-white/70">
           {refreshCountdown}
         </span>
-        <RefreshCw size={20} class:animate-spin={isRefreshing} />
+        <RefreshCw size={20} class={isRefreshing ? "animate-spin" : ""} />
       </button>
 
       <button
