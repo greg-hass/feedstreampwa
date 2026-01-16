@@ -6,6 +6,8 @@ export default defineConfig({
 	plugins: [
 		sveltekit(),
 		SvelteKitPWA({
+			strategies: 'injectManifest',
+			filename: 'sw.js',
 			registerType: 'autoUpdate',
 			includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
 			manifest: {
@@ -40,56 +42,6 @@ export default defineConfig({
 					}
 				}
 			},
-			workbox: {
-				mode: 'development',
-				disableDevLogs: true,
-				runtimeCaching: [
-					{
-						urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-						handler: 'CacheFirst',
-						options: {
-							cacheName: 'google-fonts-cache',
-							expiration: {
-								maxEntries: 10,
-								maxAgeSeconds: 60 * 60 * 24 * 365
-							},
-							cacheableResponse: {
-								statuses: [0, 200]
-							}
-						}
-					},
-					{
-						urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-						handler: 'CacheFirst',
-						options: {
-							cacheName: 'gstatic-fonts-cache',
-							expiration: {
-								maxEntries: 10,
-								maxAgeSeconds: 60 * 60 * 24 * 365
-							},
-							cacheableResponse: {
-								statuses: [0, 200]
-							}
-						}
-					},
-                    {
-                        // Match API calls
-                        urlPattern: /\/api\/.*/i,
-                        handler: 'NetworkFirst',
-                        options: {
-                            cacheName: 'api-cache',
-							networkTimeoutSeconds: 5,
-                            expiration: {
-                                maxEntries: 100,
-                                maxAgeSeconds: 24 * 60 * 60 // 24 hours
-                            },
-							cacheableResponse: {
-								statuses: [0, 200]
-							}
-                        }
-                    }
-				]
-			}
 		})
 	],
 	              test: {
