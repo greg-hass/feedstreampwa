@@ -1,9 +1,10 @@
 // Feeds store - manages feed state and operations
-import { writable, derived } from 'svelte/store';
+import { writable, derived, get } from 'svelte/store';
 import type { Feed } from '$lib/types';
 import * as feedsApi from '$lib/api/feeds';
 import * as foldersApi from '$lib/api/folders';
 import { confirmDialog } from '$lib/stores/confirm';
+import { settings } from '$lib/stores/settings';
 
 // State
 export const feeds = writable<Feed[]>([]);
@@ -19,6 +20,12 @@ export const refreshState = writable({
     currentFeedUrl: '',
     error: null as string | null
 });
+export const refreshEvent = writable<RefreshEventPayload | null>(null);
+export const refreshStream = writable({
+    status: 'connecting' as 'connecting' | 'connected' | 'reconnecting'
+});
+
+const LAST_SYNC_KEY = 'last_global_sync';
 
 // Derived stores
 export const rssFeeds = derived(feeds, ($feeds) =>
@@ -92,129 +99,189 @@ export async function removeFeed(url: string): Promise<void> {
     await loadFeeds();
 }
 
-// Refresh logic
-const MAX_POLL_ATTEMPTS = 300; // 5 minutes max (with exponential backoff)
-const INITIAL_POLL_INTERVAL = 1000; // Start with 1 second
-const MAX_POLL_INTERVAL = 5000; // Max 5 seconds between polls
-
-let refreshPollTimer: ReturnType<typeof setTimeout> | null = null;
-let activeJobId: string | null = null;
-let pollAttempts = 0;
-
-async function pollRefreshStatus(jobId: string) {
-    // If already polling for this job, ignore
-    if (activeJobId === jobId && refreshPollTimer) return;
-
-    // If polling for a different job, stop the old one
-    if (refreshPollTimer) {
-        clearTimeout(refreshPollTimer);
-        refreshPollTimer = null;
-    }
-
-    activeJobId = jobId;
-    pollAttempts = 0;
-    refreshState.update(s => ({
-        ...s,
-        isRefreshing: true,
-        message: 'Starting refresh...',
-        currentFeedTitle: '',
-        currentFeedUrl: '',
-        error: null
-    }));
-
-    const poll = async () => {
-        try {
-            pollAttempts++;
-
-            // Timeout after max attempts
-            if (pollAttempts > MAX_POLL_ATTEMPTS) {
-                throw new Error('Refresh polling timeout - exceeded maximum attempts');
-            }
-
-            const response = await fetch(`/api/refresh/status?jobId=${encodeURIComponent(jobId)}`);
-            if (!response.ok) throw new Error('Status check failed');
-
-            const data = await response.json();
-
-            if (data.status === 'done' || data.status === 'error') {
-                stopPolling();
-                await loadFeeds();
-                return;
-            }
-
-            refreshState.update(s => ({
-                ...s,
-                current: data.current,
-                total: data.total,
-                message: data.message || `Refreshing... ${data.current}/${data.total}`,
-                currentFeedTitle: data.currentFeedTitle || data.currentFeedUrl || '',
-                currentFeedUrl: data.currentFeedUrl || '',
-                error: null
-            }));
-
-            // Continue polling if still active - use exponential backoff
-            if (activeJobId === jobId) {
-                // Exponential backoff: min(INITIAL * 1.5^attempt, MAX)
-                const backoffInterval = Math.min(
-                    INITIAL_POLL_INTERVAL * Math.pow(1.5, Math.min(pollAttempts / 10, 5)),
-                    MAX_POLL_INTERVAL
-                );
-                refreshPollTimer = setTimeout(poll, backoffInterval);
-            }
-        } catch (e) {
-            console.error('Polling error:', e);
-            const errorMsg = e instanceof Error ? e.message : 'Polling error during refresh';
-            refreshState.update(s => ({
-                ...s,
-                error: errorMsg,
-                isRefreshing: false,
-                currentFeedTitle: '',
-                currentFeedUrl: ''
-            }));
-            stopPolling();
-        }
-    };
-
-    function stopPolling() {
-        if (refreshPollTimer) {
-            clearTimeout(refreshPollTimer);
-            refreshPollTimer = null;
-        }
-        activeJobId = null;
-        pollAttempts = 0;
-        refreshState.update(s => ({
-            ...s,
-            isRefreshing: false,
-            currentFeedTitle: '',
-            currentFeedUrl: ''
-        }));
-    }
-
-    // Start immediate first poll
-    await poll();
+// Refresh logic (streamed from backend)
+interface RefreshEventPayload {
+    type: 'start' | 'progress' | 'complete' | 'error';
+    jobId: string;
+    current: number;
+    total: number;
+    message?: string;
+    currentFeedTitle?: string;
+    currentFeedUrl?: string;
+    startedAt: number;
+    lastSync?: number;
+    source?: 'manual' | 'scheduler';
 }
 
-export async function refreshFeed(url: string): Promise<void> {
+let refreshEventSource: EventSource | null = null;
+let activeJobId: string | null = null;
+
+function updateLastSync(lastSync?: number) {
+    if (!lastSync) return;
+    settings.update((s) => ({
+        ...s,
+        [LAST_SYNC_KEY]: lastSync.toString()
+    }));
+}
+
+function shouldHandleEvent(payload: RefreshEventPayload): boolean {
+    if (!payload?.jobId) return false;
+    if (!activeJobId) return true;
+    if (activeJobId === payload.jobId) return true;
+    if (payload.type === 'start' && !get(refreshState).isRefreshing) return true;
+    return false;
+}
+
+function handleRefreshEvent(payload: RefreshEventPayload) {
+    refreshEvent.set(payload);
+    if (!shouldHandleEvent(payload)) return;
+
+    if (payload.type === 'start') {
+        activeJobId = payload.jobId;
+        updateLastSync(payload.lastSync);
+        refreshState.update((s) => ({
+            ...s,
+            isRefreshing: true,
+            current: payload.current ?? 0,
+            total: payload.total ?? s.total,
+            message: payload.message || 'Starting refresh...',
+            currentFeedTitle: payload.currentFeedTitle || payload.currentFeedUrl || '',
+            currentFeedUrl: payload.currentFeedUrl || '',
+            error: null
+        }));
+        return;
+    }
+
+    if (payload.type === 'progress') {
+        refreshState.update((s) => ({
+            ...s,
+            isRefreshing: true,
+            current: payload.current ?? s.current,
+            total: payload.total ?? s.total,
+            message: payload.message || s.message || 'Refreshing...',
+            currentFeedTitle: payload.currentFeedTitle || payload.currentFeedUrl || '',
+            currentFeedUrl: payload.currentFeedUrl || '',
+            error: null
+        }));
+        return;
+    }
+
+    if (payload.type === 'complete') {
+        updateLastSync(payload.lastSync);
+        refreshState.update((s) => ({
+            ...s,
+            isRefreshing: false,
+            current: payload.current ?? s.current,
+            total: payload.total ?? s.total,
+            message: payload.message || 'Refresh completed',
+            currentFeedTitle: '',
+            currentFeedUrl: '',
+            error: null
+        }));
+        activeJobId = null;
+        loadFeeds();
+        return;
+    }
+
+    if (payload.type === 'error') {
+        refreshState.update((s) => ({
+            ...s,
+            isRefreshing: false,
+            message: payload.message || s.message,
+            currentFeedTitle: '',
+            currentFeedUrl: '',
+            error: payload.message || 'Refresh failed'
+        }));
+        activeJobId = null;
+    }
+}
+
+export function startRefreshStream(): () => void {
+    if (typeof window === 'undefined') return () => {};
+    if (refreshEventSource) return () => {};
+
+    const source = new EventSource('/api/refresh/stream');
+    refreshEventSource = source;
+    refreshStream.set({ status: 'connecting' });
+
+    source.addEventListener('refresh', (event) => {
+        try {
+            const payload = JSON.parse((event as MessageEvent).data) as RefreshEventPayload;
+            handleRefreshEvent(payload);
+        } catch (e) {
+            console.warn('Failed to parse refresh event:', e);
+        }
+    });
+
+    source.addEventListener('sync', (event) => {
+        try {
+            const payload = JSON.parse((event as MessageEvent).data) as { lastSync?: number };
+            updateLastSync(payload.lastSync);
+        } catch (e) {
+            console.warn('Failed to parse sync event:', e);
+        }
+    });
+
+    source.addEventListener('ping', () => {});
+
+    source.onopen = () => {
+        refreshStream.set({ status: 'connected' });
+    };
+
+    source.onerror = () => {
+        refreshStream.set({ status: 'reconnecting' });
+    };
+
+    return () => {
+        source.close();
+        refreshEventSource = null;
+        refreshStream.set({ status: 'connecting' });
+    };
+}
+
+export async function refreshFeed(url: string): Promise<string> {
     try {
         const { jobId } = await feedsApi.refreshFeed(url);
         if (!jobId) {
             throw new Error('No feed refresh job started');
         }
-        pollRefreshStatus(jobId);
+        activeJobId = jobId;
+        refreshState.update((s) => ({
+            ...s,
+            isRefreshing: true,
+            current: 0,
+            total: s.total,
+            message: 'Starting refresh...',
+            currentFeedTitle: '',
+            currentFeedUrl: '',
+            error: null
+        }));
+        return jobId;
     } catch (e) {
         console.error('Failed to start refresh:', e);
         throw e;
     }
 }
 
-export async function refreshAll(): Promise<void> {
+export async function refreshAll(): Promise<string> {
     try {
         const response = await feedsApi.refreshAllFeeds();
         const { jobId } = response;
         if (!jobId) {
             throw new Error('No feeds to refresh or failed to start refresh');
         }
-        pollRefreshStatus(jobId);
+        activeJobId = jobId;
+        refreshState.update((s) => ({
+            ...s,
+            isRefreshing: true,
+            current: 0,
+            total: s.total,
+            message: 'Starting refresh...',
+            currentFeedTitle: '',
+            currentFeedUrl: '',
+            error: null
+        }));
+        return jobId;
     } catch (e) {
         console.error('Failed to start all-refresh:', e);
         throw e;

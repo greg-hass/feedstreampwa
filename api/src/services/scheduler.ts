@@ -2,6 +2,7 @@ import { db } from '../db/client.js';
 import { fetchFeed } from './feed-service.js';
 import { createBackup } from './backup-service.js';
 import { env } from '../config/index.js';
+import { publishRefreshEvent } from './refresh-events.js';
 import pLimit from 'p-limit';
 
 let backgroundSyncTimer: NodeJS.Timeout | null = null;
@@ -63,8 +64,14 @@ export async function startBackgroundSync(logger: any) {
                 logger.info(`Background sync triggered (interval: ${intervalStr})...`);
 
                 // Get all feed URLs
-                const feeds = db.prepare('SELECT url FROM feeds').all() as any[];
+                const feeds = db.prepare(
+                    'SELECT url, COALESCE(custom_title, title, url) as display_title FROM feeds'
+                ).all() as any[];
                 const urls = feeds.map(f => f.url);
+                const feedTitleMap = new Map<string, string>();
+                feeds.forEach((feed) => {
+                    feedTitleMap.set(feed.url, feed.display_title || feed.url);
+                });
 
                 if (urls.length === 0) return;
 
@@ -72,12 +79,55 @@ export async function startBackgroundSync(logger: any) {
                 db.prepare('INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value')
                     .run(env.LAST_SYNC_KEY, now.toString());
 
+                const jobId = `auto_${now}_${Math.random().toString(36).substr(2, 6)}`;
+                publishRefreshEvent({
+                    type: 'start',
+                    jobId,
+                    current: 0,
+                    total: urls.length,
+                    message: 'Starting refresh...',
+                    startedAt: now,
+                    lastSync: now,
+                    source: 'scheduler'
+                });
+
                 const limit = pLimit(env.MAX_CONCURRENCY);
+                let completed = 0;
                 await Promise.all(
-                    urls.map((url: string) => limit(() => fetchFeed(url, false)))
+                    urls.map((url: string) => limit(async () => {
+                        const displayTitle = feedTitleMap.get(url) || url;
+                        try {
+                            await fetchFeed(url, false);
+                        } catch (e) {
+                            logger.warn(`Background sync failed for ${url}: ${e}`);
+                        } finally {
+                            completed++;
+                            publishRefreshEvent({
+                                type: 'progress',
+                                jobId,
+                                current: completed,
+                                total: urls.length,
+                                message: `Refreshed ${completed} of ${urls.length}`,
+                                currentFeedTitle: displayTitle,
+                                currentFeedUrl: url,
+                                startedAt: now,
+                                source: 'scheduler'
+                            });
+                        }
+                    }))
                 );
 
                 logger.info('Background sync completed');
+                publishRefreshEvent({
+                    type: 'complete',
+                    jobId,
+                    current: completed,
+                    total: urls.length,
+                    message: 'Refresh completed',
+                    startedAt: now,
+                    lastSync: now,
+                    source: 'scheduler'
+                });
             }
         } catch (error: any) {
             logger.error(error, 'Background sync error');

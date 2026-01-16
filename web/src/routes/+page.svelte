@@ -44,9 +44,9 @@
     hasMore,
   } from "$lib/stores/items";
   import {
-    loadFeeds,
     refreshAll as refreshAllFeeds,
     refreshState,
+    refreshStream,
   } from "$lib/stores/feeds";
   import { settings } from "$lib/stores/settings";
   import { loadFolders, folders } from "$lib/stores/folders";
@@ -136,7 +136,15 @@
   let liveRefreshInFlight = false;
   let liveInsertResetTimer: ReturnType<typeof setTimeout> | null = null;
   let liveInsertIds = new Set<string>();
+  let previousItemIds = new Set<string>();
+  let hasLoadedOnce = false;
   let mobileFiltersHeight = 0;
+  let refreshSnapshotIds: Set<string> | null = null;
+  let awaitingRefreshResults = false;
+  let refreshItemsLoadingSeen = false;
+  let newArticlesCount = 0;
+  let showNewArticlesBanner = false;
+  let showTimeFilter = true;
 
   const LAST_SYNC_KEY = "last_global_sync";
   let syncIntervalMs: number | null = null;
@@ -147,7 +155,16 @@
 
   // Watch for refresh completion to reload items
   $: {
+    if ($refreshState.isRefreshing && !wasRefreshing) {
+      refreshSnapshotIds = new Set($items.map((item) => item.id));
+      awaitingRefreshResults = false;
+      refreshItemsLoadingSeen = false;
+      showNewArticlesBanner = false;
+      newArticlesCount = 0;
+    }
     if (wasRefreshing && !$refreshState.isRefreshing) {
+      awaitingRefreshResults = true;
+      refreshItemsLoadingSeen = false;
       loadItems({ ...getLoadParams(), refresh: true });
     }
     wasRefreshing = $refreshState.isRefreshing;
@@ -175,10 +192,47 @@
 
   $: $refreshState.isRefreshing, updateRefreshCountdown();
 
-  $: if (typeof document !== "undefined" && mobileFiltersHeight > 0) {
+  $: if (awaitingRefreshResults) {
+    if ($itemsLoading) {
+      refreshItemsLoadingSeen = true;
+    }
+    if (!$itemsLoading && refreshItemsLoadingSeen && refreshSnapshotIds) {
+      const newCount = $items.filter(
+        (item) => !refreshSnapshotIds?.has(item.id)
+      ).length;
+      if (newCount > 0) {
+        newArticlesCount = newCount;
+        showNewArticlesBanner = true;
+      }
+      refreshSnapshotIds = null;
+      awaitingRefreshResults = false;
+      refreshItemsLoadingSeen = false;
+    }
+  }
+
+  $: if ($items) {
+    if (!hasLoadedOnce) {
+      previousItemIds = new Set($items.map((item) => item.id));
+      hasLoadedOnce = true;
+    } else {
+      const newIds = $items
+        .filter((item) => !previousItemIds.has(item.id))
+        .map((item) => item.id);
+      queueLiveInsertIds(newIds);
+      previousItemIds = new Set($items.map((item) => item.id));
+    }
+  }
+
+  $: showTimeFilter = $viewMode !== "all";
+
+  $: if ($viewMode === "all" && $timeFilter !== "all") {
+    setTimeFilter("all");
+  }
+
+  $: if (typeof document !== "undefined") {
     document.documentElement.style.setProperty(
       "--mobile-filters-height",
-      `${mobileFiltersHeight}px`
+      `${showTimeFilter ? mobileFiltersHeight : 0}px`
     );
   }
 
@@ -215,7 +269,7 @@
       params.folderId = $activeFolderId;
     if ($viewMode === "unread") params.unreadOnly = true;
     if ($viewMode === "bookmarks") params.starredOnly = true;
-    params.timeFilter = $timeFilter;
+    if ($viewMode !== "all") params.timeFilter = $timeFilter;
     return params;
   }
 
@@ -247,6 +301,16 @@
     return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   }
 
+  function queueLiveInsertIds(ids: string[]) {
+    if (ids.length === 0) return;
+    liveInsertIds = new Set([...liveInsertIds, ...ids]);
+    if (liveInsertResetTimer) clearTimeout(liveInsertResetTimer);
+    liveInsertResetTimer = setTimeout(() => {
+      liveInsertIds = new Set();
+    }, LIVE_INSERT_RESET_MS);
+  }
+
+
   function updateRefreshCountdown() {
     if ($refreshState.isRefreshing) {
       refreshCountdown = "Refreshing";
@@ -268,6 +332,18 @@
 
     refreshCountdown = formatCountdown(remaining);
     refreshCountdownTitle = `Next auto refresh in ${refreshCountdown}`;
+  }
+
+  function dismissNewArticlesBanner() {
+    showNewArticlesBanner = false;
+    newArticlesCount = 0;
+  }
+
+  function viewNewArticles() {
+    dismissNewArticlesBanner();
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   }
 
   function startLiveRefresh() {
@@ -325,16 +401,7 @@
         items.update((current) => [...newItems, ...current]);
         itemsTotal.set(data.total);
         currentOffset.update((n) => n + newItems.length);
-
-        liveInsertIds = new Set([
-          ...liveInsertIds,
-          ...newItems.map((item) => item.id),
-        ]);
-
-        if (liveInsertResetTimer) clearTimeout(liveInsertResetTimer);
-        liveInsertResetTimer = setTimeout(() => {
-          liveInsertIds = new Set();
-        }, LIVE_INSERT_RESET_MS);
+        queueLiveInsertIds(newItems.map((item) => item.id));
 
         await tick();
         const nextScrollHeight = articlesList?.scrollHeight || 0;
@@ -378,7 +445,6 @@
   onMount(() => {
     // Initial load
     loadItems();
-
     updateRefreshCountdown();
     if (countdownTimer) clearInterval(countdownTimer);
     countdownTimer = setInterval(updateRefreshCountdown, 1000);
@@ -423,6 +489,7 @@
     $selectedFeedUrl ||
     $timeFilter
   ) {
+    dismissNewArticlesBanner();
     loadItems(getLoadParams());
   }
 </script>
@@ -445,13 +512,27 @@
         <h1 class="text-3xl font-bold text-white">{pageTitle}</h1>
         <div class="flex items-center gap-2">
           <div class="flex items-center gap-2">
-                      <button
-                        class="p-2.5 rounded-xl bg-zinc-700 hover:bg-zinc-600 transition-all shadow-lg shadow-black/20 text-white"
-                        on:click={refreshAll}
-                        class:spinning={$refreshState.isRefreshing}
-                        title="Refresh"
-                      >              <RefreshCw size={20} />
+            <button
+              class="p-2.5 rounded-xl bg-zinc-700 hover:bg-zinc-600 transition-all shadow-lg shadow-black/20 text-white"
+              on:click={refreshAll}
+              class:spinning={$refreshState.isRefreshing}
+              title="Refresh"
+            >
+              <RefreshCw size={20} />
             </button>
+            <span
+              class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-white/60"
+              title={$refreshStream.status === "connected"
+                ? "Live updates connected"
+                : "Reconnecting to live updates"}
+            >
+              <span
+                class={`h-2 w-2 rounded-full ${$refreshStream.status === "connected"
+                  ? "bg-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.45)]"
+                  : "bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.45)] animate-pulse"}`}
+              ></span>
+              {$refreshStream.status === "connected" ? "Live" : "Reconnecting"}
+            </span>
             <span
               class="text-xs font-semibold text-white/60"
               title={refreshCountdownTitle}
@@ -518,10 +599,12 @@
     </div>
 
     <!-- Filter Chips -->
-    <FilterChips
-      timeFilter={$timeFilter}
-      on:change={(e) => setTimeFilter(e.detail)}
-    />
+    {#if showTimeFilter}
+      <FilterChips
+        timeFilter={$timeFilter}
+        on:change={(e) => setTimeFilter(e.detail)}
+      />
+    {/if}
   </div>
 {:else}
   <!-- Mobile Header (Already Sticky) -->
@@ -536,15 +619,18 @@
     isRefreshing={$refreshState.isRefreshing}
     refreshCountdown={refreshCountdown}
     refreshCountdownTitle={refreshCountdownTitle}
+    refreshStreamStatus={$refreshStream.status}
   />
 
   <!-- Sticky Filter Chips for Mobile -->
-  <div class="mobile-sticky-filters" bind:clientHeight={mobileFiltersHeight}>
-    <FilterChips
-      timeFilter={$timeFilter}
-      on:change={(e) => setTimeFilter(e.detail)}
-    />
-  </div>
+  {#if showTimeFilter}
+    <div class="mobile-sticky-filters" bind:clientHeight={mobileFiltersHeight}>
+      <FilterChips
+        timeFilter={$timeFilter}
+        on:change={(e) => setTimeFilter(e.detail)}
+      />
+    </div>
+  {/if}
 {/if}
 
 <!-- Articles List -->
@@ -562,6 +648,31 @@
       No articles found. Add some feeds to get started!
     </div>
   {:else}
+    {#if showNewArticlesBanner}
+      <div
+        class="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent/30 bg-accent/10 px-4 py-3"
+        role="status"
+        aria-live="polite"
+      >
+        <span class="text-sm font-semibold text-white">
+          {newArticlesCount} new article{newArticlesCount === 1 ? "" : "s"} added
+        </span>
+        <div class="flex items-center gap-2">
+          <button
+            class="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white shadow-lg shadow-accent/30 transition-all hover:shadow-accent/40"
+            on:click={viewNewArticles}
+          >
+            View
+          </button>
+          <button
+            class="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-white/70 transition-colors hover:text-white"
+            on:click={dismissNewArticlesBanner}
+          >
+            Dismiss
+          </button>
+        </div>
+      </div>
+    {/if}
     <FeedGrid
       items={$items}
       {liveInsertIds}

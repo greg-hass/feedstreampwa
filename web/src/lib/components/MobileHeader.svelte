@@ -10,6 +10,8 @@
   export let isRefreshing = false;
   export let refreshCountdown = "Off";
   export let refreshCountdownTitle = "Auto refresh is off";
+  export let refreshStreamStatus: "connecting" | "connected" | "reconnecting" =
+    "connecting";
 
   let isSearchOpen = false;
   let headerHeight = 52;
@@ -91,7 +93,15 @@
         title={refreshCountdownTitle}
         aria-label="Refresh"
       >
-        <span class="text-[11px] font-semibold text-white/70">
+        <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-white/70">
+          <span
+            class={`h-2 w-2 rounded-full ${refreshStreamStatus === "connected"
+              ? "bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.45)]"
+              : "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.45)] animate-pulse"}`}
+            title={refreshStreamStatus === "connected"
+              ? "Live updates connected"
+              : "Reconnecting to live updates"}
+          ></span>
           {refreshCountdown}
         </span>
         <span class={isRefreshing ? "animate-spin" : ""} aria-hidden="true">

@@ -13,8 +13,8 @@
     ChevronDown,
   } from "lucide-svelte";
   import { isAddFeedModalOpen } from "$lib/stores/ui";
-  import { createFeed, refreshFeed } from "$lib/api/feeds";
-  import { loadFeeds } from "$lib/stores/feeds";
+  import { createFeed } from "$lib/api/feeds";
+  import { loadFeeds, refreshEvent, refreshFeed } from "$lib/stores/feeds";
   import type { SearchResult } from "$lib/types";
 
   let searchQuery = "";
@@ -23,7 +23,6 @@
   let error: string | null = null;
   let successMessage: string | null = null;
   let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
-  let refreshPollTimer: ReturnType<typeof setInterval> | null = null;
   let refreshing = false;
   let refreshMessage: string | null = null;
   let refreshProgress: { current: number; total: number } | null = null;
@@ -164,50 +163,32 @@
     }
   }
 
-  async function pollRefreshStatus(jobId: string) {
-    if (refreshPollTimer) clearInterval(refreshPollTimer);
-
+  function waitForRefresh(jobId: string) {
     return new Promise<void>((resolve, reject) => {
-      refreshPollTimer = setInterval(async () => {
-        try {
-          const response = await fetch(
-            `/api/refresh/status?jobId=${encodeURIComponent(jobId)}`
-          );
-          const data = await response.json();
+      const unsubscribe = refreshEvent.subscribe((event) => {
+        if (!event || event.jobId !== jobId) return;
 
-          if (!response.ok || data.status === "error") {
-            if (refreshPollTimer) clearInterval(refreshPollTimer);
-            refreshPollTimer = null;
-            refreshMessage = null;
-            refreshProgress = null;
-            reject(new Error(data?.message || "Feed refresh failed"));
-            return;
-          }
+        refreshMessage = event.message || "Refreshing feed...";
+        if (
+          typeof event.current === "number" &&
+          typeof event.total === "number"
+        ) {
+          refreshProgress = { current: event.current, total: event.total };
+        }
 
-          if (data.status === "done") {
-            if (refreshPollTimer) clearInterval(refreshPollTimer);
-            refreshPollTimer = null;
-            refreshMessage = null;
-            refreshProgress = null;
-            resolve();
-            return;
-          }
-
-          refreshMessage = data?.message || "Refreshing feed...";
-          if (
-            typeof data?.current === "number" &&
-            typeof data?.total === "number"
-          ) {
-            refreshProgress = { current: data.current, total: data.total };
-          }
-        } catch (err) {
-          if (refreshPollTimer) clearInterval(refreshPollTimer);
-          refreshPollTimer = null;
+        if (event.type === "complete") {
+          unsubscribe();
           refreshMessage = null;
           refreshProgress = null;
-          reject(err);
+          resolve();
         }
-      }, 1200);
+        if (event.type === "error") {
+          unsubscribe();
+          refreshMessage = null;
+          refreshProgress = null;
+          reject(new Error(event.message || "Feed refresh failed"));
+        }
+      });
     });
   }
 
@@ -219,15 +200,14 @@
       try {
         refreshError = null;
         lastRefreshUrl = url;
-        const refreshResult = await refreshFeed(url);
-        if (refreshResult?.jobId) {
-          refreshing = true;
-          await pollRefreshStatus(refreshResult.jobId);
-          await loadFeeds();
-          refreshing = false;
-          refreshError = null;
-          refreshProgress = null;
-        }
+        const jobId = await refreshFeed(url);
+        refreshing = true;
+        refreshMessage = "Starting refresh...";
+        await waitForRefresh(jobId);
+        await loadFeeds();
+        refreshing = false;
+        refreshError = null;
+        refreshProgress = null;
       } catch (refreshErr) {
         console.warn("Failed to refresh feed after adding:", refreshErr);
         // Don't fail the whole operation if refresh fails
@@ -276,15 +256,14 @@
 
     try {
       refreshError = null;
-      const refreshResult = await refreshFeed(lastRefreshUrl);
-      if (refreshResult?.jobId) {
-        refreshing = true;
-        await pollRefreshStatus(refreshResult.jobId);
-        await loadFeeds();
-        refreshing = false;
-        refreshError = null;
-        refreshProgress = null;
-      }
+      const jobId = await refreshFeed(lastRefreshUrl);
+      refreshing = true;
+      refreshMessage = "Starting refresh...";
+      await waitForRefresh(jobId);
+      await loadFeeds();
+      refreshing = false;
+      refreshError = null;
+      refreshProgress = null;
     } catch (refreshErr) {
       console.warn("Failed to refresh feed after retry:", refreshErr);
       refreshing = false;

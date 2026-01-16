@@ -25,6 +25,7 @@
   import { offlineArticles } from "$lib/stores/offlineArticles";
   import { diversitySettings } from "$lib/stores/diversity";
   import type { ItemWithDiversity } from "$lib/stores/diversity";
+  import { now } from "$lib/stores/clock";
 
   export let item: Item;
   export let feedType: "rss" | "youtube" | "reddit" | "podcast" = "rss";
@@ -106,37 +107,47 @@
     (feedType === "podcast" ? item.feed_icon_url : null);
 
   // Format Date
+  const dateFormatterWithYear = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  const dateFormatterNoYear = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
   let dateStr = "";
   let timeAgo = "";
+  let itemDate: Date | null = null;
 
-  try {
-    const date = new Date(item.published || item.created_at);
-    // Check if date is valid
-    if (!isNaN(date.getTime())) {
-      const now = new Date();
-      const isCurrentYear = date.getFullYear() === now.getFullYear();
+  $: itemDate = new Date(item.published || item.created_at);
 
-      dateStr = new Intl.DateTimeFormat("en-US", {
-        month: "short",
-        day: "numeric",
-        year: isCurrentYear ? undefined : "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      }).format(date);
-
-      timeAgo = getTimeAgo(date);
+  $: {
+    if (!itemDate || isNaN(itemDate.getTime())) {
+      dateStr = "";
+      timeAgo = "";
+    } else {
+      const nowDate = new Date($now);
+      const isCurrentYear = itemDate.getFullYear() === nowDate.getFullYear();
+      dateStr = (isCurrentYear ? dateFormatterNoYear : dateFormatterWithYear).format(
+        itemDate
+      );
+      timeAgo = getTimeAgo(itemDate, $now, dateStr);
     }
-  } catch (e) {
-    console.error("Error formatting date for item", item.id, e);
   }
 
-  function getTimeAgo(date: Date): string {
-    const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+  function getTimeAgo(date: Date, nowMs: number, fallback: string): string {
+    const seconds = Math.floor((nowMs - date.getTime()) / 1000);
     if (seconds < 60) return "just now";
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
     if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
     if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
-    return dateStr;
+    return fallback;
   }
 
   // Source Styling
@@ -176,7 +187,7 @@
     dispatch("toggleRead", { item });
   }
 
-  function handlePlay(e: MouseEvent) {
+  function handlePlay(e: Event) {
     e.stopPropagation();
     dispatch("play", { item });
   }
@@ -215,14 +226,6 @@
     (enclosureUrl &&
       (feedType === "podcast" || Boolean(item.enclosure))) ||
     youtubeVideoId;
-
-  // Track whether YouTube video should be loaded/played
-  let playYouTubeVideo = false;
-
-  function toggleYouTubePlay(e: Event) {
-    e.stopPropagation();
-    playYouTubeVideo = !playYouTubeVideo;
-  }
 
   $: isSelected = $selectedItemIds.has(item.id);
 
@@ -407,49 +410,34 @@
     <!-- YouTube: Full width on mobile/tablet, Thumbnail on desktop -->
     <div
       class="w-full aspect-video md:w-48 md:h-32 md:aspect-auto md:flex-shrink-0 md:ml-4 rounded-xl overflow-hidden bg-black {densityClasses.mediaSpacing} md:mb-0 border border-zinc-800 mt-3 md:mt-0"
-      on:click|stopPropagation
-      role="none"
+      on:click={handlePlay}
+      role="button"
+      tabindex="0"
+      on:keypress={(e) => e.key === "Enter" && handlePlay(e)}
     >
-      {#if playYouTubeVideo}
-        <iframe
-          src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0&vq=hd1080`}
-          class="w-full h-full"
-          frameborder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowfullscreen
-          title={item.title}
-        ></iframe>
-      {:else}
-        <div
-          class="relative w-full h-full group/video cursor-pointer"
-          on:click={toggleYouTubePlay}
-          role="button"
-          tabindex="0"
-          on:keypress={(e) => e.key === "Enter" && toggleYouTubePlay(e)}
-        >
-          <img
-            src={youtubeThumbnail}
-            alt={item.title}
-            class="w-full h-full object-cover opacity-100 transition-opacity"
-            loading="lazy"
-            on:error={handleYouTubeThumbnailError}
-          />
-          <div class="absolute inset-0 flex items-center justify-center">
-            <!-- Official YouTube-style play button -->
-            <div
-              class="w-[68px] h-[48px] md:w-[52px] md:h-[36px] scale-100 group-hover/video:scale-110 transition-transform"
-            >
-              <svg viewBox="0 0 68 48" class="w-full h-full drop-shadow-lg">
-                <path
-                  d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z"
-                  fill="#FF0000"
-                />
-                <path d="M45 24L27 14v20" fill="#FFF" />
-              </svg>
-            </div>
+      <div class="relative w-full h-full group/video cursor-pointer">
+        <img
+          src={youtubeThumbnail}
+          alt={item.title}
+          class="w-full h-full object-cover opacity-100 transition-opacity"
+          loading="lazy"
+          on:error={handleYouTubeThumbnailError}
+        />
+        <div class="absolute inset-0 flex items-center justify-center">
+          <!-- Official YouTube-style play button -->
+          <div
+            class="w-[68px] h-[48px] md:w-[52px] md:h-[36px] scale-100 group-hover/video:scale-110 transition-transform"
+          >
+            <svg viewBox="0 0 68 48" class="w-full h-full drop-shadow-lg">
+              <path
+                d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z"
+                fill="#FF0000"
+              />
+              <path d="M45 24L27 14v20" fill="#FFF" />
+            </svg>
           </div>
         </div>
-      {/if}
+      </div>
     </div>
   {:else if thumbnailUrl && !imageError}
     <!-- Image: Full width on mobile, Thumbnail on desktop -->

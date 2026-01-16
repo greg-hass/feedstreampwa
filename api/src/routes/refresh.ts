@@ -4,6 +4,8 @@ import { fetchFeed } from '../services/feed-service.js';
 import { RefreshFeedsSchema, RefreshStatusQuerySchema } from '../types/schemas.js';
 import { authenticateToken } from '../middleware/auth.js';
 import logger from '../utils/logger.js';
+import { env } from '../config/index.js';
+import { publishRefreshEvent, subscribeRefreshEvents } from '../services/refresh-events.js';
 import pLimit from 'p-limit';
 
 const MAX_JOBS = 5;
@@ -21,6 +23,12 @@ interface RefreshJob {
     currentFeedTitle?: string;
     startedAt: number;
 }
+
+const upsertLastSync = db.prepare(`
+  INSERT INTO meta (key, value)
+  VALUES (?, ?)
+  ON CONFLICT(key) DO UPDATE SET value = excluded.value
+`);
 
 // Periodic cleanup of old jobs to prevent memory leaks
 const cleanupInterval = setInterval(() => {
@@ -108,7 +116,8 @@ export default async function refreshRoutes(fastify: any, options: any) {
                 }
             }
 
-            const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const startedAt = Date.now();
+            const jobId = `job_${startedAt}_${Math.random().toString(36).substr(2, 9)}`;
 
             if (urlsToRefresh.length === 0) {
                 // Create a job that immediately completes
@@ -118,7 +127,22 @@ export default async function refreshRoutes(fastify: any, options: any) {
                     current: 0,
                     total: 0,
                     message: 'No feeds to refresh',
-                    startedAt: Date.now()
+                    startedAt
+                });
+                try {
+                    upsertLastSync.run(env.LAST_SYNC_KEY, startedAt.toString());
+                } catch (metaError: any) {
+                    fastify.log.warn({ err: metaError }, 'Failed to update last sync timestamp');
+                }
+                publishRefreshEvent({
+                    type: 'complete',
+                    jobId,
+                    current: 0,
+                    total: 0,
+                    message: 'No feeds to refresh',
+                    startedAt,
+                    lastSync: startedAt,
+                    source: 'manual'
                 });
                 return { ok: true, jobId };
             }
@@ -129,7 +153,24 @@ export default async function refreshRoutes(fastify: any, options: any) {
                 current: 0,
                 total: urlsToRefresh.length,
                 message: 'Starting refresh...',
-                startedAt: Date.now()
+                startedAt
+            });
+
+            try {
+                upsertLastSync.run(env.LAST_SYNC_KEY, startedAt.toString());
+            } catch (metaError: any) {
+                fastify.log.warn({ err: metaError }, 'Failed to update last sync timestamp');
+            }
+
+            publishRefreshEvent({
+                type: 'start',
+                jobId,
+                current: 0,
+                total: urlsToRefresh.length,
+                message: 'Starting refresh...',
+                startedAt,
+                lastSync: startedAt,
+                source: 'manual'
             });
 
             // Start processing in background (no await)
@@ -142,6 +183,61 @@ export default async function refreshRoutes(fastify: any, options: any) {
             reply.code(500);
             return { ok: false, error: 'Failed to start refresh job' };
         }
+    });
+
+    fastify.get('/refresh/stream', async (request: any, reply: any) => {
+        reply.raw.setHeader('Content-Type', 'text/event-stream');
+        reply.raw.setHeader('Cache-Control', 'no-cache, no-transform');
+        reply.raw.setHeader('Connection', 'keep-alive');
+        reply.raw.flushHeaders?.();
+        reply.hijack();
+
+        const sendEvent = (eventName: string, payload: any) => {
+            reply.raw.write(`event: ${eventName}\n`);
+            reply.raw.write(`data: ${JSON.stringify(payload)}\n\n`);
+        };
+
+        const unsubscribe = subscribeRefreshEvents((payload) => {
+            sendEvent('refresh', payload);
+        });
+
+        const pingTimer = setInterval(() => {
+            sendEvent('ping', { ts: Date.now() });
+        }, 20000);
+
+        try {
+            const lastSyncSetting = db.prepare('SELECT value FROM meta WHERE key = ?')
+                .get(env.LAST_SYNC_KEY) as any;
+            const lastSync = lastSyncSetting?.value ? parseInt(lastSyncSetting.value, 10) : NaN;
+            if (Number.isFinite(lastSync)) {
+                sendEvent('sync', { lastSync });
+            }
+        } catch (e) {
+            fastify.log.warn({ err: e }, 'Failed to fetch last sync for refresh stream');
+        }
+
+        const runningJobs = Array.from(refreshJobs.values())
+            .filter((job) => job.status === 'running')
+            .sort((a, b) => b.startedAt - a.startedAt);
+        if (runningJobs.length > 0) {
+            const job = runningJobs[0];
+            sendEvent('refresh', {
+                type: 'progress',
+                jobId: job.id,
+                current: job.current,
+                total: job.total,
+                message: job.message,
+                currentFeedTitle: job.currentFeedTitle,
+                currentFeedUrl: job.currentFeedUrl,
+                startedAt: job.startedAt,
+                source: 'manual'
+            });
+        }
+
+        request.raw.on('close', () => {
+            clearInterval(pingTimer);
+            unsubscribe();
+        });
     });
 
     // Get job status
@@ -173,6 +269,7 @@ export default async function refreshRoutes(fastify: any, options: any) {
     ) {
         const job = refreshJobs.get(jobId);
         if (!job) return;
+        const startedAt = job.startedAt;
 
         const limit = pLimit(6); // Concurrency
 
@@ -185,7 +282,7 @@ export default async function refreshRoutes(fastify: any, options: any) {
                 if (currentJob) {
                     currentJob.currentFeedUrl = url;
                     currentJob.currentFeedTitle = displayTitle;
-                    currentJob.message = `Refreshing ${displayTitle}`;
+                    currentJob.message = 'Refreshing feeds...';
                 }
                 try {
                     await fetchFeed(url, true); // force refresh
@@ -196,7 +293,19 @@ export default async function refreshRoutes(fastify: any, options: any) {
                     const updatedJob = refreshJobs.get(jobId);
                     if (updatedJob) {
                         updatedJob.current = completed;
+                        updatedJob.message = `Refreshed ${completed} of ${urls.length}`;
                     }
+                    publishRefreshEvent({
+                        type: 'progress',
+                        jobId,
+                        current: completed,
+                        total: urls.length,
+                        message: `Refreshed ${completed} of ${urls.length}`,
+                        currentFeedTitle: displayTitle,
+                        currentFeedUrl: url,
+                        startedAt,
+                        source: 'manual'
+                    });
                 }
             })));
 
@@ -207,6 +316,16 @@ export default async function refreshRoutes(fastify: any, options: any) {
                 finalJob.currentFeedTitle = undefined;
                 finalJob.currentFeedUrl = undefined;
             }
+            publishRefreshEvent({
+                type: 'complete',
+                jobId,
+                current: completed,
+                total: urls.length,
+                message: 'Refresh completed',
+                startedAt,
+                lastSync: startedAt,
+                source: 'manual'
+            });
         } catch (e) {
             logger.error(`Refresh job ${jobId} failed: ${e}`);
             const errorJob = refreshJobs.get(jobId);
@@ -216,6 +335,15 @@ export default async function refreshRoutes(fastify: any, options: any) {
                 errorJob.currentFeedTitle = undefined;
                 errorJob.currentFeedUrl = undefined;
             }
+            publishRefreshEvent({
+                type: 'error',
+                jobId,
+                current: completed,
+                total: urls.length,
+                message: 'Internal error during refresh',
+                startedAt,
+                source: 'manual'
+            });
         }
     }
 }

@@ -17,7 +17,7 @@
   import RefreshToast from "$lib/components/RefreshToast.svelte";
   import { currentMedia, mediaType } from "$lib/stores/media";
   import { onMount } from "svelte";
-  import { loadFeeds } from "$lib/stores/feeds";
+  import { loadFeeds, startRefreshStream } from "$lib/stores/feeds";
   import { loadFolders } from "$lib/stores/folders";
   import { loadSettings } from "$lib/stores/settings";
 
@@ -28,6 +28,8 @@
     loadFeeds();
     loadFolders();
     loadSettings();
+    const stopRefreshStream = startRefreshStream();
+    return () => stopRefreshStream();
   });
 </script>
 
