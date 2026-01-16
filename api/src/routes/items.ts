@@ -9,6 +9,20 @@ import {
     PlaybackPositionSchema
 } from '../types/schemas.js';
 
+function buildFtsQuery(query: string): string {
+    const tokens = query
+        .trim()
+        .split(/\s+/)
+        .map((token) => token.replace(/"/g, '""'))
+        .filter(Boolean);
+
+    if (tokens.length === 0) {
+        return '""';
+    }
+
+    return tokens.map((token) => `"${token}"`).join(' AND ');
+}
+
 export default async function itemRoutes(fastify: FastifyInstance, options: any) {
     // Get items endpoint
     fastify.get('/items', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -122,9 +136,10 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
             const searchConditions: QueryCondition[] = [];
             if (q) {
                 if (useFullText) {
+                    const ftsQuery = buildFtsQuery(q);
                     searchConditions.push({
                         clause: 'fts MATCH ?',
-                        params: [q]
+                        params: [ftsQuery]
                     });
                 } else {
                     const likeQuery = `%${q}%`;
