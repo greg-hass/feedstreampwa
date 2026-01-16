@@ -166,7 +166,7 @@
       bind:value={localSettings.gemini_api_key}
       placeholder="Enter your Gemini API key..."
       autocomplete="off"
-      class="w-full bg-white/5 px-4 py-3 rounded-xl text-white border border-white/10 hover:bg-white/10 focus:border-purple-500/50 transition-colors outline-none text-sm font-mono"
+      class="w-full bg-white/5 px-4 py-3 rounded-xl text-white border border-white/10 hover:bg-white/10 focus:border-accent/50 transition-colors outline-none text-sm font-mono"
     />
     <p class="text-xs text-white/40 mt-2">
       Enable AI-powered feed recommendations. Get your API key from

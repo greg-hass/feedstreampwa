@@ -278,6 +278,9 @@
   tabindex="0"
   role="button"
 >
+  {#if item.is_read === 0}
+    <span class="unread-dot" aria-hidden="true"></span>
+  {/if}
   <!-- Left Column: Content -->
   <div class="flex-1 min-w-0 flex flex-col">
     <!-- Header: Feed Icon + Feed Title + Timestamp -->
@@ -470,5 +473,17 @@
 <style>
   article {
     scroll-margin-top: 80px;
+  }
+
+  .unread-dot {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    transform: translateY(-50%);
+    background: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb), 0.12);
   }
 </style>

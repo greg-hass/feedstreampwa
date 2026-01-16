@@ -7,6 +7,8 @@
   export let onSearchClear: () => void = () => {};
   export let onRefresh: () => void = () => {};
   export let isRefreshing = false;
+  export let refreshCountdown = "Off";
+  export let refreshCountdownTitle = "Auto refresh is off";
 
   function openAddFeed() {
     isAddFeedModalOpen.set(true);
@@ -42,14 +44,22 @@
     </div>
 
     <!-- Action Buttons (Matched to Desktop) -->
-    <button
-      on:click={onRefresh}
-      class="p-2 rounded-xl bg-[#3f3f46] hover:bg-[#52525b] text-white active:scale-95 transition-all flex-shrink-0"
-      class:animate-spin={isRefreshing}
-      aria-label="Refresh"
-    >
-      <RefreshCw size={20} />
-    </button>
+    <div class="flex items-center gap-1.5 flex-shrink-0">
+      <button
+        on:click={onRefresh}
+        class="p-2 rounded-xl bg-[#3f3f46] hover:bg-[#52525b] text-white active:scale-95 transition-all"
+        class:animate-spin={isRefreshing}
+        aria-label="Refresh"
+      >
+        <RefreshCw size={20} />
+      </button>
+      <span
+        class="text-[11px] font-semibold text-white/60"
+        title={refreshCountdownTitle}
+      >
+        {refreshCountdown}
+      </span>
+    </div>
 
     <button
       on:click={() => isCreateFolderModalOpen.set(true)}

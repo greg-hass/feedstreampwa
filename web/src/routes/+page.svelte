@@ -48,6 +48,7 @@
     refreshAll as refreshAllFeeds,
     refreshState,
   } from "$lib/stores/feeds";
+  import { settings } from "$lib/stores/settings";
   import { loadFolders, folders } from "$lib/stores/folders";
   import { openReader } from "$lib/stores/reader";
   import { playMedia } from "$lib/stores/media";
@@ -136,6 +137,13 @@
   let liveInsertResetTimer: ReturnType<typeof setTimeout> | null = null;
   let liveInsertIds = new Set<string>();
 
+  const LAST_SYNC_KEY = "last_global_sync";
+  let syncIntervalMs: number | null = null;
+  let lastSyncMs: number | null = null;
+  let refreshCountdown = "Off";
+  let refreshCountdownTitle = "Auto refresh is off";
+  let countdownTimer: ReturnType<typeof setInterval> | null = null;
+
   // Watch for refresh completion to reload items
   $: {
     if (wasRefreshing && !$refreshState.isRefreshing) {
@@ -151,6 +159,20 @@
       stopLiveRefresh();
     }
   }
+
+  $: {
+    syncIntervalMs = parseIntervalMs($settings?.sync_interval);
+    const lastSyncRaw = $settings?.[LAST_SYNC_KEY];
+    const parsedLastSync = lastSyncRaw ? parseInt(lastSyncRaw, 10) : NaN;
+    if (Number.isFinite(parsedLastSync)) {
+      lastSyncMs = parsedLastSync;
+    } else {
+      lastSyncMs = syncIntervalMs ? Date.now() : null;
+    }
+    updateRefreshCountdown();
+  }
+
+  $: $refreshState.isRefreshing, updateRefreshCountdown();
 
   // Derived
   $: pageTitle = (() => {
@@ -217,6 +239,53 @@
 
   function loadMore() {
     loadItems({ ...getLoadParams(), refresh: false });
+  }
+
+  function parseIntervalMs(interval: string | undefined): number | null {
+    if (!interval || interval === "off") return null;
+    const match = interval.match(/^(\d+)([mhd])$/);
+    if (!match) return null;
+    const value = parseInt(match[1], 10);
+    if (!Number.isFinite(value)) return null;
+    const unit = match[2];
+    if (unit === "m") return value * 60 * 1000;
+    if (unit === "h") return value * 60 * 60 * 1000;
+    if (unit === "d") return value * 24 * 60 * 60 * 1000;
+    return null;
+  }
+
+  function formatCountdown(ms: number): string {
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    if (hours > 0) {
+      return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    }
+    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+
+  function updateRefreshCountdown() {
+    if ($refreshState.isRefreshing) {
+      refreshCountdown = "Refreshing";
+      refreshCountdownTitle = "Refreshing feeds";
+      return;
+    }
+
+    if (!syncIntervalMs) {
+      refreshCountdown = "Off";
+      refreshCountdownTitle = "Auto refresh is off";
+      return;
+    }
+
+    const base = lastSyncMs && Number.isFinite(lastSyncMs) ? lastSyncMs : Date.now();
+    const now = Date.now();
+    const elapsed = Math.max(0, now - base);
+    const remainder = elapsed % syncIntervalMs;
+    const remaining = remainder === 0 ? 0 : syncIntervalMs - remainder;
+
+    refreshCountdown = formatCountdown(remaining);
+    refreshCountdownTitle = `Next auto refresh in ${refreshCountdown}`;
   }
 
   function startLiveRefresh() {
@@ -328,6 +397,10 @@
     // Initial load
     loadItems();
 
+    updateRefreshCountdown();
+    if (countdownTimer) clearInterval(countdownTimer);
+    countdownTimer = setInterval(updateRefreshCountdown, 1000);
+
     const checkMobile = () => {
       isMobile = window.innerWidth <= 768;
     };
@@ -354,6 +427,10 @@
 
   onDestroy(() => {
     stopLiveRefresh();
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
   });
 
   // Reactive reload
@@ -384,14 +461,22 @@
       <div class="flex items-center justify-between">
         <h1 class="text-3xl font-bold text-white">{pageTitle}</h1>
         <div class="flex items-center gap-2">
-          <button
-            class="p-2.5 rounded-xl bg-[#3f3f46] hover:bg-[#52525b] transition-all shadow-lg shadow-black/20 text-white"
-            on:click={refreshAll}
-            class:spinning={$refreshState.isRefreshing}
-            title="Refresh"
-          >
-            <RefreshCw size={20} />
-          </button>
+          <div class="flex items-center gap-2">
+            <button
+              class="p-2.5 rounded-xl bg-[#3f3f46] hover:bg-[#52525b] transition-all shadow-lg shadow-black/20 text-white"
+              on:click={refreshAll}
+              class:spinning={$refreshState.isRefreshing}
+              title="Refresh"
+            >
+              <RefreshCw size={20} />
+            </button>
+            <span
+              class="text-xs font-semibold text-white/60"
+              title={refreshCountdownTitle}
+            >
+              {refreshCountdown}
+            </span>
+          </div>
           <button
             class="p-2.5 rounded-xl bg-gradient-to-br from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg shadow-slate-500/20 text-white relative group"
             on:click={cycleDensity}
@@ -467,6 +552,8 @@
     }}
     onRefresh={refreshAll}
     isRefreshing={$refreshState.isRefreshing}
+    refreshCountdown={refreshCountdown}
+    refreshCountdownTitle={refreshCountdownTitle}
   />
 
   <!-- Sticky Filter Chips for Mobile -->
