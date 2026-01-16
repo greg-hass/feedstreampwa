@@ -57,7 +57,7 @@
 
 <!-- Mobile-only sticky header -->
 <header
-  class="md:hidden fixed top-0 left-0 right-0 w-full z-30 bg-background border-b border-white/5"
+  class="md:hidden fixed top-0 left-0 right-0 w-full z-30 bg-zinc-950 border-b border-zinc-800"
   bind:clientHeight={headerHeight}
 >
   <div class="flex items-center justify-between gap-2 px-3 py-2">
@@ -73,7 +73,7 @@
     <div class="flex items-center gap-1.5 flex-shrink-0">
       <button
         on:click={toggleSearch}
-        class="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 active:scale-95 transition-all"
+        class="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white active:scale-95 transition-all"
         class:text-accent={searchQuery.length > 0}
         aria-label={isSearchOpen ? "Close search" : "Open search"}
         aria-expanded={isSearchOpen}
@@ -87,7 +87,7 @@
 
       <button
         on:click={onRefresh}
-        class="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-[#3f3f46] hover:bg-[#52525b] text-white active:scale-95 transition-all"
+        class="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-zinc-700 hover:bg-zinc-600 text-white active:scale-95 transition-all"
         title={refreshCountdownTitle}
         aria-label="Refresh"
       >
@@ -129,7 +129,7 @@
         bind:value={searchQuery}
         on:input={onSearchInput}
         on:keydown={handleSearchKeydown}
-        class="w-full bg-white/5 pl-10 pr-10 py-2 rounded-xl text-white placeholder-white/40 outline-none border border-white/10 focus:border-accent/50 transition-colors text-sm"
+        class="w-full bg-zinc-900 pl-10 pr-10 py-2 rounded-xl text-white placeholder-zinc-500 outline-none border border-zinc-800 focus:border-accent/50 transition-colors text-sm"
       />
       {#if searchQuery}
         <button

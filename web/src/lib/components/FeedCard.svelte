@@ -192,7 +192,7 @@
 </script>
 
 <article
-  class="group relative flex flex-col w-full overflow-hidden rounded-xl bg-surface border border-white/5 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#16161a] hover:border-white/10 cursor-pointer"
+  class="group relative flex flex-col w-full overflow-hidden rounded-xl bg-zinc-900 border border-zinc-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-zinc-800 hover:border-zinc-700 cursor-pointer"
   style="transform: translateX({isSwiping
     ? touchDiff
     : 0}px); transition: {isSwiping ? 'none' : 'transform 0.3s'}"
@@ -225,7 +225,7 @@
   {/if}
 
   <!-- Image Preview (Conditional) -->
-  <div class="relative z-10 bg-surface h-full flex flex-col">
+  <div class="relative z-10 bg-zinc-900 h-full flex flex-col">
     {#if thumbnailUrl}
       <div class="relative w-full aspect-video overflow-hidden">
         <img
@@ -242,7 +242,7 @@
 
         <!-- Source Badge -->
         <div
-          class="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center gap-1.5 shadow-lg"
+          class="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 flex items-center gap-1.5 shadow-lg"
         >
           <svelte:component this={Icon} size={12} class={currentStyle.color} />
           <span
@@ -266,11 +266,11 @@
       <!-- No Image: Header strip -->
       <div class="px-3 md:px-5 pt-3 md:pt-5 pb-2 flex items-center gap-2">
         <div
-          class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/5 border border-white/5"
+          class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-zinc-800 border border-zinc-700"
         >
           <svelte:component this={Icon} size={12} class={currentStyle.color} />
           <span
-            class="text-[10px] font-medium tracking-wide text-white/60 uppercase"
+            class="text-[10px] font-medium tracking-wide text-zinc-400 uppercase"
             >{item.feed_title}</span
           >
           {#if isCached}
@@ -296,7 +296,7 @@
       >
         <span>{dateStr}</span>
         {#if item.is_read}
-          <span class="text-white/20 flex items-center gap-1"
+          <span class="text-zinc-600 flex items-center gap-1"
             ><CheckCircle2 size={12} /> Read</span
           >
         {/if}
@@ -305,7 +305,7 @@
       <!-- Title -->
       <h3
         class="text-base font-semibold text-accent leading-tight line-clamp-2 md:line-clamp-3 mb-2 group-hover:text-accent/80 transition-colors {item.is_read
-          ? 'text-white/50'
+          ? 'text-zinc-500'
           : ''}"
       >
         {item.title}
@@ -314,8 +314,8 @@
       <!-- Summary (Optional / Desktop only mostly) -->
       {#if item.summary}
         <p
-          class="text-sm text-gray-400 line-clamp-2 leading-relaxed mb-4 hidden sm:block {item.is_read
-            ? 'text-white/30'
+          class="text-sm text-zinc-400 line-clamp-2 leading-relaxed mb-4 hidden sm:block {item.is_read
+            ? 'text-zinc-600'
             : ''}"
         >
           {@html item.summary.replace(/<[^>]*>?/gm, "")}
@@ -327,13 +327,13 @@
 
       <!-- Actions Bar -->
       <div
-        class="flex items-center justify-between pt-4 mt-2 border-t border-white/5 opacity-80 md:opacity-0 md:translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300"
+        class="flex items-center justify-between pt-4 mt-2 border-t border-zinc-800 opacity-80 md:opacity-0 md:translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300"
       >
         <!-- Read Later / Bookmark Toggle -->
         <button
-          class="p-2 rounded-full hover:bg-white/10 transition-colors {item.is_read
+          class="p-2 rounded-full hover:bg-zinc-800 transition-colors {item.is_read
             ? 'text-green-400'
-            : 'text-white/60 hover:text-white'}"
+            : 'text-zinc-500 hover:text-white'}"
           title={item.is_read ? "Mark as Unread" : "Mark as Read"}
           on:click={handleRead}
         >
@@ -349,7 +349,7 @@
         <div class="flex items-center gap-1">
           {#if isPlayable}
             <button
-              class="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-accent transition-colors"
+              class="p-2 rounded-full hover:bg-zinc-800 text-zinc-500 hover:text-accent transition-colors"
               title="Play"
               on:click={handlePlay}
             >
@@ -358,7 +358,7 @@
           {/if}
 
           <button
-            class="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-[#FF9500] transition-colors"
+            class="p-2 rounded-full hover:bg-zinc-800 text-zinc-500 hover:text-[#FF9500] transition-colors"
             title="Bookmark"
             on:click={handleStar}
           >
@@ -369,7 +369,7 @@
           </button>
 
           <button
-            class="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-blue-400 transition-colors"
+            class="p-2 rounded-full hover:bg-zinc-800 text-zinc-500 hover:text-blue-400 transition-colors"
             title="Share"
             on:click={handleShare}
           >
@@ -380,7 +380,7 @@
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
-            class="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-blue-400 transition-colors"
+            class="p-2 rounded-full hover:bg-zinc-800 text-zinc-500 hover:text-blue-400 transition-colors"
             title="Open Link"
             on:click|stopPropagation
           >

@@ -4,104 +4,93 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Theme CSS Variables */
+/* Theme CSS Variables - Solid Zinc Palette */
 :root {
-  /* Default dark theme colors */
-  --tw-colors-background: #050507;
-  --tw-colors-surface: #0e0e11;
-  --tw-colors-raised: #16161a;
-  --tw-colors-stroke: #1f1f23;
+  /* Default dark theme colors (Zinc Scale) */
+  --tw-colors-background: #09090b; /* Zinc 950 */
+  --tw-colors-surface: #18181b;    /* Zinc 900 */
+  --tw-colors-raised: #27272a;     /* Zinc 800 */
+  --tw-colors-stroke: #27272a;     /* Zinc 800 - Used for borders */
   --tw-colors-accent: #10B981;
-  --text-base: #e5e7eb; /* gray-200 */
+  --text-base: #e4e4e7; /* Zinc 200 */
 
   /* Light theme (overridden when .light class is applied) */
 }
 
 /* Light theme */
 :root.light {
-  --tw-colors-background: #f8fafc;
-  --tw-colors-surface: #ffffff;
-  --tw-colors-raised: #f1f5f9;
-  --tw-colors-stroke: #e2e8f0;
+  --tw-colors-background: #ffffff;
+  --tw-colors-surface: #f4f4f5;    /* Zinc 100 */
+  --tw-colors-raised: #e4e4e7;     /* Zinc 200 */
+  --tw-colors-stroke: #d4d4d8;     /* Zinc 300 */
   --tw-colors-accent: #10B981;
-  --text-base: #1f2937; /* gray-800 */
+  --text-base: #18181b; /* Zinc 900 */
 }
 
 /* Light mode text color overrides */
 :root.light .text-white {
-  color: #1f2937 !important;
+  color: #18181b !important;
 }
 :root.light .text-white\/60,
 :root.light .text-white\/50,
 :root.light .text-white\/40,
 :root.light .text-white\/30,
 :root.light .text-white\/20 {
-  color: #6b7280 !important;
+  color: #52525b !important; /* Zinc 600 */
 }
 :root.light .text-white\/70,
 :root.light .text-white\/80 {
-  color: #374151 !important;
-}
-:root.light .text-gray-200,
-:root.light .text-gray-300 {
-  color: #4b5563 !important;
+  color: #3f3f46 !important; /* Zinc 700 */
 }
 :root.light .bg-white\/5,
 :root.light .bg-white\/10 {
-  background-color: rgba(0, 0, 0, 0.05) !important;
+  background-color: #f4f4f5 !important; /* Zinc 100 */
 }
 :root.light .border-white\/5,
 :root.light .border-white\/10 {
-  border-color: rgba(0, 0, 0, 0.1) !important;
+  border-color: #e4e4e7 !important; /* Zinc 200 */
 }
+/* Remap dark bg utilities to light equivalents */
 :root.light .bg-\[\#121212\],
 :root.light .bg-\[\#18181b\],
 :root.light .bg-\[\#0e0e11\],
-:root.light .bg-\[\#050507\] {
+:root.light .bg-\[\#050507\],
+:root.light .bg-zinc-900,
+:root.light .bg-zinc-950 {
   background-color: #ffffff !important;
-}
-:root.light .bg-background {
-  background-color: #f8fafc !important;
-}
-:root.light h1, :root.light h2, :root.light h3, :root.light h4 {
-  color: #111827 !important;
 }
 
 /* Dark theme (explicit) */
 :root.dark {
-  --tw-colors-background: #050507;
-  --tw-colors-surface: #0e0e11;
-  --tw-colors-raised: #16161a;
-  --tw-colors-stroke: #1f1f23;
+  --tw-colors-background: #09090b;
+  --tw-colors-surface: #18181b;
+  --tw-colors-raised: #27272a;
+  --tw-colors-stroke: #27272a;
   --tw-colors-accent: #10B981;
-  --text-base: #e5e7eb; /* gray-200 */
+  --text-base: #e4e4e7;
 }
 
-/* Custom theme colors (when user sets custom colors) */
+/* Custom theme colors */
 :root {
   --custom-background: initial;
   --custom-surface: initial;
   --custom-raised: initial;
 }
-
 :root[style*="--custom-background"] {
   --tw-colors-background: var(--custom-background);
 }
-
 :root[style*="--custom-surface"] {
   --tw-colors-surface: var(--custom-surface);
 }
-
 :root[style*="--custom-raised"] {
   --tw-colors-raised: var(--custom-raised);
 }
 
-/* Accent color (dynamically set by theme store) */
+/* Accent color */
 :root {
   --accent-color: #10B981;
   --accent-color-rgb: 16, 185, 129;
 }
-
 :root[style*="--accent-color"] {
   --tw-colors-accent: var(--accent-color);
 }
@@ -117,7 +106,6 @@
     @apply bg-accent text-white;
   }
 
-  /* Smooth page transitions */
   * {
     transition-property: background-color, border-color, color, fill, stroke;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -126,29 +114,31 @@
 }
 
 @layer utilities {
-  .surface-lowest {
-    @apply bg-[#050507];
-  }
-
+  /* Solid UI Utilities */
   .surface-base {
-    @apply bg-[#0e0e11] border border-white/5;
+    @apply bg-surface border border-stroke;
   }
 
   .surface-raised {
-    @apply bg-[#16161a] border border-white/10 shadow-xl;
+    @apply bg-raised border border-stroke shadow-lg;
+  }
+
+  /* Standard Solid Hover State */
+  .hover-solid {
+    @apply hover:bg-raised hover:border-zinc-700 transition-colors duration-200;
   }
 
   .card-hover {
-    @apply hover:bg-[#1c1c21] hover:border-white/20 transition-all duration-200;
+    @apply hover-solid;
   }
 
-  /* Deprecated glass classes mapped to new solid ones for compatibility */
+  /* Deprecated glass classes mapped to solid for compatibility */
   .glass {
     @apply surface-base;
   }
 
   .glass-panel {
-    @apply surface-lowest border-r border-white/5;
+    @apply surface-base;
   }
 
   /* Scrollbar - Elegant & Slim */
@@ -160,107 +150,32 @@
     scrollbar-width: none;
   }
 
-  /* Smooth animations */
-  .animate-fade-in {
-    animation: fadeIn 0.3s ease-out;
-  }
-
-  .animate-slide-in-up {
-    animation: slideInUp 0.4s ease-out;
-  }
-
-  .animate-slide-in-down {
-    animation: slideInDown 0.4s ease-out;
-  }
-
-  .animate-scale-in {
-    animation: scaleIn 0.3s ease-out;
-  }
+  /* Animations */
+  .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+  .animate-slide-in-up { animation: slideInUp 0.4s ease-out; }
+  .animate-slide-in-down { animation: slideInDown 0.4s ease-out; }
+  .animate-scale-in { animation: scaleIn 0.3s ease-out; }
 }
 
 /* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: #3f3f46; /* Zinc 700 */
   border-radius: 99px;
   transition: background 0.2s;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
+::-webkit-scrollbar-thumb:hover { background: #52525b; /* Zinc 600 */ }
 
-/* Smooth Animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
+/* Keyframes */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+@keyframes pageTransition { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* Page transition */
-@keyframes pageTransition {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.page-transition {
-  animation: pageTransition 0.3s ease-out;
-}
+.page-transition { animation: pageTransition 0.3s ease-out; }
 
 /* Micro-interactions */
-button,
-a {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-button:active,
-a:active {
-  transform: scale(0.98);
-}
+button, a { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+button:active, a:active { transform: scale(0.98); }

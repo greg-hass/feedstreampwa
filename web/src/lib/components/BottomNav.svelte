@@ -15,7 +15,7 @@
 </script>
 
 <nav
-  class="md:hidden fixed bottom-0 left-0 right-0 min-h-[52px] bg-background border-t border-white/5 z-[2100] flex items-center justify-around px-2 pt-1.5 select-none safe-bottom"
+  class="md:hidden fixed bottom-0 left-0 right-0 min-h-[52px] bg-zinc-950 border-t border-zinc-800 z-[2100] flex items-center justify-around px-2 pt-1.5 select-none safe-bottom"
 >
   <!-- Menu Button -->
   <button
@@ -24,21 +24,21 @@
   >
     <div
       class="relative p-1.5 rounded-xl transition-all duration-300 {$isMobileMenuOpen
-        ? 'bg-white/10'
+        ? 'bg-zinc-800'
         : ''}"
     >
       <Menu
         size={22}
         class="transition-colors duration-300 {$isMobileMenuOpen
           ? 'text-accent'
-          : 'text-white/40'}"
+          : 'text-zinc-500'}"
         strokeWidth={$isMobileMenuOpen ? 2.5 : 2}
       />
     </div>
     <span
       class="text-[10px] font-medium {$isMobileMenuOpen
         ? 'text-white'
-        : 'text-white/40'}"
+        : 'text-zinc-500'}"
     >
       Menu
     </span>
@@ -52,19 +52,19 @@
     <div
       class="relative p-1.5 rounded-xl transition-all duration-300 {$viewMode ===
       'all'
-        ? 'bg-white/10'
+        ? 'bg-zinc-800'
         : ''}"
     >
       <LayoutDashboard
         size={22}
         class="transition-colors duration-300 {$viewMode === 'all'
           ? 'text-accent'
-          : 'text-white/40'}"
+          : 'text-zinc-500'}"
         strokeWidth={$viewMode === "all" ? 2.5 : 2}
       />
       {#if $allArticlesUnread > 0}
         <span
-          class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border border-background shadow-lg"
+          class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border border-zinc-950 shadow-lg"
         >
           {$allArticlesUnread > 99 ? "99+" : $allArticlesUnread}
         </span>
@@ -73,7 +73,7 @@
     <span
       class="text-[10px] font-medium {$viewMode === 'all'
         ? 'text-white'
-        : 'text-white/40'}"
+        : 'text-zinc-500'}"
     >
       All
     </span>
@@ -87,19 +87,19 @@
     <div
       class="relative p-1.5 rounded-xl transition-all duration-300 {$viewMode ===
       'unread'
-        ? 'bg-white/10'
+        ? 'bg-zinc-800'
         : ''}"
     >
       <Eye
         size={22}
         class="transition-colors duration-300 {$viewMode === 'unread'
           ? 'text-accent'
-          : 'text-white/40'}"
+          : 'text-zinc-500'}"
         strokeWidth={$viewMode === "unread" ? 2.5 : 2}
       />
       {#if $allArticlesUnread > 0}
         <span
-          class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border border-background shadow-lg"
+          class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border border-zinc-950 shadow-lg"
         >
           {$allArticlesUnread > 99 ? "99+" : $allArticlesUnread}
         </span>
@@ -108,7 +108,7 @@
     <span
       class="text-[10px] font-medium {$viewMode === 'unread'
         ? 'text-white'
-        : 'text-white/40'}"
+        : 'text-zinc-500'}"
     >
       Today
     </span>
@@ -122,20 +122,20 @@
     <div
       class="relative p-1.5 rounded-xl transition-all duration-300 {$viewMode ===
       'bookmarks'
-        ? 'bg-white/10'
+        ? 'bg-zinc-800'
         : ''}"
     >
       <Bookmark
         size={22}
         class="transition-colors duration-300 {$viewMode === 'bookmarks'
           ? 'text-[#FF9500]'
-          : 'text-white/40'}"
+          : 'text-zinc-500'}"
         fill={$viewMode === "bookmarks" ? "currentColor" : "none"}
         strokeWidth={$viewMode === "bookmarks" ? 2.5 : 2}
       />
       {#if $libraryTotal > 0}
         <span
-          class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border border-background"
+          class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border border-zinc-950"
         >
           {$libraryTotal}
         </span>
@@ -144,7 +144,7 @@
     <span
       class="text-[10px] font-medium {$viewMode === 'bookmarks'
         ? 'text-white'
-        : 'text-white/40'}"
+        : 'text-zinc-500'}"
     >
       Bookmarks
     </span>

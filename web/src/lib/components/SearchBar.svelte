@@ -37,10 +37,10 @@
     gap: 12px;
     padding: 0 16px;
     height: 48px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: #18181b; /* Zinc 900 */
+    border: 1px solid #27272a; /* Zinc 800 */
     border-radius: 999px;
-    color: rgba(255, 255, 255, 0.4);
+    color: #71717a; /* Zinc 500 */
     transition: all 0.2s ease;
     width: 100%;
   }
@@ -56,9 +56,9 @@
   }
 
   .search-box:focus-within {
-    background: rgba(255, 255, 255, 0.05);
+    background: #27272a; /* Zinc 800 */
     border-color: rgba(16, 185, 129, 0.5);
-    color: rgba(255, 255, 255, 0.6);
+    color: white;
   }
 
   .search-box input {
@@ -71,13 +71,13 @@
   }
 
   .search-box input::placeholder {
-    color: rgba(255, 255, 255, 0.4);
+    color: #71717a; /* Zinc 500 */
   }
 
   .search-clear {
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.4);
+    color: #71717a; /* Zinc 500 */
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -92,7 +92,7 @@
   }
 
   .search-clear:hover {
-    color: rgba(255, 255, 255, 0.8);
+    color: white;
   }
 
   /* Mobile responsive */

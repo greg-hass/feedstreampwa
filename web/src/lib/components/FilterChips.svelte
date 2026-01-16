@@ -42,8 +42,8 @@
     display: flex;
     gap: 0;
     padding: 4px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #18181b; /* Zinc 900 */
+    border: 1px solid #27272a; /* Zinc 800 */
     border-radius: 999px;
     margin-bottom: 0;
   }
@@ -55,7 +55,7 @@
     background: transparent;
     border: none;
     border-radius: 999px;
-    color: rgba(255, 255, 255, 0.6);
+    color: #71717a; /* Zinc 500 */
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
@@ -71,7 +71,7 @@
   .segment.active {
     background: var(--accent-color);
     color: white;
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* Stronger solid shadow */
   }
 
   /* Mobile Filter Chips */

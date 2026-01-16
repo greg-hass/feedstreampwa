@@ -445,13 +445,12 @@
         <h1 class="text-3xl font-bold text-white">{pageTitle}</h1>
         <div class="flex items-center gap-2">
           <div class="flex items-center gap-2">
-            <button
-              class="p-2.5 rounded-xl bg-[#3f3f46] hover:bg-[#52525b] transition-all shadow-lg shadow-black/20 text-white"
-              on:click={refreshAll}
-              class:spinning={$refreshState.isRefreshing}
-              title="Refresh"
-            >
-              <RefreshCw size={20} />
+                      <button
+                        class="p-2.5 rounded-xl bg-zinc-700 hover:bg-zinc-600 transition-all shadow-lg shadow-black/20 text-white"
+                        on:click={refreshAll}
+                        class:spinning={$refreshState.isRefreshing}
+                        title="Refresh"
+                      >              <RefreshCw size={20} />
             </button>
             <span
               class="text-xs font-semibold text-white/60"
@@ -618,7 +617,7 @@
     z-index: 20;
     background: theme("colors.background");
     padding: 0 0 12px 0; /* Remove top padding, let parent handle alignment */
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid theme("colors.stroke"); /* Use theme color */
   }
 
   /* Mobile Fixed Filter Chips */
@@ -630,7 +629,7 @@
     z-index: 25;
     background: theme("colors.background");
     padding: 12px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid theme("colors.stroke"); /* Use theme color */
   }
 
   /* Page Header */

@@ -264,11 +264,11 @@
   }
 </script>
 
-<div
-  class="feed-item group flex flex-col md:flex-row {densityClasses.padding} border-b transition-all duration-200 cursor-pointer overflow-hidden
+<article
+  class="group relative flex flex-col md:flex-row {densityClasses.padding} border-b transition-all duration-200 cursor-pointer overflow-hidden
   {isSelected
     ? 'bg-blue-500/10 border-blue-500/30'
-    : 'border-white/5 hover:bg-white/[0.02] hover:border-white/10'}"
+    : 'border-zinc-800 hover:bg-zinc-900 hover:border-zinc-700'}"
   class:opacity-100={item.is_read === 0}
   class:opacity-60={item.is_read === 1}
   on:click={handleClick}
@@ -284,32 +284,30 @@
     <div class="flex items-start gap-3 {densityClasses.headerSpacing}">
       <!-- Feed Icon -->
       <div class="flex-shrink-0">
-        {#if item.feed_icon_url}
-          <img
-            src={item.feed_icon_url}
-            alt=""
-            class="{densityClasses.iconSize} rounded-lg object-cover"
-          />
-        {:else}
-          <div
-            class="{densityClasses.iconSize} rounded-lg bg-white/5 flex items-center justify-center"
-          >
+        <div
+          class="{densityClasses.iconSize} rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700 group-hover:border-zinc-600 transition-colors"
+        >
+          {#if item.feed_icon_url}
+            <img
+              src={item.feed_icon_url}
+              alt=""
+              class="w-5 h-5 object-contain opacity-80"
+            />
+          {:else}
             <svelte:component
               this={Icon}
               size={20}
               class={currentStyle.color}
             />
-          </div>
-        {/if}
+          {/if}
+        </div>
       </div>
 
       <!-- Feed Title + Timestamp + Read Time -->
       <div
         class="flex-1 min-w-0 flex items-center gap-2 text-sm pt-1 flex-wrap"
       >
-        <span class="min-w-0 font-bold text-accent truncate"
-          >{item.feed_title}</span
-        >
+        <span class="font-bold text-accent truncate">{item.feed_title}</span>
         {#if isCached}
           <OfflineBadge size="sm" showText={false} />
         {/if}
@@ -319,11 +317,11 @@
             title="New source - explore diverse content">NEW</span
           >
         {/if}
-        <span class="text-white/30">•</span>
+        <span class="text-zinc-600">•</span>
         <span class="text-orange-400 whitespace-nowrap">{timeAgo}</span>
         {#if readTimeText}
-          <span class="text-white/30">•</span>
-          <span class="text-white/40 whitespace-nowrap flex items-center gap-1">
+          <span class="text-zinc-600">•</span>
+          <span class="text-zinc-500 whitespace-nowrap flex items-center gap-1">
             <Clock size={12} />
             {readTimeText}
           </span>
@@ -334,15 +332,9 @@
     <!-- Article Title (Full Width) -->
     <h3
       class="{densityClasses.titleSize} font-semibold leading-snug transition-colors {densityClasses.spacing} {item.is_read
-        ? 'text-gray-400 font-normal'
+        ? 'text-zinc-500 font-normal'
         : 'text-white'}"
     >
-      {#if item.is_read === 0}
-        <span
-          class="inline-block h-2 w-2 rounded-full bg-accent align-middle mr-2"
-          aria-hidden="true"
-        ></span>
-      {/if}
       {item.title}
     </h3>
 
@@ -350,9 +342,9 @@
     <div class="flex items-center justify-between pt-2 mt-auto">
       <div class="flex items-center gap-4">
         <button
-          class="p-1.5 -ml-1.5 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-1.5 {item.is_read
+          class="p-1.5 -ml-1.5 rounded-lg hover:bg-zinc-800 transition-colors flex items-center gap-1.5 {item.is_read
             ? 'text-emerald-400'
-            : 'text-white/40 hover:text-white'}"
+            : 'text-zinc-500 hover:text-white'}"
           on:click={handleRead}
           title={item.is_read ? "Mark as Unread" : "Mark as Read"}
         >
@@ -366,9 +358,9 @@
         </button>
 
         <button
-          class="p-1.5 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-1.5 {item.is_starred
+          class="p-1.5 rounded-lg hover:bg-zinc-800 transition-colors flex items-center gap-1.5 {item.is_starred
             ? 'text-orange-400'
-            : 'text-white/40 hover:text-white'}"
+            : 'text-zinc-500 hover:text-white'}"
           on:click={handleStar}
           title="Bookmark"
         >
@@ -378,7 +370,7 @@
         {#if isPlayable}
           <div class="flex items-center gap-2">
             <button
-              class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-medium text-xs transition-colors border border-white/5"
+              class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white font-medium text-xs transition-colors border border-zinc-700"
               on:click={handlePlay}
               title="Play Episode"
             >
@@ -389,7 +381,7 @@
         {/if}
 
         <button
-          class="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-blue-400 transition-colors"
+          class="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 hover:text-blue-400 transition-colors"
           on:click={handleShare}
           title="Share"
         >
@@ -400,7 +392,7 @@
           href={item.url}
           target="_blank"
           rel="noopener noreferrer"
-          class="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-blue-400 transition-colors"
+          class="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 hover:text-blue-400 transition-colors"
           on:click|stopPropagation
           title="Open Link"
         >
@@ -414,7 +406,7 @@
   {#if youtubeVideoId}
     <!-- YouTube: Full width on mobile/tablet, Thumbnail on desktop -->
     <div
-      class="w-full aspect-video md:w-48 md:h-32 md:aspect-auto md:flex-shrink-0 md:ml-4 rounded-xl overflow-hidden bg-black {densityClasses.mediaSpacing} md:mb-0 border border-white/10 mt-3 md:mt-0"
+      class="w-full aspect-video md:w-48 md:h-32 md:aspect-auto md:flex-shrink-0 md:ml-4 rounded-xl overflow-hidden bg-black {densityClasses.mediaSpacing} md:mb-0 border border-zinc-800 mt-3 md:mt-0"
       on:click|stopPropagation
       role="none"
     >
@@ -462,7 +454,7 @@
   {:else if thumbnailUrl && !imageError}
     <!-- Image: Full width on mobile, Thumbnail on desktop -->
     <div
-      class="w-full aspect-video sm:aspect-[2/1] md:w-48 md:h-32 md:aspect-auto md:flex-shrink-0 md:ml-4 rounded-xl overflow-hidden bg-white/5 {densityClasses.mediaSpacing} md:mb-0 border border-white/5 mt-3 md:mt-0"
+      class="w-full aspect-video sm:aspect-[2/1] md:w-48 md:h-32 md:aspect-auto md:flex-shrink-0 md:ml-4 rounded-xl overflow-hidden bg-zinc-900 {densityClasses.mediaSpacing} md:mb-0 border border-zinc-800 mt-3 md:mt-0"
     >
       <img
         src={thumbnailUrl}
@@ -473,11 +465,10 @@
       />
     </div>
   {/if}
-</div>
+</article>
 
 <style>
-  .feed-item {
+  article {
     scroll-margin-top: 80px;
   }
-
 </style>

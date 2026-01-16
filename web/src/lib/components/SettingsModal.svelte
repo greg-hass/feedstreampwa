@@ -234,22 +234,22 @@
 <svelte:window on:keydown={handleKeydown} />
 
 {#if $isSettingsModalOpen}
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div
-    class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
-    on:click={handleBackdropClick}
-    on:keydown={handleBackdropKeydown}
-    role="button"
-    aria-label="Close dialog"
-    tabindex="0"
+    class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+    on:click|self={handleCancel}
   >
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
     <div
-      class="bg-[#18181b] rounded-2xl border border-white/10 max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
+      class="bg-zinc-900 rounded-2xl border border-zinc-700 max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
+      on:click|stopPropagation={() => {}}
       role="dialog"
       aria-modal="true"
-      tabindex="-1"
     >
       <!-- Header -->
-      <div class="bg-[#18181b] border-b border-white/10 px-6 pt-6 pb-0 flex-shrink-0">
+      <div class="bg-zinc-900 border-b border-zinc-800 px-6 pt-6 pb-0 flex-shrink-0">
         <div class="flex items-center justify-between mb-6">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/20 flex items-center justify-center">
@@ -257,10 +257,10 @@
             </div>
             <div>
               <h2 class="text-xl font-semibold text-white">Settings</h2>
-              <p class="text-sm text-white/60">Preferences & Management</p>
+              <p class="text-sm text-zinc-400">Preferences & Management</p>
             </div>
           </div>
-          <button class="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white" on:click={handleCancel}>
+          <button class="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white" on:click={handleCancel}>
             <X size={20} />
           </button>
         </div>
@@ -268,7 +268,7 @@
         <div class="flex gap-6">
           {#each ["general", "feeds", "data", "automation"] as tab}
             <button
-              class="pb-3 text-sm font-medium border-b-2 transition-colors {activeTab === tab ? 'text-accent border-accent' : 'text-white/60 border-transparent hover:text-white'}"
+              class="pb-3 text-sm font-medium border-b-2 transition-colors {activeTab === tab ? 'text-accent border-accent' : 'text-zinc-400 border-transparent hover:text-white'}"
               on:click={() => setTab(tab)}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -323,8 +323,8 @@
 
       <!-- Footer -->
       {#if activeTab === "general"}
-        <div class="sticky bottom-0 bg-[#18181b] border-t border-white/10 px-6 py-4 flex items-center justify-end gap-3 rounded-b-2xl">
-          <button class="px-4 py-2 rounded-xl text-white/60 hover:text-white hover:bg-white/5 transition-colors text-sm font-medium" on:click={handleCancel}>
+        <div class="sticky bottom-0 bg-zinc-900 border-t border-zinc-800 px-6 py-4 flex items-center justify-end gap-3 rounded-b-2xl">
+          <button class="px-4 py-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors text-sm font-medium" on:click={handleCancel}>
             Cancel
           </button>
           <button class="px-6 py-2 rounded-xl bg-accent text-white hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20 flex items-center gap-2 disabled:opacity-50 text-sm font-bold" on:click={handleSave} disabled={saving}>
