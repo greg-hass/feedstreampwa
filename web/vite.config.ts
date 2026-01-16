@@ -2,6 +2,44 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vitest/config';
 import { SvelteKitPWA } from '@vite-pwa/sveltekit';
 
+const shouldSilenceSvelteWarning = (message: string) => {
+	if (
+		message.includes('is not exported by "node_modules/svelte/src/runtime') &&
+		(message.includes('"untrack"') || message.includes('"fork"') || message.includes('"settled"'))
+	) {
+		return true;
+	}
+
+	return false;
+};
+
+const svelteKitWarningFilter = () => ({
+	name: 'sveltekit-warning-filter',
+	configResolved(config: any) {
+		const rollupOptions = config.build?.rollupOptions ?? {};
+		const originalOnwarn = rollupOptions.onwarn;
+
+		rollupOptions.onwarn = (warning: any, defaultHandler: (warning: any) => void) => {
+			const message = String(warning?.message || '');
+			if (warning?.code === 'MISSING_EXPORT' && shouldSilenceSvelteWarning(message)) {
+				return;
+			}
+
+			if (typeof originalOnwarn === 'function') {
+				originalOnwarn(warning, defaultHandler);
+			} else {
+				defaultHandler(warning);
+			}
+		};
+
+		if (config.build) {
+			config.build.rollupOptions = rollupOptions;
+		} else {
+			config.build = { rollupOptions };
+		}
+	}
+});
+
 export default defineConfig({
 	plugins: [
 		sveltekit(),
@@ -42,7 +80,8 @@ export default defineConfig({
 					}
 				}
 			},
-		})
+		}),
+		svelteKitWarningFilter()
 	],
 	              test: {
 	                      environment: 'jsdom',
