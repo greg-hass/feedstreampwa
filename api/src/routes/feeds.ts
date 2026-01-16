@@ -153,31 +153,113 @@ export default async function feedRoutes(fastify: FastifyInstance, options: any)
     }, async (request: FastifyRequest, reply: FastifyReply) => {
         const query = request.query as any;
         const limit = Math.min(parseInt(query?.limit || '5', 10), 10); // Max 10 recommendations
+        const debug = query?.debug === 'true' || query?.debug === '1';
+        const dryRun = query?.dryRun === 'true' || query?.dryRun === '1';
+
+        const buildDebugInfo = () => {
+            const hasEnvKey = Boolean(env.GEMINI_API_KEY);
+            let hasDbKey = false;
+            try {
+                const dbKey = db.prepare('SELECT value FROM meta WHERE key = ?').get('gemini_api_key') as any;
+                hasDbKey = Boolean(dbKey?.value);
+            } catch (err) {
+                hasDbKey = false;
+            }
+
+            const feedCountResult = db.prepare('SELECT COUNT(*) as count FROM feeds').get() as any;
+            const feedsByKindRows = db.prepare('SELECT kind, COUNT(*) as count FROM feeds GROUP BY kind').all() as Array<{ kind: string; count: number }>;
+            const feedsByKind: Record<string, number> = {
+                generic: 0,
+                youtube: 0,
+                reddit: 0,
+                podcast: 0
+            };
+            feedsByKindRows.forEach((row) => {
+                feedsByKind[row.kind] = row.count;
+            });
+
+            const readCountResult = db.prepare('SELECT COUNT(*) as count FROM items WHERE is_read = 1').get() as any;
+            const starredCountResult = db.prepare('SELECT COUNT(*) as count FROM items WHERE is_starred = 1').get() as any;
+            const historyCountResult = db.prepare('SELECT COUNT(*) as count FROM items WHERE is_read = 1 OR is_starred = 1').get() as any;
+            const lastInteractionResult = db.prepare(`
+                SELECT MAX(COALESCE(updated, published, created_at)) as lastInteractionAt
+                FROM items
+                WHERE is_read = 1 OR is_starred = 1
+            `).get() as any;
+
+            return {
+                hasGeminiKey: hasDbKey || hasEnvKey,
+                hasDbKey,
+                hasEnvKey,
+                feedCount: feedCountResult?.count || 0,
+                feedsByKind,
+                historyCount: historyCountResult?.count || 0,
+                readCount: readCountResult?.count || 0,
+                starredCount: starredCountResult?.count || 0,
+                lastInteractionAt: lastInteractionResult?.lastInteractionAt || null
+            };
+        };
+
+        const debugInfoBase = debug ? buildDebugInfo() : null;
+        let promptPreview: string | null = null;
+        let debugError: string | null = null;
+
+        if (debug) {
+            try {
+                promptPreview = await aiRecommendationService.getPromptPreview(db, limit);
+            } catch (err: any) {
+                debugError = err instanceof Error ? err.message : 'Failed to build prompt preview';
+            }
+        }
 
         try {
-            // Check if AI service is available
-            if (!aiRecommendationService.isAvailable()) {
+            if (debug && dryRun) {
                 return {
-                    ok: false,
-                    error: 'AI recommendations not available. Please configure GEMINI_API_KEY environment variable.',
-                    recommendations: []
+                    ok: true,
+                    recommendations: [],
+                    count: 0,
+                    debug: {
+                        ...debugInfoBase,
+                        model: aiRecommendationService.getModelName(),
+                        promptPreview,
+                        lastError: debugError
+                    }
                 };
             }
 
-            // Generate recommendations
+            // Generate recommendations (service will validate API key)
             const recommendations = await aiRecommendationService.generateRecommendations(db, limit);
 
             return {
                 ok: true,
                 recommendations,
-                count: recommendations.length
+                count: recommendations.length,
+                ...(debug ? {
+                    debug: {
+                        ...debugInfoBase,
+                        model: aiRecommendationService.getModelName(),
+                        promptPreview,
+                        lastError: debugError
+                    }
+                } : {})
             };
         } catch (error: any) {
             fastify.log.error('Error generating recommendations:', error);
+            if (debug) {
+                debugError = error instanceof Error ? error.message : 'Failed to generate recommendations';
+            }
             return {
                 ok: false,
                 error: error.message || 'Failed to generate recommendations',
-                recommendations: []
+                recommendations: [],
+                ...(debug ? {
+                    debug: {
+                        ...debugInfoBase,
+                        model: aiRecommendationService.getModelName(),
+                        promptPreview,
+                        lastError: debugError
+                    }
+                } : {})
             };
         }
     });

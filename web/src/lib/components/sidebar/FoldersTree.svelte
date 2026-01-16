@@ -77,8 +77,11 @@
 </script>
 
 <div class="space-y-1 mt-6">
-  <div class="flex items-center justify-between px-3 mb-2">
-    <div class="text-xs font-semibold text-white/40 uppercase tracking-wider">
+  <div class="flex items-center justify-between px-3 mb-3">
+    <div
+      class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] font-semibold text-amber-200 uppercase tracking-[0.22em]"
+    >
+      <span class="h-1.5 w-1.5 rounded-full bg-amber-300/80"></span>
       Feeds & Folders
     </div>
     <button
@@ -225,7 +228,7 @@
   <!-- Uncategorized Feeds -->
   {#if $feedsTree.uncategorized.length > 0}
     <div
-      class="mt-4 mb-2 px-3 text-xs font-semibold text-white/30 uppercase tracking-wider"
+      class="mt-4 mb-2 px-3 text-[11px] font-semibold text-white/40 uppercase tracking-[0.22em]"
     >
       Uncategorized
     </div>

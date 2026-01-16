@@ -21,8 +21,9 @@
 
 <div class="space-y-1 mt-6">
   <div
-    class="text-xs font-semibold text-white/40 uppercase tracking-wider px-3 mb-2"
+    class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-semibold text-emerald-200 uppercase tracking-[0.22em] mb-3"
   >
+    <span class="h-1.5 w-1.5 rounded-full bg-emerald-300/80"></span>
     Smart Folders
   </div>
 

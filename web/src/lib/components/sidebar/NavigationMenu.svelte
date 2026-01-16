@@ -20,8 +20,9 @@
 
 <div class="space-y-1">
   <div
-    class="text-xs font-semibold text-white/40 uppercase tracking-wider px-3 mb-2 mt-2"
+    class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-semibold text-white/70 uppercase tracking-[0.22em] mb-3 mt-2"
   >
+    <span class="h-1.5 w-1.5 rounded-full bg-white/70"></span>
     Menu
   </div>
 

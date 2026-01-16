@@ -15,12 +15,59 @@ export interface FeedRecommendation {
 export class AIRecommendationService {
     private genAI: GoogleGenerativeAI | null = null;
     private model: any = null;
+    private readonly modelName = 'gemini-2.5-flash';
 
     constructor() {
         if (env.GEMINI_API_KEY) {
             this.genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
-            this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+            this.model = this.genAI.getGenerativeModel({ model: this.modelName });
         }
+    }
+
+    private loadRecommendationData(db: Database): {
+        feeds: Array<{ url: string; title: string; type: string }>;
+        readingHistory: Array<{ title: string; summary: string | null; feed_title: string; source: string; is_starred: number }>;
+    } {
+        const feeds = db.prepare(`
+            SELECT 
+                url, 
+                COALESCE(custom_title, title, url) as title,
+                kind as type
+            FROM feeds
+        `).all() as Array<{ url: string; title: string; type: string }>;
+
+        const readingHistory = db.prepare(`
+            SELECT 
+                i.title,
+                i.summary,
+                COALESCE(f.custom_title, f.title, f.url) as feed_title,
+                i.source,
+                i.is_starred
+            FROM items i
+            INNER JOIN feeds f ON i.feed_url = f.url
+            WHERE i.is_read = 1 OR i.is_starred = 1
+            ORDER BY 
+                i.is_starred DESC,
+                COALESCE(i.updated, i.published, i.created_at) DESC
+            LIMIT 50
+        `).all() as Array<{
+            title: string;
+            summary: string | null;
+            feed_title: string;
+            source: string;
+            is_starred: number;
+        }>;
+
+        return { feeds, readingHistory };
+    }
+
+    getModelName(): string {
+        return this.modelName;
+    }
+
+    async getPromptPreview(db: Database, limit: number = 5): Promise<string> {
+        const { feeds, readingHistory } = this.loadRecommendationData(db);
+        return this.buildRecommendationPrompt(feeds, readingHistory, limit);
     }
 
     /**
@@ -46,37 +93,10 @@ export class AIRecommendationService {
 
         if (!this.genAI || !this.model) {
             this.genAI = new GoogleGenerativeAI(apiKey);
-            this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+            this.model = this.genAI.getGenerativeModel({ model: this.modelName });
         }
 
-        // Get user's current feeds
-        const feeds = db.prepare(`
-            SELECT url, title, type 
-            FROM feeds 
-            ORDER BY created_at DESC
-        `).all() as Array<{ url: string; title: string; type: string }>;
-
-        // Get user's reading history (starred and read articles)
-        const readingHistory = db.prepare(`
-            SELECT 
-                i.title,
-                i.summary,
-                i.feed_title,
-                i.source,
-                i.is_starred
-            FROM items i
-            WHERE i.is_read = 1 OR i.is_starred = 1
-            ORDER BY 
-                i.is_starred DESC,
-                i.updated_at DESC
-            LIMIT 50
-        `).all() as Array<{
-            title: string;
-            summary: string | null;
-            feed_title: string;
-            source: string;
-            is_starred: number;
-        }>;
+        const { feeds, readingHistory } = this.loadRecommendationData(db);
 
         // Build the prompt for Gemini
         const prompt = this.buildRecommendationPrompt(feeds, readingHistory, limit);
@@ -88,10 +108,17 @@ export class AIRecommendationService {
 
             // Parse the JSON response
             const recommendations = this.parseRecommendations(text);
-            return recommendations.slice(0, limit);
+            const existingUrls = new Set(
+                currentFeeds.map((feed) => feed.url.toLowerCase())
+            );
+            const uniqueRecommendations = recommendations.filter(
+                (rec) => !existingUrls.has(rec.url.toLowerCase())
+            );
+            return uniqueRecommendations.slice(0, limit);
         } catch (error) {
             logger.error({ err: error }, 'Error generating recommendations');
-            throw new Error('Failed to generate feed recommendations');
+            const message = error instanceof Error ? error.message : 'Failed to generate feed recommendations';
+            throw new Error(message);
         }
     }
 
@@ -113,7 +140,7 @@ export class AIRecommendationService {
             .map(a => `- "${a.title}" from ${a.feed_title}`)
             .join('\n');
 
-        return `You are an expert RSS feed curator. Analyze the user's reading patterns and recommend NEW RSS/Atom feeds they might enjoy.
+        return `You are an expert feed curator. Analyze the user's reading patterns and recommend NEW subscriptions they might enjoy.
 
 **Current Subscribed Feeds:**
 ${feedList || 'None yet'}
@@ -124,7 +151,7 @@ ${starredArticles || 'None yet'}
 **Recent Reading History:**
 ${recentReads || 'None yet'}
 
-Based on this data, recommend ${limit} NEW RSS/Atom feeds that:
+Based on this data, recommend ${limit} NEW feeds (RSS/Atom, YouTube channel feeds, Reddit subreddit feeds, podcast feeds) that:
 1. Are NOT already in their subscribed feeds
 2. Match their interests based on reading patterns
 3. Are high-quality, actively maintained feeds
@@ -133,11 +160,17 @@ Based on this data, recommend ${limit} NEW RSS/Atom feeds that:
 
 For each recommendation, provide:
 - title: The feed name
-- url: The RSS/Atom feed URL (must be a valid feed URL, not a website URL)
+- url: The feed URL (must be a valid feed URL, not a website URL)
 - description: Brief description of the feed
 - category: One of: technology, news, entertainment, science, business, lifestyle, sports, other
 - reason: Why this feed matches their interests (2-3 sentences)
 - confidence: A number between 0 and 1 indicating how confident you are this is a good match
+
+Examples of valid feed URLs:
+- RSS/Atom: https://example.com/feed.xml
+- YouTube channel: https://www.youtube.com/feeds/videos.xml?channel_id=UCxxxx
+- Reddit subreddit: https://www.reddit.com/r/technology/.rss
+- Podcast: https://feeds.simplecast.com/xxxx
 
 Return ONLY a valid JSON array of recommendations. No markdown, no code blocks, just the JSON array.
 

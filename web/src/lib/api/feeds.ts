@@ -105,6 +105,21 @@ export interface FeedRecommendation {
     confidence: number;
 }
 
+export interface FeedRecommendationsDebug {
+    hasGeminiKey: boolean;
+    hasDbKey: boolean;
+    hasEnvKey: boolean;
+    feedCount: number;
+    feedsByKind: Record<string, number>;
+    historyCount: number;
+    readCount: number;
+    starredCount: number;
+    lastInteractionAt: string | null;
+    model?: string;
+    promptPreview?: string | null;
+    lastError?: string | null;
+}
+
 export async function getFeedRecommendations(limit: number = 5): Promise<FeedRecommendation[]> {
     const response = await fetchWithTimeout(`${API_BASE}/feeds/recommendations?limit=${limit}`);
     
@@ -116,5 +131,33 @@ export async function getFeedRecommendations(limit: number = 5): Promise<FeedRec
     }
     
     const data = await response.json();
+    if (data.ok === false) {
+        throw new Error(data.error || 'Failed to generate recommendations');
+    }
     return data.recommendations || [];
+}
+
+export async function getFeedRecommendationsDebug(
+    limit: number = 5
+): Promise<{ recommendations: FeedRecommendation[]; debug: FeedRecommendationsDebug | null }> {
+    const response = await fetchWithTimeout(
+        `${API_BASE}/feeds/recommendations?limit=${limit}&debug=true&dryRun=true`
+    );
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+            errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        );
+    }
+
+    const data = await response.json();
+    if (data.ok === false) {
+        throw new Error(data.error || 'Failed to load recommendation debug data');
+    }
+
+    return {
+        recommendations: data.recommendations || [],
+        debug: data.debug || null
+    };
 }

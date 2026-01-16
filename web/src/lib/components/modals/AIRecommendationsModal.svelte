@@ -10,8 +10,10 @@
   } from "lucide-svelte";
   import {
     getFeedRecommendations,
+    getFeedRecommendationsDebug,
     createFeed,
     type FeedRecommendation,
+    type FeedRecommendationsDebug,
   } from "$lib/api/feeds";
   import { toast } from "$lib/stores/toast";
   import { loadFeeds } from "$lib/stores/feeds";
@@ -24,6 +26,10 @@
   let loading = false;
   let error: string | null = null;
   let addingFeeds = new Set<string>();
+  let showDebug = false;
+  let debugInfo: FeedRecommendationsDebug | null = null;
+  let debugLoading = false;
+  let debugError: string | null = null;
 
   async function loadRecommendations() {
     loading = true;
@@ -65,6 +71,51 @@
 
   function close() {
     dispatch("close");
+  }
+
+  async function loadDebugInfo() {
+    debugLoading = true;
+    debugError = null;
+    try {
+      const data = await getFeedRecommendationsDebug(8);
+      debugInfo = data.debug;
+      if (!debugInfo) {
+        debugError = "No debug data returned.";
+      }
+    } catch (err: any) {
+      debugError = err.message || "Failed to load debug data";
+    } finally {
+      debugLoading = false;
+    }
+  }
+
+  function toggleDebug() {
+    showDebug = !showDebug;
+    if (showDebug && !debugInfo && !debugLoading) {
+      loadDebugInfo();
+    }
+  }
+
+  async function copyPrompt() {
+    const text = debugInfo?.promptPreview;
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Prompt copied");
+    } catch (err) {
+      toast.error("Failed to copy prompt");
+    }
+  }
+
+  async function copyError() {
+    const text = debugInfo?.lastError;
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Error copied");
+    } catch (err) {
+      toast.error("Failed to copy error");
+    }
   }
 
   function handleBackdropClick(event: MouseEvent) {
@@ -138,17 +189,111 @@
             </p>
           </div>
         </div>
-        <button
-          class="p-2 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
-          on:click={close}
-          aria-label="Close"
-        >
-          <X size={24} />
-        </button>
+        <div class="flex items-center gap-2">
+          <button
+            class="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-xs font-semibold text-white/70 hover:text-white hover:border-white/20 transition-colors"
+            on:click={toggleDebug}
+          >
+            {showDebug ? "Hide Debug" : "Debug"}
+          </button>
+          <button
+            class="p-2 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+            on:click={close}
+            aria-label="Close"
+          >
+            <X size={24} />
+          </button>
+        </div>
       </div>
 
       <!-- Body -->
       <div class="flex-1 overflow-y-auto p-6">
+        {#if showDebug}
+          <div
+            class="mb-6 rounded-xl border border-white/10 bg-white/5 p-4 text-xs text-white/70"
+          >
+            {#if debugLoading}
+              <div class="flex items-center gap-2 text-white/60">
+                <Loader2 size={14} class="animate-spin" />
+                Loading debug data...
+              </div>
+            {:else if debugError}
+              <div class="text-red-400">{debugError}</div>
+            {:else if debugInfo}
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <span class="text-white/40">Gemini Key</span>
+                  <div class="text-white/80">
+                    {debugInfo.hasGeminiKey ? "Configured" : "Missing"}
+                  </div>
+                </div>
+                <div>
+                  <span class="text-white/40">Model</span>
+                  <div class="text-white/80">{debugInfo.model || "—"}</div>
+                </div>
+                <div>
+                  <span class="text-white/40">Feeds</span>
+                  <div class="text-white/80">{debugInfo.feedCount}</div>
+                </div>
+                <div>
+                  <span class="text-white/40">Read Articles</span>
+                  <div class="text-white/80">{debugInfo.readCount}</div>
+                </div>
+                <div>
+                  <span class="text-white/40">Starred Articles</span>
+                  <div class="text-white/80">{debugInfo.starredCount}</div>
+                </div>
+                <div>
+                  <span class="text-white/40">History Entries</span>
+                  <div class="text-white/80">{debugInfo.historyCount}</div>
+                </div>
+                <div>
+                  <span class="text-white/40">Last Interaction</span>
+                  <div class="text-white/80">
+                    {debugInfo.lastInteractionAt || "—"}
+                  </div>
+                </div>
+                <div class="col-span-2">
+                  <span class="text-white/40">Feeds by type</span>
+                  <div class="text-white/80">
+                    RSS {debugInfo.feedsByKind.generic || 0} • YouTube {debugInfo.feedsByKind.youtube || 0} •
+                    Reddit {debugInfo.feedsByKind.reddit || 0} • Podcasts {debugInfo.feedsByKind.podcast || 0}
+                  </div>
+                </div>
+                <div class="col-span-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-white/40">Last Error</span>
+                    <button
+                      class="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-semibold text-white/70 hover:text-white hover:border-white/20 transition-colors disabled:opacity-50"
+                      on:click={copyError}
+                      disabled={!debugInfo.lastError}
+                    >
+                      Copy Error
+                    </button>
+                  </div>
+                  <div class="text-white/80">{debugInfo.lastError || "—"}</div>
+                </div>
+                <div class="col-span-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-white/40">Prompt Preview</span>
+                    <button
+                      class="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-semibold text-white/70 hover:text-white hover:border-white/20 transition-colors disabled:opacity-50"
+                      on:click={copyPrompt}
+                      disabled={!debugInfo.promptPreview}
+                    >
+                      Copy Prompt
+                    </button>
+                  </div>
+                  <pre
+                    class="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded-lg border border-white/10 bg-black/30 p-3 text-[11px] text-white/70"
+                  >{debugInfo.promptPreview || "—"}</pre>
+                </div>
+              </div>
+            {:else}
+              <div class="text-white/50">No debug data.</div>
+            {/if}
+          </div>
+        {/if}
         {#if loading}
           <div class="flex flex-col items-center justify-center py-20">
             <Loader2 size={48} class="text-purple-500 animate-spin mb-4" />
