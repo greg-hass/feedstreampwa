@@ -34,6 +34,7 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
         const limit = Math.min(query.limit || 20, 200) || 20;
         const offset = query.offset;
         const q = query.q ? query.q.trim() : null;
+        const timeFilter = query.timeFilter || 'all';
 
         // Build WHERE clause using safe query builder pattern
         interface QueryCondition {
@@ -101,6 +102,21 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
             conditions.push({
                 clause: 'fts MATCH ?',
                 params: [q]
+            });
+        }
+
+        if (timeFilter && timeFilter !== 'all') {
+            const dayMs = 24 * 60 * 60 * 1000;
+            const now = Date.now();
+            let cutoffMs = dayMs;
+            if (timeFilter === 'week') {
+                cutoffMs = 7 * dayMs;
+            }
+
+            const cutoffIso = new Date(now - cutoffMs).toISOString();
+            conditions.push({
+                clause: 'COALESCE(i.published, i.created_at) >= ?',
+                params: [cutoffIso]
             });
         }
 

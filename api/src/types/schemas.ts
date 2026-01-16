@@ -51,6 +51,8 @@ export const RefreshStatusQuerySchema = z.object({
     jobId: z.string().min(1)
 });
 
+export const TimeFilterSchema = z.enum(['all', 'today', '24h', 'week']);
+
 // System Schemas
 export const SettingsSchema = z.record(z.string(), z.string());
 
@@ -89,7 +91,8 @@ export const GetItemsQuerySchema = z.object({
     starredOnly: z.enum(['true', 'false']).transform(v => v === 'true').optional(),
     limit: z.string().transform(Number).optional().default(20),
     offset: z.string().transform(Number).optional().default(0),
-    q: SearchQueryValidator.optional()
+    q: SearchQueryValidator.optional(),
+    timeFilter: TimeFilterSchema.optional()
 });
 
 export const MarkReadSchema = z.object({
@@ -177,4 +180,3 @@ export const LoginSchema = z.object({
     email: z.string().email('Invalid email format'),
     password: z.string().min(1, 'Password is required')
 });
-

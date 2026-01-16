@@ -32,6 +32,7 @@ export async function loadItems(params: {
     smartFolder?: 'rss' | 'youtube' | 'reddit' | 'podcast';
     unreadOnly?: boolean;
     starredOnly?: boolean;
+    timeFilter?: TimeFilter;
     refresh?: boolean;
 } = {}): Promise<void> {
     const isRefresh = params.refresh !== false;
@@ -49,14 +50,16 @@ export async function loadItems(params: {
 
     try {
         const query = get(searchQuery);
+        const filter = params.timeFilter ?? get(timeFilter);
         const offset = get(currentOffset);
 
         let data;
         if (query.trim()) {
-            data = await itemsApi.searchItems(query, PAGE_SIZE, offset);
+            data = await itemsApi.searchItems(query, PAGE_SIZE, offset, filter);
         } else {
             data = await itemsApi.fetchItems({
                 ...params,
+                timeFilter: filter,
                 limit: PAGE_SIZE,
                 offset: offset,
             });

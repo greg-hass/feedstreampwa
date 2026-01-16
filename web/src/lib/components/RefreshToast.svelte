@@ -5,10 +5,18 @@
   import { onMount } from "svelte";
 
   let errorDismissTimeout: ReturnType<typeof setTimeout> | null = null;
+  let dismissed = false;
 
   function close() {
-    refreshState.update((s) => ({ ...s, isRefreshing: false, error: null }));
+    dismissed = true;
+    if ($refreshState.error) {
+      refreshState.update((s) => ({ ...s, error: null }));
+    }
     if (errorDismissTimeout) clearTimeout(errorDismissTimeout);
+  }
+
+  $: if (!$refreshState.isRefreshing && !$refreshState.error) {
+    dismissed = false;
   }
 
   $: if ($refreshState.error && !errorDismissTimeout) {
@@ -26,7 +34,7 @@
   });
 </script>
 
-{#if $refreshState.isRefreshing || $refreshState.error}
+{#if !dismissed && ($refreshState.isRefreshing || $refreshState.error)}
   <div
     class="fixed left-1/2 -translate-x-1/2 z-[1500] min-w-[320px] max-w-[400px] bottom-toast"
     transition:slide={{ axis: "y" }}

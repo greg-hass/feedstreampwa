@@ -205,33 +205,6 @@
     return "All Articles";
   })();
 
-  // Filter items based on time
-  $: filteredItems = (() => {
-    if ($timeFilter === "all") return $items;
-
-    const now = new Date();
-    let cutoffDate: Date;
-
-    switch ($timeFilter) {
-      case "today":
-      case "24h":
-        cutoffDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        break;
-      case "week":
-        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      default:
-        return $items;
-    }
-
-    return $items.filter((item) => {
-      const itemDate = new Date(
-        item.published || item.created_at
-      );
-      return itemDate >= cutoffDate;
-    });
-  })();
-
   function getLoadParams() {
     const params: any = {};
     if ($viewMode === "feed" && $selectedFeedUrl)
@@ -242,6 +215,7 @@
       params.folderId = $activeFolderId;
     if ($viewMode === "unread") params.unreadOnly = true;
     if ($viewMode === "bookmarks") params.starredOnly = true;
+    params.timeFilter = $timeFilter;
     return params;
   }
 
@@ -446,7 +420,8 @@
     $viewMode ||
     $activeSmartFolder ||
     $activeFolderId ||
-    $selectedFeedUrl
+    $selectedFeedUrl ||
+    $timeFilter
   ) {
     loadItems(getLoadParams());
   }
@@ -583,13 +558,13 @@
     </div>
   {:else if $itemsError}
     <div class="empty-state error">{$itemsError}</div>
-  {:else if filteredItems.length === 0}
+  {:else if $items.length === 0}
     <div class="empty-state">
       No articles found. Add some feeds to get started!
     </div>
   {:else}
     <FeedGrid
-      items={filteredItems}
+      items={$items}
       {liveInsertIds}
       density={$viewDensity}
       on:open={(e) => openReader(e.detail.item)}

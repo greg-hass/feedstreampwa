@@ -1,5 +1,5 @@
 // API utilities for articles/items
-import type { Article, ReaderData } from '../types';
+import type { Article, ReaderData, TimeFilter } from '../types';
 import { fetchWithTimeout } from '$lib/utils/fetch';
 
 const API_BASE = '/api';
@@ -10,6 +10,7 @@ export interface FetchItemsParams {
     smartFolder?: 'rss' | 'youtube' | 'reddit' | 'podcast';
     unreadOnly?: boolean;
     starredOnly?: boolean;
+    timeFilter?: TimeFilter;
     limit?: number;
     offset?: number;
 }
@@ -26,6 +27,9 @@ export async function fetchItems(params: FetchItemsParams = {}): Promise<{
     if (params.smartFolder) searchParams.set('smartFolder', params.smartFolder);
     if (params.unreadOnly) searchParams.set('unreadOnly', 'true');
     if (params.starredOnly) searchParams.set('starredOnly', 'true');
+    if (params.timeFilter && params.timeFilter !== 'all') {
+        searchParams.set('timeFilter', params.timeFilter);
+    }
     if (params.limit) searchParams.set('limit', params.limit.toString());
     if (params.offset) searchParams.set('offset', params.offset.toString());
 
@@ -42,7 +46,12 @@ export async function fetchItems(params: FetchItemsParams = {}): Promise<{
     };
 }
 
-export async function searchItems(query: string, limit = 100, offset = 0): Promise<{
+export async function searchItems(
+    query: string,
+    limit = 100,
+    offset = 0,
+    timeFilter?: TimeFilter
+): Promise<{
     items: Article[];
     total: number;
 }> {
@@ -51,6 +60,9 @@ export async function searchItems(query: string, limit = 100, offset = 0): Promi
         limit: limit.toString(),
         offset: offset.toString(),
     });
+    if (timeFilter && timeFilter !== 'all') {
+        params.set('timeFilter', timeFilter);
+    }
 
     const response = await fetchWithTimeout(`${API_BASE}/items?${params}`);
 

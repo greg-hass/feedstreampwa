@@ -10,85 +10,80 @@
   }
 </script>
 
-<div class="filter-chips">
+<div class="filter-segment" role="group" aria-label="Time filter">
   <button
-    class="chip"
+    class="segment"
     class:active={timeFilter === "all"}
+    aria-pressed={timeFilter === "all"}
     on:click={() => setFilter("all")}>All</button
   >
   <button
-    class="chip"
+    class="segment"
     class:active={timeFilter === "today"}
+    aria-pressed={timeFilter === "today"}
     on:click={() => setFilter("today")}>Today</button
   >
   <button
-    class="chip"
+    class="segment"
     class:active={timeFilter === "24h"}
-    on:click={() => setFilter("24h")}>Last 24h</button
+    aria-pressed={timeFilter === "24h"}
+    on:click={() => setFilter("24h")}>24h</button
   >
   <button
-    class="chip"
+    class="segment"
     class:active={timeFilter === "week"}
+    aria-pressed={timeFilter === "week"}
     on:click={() => setFilter("week")}>Week</button
   >
 </div>
 
 <style>
-  .filter-chips {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    padding: 0;
+  .filter-segment {
+    display: flex;
+    gap: 0;
+    padding: 4px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
     margin-bottom: 0;
   }
 
-  .chip {
-    padding: 10px 16px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+  .segment {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 8px 10px;
+    background: transparent;
+    border: none;
     border-radius: 999px;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.6);
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: all 0.2s ease;
     text-align: center;
     white-space: nowrap;
   }
 
-  .chip:hover {
-    background: rgba(255, 255, 255, 0.1);
+  .segment:hover {
     color: white;
-    border-color: rgba(255, 255, 255, 0.3);
   }
 
-  .chip.active {
+  .segment.active {
     background: var(--accent-color);
     color: white;
-    border-color: var(--accent-color);
-    font-weight: 600;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
   }
 
   /* Mobile Filter Chips */
   @media (max-width: 768px) {
-    .filter-chips {
-      gap: 6px;
-      padding: 0 8px; /* Match reduced mobile padding */
-      margin-bottom: 0; /* No bottom margin when sticky */
-      overflow-x: auto;
-      overflow-y: visible;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none; /* Hide scrollbar */
-      position: relative;
-      z-index: 1;
+    .filter-segment {
+      margin: 0 8px;
+      padding: 3px;
     }
 
-    .chip {
+    .segment {
       height: 36px;
-      padding: 0 8px;
       font-size: 13px;
-      font-weight: 600;
     }
   }
 </style>
