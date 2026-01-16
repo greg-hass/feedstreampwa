@@ -41,6 +41,8 @@ export default defineConfig({
 				}
 			},
 			workbox: {
+				mode: 'development',
+				disableDevLogs: true,
 				runtimeCaching: [
 					{
 						urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
