@@ -7,6 +7,7 @@
 
   export let items: Item[] = [];
   export let density: ViewDensity = "comfortable";
+  export let liveInsertIds: Set<string> = new Set();
 
   const dispatch = createEventDispatcher();
 
@@ -25,19 +26,44 @@
 <!-- List View - Single column, full width -->
 <div class="flex flex-col gap-0 w-full">
   {#each items as item (item.id)}
-    <SwipeableItem
-      on:markRead={() => dispatch("toggleRead", { item })}
-      on:toggleBookmark={() => dispatch("toggleStar", { item })}
-    >
-      <FeedListItem
-        {item}
-        {density}
-        feedType={guessType(item)}
-        on:open
-        on:toggleStar
-        on:toggleRead
-        on:play
-      />
-    </SwipeableItem>
+    <div class:live-insert={liveInsertIds.has(item.id)}>
+      <SwipeableItem
+        on:markRead={() => dispatch("toggleRead", { item })}
+        on:toggleBookmark={() => dispatch("toggleStar", { item })}
+      >
+        <FeedListItem
+          {item}
+          {density}
+          feedType={guessType(item)}
+          on:open
+          on:toggleStar
+          on:toggleRead
+          on:play
+        />
+      </SwipeableItem>
+    </div>
   {/each}
 </div>
+
+<style>
+  .live-insert {
+    animation: liveInsert 360ms ease-out;
+  }
+
+  @keyframes liveInsert {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .live-insert {
+      animation: none;
+    }
+  }
+</style>

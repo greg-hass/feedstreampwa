@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onDestroy, onMount, tick } from "svelte";
   import {
     RefreshCw,
     Plus,
@@ -33,6 +33,8 @@
     itemsLoading,
     itemsError,
     loadItems,
+    currentOffset,
+    itemsTotal,
     toggleRead,
     toggleStar,
     searchQuery,
@@ -60,6 +62,7 @@
   import { diversitySettings } from "$lib/stores/diversity";
   import KeyboardShortcutsHelp from "$lib/components/KeyboardShortcutsHelp.svelte";
   import ReadingStatsModal from "$lib/components/ReadingStatsModal.svelte";
+  import * as itemsApi from "$lib/api/items";
 
   // State for modals
   let showStats = false;
@@ -120,6 +123,18 @@
   let sentinel: HTMLElement;
   let wasRefreshing = false;
   let showOnboarding = false;
+  let articlesList: HTMLDivElement;
+
+  const LIVE_POLL_INTERVAL_MS = 1500;
+  const LIVE_POLL_LIMIT = 30;
+  const LIVE_INSERT_RESET_MS = 2000;
+  const LIVE_PRESERVE_SCROLL_THRESHOLD = 120;
+
+  let liveRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+  let liveRefreshActive = false;
+  let liveRefreshInFlight = false;
+  let liveInsertResetTimer: ReturnType<typeof setTimeout> | null = null;
+  let liveInsertIds = new Set<string>();
 
   // Watch for refresh completion to reload items
   $: {
@@ -127,6 +142,14 @@
       loadItems({ ...getLoadParams(), refresh: true });
     }
     wasRefreshing = $refreshState.isRefreshing;
+  }
+
+  $: {
+    if ($refreshState.isRefreshing) {
+      startLiveRefresh();
+    } else {
+      stopLiveRefresh();
+    }
   }
 
   // Derived
@@ -196,6 +219,89 @@
     loadItems({ ...getLoadParams(), refresh: false });
   }
 
+  function startLiveRefresh() {
+    if (typeof window === "undefined" || liveRefreshActive) return;
+    liveRefreshActive = true;
+    pollLiveItems();
+  }
+
+  function stopLiveRefresh() {
+    if (!liveRefreshActive) return;
+    liveRefreshActive = false;
+    liveRefreshInFlight = false;
+    if (liveRefreshTimer) {
+      clearTimeout(liveRefreshTimer);
+      liveRefreshTimer = null;
+    }
+    if (liveInsertResetTimer) {
+      clearTimeout(liveInsertResetTimer);
+      liveInsertResetTimer = null;
+    }
+    liveInsertIds = new Set();
+  }
+
+  async function pollLiveItems() {
+    if (!liveRefreshActive || liveRefreshInFlight) return;
+    liveRefreshInFlight = true;
+
+    if (liveRefreshTimer) {
+      clearTimeout(liveRefreshTimer);
+      liveRefreshTimer = null;
+    }
+
+    try {
+      if (!$refreshState.isRefreshing) return;
+      if ($itemsLoading) return;
+      if ($searchQuery.trim()) return;
+
+      const params = {
+        ...getLoadParams(),
+        limit: LIVE_POLL_LIMIT,
+        offset: 0,
+      };
+
+      // Keep the viewport stable if the user isn't near the top.
+      const prevScrollHeight = articlesList?.scrollHeight || 0;
+      const shouldPreserveScroll =
+        typeof window !== "undefined" &&
+        window.scrollY > LIVE_PRESERVE_SCROLL_THRESHOLD;
+
+      const data = await itemsApi.fetchItems(params);
+      const existingIds = new Set($items.map((item) => item.id));
+      const newItems = data.items.filter((item) => !existingIds.has(item.id));
+
+      if (newItems.length > 0) {
+        items.update((current) => [...newItems, ...current]);
+        itemsTotal.set(data.total);
+        currentOffset.update((n) => n + newItems.length);
+
+        liveInsertIds = new Set([
+          ...liveInsertIds,
+          ...newItems.map((item) => item.id),
+        ]);
+
+        if (liveInsertResetTimer) clearTimeout(liveInsertResetTimer);
+        liveInsertResetTimer = setTimeout(() => {
+          liveInsertIds = new Set();
+        }, LIVE_INSERT_RESET_MS);
+
+        await tick();
+        const nextScrollHeight = articlesList?.scrollHeight || 0;
+        const delta = nextScrollHeight - prevScrollHeight;
+        if (shouldPreserveScroll && delta > 0) {
+          window.scrollBy(0, delta);
+        }
+      }
+    } catch (err) {
+      console.warn("Live refresh poll failed:", err);
+    } finally {
+      liveRefreshInFlight = false;
+      if (liveRefreshActive && $refreshState.isRefreshing) {
+        liveRefreshTimer = setTimeout(pollLiveItems, LIVE_POLL_INTERVAL_MS);
+      }
+    }
+  }
+
   async function refreshAll() {
     try {
       await refreshAllFeeds();
@@ -244,6 +350,10 @@
       window.removeEventListener("resize", checkMobile);
       observer.disconnect();
     };
+  });
+
+  onDestroy(() => {
+    stopLiveRefresh();
   });
 
   // Reactive reload
@@ -369,7 +479,7 @@
 {/if}
 
 <!-- Articles List -->
-<div class="articles-list">
+<div class="articles-list" bind:this={articlesList}>
   {#if $itemsLoading && $items.length === 0}
     <div class="flex flex-col gap-0 w-full">
       {#each Array(5) as _ (Math.random())}
@@ -385,6 +495,7 @@
   {:else}
     <FeedGrid
       items={filteredItems}
+      {liveInsertIds}
       density={$viewDensity}
       on:open={(e) => openReader(e.detail.item)}
       on:toggleStar={(e) => toggleStar(e.detail.item)}
