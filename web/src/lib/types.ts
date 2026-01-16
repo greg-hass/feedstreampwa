@@ -112,5 +112,7 @@ export interface RefreshJob {
     current: number;
     total: number;
     message?: string;
+    currentFeedTitle?: string;
+    currentFeedUrl?: string;
     startedAt: number;
 }

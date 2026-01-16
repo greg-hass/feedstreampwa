@@ -83,9 +83,17 @@
             {$refreshState.current} / {$refreshState.total} • {$refreshState.message ||
               "Starting..."}
           </div>
+          {#if $refreshState.currentFeedTitle}
+            <div
+              class="text-xs text-white/60 truncate"
+              title={$refreshState.currentFeedTitle}
+            >
+              Refreshing: {$refreshState.currentFeedTitle}
+            </div>
+          {/if}
           <div class="h-1 bg-white/5 rounded-full overflow-hidden">
             <div
-              class="h-full bg-gradient-to-r from-accent to-accent/80 rounded-full transition-all duration-300"
+              class="h-full bg-accent rounded-full transition-all duration-300"
               style="width: {$refreshState.total > 0
                 ? ($refreshState.current / $refreshState.total) * 100
                 : 0}%"

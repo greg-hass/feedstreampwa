@@ -15,6 +15,8 @@ export const refreshState = writable({
     current: 0,
     total: 0,
     message: '',
+    currentFeedTitle: '',
+    currentFeedUrl: '',
     error: null as string | null
 });
 
@@ -111,7 +113,14 @@ async function pollRefreshStatus(jobId: string) {
 
     activeJobId = jobId;
     pollAttempts = 0;
-    refreshState.update(s => ({ ...s, isRefreshing: true, message: 'Starting refresh...', error: null }));
+    refreshState.update(s => ({
+        ...s,
+        isRefreshing: true,
+        message: 'Starting refresh...',
+        currentFeedTitle: '',
+        currentFeedUrl: '',
+        error: null
+    }));
 
     const poll = async () => {
         try {
@@ -138,6 +147,8 @@ async function pollRefreshStatus(jobId: string) {
                 current: data.current,
                 total: data.total,
                 message: data.message || `Refreshing... ${data.current}/${data.total}`,
+                currentFeedTitle: data.currentFeedTitle || data.currentFeedUrl || '',
+                currentFeedUrl: data.currentFeedUrl || '',
                 error: null
             }));
 
@@ -156,7 +167,9 @@ async function pollRefreshStatus(jobId: string) {
             refreshState.update(s => ({
                 ...s,
                 error: errorMsg,
-                isRefreshing: false
+                isRefreshing: false,
+                currentFeedTitle: '',
+                currentFeedUrl: ''
             }));
             stopPolling();
         }
@@ -169,7 +182,12 @@ async function pollRefreshStatus(jobId: string) {
         }
         activeJobId = null;
         pollAttempts = 0;
-        refreshState.update(s => ({ ...s, isRefreshing: false }));
+        refreshState.update(s => ({
+            ...s,
+            isRefreshing: false,
+            currentFeedTitle: '',
+            currentFeedUrl: ''
+        }));
     }
 
     // Start immediate first poll

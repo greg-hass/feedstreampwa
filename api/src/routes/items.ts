@@ -178,7 +178,7 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
                     f.icon_url as feed_icon_url, COALESCE(f.custom_title, f.title) as feed_title
                 ${fromClause}
                 ${whereClause}
-                ORDER BY i.published DESC
+                ORDER BY COALESCE(i.published, i.created_at) DESC
                 LIMIT ? OFFSET ?
             `;
 

@@ -17,6 +17,8 @@ interface RefreshJob {
     current: number;
     total: number;
     message?: string;
+    currentFeedUrl?: string;
+    currentFeedTitle?: string;
     startedAt: number;
 }
 
@@ -76,14 +78,29 @@ export default async function refreshRoutes(fastify: any, options: any) {
         }
 
         let urlsToRefresh: string[] = [];
+        const feedTitleMap = new Map<string, string>();
 
         try {
             if (specificUrls && Array.isArray(specificUrls) && specificUrls.length > 0) {
                 urlsToRefresh = specificUrls;
+                const placeholders = specificUrls.map(() => '?').join(',');
+                if (placeholders.length > 0) {
+                    const feedRows = db.prepare(
+                        `SELECT url, COALESCE(custom_title, title, url) as display_title FROM feeds WHERE url IN (${placeholders})`
+                    ).all(...specificUrls) as any[];
+                    feedRows.forEach((row) => {
+                        feedTitleMap.set(row.url, row.display_title || row.url);
+                    });
+                }
             } else {
                 try {
-                    const feeds = db.prepare('SELECT url FROM feeds').all() as any[];
+                    const feeds = db.prepare(
+                        'SELECT url, COALESCE(custom_title, title, url) as display_title FROM feeds'
+                    ).all() as any[];
                     urlsToRefresh = feeds.map(f => f.url);
+                    feeds.forEach((feed) => {
+                        feedTitleMap.set(feed.url, feed.display_title || feed.url);
+                    });
                 } catch (dbError: any) {
                     fastify.log.error('Database error fetching feeds:', dbError);
                     reply.code(500);
@@ -116,7 +133,7 @@ export default async function refreshRoutes(fastify: any, options: any) {
             });
 
             // Start processing in background (no await)
-            processRefresh(jobId, urlsToRefresh, fastify.log);
+            processRefresh(jobId, urlsToRefresh, fastify.log, feedTitleMap);
 
             return { ok: true, jobId };
 
@@ -148,7 +165,12 @@ export default async function refreshRoutes(fastify: any, options: any) {
     });
 
     // Internal helper to process refresh
-    async function processRefresh(jobId: string, urls: string[], logger: any) {
+    async function processRefresh(
+        jobId: string,
+        urls: string[],
+        logger: any,
+        feedTitleMap: Map<string, string>
+    ) {
         const job = refreshJobs.get(jobId);
         if (!job) return;
 
@@ -158,16 +180,22 @@ export default async function refreshRoutes(fastify: any, options: any) {
 
         try {
             await Promise.all(urls.map(url => limit(async () => {
+                const displayTitle = feedTitleMap.get(url) || url;
+                const currentJob = refreshJobs.get(jobId);
+                if (currentJob) {
+                    currentJob.currentFeedUrl = url;
+                    currentJob.currentFeedTitle = displayTitle;
+                    currentJob.message = `Refreshing ${displayTitle}`;
+                }
                 try {
                     await fetchFeed(url, true); // force refresh
                 } catch (e) {
                     logger.warn(`Failed to refresh ${url}: ${e}`);
                 } finally {
                     completed++;
-                    const currentJob = refreshJobs.get(jobId);
-                    if (currentJob) {
-                        currentJob.current = completed;
-                        currentJob.message = `Refreshed ${completed} of ${urls.length}`;
+                    const updatedJob = refreshJobs.get(jobId);
+                    if (updatedJob) {
+                        updatedJob.current = completed;
                     }
                 }
             })));
@@ -176,6 +204,8 @@ export default async function refreshRoutes(fastify: any, options: any) {
             if (finalJob) {
                 finalJob.status = 'done';
                 finalJob.message = 'Refresh completed';
+                finalJob.currentFeedTitle = undefined;
+                finalJob.currentFeedUrl = undefined;
             }
         } catch (e) {
             logger.error(`Refresh job ${jobId} failed: ${e}`);
@@ -183,6 +213,8 @@ export default async function refreshRoutes(fastify: any, options: any) {
             if (errorJob) {
                 errorJob.status = 'error';
                 errorJob.message = 'Internal error during refresh';
+                errorJob.currentFeedTitle = undefined;
+                errorJob.currentFeedUrl = undefined;
             }
         }
     }
