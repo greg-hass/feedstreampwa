@@ -239,7 +239,11 @@ export async function fetchFeedIcon(feedUrl: string, kind: string, siteUrl?: str
             if (match) {
                 const subreddit = match[1];
                 try {
-                    const response = await fetch(`https://www.reddit.com/r/${subreddit}/about.json`);
+                    const response = await fetch(`https://www.reddit.com/r/${subreddit}/about.json`, {
+                        headers: {
+                            'User-Agent': BROWSER_USER_AGENT
+                        }
+                    });
                     if (response.ok) {
                         const json = (await response.json()) as any;
                         const icon = json.data?.community_icon || json.data?.icon_img;
@@ -466,10 +470,12 @@ export async function fetchFeed(url: string, force: boolean): Promise<any> {
     }
 
     const headers: Record<string, string> = {
-        'User-Agent': kind === 'youtube' ? BROWSER_USER_AGENT : 'FeedStream/1.0 (compatible; RSS Reader; +http://localhost:3000)'
+        'User-Agent': kind === 'youtube' || kind === 'reddit'
+            ? BROWSER_USER_AGENT
+            : 'FeedStream/1.0 (compatible; RSS Reader; +http://localhost:3000)'
     };
 
-    if (kind === 'youtube') {
+    if (kind === 'youtube' || kind === 'reddit') {
         headers['Accept'] = 'application/atom+xml, application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.1';
         headers['Accept-Language'] = 'en-US,en;q=0.9';
     }
