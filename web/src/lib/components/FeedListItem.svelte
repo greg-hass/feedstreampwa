@@ -307,15 +307,9 @@
       <div
         class="flex-1 min-w-0 flex items-center gap-2 text-sm pt-1 flex-wrap"
       >
-        <span class="flex items-center gap-2 min-w-0">
-          {#if item.is_read === 0}
-            <span
-              class="h-2 w-2 rounded-full bg-current {currentStyle.color} shrink-0"
-              aria-hidden="true"
-            ></span>
-          {/if}
-          <span class="font-bold text-accent truncate">{item.feed_title}</span>
-        </span>
+        <span class="min-w-0 font-bold text-accent truncate"
+          >{item.feed_title}</span
+        >
         {#if isCached}
           <OfflineBadge size="sm" showText={false} />
         {/if}
@@ -343,6 +337,12 @@
         ? 'text-gray-400 font-normal'
         : 'text-white'}"
     >
+      {#if item.is_read === 0}
+        <span
+          class="inline-block h-2 w-2 rounded-full bg-accent align-middle mr-2"
+          aria-hidden="true"
+        ></span>
+      {/if}
       {item.title}
     </h3>
 

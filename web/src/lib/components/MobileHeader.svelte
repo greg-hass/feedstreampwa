@@ -79,28 +79,23 @@
         aria-expanded={isSearchOpen}
       >
         {#if isSearchOpen}
-          <X size={18} />
+          <X size={20} />
         {:else}
-          <Search size={18} />
+          <Search size={20} />
         {/if}
       </button>
 
-      <div class="flex items-center gap-1">
-        <button
-          on:click={onRefresh}
-          class="p-2 rounded-xl bg-[#3f3f46] hover:bg-[#52525b] text-white active:scale-95 transition-all"
-          class:animate-spin={isRefreshing}
-          aria-label="Refresh"
-        >
-          <RefreshCw size={20} />
-        </button>
-        <span
-          class="text-[11px] font-semibold text-white/60"
-          title={refreshCountdownTitle}
-        >
+      <button
+        on:click={onRefresh}
+        class="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-[#3f3f46] hover:bg-[#52525b] text-white active:scale-95 transition-all"
+        title={refreshCountdownTitle}
+        aria-label="Refresh"
+      >
+        <span class="text-[11px] font-semibold text-white/70">
           {refreshCountdown}
         </span>
-      </div>
+        <RefreshCw size={20} class:animate-spin={isRefreshing} />
+      </button>
 
       <button
         on:click={() => isCreateFolderModalOpen.set(true)}
