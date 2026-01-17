@@ -45,9 +45,13 @@ export default defineConfig({
 		sveltekit(),
 		SvelteKitPWA({
 			strategies: 'injectManifest',
+			srcDir: 'src',
 			filename: 'sw.js',
 			registerType: 'autoUpdate',
 			includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+			injectManifest: {
+				swSrc: 'src/service-worker.js'
+			},
 			manifest: {
 				name: 'FeedStream',
 				short_name: 'FeedStream',
