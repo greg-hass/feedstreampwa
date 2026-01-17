@@ -356,6 +356,11 @@ export async function fetchFeedIcon(feedUrl: string, kind: string, siteUrl?: str
                     extractImageUrl(feedData.image) ||
                     extractImageUrl(feedData.items?.[0]?.image);
                 if (feedImage) return feedImage;
+
+                const itemImage =
+                    extractImageUrl(feedData.items?.[0]?.mediaThumbnail) ||
+                    extractImageUrl(feedData.items?.[0]?.mediaGroup?.['media:thumbnail']);
+                if (itemImage) return itemImage;
             }
         }
 
@@ -375,6 +380,9 @@ export async function fetchFeedIcon(feedUrl: string, kind: string, siteUrl?: str
 
 function extractImageUrl(value: unknown): string | null {
     if (!value) return null;
+    if (Array.isArray(value)) {
+        return extractImageUrl(value[0]);
+    }
     if (typeof value === 'string') return value;
     if (typeof value !== 'object') return null;
 

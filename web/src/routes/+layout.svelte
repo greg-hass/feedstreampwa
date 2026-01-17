@@ -58,18 +58,15 @@
   </main>
 
   <!-- Full-width Media Player (All sizes) -->
-  <!-- Desktop Media Player (Full width) -->
+  <!-- Full-width Media Player (Single instance) -->
   {#if isMediaVisible}
-    <div class="hidden md:block fixed bottom-0 left-0 right-0 z-50 pointer-events-auto">
+    <div class="fixed left-0 right-0 z-50 pointer-events-auto bottom-[64px] md:bottom-0">
       <MediaPlayer />
     </div>
   {/if}
 
-  <!-- Mobile Bottom Stack -->
-  <div class="md:hidden fixed bottom-0 left-0 right-0 z-50 w-full pointer-events-auto">
-    {#if isMediaVisible}
-      <MediaPlayer />
-    {/if}
+  <!-- Mobile Navigation (Fixed Bottom) -->
+  <div class="md:hidden fixed bottom-0 left-0 right-0 z-40 w-full pointer-events-auto">
     <BottomNav />
   </div>
 

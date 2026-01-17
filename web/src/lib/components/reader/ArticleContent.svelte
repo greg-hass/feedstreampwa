@@ -103,6 +103,7 @@
       (readerData.url.includes("youtube.com/watch") ||
         readerData.url.includes("youtu.be/")));
   $: isPodcast = item?.source === "podcast" || Boolean(item?.enclosure);
+  $: isReddit = item?.source === "reddit";
   $: coverImage = isPodcast
     ? item?.feed_icon_url || readerData?.imageUrl || item?.media_thumbnail || null
     : readerData?.imageUrl || item?.media_thumbnail || null;
@@ -159,6 +160,15 @@
     const next = speedOptions[(current + 1) % speedOptions.length];
     setPlaybackSpeed(next);
   }
+
+  function stripInlineImages(html: string): string {
+    if (!html) return "";
+    return html
+      .replace(/<figure[^>]*>\\s*<img[^>]*>\\s*<\\/figure>/gi, "")
+      .replace(/<img[^>]*>/gi, "");
+  }
+
+  $: bodyHtml = isReddit ? stripInlineImages(readerData?.contentHtml || "") : readerData?.contentHtml || "";
 </script>
 
 <article class="reader-content {themeClass}">
@@ -294,11 +304,11 @@
 
   {#if !isPodcast}
     <div
-      class="reader-body {fontSizeClass} {fontFamilyClass} mx-auto"
+      class="reader-body {fontSizeClass} {fontFamilyClass} mx-auto w-full max-w-none"
       id="reader-body-content"
     >
       {#if !isYouTube}
-        {@html formatContent(readerData.contentHtml)}
+        {@html formatContent(bodyHtml)}
       {/if}
     </div>
   {/if}
