@@ -164,7 +164,7 @@
   function stripInlineImages(html: string): string {
     if (!html) return "";
     return html
-      .replace(/<figure[^>]*>\\s*<img[^>]*>\\s*<\\/figure>/gi, "")
+      .replace(/<figure[^>]*>\s*<img[^>]*>\s*<\/figure>/gi, "")
       .replace(/<img[^>]*>/gi, "");
   }
 
