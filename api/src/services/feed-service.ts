@@ -347,11 +347,15 @@ export async function fetchFeedIcon(feedUrl: string, kind: string, siteUrl?: str
         } else if (kind === 'podcast') {
             // Extract podcast artwork from feed data
             if (feedData) {
-                const itunesImage = feedData.itunesImage;
-                if (typeof itunesImage === 'object' && itunesImage['@_href']) return itunesImage['@_href'];
-                if (typeof itunesImage === 'string') return itunesImage;
+                const itunesImage =
+                    extractImageUrl(feedData.itunesImage) ||
+                    extractImageUrl(feedData.items?.[0]?.itunesImage);
+                if (itunesImage) return itunesImage;
 
-                if (feedData.image?.url) return feedData.image.url;
+                const feedImage =
+                    extractImageUrl(feedData.image) ||
+                    extractImageUrl(feedData.items?.[0]?.image);
+                if (feedImage) return feedImage;
             }
         }
 
@@ -366,6 +370,27 @@ export async function fetchFeedIcon(feedUrl: string, kind: string, siteUrl?: str
     } catch (e) {
         logger.error({ err: e }, `Failed to fetch icon for ${feedUrl}`);
     }
+    return null;
+}
+
+function extractImageUrl(value: unknown): string | null {
+    if (!value) return null;
+    if (typeof value === 'string') return value;
+    if (typeof value !== 'object') return null;
+
+    const record = value as Record<string, unknown>;
+    if (typeof record['@_href'] === 'string') return record['@_href'];
+    if (typeof record['href'] === 'string') return record['href'];
+    if (typeof record['url'] === 'string') return record['url'];
+    if (typeof record['@_url'] === 'string') return record['@_url'];
+
+    const nested = record['$'];
+    if (nested && typeof nested === 'object') {
+        const nestedRecord = nested as Record<string, unknown>;
+        if (typeof nestedRecord['href'] === 'string') return nestedRecord['href'];
+        if (typeof nestedRecord['url'] === 'string') return nestedRecord['url'];
+    }
+
     return null;
 }
 
@@ -416,7 +441,7 @@ function extractRedditMetadata(item: ParsedFeedItem): Partial<NormalizedItem> {
     if (content) {
         const imgMatch = content.match(IMG_SRC_REGEX);
         if (imgMatch) {
-            const src = imgMatch[1];
+            const src = upgradeRedditImageUrl(imgMatch[1]);
             if (!isVideo) {
                 metadata.media_thumbnail = src;
             }
@@ -437,6 +462,32 @@ function cleanRedditContent(html: string): string {
     cleaned = cleaned.replace(REDDIT_EMPTY_ANCHOR, '');
     cleaned = cleaned.replace(REDDIT_EMPTY_SPAN, '');
     return cleaned.trim();
+}
+
+function upgradeRedditImageUrl(url: string): string {
+    try {
+        const parsed = new URL(url);
+        const host = parsed.hostname;
+
+        if (host === 'i.redd.it') {
+            parsed.search = '';
+            return parsed.toString();
+        }
+
+        if (host.endsWith('preview.redd.it') || host.endsWith('external-preview.redd.it')) {
+            if (parsed.searchParams.has('width')) {
+                parsed.searchParams.set('width', '1920');
+            }
+            if (parsed.searchParams.has('auto')) {
+                parsed.searchParams.set('auto', 'webp');
+            }
+            return parsed.toString();
+        }
+    } catch {
+        return url;
+    }
+
+    return url;
 }
 
 function extractHeroImage(item: any): string | null {
