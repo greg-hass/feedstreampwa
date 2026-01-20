@@ -398,8 +398,17 @@
 
   function handleVisibilityChange() {
     const interval = getCountdownInterval(document.hidden);
-    if (!document.hidden) updateRefreshCountdown();
+    if (!document.hidden) {
+      updateRefreshCountdown();
+      // Refresh items when user returns to the app
+      loadItems(getLoadParams());
+    }
     setupCountdownTimer(interval);
+  }
+
+  function handleWindowFocus() {
+    // Refresh items when browser tab regains focus
+    loadItems(getLoadParams());
   }
 
   onMount(() => {
@@ -408,6 +417,7 @@
     setupCountdownTimer(getCountdownInterval(false));
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleWindowFocus);
 
     const checkMobile = () => {
       isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
@@ -428,6 +438,7 @@
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleWindowFocus);
       window.removeEventListener("resize", checkMobile);
       observer.disconnect();
     };
