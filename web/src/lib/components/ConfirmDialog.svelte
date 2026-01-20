@@ -67,8 +67,10 @@
     <div
       class="confirm-dialog bg-[#18181b] rounded-2xl border border-white/10 max-w-md w-full shadow-2xl"
       transition:fly={{ duration: 250, y: 50 }}
-      role="dialog"
+      role="alertdialog"
       aria-modal="true"
+      aria-labelledby="confirm-dialog-title"
+      aria-describedby="confirm-dialog-message"
       tabindex="-1"
     >
       <!-- Header -->
@@ -76,16 +78,17 @@
         <div class="flex-shrink-0">
           <div
             class="w-12 h-12 rounded-xl border {iconBg} flex items-center justify-center"
+            aria-hidden="true"
           >
             <Icon size={24} class={iconColor} />
           </div>
         </div>
 
         <div class="flex-1 min-w-0">
-          <h3 class="text-lg font-semibold text-white mb-1">
+          <h3 id="confirm-dialog-title" class="text-lg font-semibold text-white mb-1">
             {$confirmDialog.title}
           </h3>
-          <p class="text-sm text-white/60 leading-relaxed">
+          <p id="confirm-dialog-message" class="text-sm text-white/60 leading-relaxed">
             {$confirmDialog.message}
           </p>
         </div>

@@ -247,6 +247,8 @@
       on:click|stopPropagation={() => {}}
       role="dialog"
       aria-modal="true"
+      aria-labelledby="settings-modal-title"
+      aria-describedby="settings-modal-description"
     >
       <!-- Header -->
       <div class="bg-zinc-900 border-b border-zinc-800 px-6 pt-6 pb-0 flex-shrink-0">
@@ -256,8 +258,8 @@
               <SettingsIcon size={20} class="text-blue-400" />
             </div>
             <div>
-              <h2 class="text-xl font-semibold text-white">Settings</h2>
-              <p class="text-sm text-zinc-400">Preferences & Management</p>
+              <h2 id="settings-modal-title" class="text-xl font-semibold text-white">Settings</h2>
+              <p id="settings-modal-description" class="text-sm text-zinc-400">Preferences & Management</p>
             </div>
           </div>
           <button class="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white" on:click={handleCancel}>

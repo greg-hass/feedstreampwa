@@ -36,6 +36,14 @@
 <div
   class="min-h-screen bg-background text-gray-200 font-sans selection:bg-accent selection:text-white"
 >
+  <!-- Skip Links for Keyboard Accessibility -->
+  <a
+    href="#main-content"
+    class="skip-link sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-accent focus:text-white focus:rounded-lg focus:font-semibold focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-white"
+  >
+    Skip to main content
+  </a>
+
   <!-- Desktop Sidebar (Fixed Left) -->
   <Sidebar />
 
@@ -46,7 +54,9 @@
     md:pb-0: No bottom padding needed on desktop (Player in sidebar)
   -->
   <main
-    class={`relative w-full min-h-screen md:pl-[280px] pb-[140px] ${isMediaVisible ? "md:pb-[96px]" : "md:pb-0"} transition-all duration-300 ease-out overflow-x-hidden`}
+    id="main-content"
+    tabindex="-1"
+    class={`relative w-full min-h-screen md:pl-[280px] pb-[140px] ${isMediaVisible ? "md:pb-[96px]" : "md:pb-0"} transition-all duration-300 ease-out overflow-x-hidden focus:outline-none`}
   >
     <div
       class="w-full max-w-[1600px] mx-auto p-2 md:px-6 md:pt-6 lg:px-8 lg:pt-6"

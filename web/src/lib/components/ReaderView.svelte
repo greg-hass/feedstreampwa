@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, onMount, afterUpdate } from "svelte";
+  import { onDestroy, onMount, afterUpdate, tick } from "svelte";
   import {
     showReader,
     readerData,
@@ -7,6 +7,9 @@
     readerError,
     currentItem,
     closeReader,
+    saveReadingPosition,
+    getReadingPosition,
+    clearReadingPosition,
   } from "$lib/stores/reader";
   import { readerSettings } from "$lib/stores/readerSettings";
   import ReadingProgress from "$lib/components/ReadingProgress.svelte";
@@ -30,6 +33,49 @@
   let ttsActive = false;
   let speechSynthesis: SpeechSynthesis | null = null;
   let currentUtterance: SpeechSynthesisUtterance | null = null;
+  let savePositionTimer: ReturnType<typeof setTimeout> | null = null;
+  let hasRestoredPosition = false;
+
+  // Save reading position on scroll (debounced)
+  function handleScroll() {
+    if (!scrollContainer || !$currentItem) return;
+
+    const scrollHeight = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+    if (scrollHeight <= 0) return;
+
+    const scrollPercent = scrollContainer.scrollTop / scrollHeight;
+
+    // Debounce saving
+    if (savePositionTimer) clearTimeout(savePositionTimer);
+    savePositionTimer = setTimeout(() => {
+      if (scrollPercent > 0.95) {
+        // Article finished - clear position
+        clearReadingPosition($currentItem!.id);
+      } else {
+        saveReadingPosition($currentItem!.id, scrollPercent);
+      }
+    }, 500);
+  }
+
+  // Restore reading position when article loads
+  async function restoreReadingPosition() {
+    if (!$currentItem || !scrollContainer || hasRestoredPosition) return;
+
+    await tick(); // Wait for content to render
+
+    const savedPercent = getReadingPosition($currentItem.id);
+    if (savedPercent && savedPercent > 0.05) {
+      // Small delay to ensure content is fully rendered
+      setTimeout(() => {
+        if (!scrollContainer) return;
+        const scrollHeight = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+        if (scrollHeight > 0) {
+          scrollContainer.scrollTop = savedPercent * scrollHeight;
+          hasRestoredPosition = true;
+        }
+      }, 100);
+    }
+  }
 
   async function handleSummarize() {
     if (!$currentItem) return;
@@ -140,7 +186,13 @@
     summaryLoading = false;
     discussions = [];
     showDiscussions = false;
+    hasRestoredPosition = false; // Reset for new article
     fetchDiscussions();
+  }
+
+  // Restore position when content loads
+  $: if ($readerData && !$readerLoading && scrollContainer) {
+    restoreReadingPosition();
   }
 
   $: if (typeof window !== "undefined") {
@@ -152,7 +204,10 @@
   }
 
   onMount(() => {
-    return () => { if (typeof document !== "undefined") document.body.style.overflow = ""; };
+    return () => {
+      if (typeof document !== "undefined") document.body.style.overflow = "";
+      if (savePositionTimer) clearTimeout(savePositionTimer);
+    };
   });
 
   afterUpdate(() => {
@@ -188,7 +243,7 @@
     role="button"
     tabindex="0"
   >
-    <div class="reader-container" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="reader-container" role="dialog" aria-modal="true" aria-labelledby="reader-title" tabindex="-1">
       <ReadingProgress {scrollContainer} />
 
       <ReaderHeader 
@@ -199,7 +254,7 @@
         {ttsActive} 
       />
 
-      <div class="reader-scroll-container" bind:this={scrollContainer}>
+      <div class="reader-scroll-container" bind:this={scrollContainer} on:scroll={handleScroll}>
         {#if $readerLoading}
           <div class="reader-loading">
             <div class="reader-spinner"></div>

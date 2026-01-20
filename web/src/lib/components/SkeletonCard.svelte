@@ -31,9 +31,12 @@
 </script>
 
 <article
-  class="group flex flex-col {densityClasses.padding} border-b border-white/5 animate-pulse"
+  class="group flex flex-col {densityClasses.padding} border-b border-white/5 skeleton-pulse"
   aria-hidden="true"
+  aria-busy="true"
+  role="status"
 >
+  <span class="sr-only">Loading article...</span>
   <!-- Header: Icon + Feed Title + Timestamp Skeleton -->
   <div class="flex items-start gap-3 {densityClasses.headerSpacing}">
     <!-- Icon Skeleton -->
@@ -90,7 +93,15 @@
     }
   }
 
-  .animate-pulse {
+  .skeleton-pulse {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Respect user's reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-pulse {
+      animation: none;
+      opacity: 0.7;
+    }
   }
 </style>

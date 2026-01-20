@@ -1,14 +1,17 @@
 <script lang="ts">
-  import { 
-    ChevronLeft, 
-    ZoomOut, 
-    ZoomIn, 
-    Trash2, 
-    Share, 
+  import {
+    ChevronLeft,
+    ChevronUp,
+    ChevronDown,
+    ZoomOut,
+    ZoomIn,
+    Trash2,
+    Share,
     Headphones,
     Loader2
   } from "lucide-svelte";
   import { readerSettings } from "$lib/stores/readerSettings";
+  import { readerNavigation, navigateToPrev, navigateToNext } from "$lib/stores/reader";
   import type { FontSize } from "$lib/types";
 
   export let handleClose: () => void;
@@ -16,6 +19,24 @@
   export let handleShare: () => Promise<void>;
   export let toggleTTS: () => void;
   export let ttsActive: boolean;
+
+  // Keyboard navigation
+  function handleKeydown(e: KeyboardEvent) {
+    // Only handle if reader is focused and not in an input
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+    if (e.key === 'j' || e.key === 'ArrowDown') {
+      if ($readerNavigation.hasNext) {
+        e.preventDefault();
+        navigateToNext();
+      }
+    } else if (e.key === 'k' || e.key === 'ArrowUp') {
+      if ($readerNavigation.hasPrev) {
+        e.preventDefault();
+        navigateToPrev();
+      }
+    }
+  }
 
   function increaseFontSize() {
     const sizes: FontSize[] = ["small", "medium", "large", "xlarge"];
@@ -41,23 +62,52 @@
   };
 </script>
 
+<svelte:window on:keydown={handleKeydown} />
+
 <div class="reader-header-new">
   <div class="header-top">
     <button class="back-button" on:click={handleClose}>
       <ChevronLeft size={20} />
       <span>Back</span>
     </button>
+
+    <!-- Article Navigation -->
+    {#if $readerNavigation.total > 1}
+      <div class="nav-controls">
+        <button
+          class="nav-button"
+          on:click={navigateToPrev}
+          disabled={!$readerNavigation.hasPrev}
+          title="Previous article (k or ↑)"
+          aria-label="Go to previous article"
+        >
+          <ChevronUp size={18} />
+        </button>
+        <span class="nav-position">
+          {$readerNavigation.currentIndex + 1} / {$readerNavigation.total}
+        </span>
+        <button
+          class="nav-button"
+          on:click={navigateToNext}
+          disabled={!$readerNavigation.hasNext}
+          title="Next article (j or ↓)"
+          aria-label="Go to next article"
+        >
+          <ChevronDown size={18} />
+        </button>
+      </div>
+    {/if}
   </div>
 
   <div class="header-controls-row">
     <div class="zoom-controls">
-      <button on:click={decreaseFontSize} title="Decrease Font Size">
+      <button on:click={decreaseFontSize} title="Decrease Font Size" aria-label="Decrease font size">
         <ZoomOut size={18} />
       </button>
-      <span class="zoom-level">
+      <span class="zoom-level" aria-live="polite">
         {zoomLabels[$readerSettings.fontSize]}
       </span>
-      <button on:click={increaseFontSize} title="Increase Font Size">
+      <button on:click={increaseFontSize} title="Increase Font Size" aria-label="Increase font size">
         <ZoomIn size={18} />
       </button>
     </div>
@@ -68,16 +118,18 @@
       <button
         on:click={handleDelete}
         title="Delete Article"
+        aria-label="Delete article"
         class="hover:text-red-400 transition-colors"
       >
         <Trash2 size={20} />
       </button>
-      <button on:click={handleShare} title="Share">
+      <button on:click={handleShare} title="Share" aria-label="Share article">
         <Share size={20} />
       </button>
-      <button 
-        on:click={toggleTTS} 
+      <button
+        on:click={toggleTTS}
         title={ttsActive ? "Stop Listening" : "Listen"}
+        aria-label={ttsActive ? "Stop listening" : "Listen to article"}
         class={ttsActive ? "text-accent" : ""}
       >
         <Headphones size={20} />
@@ -98,6 +150,54 @@
 
   .header-top {
     margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .nav-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .nav-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: all 0.2s;
+  }
+
+  .nav-button:hover:not(:disabled) {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .nav-button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .nav-position {
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 50px;
+    text-align: center;
+    opacity: 0.7;
+    font-variant-numeric: tabular-nums;
   }
 
   .back-button {

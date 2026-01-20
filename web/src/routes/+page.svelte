@@ -442,12 +442,34 @@
     viewDensity.set(densities[nextIndex]);
   }
 
+  // Throttled countdown timer - runs slower when tab is hidden
+  const COUNTDOWN_INTERVAL_ACTIVE = 1000;
+  const COUNTDOWN_INTERVAL_HIDDEN = 10000;
+
+  function setupCountdownTimer(interval: number) {
+    if (countdownTimer) clearInterval(countdownTimer);
+    countdownTimer = setInterval(updateRefreshCountdown, interval);
+  }
+
+  function handleVisibilityChange() {
+    if (document.hidden) {
+      // Tab is hidden - slow down the timer
+      setupCountdownTimer(COUNTDOWN_INTERVAL_HIDDEN);
+    } else {
+      // Tab is visible - use normal interval and update immediately
+      updateRefreshCountdown();
+      setupCountdownTimer(COUNTDOWN_INTERVAL_ACTIVE);
+    }
+  }
+
   onMount(() => {
     // Initial load
     loadItems();
     updateRefreshCountdown();
-    if (countdownTimer) clearInterval(countdownTimer);
-    countdownTimer = setInterval(updateRefreshCountdown, 1000);
+    setupCountdownTimer(COUNTDOWN_INTERVAL_ACTIVE);
+
+    // Listen for visibility changes to throttle countdown
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     const checkMobile = () => {
       isMobile = window.innerWidth <= 768;
@@ -468,6 +490,7 @@
     if (sentinel) observer.observe(sentinel);
 
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("resize", checkMobile);
       observer.disconnect();
     };

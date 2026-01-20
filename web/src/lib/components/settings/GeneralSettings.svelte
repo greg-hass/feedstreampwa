@@ -1,9 +1,20 @@
 <script lang="ts">
-  import { Palette } from "lucide-svelte";
+  import { Palette, HelpCircle } from "lucide-svelte";
   import { theme, colorSchemes, type ColorScheme, type ThemeMode } from "$lib/stores/theme";
+  import { resetOnboarding } from "$lib/stores/onboarding";
+  import { isSettingsModalOpen } from "$lib/stores/ui";
   import type { Settings } from "$lib/types";
 
   export let localSettings: Settings;
+
+  function handleShowWelcomeTour() {
+    // Close settings modal first, then trigger onboarding
+    isSettingsModalOpen.set(false);
+    // Small delay to let modal close animation complete
+    setTimeout(() => {
+      resetOnboarding();
+    }, 200);
+  }
   export let showCustomColors = false;
   export let customColors = {
     primary: "#10B981",
@@ -234,5 +245,27 @@
       </a>
       . Your key is stored securely on the server and never exposed to the browser.
     </p>
+  </div>
+
+  <!-- Help & Tips -->
+  <div class="space-y-3 pt-4 border-t border-white/10">
+    <span class="text-sm font-semibold text-white flex items-center gap-2">
+      <HelpCircle size={16} />
+      Help & Tips
+    </span>
+    <p class="text-xs text-white/50">
+      Need a refresher on FeedStream's features? Re-watch the welcome tour.
+    </p>
+    <button
+      type="button"
+      class="w-full px-4 py-3 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 text-white/80 hover:text-white hover:border-purple-500/40 hover:from-purple-500/20 hover:to-pink-500/20 transition-all text-sm font-medium flex items-center justify-center gap-2"
+      on:click={handleShowWelcomeTour}
+    >
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <polygon points="10 8 16 12 10 16 10 8" />
+      </svg>
+      Show Welcome Tour
+    </button>
   </div>
 </div>

@@ -9,10 +9,28 @@
     Zap,
     Heart,
   } from "lucide-svelte";
+  import { showOnboarding } from "$lib/stores/onboarding";
 
   export let isOpen = false;
 
   const dispatch = createEventDispatcher();
+
+  // Auto-show on first visit, also react to store changes
+  onMount(() => {
+    if (typeof window !== "undefined") {
+      const completed = localStorage.getItem("feedstream_onboarding_completed");
+      if (!completed) {
+        isOpen = true;
+      }
+    }
+  });
+
+  // React to external requests to show onboarding (e.g., from settings)
+  $: if ($showOnboarding) {
+    isOpen = true;
+    currentStep = 0;
+    showOnboarding.set(false);
+  }
 
   let currentStep = 0;
 

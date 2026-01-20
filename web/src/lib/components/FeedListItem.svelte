@@ -26,167 +26,96 @@
   import { offlineArticles } from "$lib/stores/offlineArticles";
   import { diversitySettings } from "$lib/stores/diversity";
   import type { ItemWithDiversity } from "$lib/stores/diversity";
-  import { now } from "$lib/stores/clock";
 
   export let item: Item;
   export let feedType: "rss" | "youtube" | "reddit" | "podcast" = "rss";
   export let density: ViewDensity = "comfortable";
+  export let timeAgo: string = ""; // Computed by parent to avoid N subscriptions
 
   const dispatch = createEventDispatcher();
 
-  // Cast to diversity-aware item
-  $: diversityItem = item as ItemWithDiversity;
-  $: showDiversityBadge =
-    $diversitySettings.enabled && diversityItem._isDiverseSource;
-
-  // Check if this article is cached for offline
-  $: isCached = $offlineArticles.has(item.id);
-
-  // Calculate read time
-  $: readTime = item.summary ? calculateReadTime(item.summary) : 0;
-  $: readTimeText = readTime > 0 ? formatReadTime(readTime) : null;
-
-  // Density-aware sizing
-  $: densityClasses = {
-    padding:
-      density === "compact"
-        ? "px-4 py-2"
-        : density === "spacious"
-          ? "px-4 py-6"
-          : "px-4 py-4",
-    iconSize: "w-5 h-5", // Fixed 20px regardless of density
-    titleSize:
-      density === "compact"
-        ? "text-sm"
-        : density === "spacious"
-          ? "text-xl"
-          : "text-base sm:text-lg",
-    summarySize:
-      density === "compact"
-        ? "text-xs"
-        : density === "spacious"
-          ? "text-base"
-          : "text-sm",
-    spacing:
-      density === "compact" ? "mb-1" : density === "spacious" ? "mb-4" : "mb-2",
-    headerSpacing:
-      density === "compact" ? "mb-1" : density === "spacious" ? "mb-4" : "mb-3",
-    mediaSpacing:
-      density === "compact" ? "mb-1" : density === "spacious" ? "mb-4" : "mb-3",
-  };
-
-  // Extract YouTube video ID from external_id or URL
-  $: youtubeVideoId = (() => {
-    if (item.external_id) return item.external_id;
-    if (item.url) {
-      const match = item.url.match(
-        /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/
-      );
+  // ===== Memoized/cached computations =====
+  // Extract YouTube video ID - pure function, no IIFE in reactive
+  function extractYouTubeId(externalId: string | null | undefined, url: string | null | undefined): string | null {
+    if (externalId) return externalId;
+    if (url) {
+      const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
       if (match) return match[1];
     }
     return null;
-  })();
+  }
 
-  // YouTube thumbnail URL - try highest quality first, fallback on error
-  // maxresdefault (1280x720) → hqdefault (480x360)
+  // YouTube thumbnail quality state (mutable for fallback)
   let ytThumbnailQuality = "maxresdefault";
-  $: youtubeThumbnail = youtubeVideoId
-    ? `https://img.youtube.com/vi/${youtubeVideoId}/${ytThumbnailQuality}.jpg`
-    : null;
 
   function handleYouTubeThumbnailError() {
     if (ytThumbnailQuality === "maxresdefault") {
-      ytThumbnailQuality = "hqdefault"; // Fallback to 480x360
+      ytThumbnailQuality = "hqdefault";
     }
   }
 
-  // Use YouTube thumbnail if available, otherwise use media_thumbnail.
-  // For podcasts, fallback to feed icon (usually high-res cover art) if no episode image.
-  $: thumbnailUrl =
-    youtubeThumbnail ||
-    (feedType === "podcast"
-      ? item.feed_icon_url || item.media_thumbnail
-      : item.media_thumbnail);
+  // ===== Consolidated reactive computations =====
+  // Single reactive block for item-derived metadata
+  $: itemMeta = (() => {
+    const youtubeVideoId = extractYouTubeId(item.external_id, item.url);
+    const youtubeThumbnail = youtubeVideoId
+      ? `https://img.youtube.com/vi/${youtubeVideoId}/${ytThumbnailQuality}.jpg`
+      : null;
+    const readTime = item.summary ? calculateReadTime(item.summary) : 0;
 
-  $: isPodcast = feedType === "podcast";
-  $: durationSeconds = item.media_duration_seconds ?? null;
-  $: hasDuration = typeof durationSeconds === "number" && durationSeconds > 0;
-  $: progressSeconds = Math.max(0, item.playback_position || 0);
-  $: hasProgress = progressSeconds > 5;
-  $: progressPercent = hasDuration
-    ? Math.min(100, (progressSeconds / durationSeconds) * 100)
-    : 0;
-  $: remainingSeconds = hasDuration
-    ? Math.max(0, durationSeconds - progressSeconds)
-    : null;
-  $: playLabel = isPodcast ? (hasProgress ? "Resume" : "Listen") : "Play";
+    return {
+      youtubeVideoId,
+      youtubeThumbnail,
+      thumbnailUrl: youtubeThumbnail ||
+        (feedType === "podcast" ? item.feed_icon_url || item.media_thumbnail : item.media_thumbnail),
+      readTimeText: readTime > 0 ? formatReadTime(readTime) : null,
+      isCached: $offlineArticles.has(item.id),
+      showDiversityBadge: $diversitySettings.enabled && (item as ItemWithDiversity)._isDiverseSource,
+    };
+  })();
 
-  // Format Date
-  const dateFormatterWithYear = new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-  const dateFormatterNoYear = new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  // Single reactive block for podcast-specific metadata
+  $: podcastMeta = (() => {
+    const isPodcast = feedType === "podcast";
+    const durationSeconds = item.media_duration_seconds ?? null;
+    const hasDuration = typeof durationSeconds === "number" && durationSeconds > 0;
+    const progressSeconds = Math.max(0, item.playback_position || 0);
+    const hasProgress = progressSeconds > 5;
 
-  let dateStr = "";
-  let timeAgo = "";
-  let itemDate: Date | null = null;
+    return {
+      isPodcast,
+      durationSeconds,
+      hasDuration,
+      progressSeconds,
+      hasProgress,
+      progressPercent: hasDuration ? Math.min(100, (progressSeconds / durationSeconds) * 100) : 0,
+      remainingSeconds: hasDuration ? Math.max(0, durationSeconds - progressSeconds) : null,
+      playLabel: isPodcast ? (hasProgress ? "Resume" : "Listen") : "Play",
+    };
+  })();
 
-  $: itemDate = new Date(item.published || item.created_at);
+  // Density classes - only recomputes when density prop changes
+  $: densityClasses = {
+    padding: density === "compact" ? "px-4 py-2.5" : density === "spacious" ? "px-4 py-6" : "px-4 py-4",
+    iconSize: density === "compact" ? "w-4 h-4" : "w-5 h-5",
+    titleSize: density === "compact" ? "text-sm leading-snug" : density === "spacious" ? "text-xl" : "text-base sm:text-lg",
+    summarySize: density === "compact" ? "text-xs" : density === "spacious" ? "text-base" : "text-sm",
+    spacing: density === "compact" ? "mb-0.5" : density === "spacious" ? "mb-4" : "mb-2",
+    headerSpacing: density === "compact" ? "mb-1" : density === "spacious" ? "mb-4" : "mb-3",
+    mediaSpacing: density === "compact" ? "mb-1" : density === "spacious" ? "mb-4" : "mb-3",
+    feedTextSize: density === "compact" ? "text-xs" : "text-sm",
+    metaGap: density === "compact" ? "gap-1.5" : "gap-2",
+  };
 
-  $: {
-    if (!itemDate || isNaN(itemDate.getTime())) {
-      dateStr = "";
-      timeAgo = "";
-    } else {
-      const nowDate = new Date($now);
-      const isCurrentYear = itemDate.getFullYear() === nowDate.getFullYear();
-      dateStr = (isCurrentYear ? dateFormatterNoYear : dateFormatterWithYear).format(
-        itemDate
-      );
-      timeAgo = getTimeAgo(itemDate, $now, dateStr);
-    }
-  }
-
-  function getTimeAgo(date: Date, nowMs: number, fallback: string): string {
-    const seconds = Math.floor((nowMs - date.getTime()) / 1000);
-    if (seconds < 60) return "just now";
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
-    return fallback;
-  }
-
-  // Source Styling
+  // Source styling - static lookup, minimal reactivity
   const styles = {
-    youtube: {
-      color: "text-red-400",
-      icon: PlayCircle,
-    },
-    reddit: {
-      color: "text-orange-400",
-      icon: RedditIcon,
-    },
-    podcast: {
-      color: "text-purple-400",
-      icon: Radio,
-    },
-    rss: {
-      color: "text-accent",
-      icon: Rss,
-    },
+    youtube: { color: "text-red-400", icon: PlayCircle },
+    reddit: { color: "text-orange-400", icon: RedditIcon },
+    podcast: { color: "text-purple-400", icon: Radio },
+    rss: { color: "text-accent", icon: Rss },
   };
 
   $: currentStyle = styles[feedType] || styles.rss;
-  $: Icon = currentStyle.icon;
 
   function handleOpen() {
     dispatch("open", { item });
@@ -231,23 +160,18 @@
     }
   }
 
-  // Check if item is playable (podcast or video)
-  // Strictly require enclosure URL for podcasts/audio
-  $: enclosureUrl = typeof item.enclosure === 'string' 
-    ? item.enclosure 
-    : (item.enclosure && typeof item.enclosure === 'object' ? item.enclosure.url : null);
-
-  $: fallbackAudioUrl =
-    item.url && /\.(mp3|m4a|aac|ogg|opus|wav|flac)(\?|#|$)/i.test(item.url)
-      ? item.url
-      : null;
-
-  $: isPlayable =
-    (feedType === "podcast" && (enclosureUrl || fallbackAudioUrl || item.url)) ||
-    ((enclosureUrl || fallbackAudioUrl) && Boolean(item.enclosure)) ||
-    youtubeVideoId;
-
-  $: isSelected = $selectedItemIds.has(item.id);
+  // Check if item is playable - consolidated into single reactive
+  $: playability = (() => {
+    const enclosureUrl = typeof item.enclosure === 'string'
+      ? item.enclosure
+      : (item.enclosure && typeof item.enclosure === 'object' ? item.enclosure.url : null);
+    const fallbackAudioUrl = item.url && /\.(mp3|m4a|aac|ogg|opus|wav|flac)(\?|#|$)/i.test(item.url)
+      ? item.url : null;
+    const isPlayable = (feedType === "podcast" && (enclosureUrl || fallbackAudioUrl || item.url)) ||
+      ((enclosureUrl || fallbackAudioUrl) && Boolean(item.enclosure)) ||
+      itemMeta.youtubeVideoId;
+    return { isPlayable, isSelected: $selectedItemIds.has(item.id) };
+  })();
 
   function handleClick(e: Event) {
     // Clear any pending long-press timer
@@ -288,18 +212,18 @@
 </script>
 
 <article
-  class="group relative flex flex-col md:flex-row {densityClasses.padding} border-b transition-all duration-200 cursor-pointer overflow-hidden
-  {isSelected
+  class="group relative flex flex-col md:flex-row {densityClasses.padding} border-b transition-colors cursor-pointer overflow-hidden
+  {playability.isSelected
     ? 'bg-blue-500/10 border-blue-500/30'
-    : 'border-zinc-800 hover:bg-zinc-900 hover:border-zinc-700'}"
-  class:opacity-100={item.is_read === 0}
-  class:opacity-60={item.is_read === 1}
+    : 'border-zinc-800 hover:bg-zinc-900/80 hover:border-zinc-700'}
+  {item.is_read === 1 ? 'article-read' : 'article-unread'}"
   on:click={handleClick}
   on:touchstart={handleTouchStart}
   on:touchend={handleTouchEnd}
   on:keypress={(e) => e.key === "Enter" && handleClick(e)}
   tabindex="0"
   role="button"
+  aria-label={`${item.is_read ? 'Read' : 'Unread'}: ${item.title}`}
 >
   <!-- Left Column: Content -->
   <div class="flex-1 min-w-0 flex flex-col">
@@ -318,7 +242,7 @@
             />
           {:else}
             <svelte:component
-              this={Icon}
+              this={currentStyle.icon}
               size={20}
               class={currentStyle.color}
             />
@@ -328,13 +252,13 @@
 
       <!-- Feed Title + Timestamp + Read Time -->
       <div
-        class="flex-1 min-w-0 flex items-center gap-2 text-sm pt-1 flex-wrap"
+        class="flex-1 min-w-0 flex items-center {densityClasses.metaGap} {densityClasses.feedTextSize} pt-0.5 flex-wrap"
       >
-        <span class="font-bold text-accent truncate">{item.feed_title}</span>
-        {#if isCached}
+        <span class="font-semibold text-accent truncate max-w-[180px]">{item.feed_title}</span>
+        {#if itemMeta.isCached}
           <OfflineBadge size="sm" showText={false} />
         {/if}
-        {#if showDiversityBadge}
+        {#if itemMeta.showDiversityBadge}
           <span
             class="px-1.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-[8px] font-semibold text-cyan-400"
             title="New source - explore diverse content">NEW</span
@@ -342,11 +266,11 @@
         {/if}
         <span class="text-zinc-600">•</span>
         <span class="text-orange-400 whitespace-nowrap">{timeAgo}</span>
-        {#if readTimeText}
+        {#if itemMeta.readTimeText}
           <span class="text-zinc-600">•</span>
           <span class="text-zinc-500 whitespace-nowrap flex items-center gap-1">
             <Clock size={12} />
-            {readTimeText}
+            {itemMeta.readTimeText}
           </span>
         {/if}
       </div>
@@ -354,14 +278,17 @@
 
     <!-- Article Title (Full Width) -->
     <h3
-      class="{densityClasses.titleSize} font-semibold leading-snug transition-colors {densityClasses.spacing} {item.is_read
+      class="{densityClasses.titleSize} leading-snug transition-colors {densityClasses.spacing} {item.is_read
         ? 'text-zinc-500 font-normal'
-        : 'text-white'}"
+        : 'text-white font-semibold'}"
     >
+      {#if item.is_read === 0 && density === "compact"}
+        <span class="unread-indicator" aria-hidden="true"></span>
+      {/if}
       {item.title}
     </h3>
 
-    {#if isPodcast}
+    {#if podcastMeta.isPodcast}
       <div class="flex flex-col gap-2 {densityClasses.spacing}">
         <div class="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
           <span
@@ -370,23 +297,23 @@
             <Radio size={12} class="text-accent" />
             Podcast
           </span>
-          {#if hasDuration}
+          {#if podcastMeta.hasDuration}
             <span class="text-zinc-500">
-              {hasProgress
-                ? `${formatDuration(remainingSeconds)} left`
-                : formatDuration(durationSeconds)}
+              {podcastMeta.hasProgress
+                ? `${formatDuration(podcastMeta.remainingSeconds)} left`
+                : formatDuration(podcastMeta.durationSeconds)}
             </span>
-          {:else if hasProgress}
+          {:else if podcastMeta.hasProgress}
             <span class="text-zinc-500">
-              Resume at {formatDuration(progressSeconds)}
+              Resume at {formatDuration(podcastMeta.progressSeconds)}
             </span>
           {/if}
         </div>
-        {#if hasDuration}
+        {#if podcastMeta.hasDuration}
           <div class="h-1.5 w-full rounded-full bg-white/5">
             <div
-              class="h-full rounded-full bg-accent/80 transition-all"
-              style="width: {progressPercent}%"
+              class="h-full rounded-full bg-accent/80 transition-[width]"
+              style="width: {podcastMeta.progressPercent}%"
             ></div>
           </div>
         {/if}
@@ -395,70 +322,73 @@
 
     <!-- Actions Bar -->
     <div class="flex items-center justify-between pt-2 mt-auto">
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-1 -ml-2">
         <button
-          class="p-1.5 -ml-1.5 rounded-lg hover:bg-zinc-800 transition-colors flex items-center gap-1.5 {item.is_read
+          class="touch-target rounded-lg hover:bg-zinc-800 transition-colors flex items-center justify-center {item.is_read
             ? 'text-emerald-400'
             : 'text-zinc-500 hover:text-white'}"
           on:click={handleRead}
           title={item.is_read ? "Mark as Unread" : "Mark as Read"}
+          aria-label={item.is_read ? "Mark as Unread" : "Mark as Read"}
         >
           {#if item.is_read}
-            <CheckCircle2 size={18} />
+            <CheckCircle2 size={20} />
           {:else}
             <div
-              class="w-[18px] h-[18px] border-2 border-current rounded-full"
+              class="w-5 h-5 border-2 border-current rounded-full"
             ></div>
           {/if}
         </button>
 
         <button
-          class="p-1.5 rounded-lg hover:bg-zinc-800 transition-colors flex items-center gap-1.5 {item.is_starred
+          class="touch-target rounded-lg hover:bg-zinc-800 transition-colors flex items-center justify-center {item.is_starred
             ? 'text-orange-400'
             : 'text-zinc-500 hover:text-white'}"
           on:click={handleStar}
           title="Bookmark"
+          aria-label={item.is_starred ? "Remove bookmark" : "Add bookmark"}
         >
-          <Bookmark size={18} class={item.is_starred ? "fill-current" : ""} />
+          <Bookmark size={20} class={item.is_starred ? "fill-current" : ""} />
         </button>
 
-        {#if isPlayable}
-          <div class="flex items-center gap-2">
-            <button
-              class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white font-medium text-xs transition-colors border border-zinc-700"
-              on:click={handlePlay}
-              title={isPodcast ? (hasProgress ? "Resume Episode" : "Play Episode") : "Play"}
-            >
-              <PlayCircle size={14} class="fill-current text-accent" />
-              <span>{playLabel}</span>
-            </button>
-          </div>
+        {#if playability.isPlayable}
+          <button
+            class="flex items-center gap-2 px-3 min-h-[44px] rounded-full bg-zinc-800 hover:bg-zinc-700 text-white font-medium text-xs transition-colors border border-zinc-700"
+            on:click={handlePlay}
+            title={podcastMeta.isPodcast ? (podcastMeta.hasProgress ? "Resume Episode" : "Play Episode") : "Play"}
+            aria-label={podcastMeta.isPodcast ? (podcastMeta.hasProgress ? "Resume Episode" : "Play Episode") : "Play video"}
+          >
+            <PlayCircle size={16} class="fill-current text-accent" />
+            <span>{podcastMeta.playLabel}</span>
+          </button>
         {/if}
 
         <button
-          class="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 hover:text-blue-400 transition-colors"
+          class="touch-target rounded-lg hover:bg-zinc-800 text-zinc-500 hover:text-blue-400 transition-colors flex items-center justify-center"
           on:click={handleShare}
           title="Share"
+          aria-label="Share article"
         >
-          <Share2 size={18} />
+          <Share2 size={20} />
         </button>
 
         <a
           href={item.url}
           target="_blank"
           rel="noopener noreferrer"
-          class="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 hover:text-blue-400 transition-colors"
+          class="touch-target rounded-lg hover:bg-zinc-800 text-zinc-500 hover:text-blue-400 transition-colors flex items-center justify-center"
           on:click|stopPropagation
           title="Open Link"
+          aria-label="Open original article in new tab"
         >
-          <ExternalLink size={18} />
+          <ExternalLink size={20} />
         </a>
       </div>
     </div>
   </div>
 
   <!-- Right Column: Media (Thumbnail on Desktop) -->
-  {#if youtubeVideoId}
+  {#if itemMeta.youtubeVideoId}
     <!-- YouTube: Full width on mobile/tablet, Thumbnail on desktop -->
     <div
       class="w-full aspect-video md:w-48 md:h-32 md:aspect-auto md:flex-shrink-0 md:ml-4 rounded-xl overflow-hidden bg-black {densityClasses.mediaSpacing} md:mb-0 border border-zinc-800 mt-3 md:mt-0"
@@ -469,9 +399,9 @@
     >
       <div class="relative w-full h-full group/video cursor-pointer">
         <img
-          src={youtubeThumbnail}
+          src={itemMeta.youtubeThumbnail}
           alt={item.title}
-          class="w-full h-full object-cover opacity-100 transition-opacity"
+          class="w-full h-full object-cover"
           loading="lazy"
           on:error={handleYouTubeThumbnailError}
         />
@@ -491,15 +421,15 @@
         </div>
       </div>
     </div>
-  {:else if thumbnailUrl && !imageError}
+  {:else if itemMeta.thumbnailUrl && !imageError}
     <!-- Image: Full width on mobile, Thumbnail on desktop -->
     <div
       class="w-full aspect-video sm:aspect-[2/1] md:w-48 md:h-32 md:aspect-auto md:flex-shrink-0 md:ml-4 rounded-xl overflow-hidden bg-zinc-900 {densityClasses.mediaSpacing} md:mb-0 border border-zinc-800 mt-3 md:mt-0"
     >
       <img
-        src={thumbnailUrl}
+        src={itemMeta.thumbnailUrl}
         alt={item.title}
-        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+        class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform"
         loading="lazy"
         on:error={handleImageError}
       />
@@ -510,5 +440,30 @@
 <style>
   article {
     scroll-margin-top: 80px;
+  }
+
+  /* Enhanced read/unread states for visual hierarchy */
+  article.article-read {
+    opacity: 0.65;
+  }
+
+  article.article-read:hover {
+    opacity: 0.85;
+  }
+
+  article.article-unread {
+    opacity: 1;
+  }
+
+  /* Unread indicator dot for compact mode */
+  .unread-indicator {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--tw-colors-accent, #10b981);
+    margin-right: 6px;
+    vertical-align: middle;
+    flex-shrink: 0;
   }
 </style>

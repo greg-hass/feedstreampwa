@@ -298,6 +298,8 @@
       class="bg-[#18181b] rounded-2xl border border-white/10 max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden"
       role="dialog"
       aria-modal="true"
+      aria-labelledby="add-feed-modal-title"
+      aria-describedby="add-feed-modal-description"
       tabindex="-1"
     >
       <!-- Header -->
@@ -307,10 +309,14 @@
         <div class="flex items-center gap-3">
           <div
             class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 border border-emerald-500/20 flex items-center justify-center"
+            aria-hidden="true"
           >
             <Search size={20} class="text-emerald-400" />
           </div>
-          <h2 class="text-xl font-semibold text-white">Smart Feed Discovery</h2>
+          <div>
+            <h2 id="add-feed-modal-title" class="text-xl font-semibold text-white">Smart Feed Discovery</h2>
+            <p id="add-feed-modal-description" class="sr-only">Search and add RSS feeds, YouTube channels, Reddit communities, and podcasts</p>
+          </div>
         </div>
         <button
           class="p-2 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"

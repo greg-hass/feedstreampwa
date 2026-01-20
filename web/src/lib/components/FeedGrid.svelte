@@ -4,12 +4,22 @@
   import FeedListItem from "./FeedListItem.svelte";
   import SwipeableItem from "./SwipeableItem.svelte";
   import { createEventDispatcher } from "svelte";
+  import { now } from "$lib/stores/clock";
+  import { computeTimeAgo } from "$lib/utils/timeAgo";
 
   export let items: Item[] = [];
   export let density: ViewDensity = "comfortable";
   export let liveInsertIds: Set<string> = new Set();
 
   const dispatch = createEventDispatcher();
+
+  // Compute timeAgo for all items at once when $now updates (single subscription)
+  $: timeAgoMap = new Map(
+    items.map(item => [
+      item.id,
+      computeTimeAgo(item.published || item.created_at, $now)
+    ])
+  );
 
   // Simple helper to visualize the "Premium" accents based on available data
   function guessType(item: Item): "rss" | "youtube" | "reddit" | "podcast" {
@@ -31,7 +41,7 @@
 <!-- List View - Single column, full width -->
 <div class="flex flex-col gap-0 w-full">
   {#each items as item (item.id)}
-    <div class:live-insert={liveInsertIds.has(item.id)}>
+    <div class="feed-item-wrapper" class:live-insert={liveInsertIds.has(item.id)}>
       <SwipeableItem
         on:markRead={() => dispatch("toggleRead", { item })}
         on:toggleBookmark={() => dispatch("toggleStar", { item })}
@@ -40,6 +50,7 @@
           {item}
           {density}
           feedType={guessType(item)}
+          timeAgo={timeAgoMap.get(item.id) || ""}
           on:open
           on:toggleStar
           on:toggleRead
@@ -51,6 +62,12 @@
 </div>
 
 <style>
+  /* Content-visibility optimization for off-screen items */
+  .feed-item-wrapper {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 120px; /* Estimated height for comfortable density */
+  }
+
   .live-insert {
     animation: liveInsert 360ms ease-out;
   }

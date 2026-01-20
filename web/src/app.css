@@ -179,3 +179,76 @@
 /* Micro-interactions */
 button, a { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
 button:active, a:active { transform: scale(0.98); }
+
+/* ===== Reduced Motion Support ===== */
+/* Respects user's OS-level motion preferences for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  /* Disable all animations */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Keep essential opacity changes but remove motion */
+  .animate-fade-in,
+  .animate-slide-in-up,
+  .animate-slide-in-down,
+  .animate-scale-in,
+  .page-transition {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* Disable interactive transforms */
+  button:active,
+  a:active {
+    transform: none !important;
+  }
+
+  /* Keep hover color changes but disable motion effects */
+  .hover-solid,
+  .card-hover {
+    transition: none !important;
+  }
+}
+
+/* ===== Touch Target Utilities ===== */
+/* Minimum 44x44px touch targets for accessibility (WCAG 2.1 AAA) */
+.touch-target {
+  position: relative;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Touch target with expanded hit area via pseudo-element */
+.touch-target-expand {
+  position: relative;
+}
+
+.touch-target-expand::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  width: 100%;
+  height: 100%;
+}
+
+/* Larger touch target for mobile (48px per Material Design) */
+@media (max-width: 767px) {
+  .touch-target-mobile {
+    min-width: 48px;
+    min-height: 48px;
+  }
+}
