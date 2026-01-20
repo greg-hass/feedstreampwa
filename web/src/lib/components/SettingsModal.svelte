@@ -6,7 +6,7 @@
   import { feeds, loadFeeds } from "$lib/stores/feeds";
   import { loadFolders } from "$lib/stores/folders";
   import { onMount } from "svelte";
-  import type { Settings, ImportResult } from "$lib/types";
+  import type { Settings, ImportResult, AutomationRule, Backup, ImportStatus } from "$lib/types";
 
   // Child Components
   import GeneralSettings from "./settings/GeneralSettings.svelte";
@@ -26,8 +26,8 @@
   let activeTab: Tab = "general";
 
   // Automation logic
-  let rules: any[] = [];
-  let newRule = { keyword: "", field: "title", action: "mark_read", name: "" };
+  let rules: AutomationRule[] = [];
+  let newRule: Omit<AutomationRule, 'id'> = { keyword: "", field: "title", action: "mark_read", name: "" };
   let rulesLoading = false;
   let rulesError: string | null = null;
 
@@ -70,10 +70,10 @@
   }
 
   // Data & OPML logic
-  let backups: any[] = [];
+  let backups: Backup[] = [];
   let backupLoading = false;
   let importingOpml = false;
-  let importStatus: any = null;
+  let importStatus: ImportStatus | null = null;
   let importResults: ImportResult | null = null;
   let importJobId: string | null = null;
 

@@ -2,12 +2,12 @@
   import { Download, Upload, Database, Loader2, List, Settings as SettingsIcon } from "lucide-svelte";
   import { loadFeeds } from "$lib/stores/feeds";
   import { loadFolders } from "$lib/stores/folders";
-  import type { ImportResult } from "$lib/types";
+  import type { ImportResult, ImportStatus, Backup } from "$lib/types";
 
   export let importingOpml = false;
-  export let importStatus: any = null;
+  export let importStatus: ImportStatus | null = null;
   export let importResults: ImportResult | null = null;
-  export let backups: any[] = [];
+  export let backups: Backup[] = [];
   export let backupLoading = false;
   export let handleCreateBackup: () => Promise<void>;
   export let handleExportOpml: () => Promise<void>;

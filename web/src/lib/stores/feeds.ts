@@ -5,6 +5,7 @@ import * as feedsApi from '$lib/api/feeds';
 import * as foldersApi from '$lib/api/folders';
 import { confirmDialog } from '$lib/stores/confirm';
 import { settings } from '$lib/stores/settings';
+import { logger } from '$lib/utils/logger';
 
 // State
 export const feeds = writable<Feed[]>([]);
@@ -198,7 +199,10 @@ function handleRefreshEvent(payload: RefreshEventPayload) {
 
 export function startRefreshStream(): () => void {
     if (typeof window === 'undefined') return () => {};
-    if (refreshEventSource) return () => {};
+    if (refreshEventSource) {
+        logger.warn('Refresh stream already active, closing existing connection');
+        refreshEventSource.close();
+    }
 
     const source = new EventSource('/api/refresh/stream');
     refreshEventSource = source;
@@ -209,7 +213,7 @@ export function startRefreshStream(): () => void {
             const payload = JSON.parse((event as MessageEvent).data) as RefreshEventPayload;
             handleRefreshEvent(payload);
         } catch (e) {
-            console.warn('Failed to parse refresh event:', e);
+            logger.warn('Failed to parse refresh event', { error: e });
         }
     });
 
@@ -218,21 +222,24 @@ export function startRefreshStream(): () => void {
             const payload = JSON.parse((event as MessageEvent).data) as { lastSync?: number };
             updateLastSync(payload.lastSync);
         } catch (e) {
-            console.warn('Failed to parse sync event:', e);
+            logger.warn('Failed to parse sync event', { error: e });
         }
     });
 
     source.addEventListener('ping', () => {});
 
     source.onopen = () => {
+        logger.info('Refresh stream connected');
         refreshStream.set({ status: 'connected' });
     };
 
     source.onerror = () => {
+        logger.warn('Refresh stream error, attempting to reconnect');
         refreshStream.set({ status: 'reconnecting' });
     };
 
     return () => {
+        logger.info('Closing refresh stream');
         source.close();
         refreshEventSource = null;
         refreshStream.set({ status: 'connecting' });
@@ -258,7 +265,7 @@ export async function refreshFeed(url: string): Promise<string> {
         }));
         return jobId;
     } catch (e) {
-        console.error('Failed to start refresh:', e);
+        logger.error('Failed to start refresh', { error: e });
         throw e;
     }
 }
@@ -283,7 +290,7 @@ export async function refreshAll(): Promise<string> {
         }));
         return jobId;
     } catch (e) {
-        console.error('Failed to start all-refresh:', e);
+        logger.error('Failed to start all-refresh', { error: e });
         throw e;
     }
 }

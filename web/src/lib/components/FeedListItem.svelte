@@ -185,7 +185,7 @@
   }
 
   // Long press handler for mobile - disabled since we removed selection mode UI
-  let longPressTimer: any = null;
+  let longPressTimer: ReturnType<typeof setTimeout> | null = null;
 
   function handleTouchStart() {
     // Long press no longer enables selection mode
@@ -211,6 +211,7 @@
   }
 </script>
 
+<!-- svelte-ignore a11y-no-noninteractive-element-to-interactive-role -->
 <article
   class="group relative flex flex-col md:flex-row {densityClasses.padding} border-b transition-colors cursor-pointer overflow-hidden
   {playability.isSelected

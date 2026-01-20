@@ -1,8 +1,9 @@
 <script lang="ts">
   import { MessageSquare, MessageCircle, ExternalLink } from "lucide-svelte";
+  import type { Discussion } from "$lib/types";
 
   export let showDiscussions: boolean;
-  export let discussions: any[];
+  export let discussions: Discussion[];
   export let discussionsLoading: boolean;
   export let toggleDiscussions: () => void;
 </script>

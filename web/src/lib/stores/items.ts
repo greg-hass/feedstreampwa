@@ -3,6 +3,7 @@ import { writable, derived, get } from 'svelte/store';
 import type { Article, TimeFilter } from '../types';
 import * as itemsApi from '../api/items';
 import { cacheArticle, removeCachedArticle } from './offlineArticles';
+import { logger } from '$lib/utils/logger';
 
 // State
 export const items = writable<Article[]>([]);
@@ -15,6 +16,9 @@ export const timeFilter = writable<TimeFilter>('all');
 export const hasMore = writable(true);
 export const currentOffset = writable(0);
 const PAGE_SIZE = 50;
+
+// Delta update tracking
+export const lastItemsFetchTimestamp = writable<string | null>(null);
 
 // Derived stores
 export const bookmarkedCount = derived(items, ($items) =>
@@ -34,16 +38,19 @@ export async function loadItems(params: {
     starredOnly?: boolean;
     timeFilter?: TimeFilter;
     refresh?: boolean;
+    delta?: boolean; // Enable delta updates (only fetch new items since last fetch)
 } = {}): Promise<void> {
     const isRefresh = params.refresh !== false;
-    
-    if (!isRefresh && get(itemsLoading)) return;
+    const isDelta = params.delta === true;
+    const sinceTimestamp = isDelta ? get(lastItemsFetchTimestamp) : null;
+
+    if (!isRefresh && !isDelta && get(itemsLoading)) return;
 
     itemsLoading.set(true);
-    if (isRefresh) {
+    if (isRefresh && !isDelta) {
         itemsError.set(null);
         // Don't clear items immediately to avoid flash
-        // items.set([]); 
+        // items.set([]);
         currentOffset.set(0);
         hasMore.set(true);
     }
@@ -55,25 +62,38 @@ export async function loadItems(params: {
 
         let data;
         if (query.trim()) {
+            // Delta updates don't apply to search
             data = await itemsApi.searchItems(query, PAGE_SIZE, offset, filter);
         } else {
             data = await itemsApi.fetchItems({
                 ...params,
                 timeFilter: filter,
-                limit: PAGE_SIZE,
-                offset: offset,
+                limit: isDelta ? 1000 : PAGE_SIZE, // Higher limit for delta to catch all new items
+                offset: isDelta ? 0 : offset,
+                since: sinceTimestamp ?? undefined,
             });
         }
-        
-        if (isRefresh) {
+
+        // Update timestamp after successful fetch
+        const fetchTimestamp = new Date().toISOString();
+        lastItemsFetchTimestamp.set(fetchTimestamp);
+
+        if (isDelta) {
+            // Merge new items into existing items, avoiding duplicates
+            items.update((currentItems) => {
+                const existingIds = new Set(currentItems.map((i) => i.id));
+                const newItems = data.items.filter((i) => !existingIds.has(i.id));
+                return [...newItems, ...currentItems];
+            });
+        } else if (isRefresh) {
             items.set(data.items);
         } else {
-            items.update(current => [...current, ...data.items]);
+            items.update((current) => [...current, ...data.items]);
         }
-        
+
         itemsTotal.set(data.total);
         hasMore.set(data.items.length === PAGE_SIZE);
-        currentOffset.update(n => n + PAGE_SIZE);
+        currentOffset.update((n) => n + PAGE_SIZE);
     } catch (err) {
         itemsError.set(err instanceof Error ? err.message : 'Unknown error occurred');
     } finally {
@@ -118,9 +138,9 @@ export async function toggleStar(item: Article): Promise<void> {
         await itemsApi.toggleItemStar(item.id, newStarredState);
 
         if (newStarredState) {
-            cacheArticle(item).catch(console.error);
+            cacheArticle(item).catch((err) => logger.warn('Failed to cache article', { error: err }));
         } else {
-            removeCachedArticle(item.id).catch(console.error);
+            removeCachedArticle(item.id).catch((err) => logger.warn('Failed to remove cached article', { error: err }));
         }
     } catch (err) {
         // Revert on error

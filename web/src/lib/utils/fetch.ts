@@ -1,3 +1,5 @@
+import { getAuthToken } from '$lib/stores/auth';
+
 const DEFAULT_TIMEOUT_MS = 30000;
 
 export interface FetchWithTimeoutOptions extends RequestInit {
@@ -33,16 +35,16 @@ export async function fetchWithAuth(
     url: string,
     options: RequestInit = {}
 ): Promise<Response> {
-    const token = localStorage.getItem('auth_token');
-    
+    const token = getAuthToken();
+
     const headers: HeadersInit = {
         ...options.headers,
     };
-    
+
     if (token) {
         (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
     }
-    
+
     return fetchWithTimeout(url, {
         ...options,
         headers,

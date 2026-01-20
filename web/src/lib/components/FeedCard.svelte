@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  import { createEventDispatcher, onMount } from "svelte";
   import type { Item } from "$lib/types";
   import {
     Bookmark,
@@ -12,10 +12,12 @@
     Share2,
   } from "lucide-svelte";
   import { formatDuration } from "$lib/utils/formatDuration";
+  import { stripHtml } from "$lib/utils/sanitize";
   import OfflineBadge from "$lib/components/OfflineBadge.svelte";
   import { offlineArticles } from "$lib/stores/offlineArticles";
   import { diversitySettings } from "$lib/stores/diversity";
   import type { ItemWithDiversity } from "$lib/stores/diversity";
+  import { createSwipeGesture } from "$lib/composables/useSwipeGesture";
 
   export let item: Item;
   export let feedType: "rss" | "youtube" | "reddit" | "podcast" = "rss";
@@ -188,51 +190,38 @@
     feedType === "youtube" ||
     item.external_id;
 
-  // Swipe Gestures
-  let touchStartX = 0;
+  // Swipe Gestures (using composable)
+  let articleElement: HTMLElement;
   let touchDiff = 0;
-  let isSwiping = false;
   const SWIPE_THRESHOLD = 75;
 
-  function handleTouchStart(e: TouchEvent) {
-    touchStartX = e.touches[0].clientX;
-    isSwiping = true;
-    touchDiff = 0;
-  }
+  onMount(() => {
+    const cleanup = createSwipeGesture({
+      element: articleElement,
+      swipeThreshold: SWIPE_THRESHOLD,
+      onSwipeRight: () => dispatch("toggleRead", { item }),
+      onSwipeLeft: () => dispatch("toggleStar", { item }),
+      onSwipeProgress: (progress, direction) => {
+        touchDiff = direction === 'right' ? progress * SWIPE_THRESHOLD : -progress * SWIPE_THRESHOLD;
+      },
+      onSwipeEnd: () => {
+        touchDiff = 0;
+      },
+    });
 
-  function handleTouchMove(e: TouchEvent) {
-    if (!isSwiping) return;
-    touchDiff = e.touches[0].clientX - touchStartX;
-  }
-
-  function handleTouchEnd() {
-    if (!isSwiping) return;
-
-    if (Math.abs(touchDiff) > SWIPE_THRESHOLD) {
-      if (touchDiff > 0) {
-        dispatch("toggleRead", { item });
-      } else {
-        dispatch("toggleStar", { item });
-      }
-    }
-
-    isSwiping = false;
-    touchDiff = 0;
-  }
+    return cleanup;
+  });
 </script>
 
 <article
   class="group relative flex flex-col w-full overflow-hidden rounded-xl bg-zinc-900 border border-zinc-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-zinc-800 hover:border-zinc-700 cursor-pointer"
-  style="transform: translateX({isSwiping
-    ? touchDiff
-    : 0}px); transition: {isSwiping ? 'none' : 'transform 0.3s'}"
+  bind:this={articleElement}
+  style="transform: translateX({touchDiff}px); transition: {touchDiff !== 0 ? 'none' : 'transform 0.3s'}"
   on:click={handleOpen}
   on:keypress={(e) => e.key === "Enter" && handleOpen()}
-  on:touchstart={handleTouchStart}
-  on:touchmove={handleTouchMove}
-  on:touchend={handleTouchEnd}
   tabindex="0"
   role="button"
+  aria-label="Open article: {item.title || 'Untitled'}"
 >
   <!-- Background Indicators for Swipe -->
   {#if Math.abs(touchDiff) > 20}
@@ -373,14 +362,13 @@
         </div>
       {/if}
 
-      <!-- Summary (Optional / Desktop only mostly) -->
       {#if item.summary}
         <p
           class="text-sm text-zinc-400 line-clamp-2 leading-relaxed mb-4 hidden sm:block {item.is_read
             ? 'text-zinc-600'
             : ''}"
         >
-          {@html item.summary.replace(/<[^>]*>?/gm, "")}
+          {stripHtml(item.summary)}
         </p>
       {/if}
 
@@ -397,6 +385,7 @@
             ? 'text-green-400'
             : 'text-zinc-500 hover:text-white'}"
           title={item.is_read ? "Mark as Unread" : "Mark as Read"}
+          aria-label={item.is_read ? "Mark as Unread" : "Mark as Read"}
           on:click={handleRead}
         >
           {#if item.is_read}
@@ -413,6 +402,7 @@
             <button
               class="p-2 rounded-full hover:bg-zinc-800 text-zinc-500 hover:text-accent transition-colors"
               title={isPodcast ? (hasProgress ? "Resume Episode" : "Play Episode") : "Play"}
+              aria-label={isPodcast ? (hasProgress ? "Resume Episode" : "Play Episode") : "Play"}
               on:click={handlePlay}
             >
               <PlayCircle size={18} />
@@ -422,6 +412,7 @@
           <button
             class="p-2 rounded-full hover:bg-zinc-800 text-zinc-500 hover:text-[#FF9500] transition-colors"
             title="Bookmark"
+            aria-label={item.is_starred ? "Remove Bookmark" : "Add Bookmark"}
             on:click={handleStar}
           >
             <Bookmark
@@ -433,6 +424,7 @@
           <button
             class="p-2 rounded-full hover:bg-zinc-800 text-zinc-500 hover:text-blue-400 transition-colors"
             title="Share"
+            aria-label="Share Article"
             on:click={handleShare}
           >
             <Share2 size={18} />
@@ -444,6 +436,7 @@
             rel="noopener noreferrer"
             class="p-2 rounded-full hover:bg-zinc-800 text-zinc-500 hover:text-blue-400 transition-colors"
             title="Open Link"
+            aria-label="Open Article in New Tab"
             on:click|stopPropagation
           >
             <ExternalLink size={18} />

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount, afterUpdate, tick } from "svelte";
+  import type { Discussion } from "$lib/types";
   import {
     showReader,
     readerData,
@@ -27,7 +28,7 @@
   let summary: string | null = null;
   let summaryLoading = false;
   let showDiscussions = false;
-  let discussions: any[] = [];
+  let discussions: Discussion[] = [];
   let discussionsLoading = false;
   let scrollContainer: HTMLElement | null = null;
   let ttsActive = false;

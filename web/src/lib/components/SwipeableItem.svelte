@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import { CheckCircle2, Bookmark } from "lucide-svelte";
+  import { SWIPE_THRESHOLD, MAX_SWIPE, INTENT_THRESHOLD } from "$lib/constants/gestures";
 
   const dispatch = createEventDispatcher();
 
@@ -8,10 +9,6 @@
   let currentX = 0;
   let isSwiping = false;
   let swipeDirection: "left" | "right" | null = null;
-
-  const SWIPE_THRESHOLD = 120; // Increased from 100 to prevent accidental triggers
-  const MAX_SWIPE = 180;
-  const INTENT_THRESHOLD = 25; // Minimum movement to consider it a swipe intent
 
   $: swipeDistance = isSwiping
     ? Math.max(Math.min(currentX - startX, MAX_SWIPE), -MAX_SWIPE)

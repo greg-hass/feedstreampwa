@@ -41,9 +41,9 @@
         error =
           "No recommendations available yet. Try reading more articles to help the AI understand your interests!";
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to load recommendations:", err);
-      error = err.message || "Failed to load recommendations";
+      error = err instanceof Error ? err.message : "Failed to load recommendations";
     } finally {
       loading = false;
     }
@@ -60,9 +60,9 @@
 
       // Remove from recommendations
       recommendations = recommendations.filter((r) => r.url !== rec.url);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to add feed:", err);
-      toast.error(err.message || "Failed to add feed");
+      toast.error(err instanceof Error ? err.message : "Failed to add feed");
     } finally {
       addingFeeds.delete(rec.url);
       addingFeeds = addingFeeds;
@@ -82,8 +82,8 @@
       if (!debugInfo) {
         debugError = "No debug data returned.";
       }
-    } catch (err: any) {
-      debugError = err.message || "Failed to load debug data";
+    } catch (err: unknown) {
+      debugError = err instanceof Error ? err.message : "Failed to load debug data";
     } finally {
       debugLoading = false;
     }

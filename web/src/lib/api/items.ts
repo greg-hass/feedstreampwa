@@ -13,6 +13,7 @@ export interface FetchItemsParams {
     timeFilter?: TimeFilter;
     limit?: number;
     offset?: number;
+    since?: string; // ISO 8601 timestamp for delta updates
 }
 
 export async function fetchItems(params: FetchItemsParams = {}): Promise<{
@@ -32,6 +33,7 @@ export async function fetchItems(params: FetchItemsParams = {}): Promise<{
     }
     if (params.limit) searchParams.set('limit', params.limit.toString());
     if (params.offset) searchParams.set('offset', params.offset.toString());
+    if (params.since) searchParams.set('since', params.since);
 
     const response = await fetchWithTimeout(`${API_BASE}/items?${searchParams}`);
 

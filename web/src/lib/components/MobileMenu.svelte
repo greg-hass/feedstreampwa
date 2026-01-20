@@ -56,6 +56,7 @@
   } from "$lib/stores/counts";
   import { folders, createFolder } from "$lib/stores/folders";
   import { toast } from "$lib/stores/toast";
+  import type { Feed, Folder } from "$lib/types";
 
   import AIRecommendationsModal from "$lib/components/modals/AIRecommendationsModal.svelte";
   import FeedHealthModal from "$lib/components/modals/FeedHealthModal.svelte";
@@ -131,7 +132,7 @@
   function handleContextMenu(
     e: MouseEvent,
     type: "folder" | "feed",
-    target: any
+    target: Feed | Folder
   ) {
     e.preventDefault();
     e.stopPropagation();

@@ -2,23 +2,38 @@ import { writable, derived, get } from 'svelte/store';
 import * as authApi from '../api/auth';
 import { toast } from './toast';
 
-// State
+const AUTH_TOKEN_KEY = 'auth_token';
+const USER_ID_KEY = 'user_id';
+const USER_EMAIL_KEY = 'user_email';
+
 export const isAuthenticated = writable(false);
 export const currentUser = writable<{ id: string; email: string } | null>(null);
 export const authLoading = writable(false);
 export const authError = writable<string | null>(null);
 
-// Derived state
 export const isLoggedIn = derived(isAuthenticated, ($isAuthenticated) => $isAuthenticated);
 
-/**
- * Initialize auth state from localStorage
- */
+export function getAuthToken(): string | null {
+  return localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+function setAuthData(token: string, userId: string, userEmail: string): void {
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
+  localStorage.setItem(USER_ID_KEY, userId);
+  localStorage.setItem(USER_EMAIL_KEY, userEmail);
+}
+
+export function clearAuthData(): void {
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.removeItem(USER_ID_KEY);
+  localStorage.removeItem(USER_EMAIL_KEY);
+}
+
 export function initAuth(): void {
-  const token = localStorage.getItem('auth_token');
-  const userId = localStorage.getItem('user_id');
-  const userEmail = localStorage.getItem('user_email');
-  
+  const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  const userId = localStorage.getItem(USER_ID_KEY);
+  const userEmail = localStorage.getItem(USER_EMAIL_KEY);
+
   if (token && userId && userEmail) {
     isAuthenticated.set(true);
     currentUser.set({ id: userId, email: userEmail });
@@ -31,20 +46,16 @@ export function initAuth(): void {
 export async function register(email: string, password: string): Promise<void> {
   authLoading.set(true);
   authError.set(null);
-  
+
   try {
     const response = await authApi.register({ email, password });
-    
+
     if (response.ok && response.token && response.user) {
-      // Store auth data
-      localStorage.setItem('auth_token', response.token);
-      localStorage.setItem('user_id', response.user.id);
-      localStorage.setItem('user_email', response.user.email);
-      
-      // Update state
+      setAuthData(response.token, response.user.id, response.user.email);
+
       isAuthenticated.set(true);
       currentUser.set(response.user);
-      
+
       toast.success('Account created successfully!');
     } else {
       authError.set(response.error || 'Registration failed');
@@ -59,26 +70,19 @@ export async function register(email: string, password: string): Promise<void> {
   }
 }
 
-/**
- * Login with email and password
- */
 export async function login(email: string, password: string): Promise<void> {
   authLoading.set(true);
   authError.set(null);
-  
+
   try {
     const response = await authApi.login({ email, password });
-    
+
     if (response.ok && response.token && response.user) {
-      // Store auth data
-      localStorage.setItem('auth_token', response.token);
-      localStorage.setItem('user_id', response.user.id);
-      localStorage.setItem('user_email', response.user.email);
-      
-      // Update state
+      setAuthData(response.token, response.user.id, response.user.email);
+
       isAuthenticated.set(true);
       currentUser.set(response.user);
-      
+
       toast.success('Logged in successfully!');
     } else {
       authError.set(response.error || 'Login failed');
@@ -93,17 +97,15 @@ export async function login(email: string, password: string): Promise<void> {
   }
 }
 
-/**
- * Logout current user
- */
 export function logout(): void {
   authApi.logout();
-  
-  // Clear state
+
+  clearAuthData();
+
   isAuthenticated.set(false);
   currentUser.set(null);
   authError.set(null);
-  
+
   toast.success('Logged out successfully!');
 }
 

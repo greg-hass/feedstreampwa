@@ -45,6 +45,7 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
         const folderId = query.folderId || null;
         const unreadOnly = query.unreadOnly === true;
         const starredOnly = query.starredOnly === true;
+        const since = query.since || null;
         let isPodcastRequest =
             smartFolder === 'podcast' ||
             source === 'podcast';
@@ -118,6 +119,14 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
             conditions.push({
                 clause: 'i.is_starred = 1',
                 params: []
+            });
+        }
+
+        // Delta updates: only return items created after the 'since' timestamp
+        if (since) {
+            conditions.push({
+                clause: 'i.created_at > ?',
+                params: [since]
             });
         }
 

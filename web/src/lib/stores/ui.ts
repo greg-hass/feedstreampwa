@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import type { Feed } from '$lib/types';
+import type { Feed, Folder } from '$lib/types';
 
 // Modal states
 export const isAddFeedModalOpen = writable(false);
@@ -33,7 +33,7 @@ export const feedFolderPopover = writable<{
 export const contextMenu = writable<{
     isOpen: boolean;
     type: 'folder' | 'feed';
-    target: any;
+    target: Feed | Folder | null;
     position: { x: number; y: number };
 }>({
     isOpen: false,

@@ -1,4 +1,5 @@
 import { fetchWithAuth } from '../utils/fetch';
+import { getAuthToken as getToken, clearAuthData } from '$lib/stores/auth';
 
 export interface AuthResponse {
   ok: boolean;
@@ -27,9 +28,6 @@ export interface LoginData {
   password: string;
 }
 
-/**
- * Register a new user
- */
 export async function register(data: RegisterData): Promise<AuthResponse> {
   const response = await fetch('/api/auth/register', {
     method: 'POST',
@@ -42,9 +40,6 @@ export async function register(data: RegisterData): Promise<AuthResponse> {
   return response.json();
 }
 
-/**
- * Login with email and password
- */
 export async function login(data: LoginData): Promise<AuthResponse> {
   const response = await fetch('/api/auth/login', {
     method: 'POST',
@@ -57,40 +52,17 @@ export async function login(data: LoginData): Promise<AuthResponse> {
   return response.json();
 }
 
-/**
- * Get current user info
- */
 export async function getCurrentUser(): Promise<{ ok: boolean; user?: User; error?: string }> {
   const response = await fetchWithAuth('/api/auth/me');
   return response.json();
 }
 
-/**
- * Logout (clears local storage)
- */
 export function logout(): void {
-  localStorage.removeItem('auth_token');
-  localStorage.removeItem('user_id');
-  localStorage.removeItem('user_email');
+  clearAuthData();
 }
 
-/**
- * Check if user is authenticated
- */
 export function isAuthenticated(): boolean {
-  return !!localStorage.getItem('auth_token');
+  return !!getToken();
 }
 
-/**
- * Get stored auth token
- */
-export function getAuthToken(): string | null {
-  return localStorage.getItem('auth_token');
-}
-
-/**
- * Store auth token
- */
-export function setAuthToken(token: string): void {
-  localStorage.setItem('auth_token', token);
-}
+export { getToken as getAuthToken };

@@ -22,6 +22,7 @@
   } from "$lib/stores/counts";
   import { folders, createFolder } from "$lib/stores/folders";
   import { toast } from "$lib/stores/toast";
+  import type { Feed, Folder } from "$lib/types";
 
   export let openFolders: Record<string, boolean> = {};
   export let isCreatingInline = false;
@@ -62,7 +63,7 @@
   function handleContextMenu(
     e: MouseEvent,
     type: "folder" | "feed",
-    target: any
+    target: Feed | Folder
   ) {
     e.preventDefault();
     e.stopPropagation();

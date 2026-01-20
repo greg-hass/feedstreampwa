@@ -56,6 +56,40 @@ export interface Folder {
     feedCount?: number;
 }
 
+export interface Discussion {
+    url: string;
+    title: string;
+    score: number;
+    commentsCount: number;
+    source: 'hackernews' | 'reddit';
+    subreddit?: string;
+}
+
+export interface AutomationRule {
+    id?: string;
+    name: string;
+    keyword: string;
+    field: 'title' | 'summary' | 'author';
+    action: 'mark_read' | 'mark_starred' | 'mark_unread';
+}
+
+export interface Backup {
+    id: string;
+    filename: string;
+    createdAt: string;
+    size: number;
+}
+
+export interface ImportStatus {
+    status: 'pending' | 'running' | 'completed' | 'failed';
+    progress: number;
+    total: number;
+    current: number;
+    currentName?: string;
+    message?: string;
+    error?: string;
+}
+
 export interface SearchResult {
     title: string;
     url: string;

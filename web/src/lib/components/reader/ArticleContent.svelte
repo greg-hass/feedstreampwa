@@ -10,9 +10,10 @@
     SkipBack,
     SkipForward,
   } from "lucide-svelte";
-  import type { Item } from "$lib/types";
+  import type { Item, ReaderData } from "$lib/types";
   import { calculateReadTime, formatReadTime } from "$lib/utils/readTime";
   import { formatDuration } from "$lib/utils/formatDuration";
+  import { sanitizeHtml } from "$lib/utils/sanitize";
   import {
     currentMedia,
     isPlaying,
@@ -27,7 +28,7 @@
     setPlaybackSpeed,
   } from "$lib/stores/media";
 
-  export let readerData: any;
+  export let readerData: ReaderData | null = null;
   export let item: Item | null;
   export let summary: string | null;
   export let summaryLoading: boolean;
@@ -106,10 +107,10 @@
   $: isReddit = item?.source === "reddit";
   $: coverImage = isPodcast
     ? item?.feed_icon_url || readerData?.imageUrl || item?.media_thumbnail || null
-    : readerData?.imageUrl || item?.media_thumbnail || null;
+    : (readerData?.imageUrl || item?.media_thumbnail || null);
   $: coverUrl = heroImageError
     ? item?.feed_icon_url || null
-    : coverImage || item?.feed_icon_url || null;
+    : (coverImage || item?.feed_icon_url || null);
   $: heroStyle = coverUrl ? `--hero-image: url("${coverUrl}")` : "";
   $: feedTitle = item?.feed_title || readerData?.siteName || "FeedStream";
   $: displayAuthor = readerData?.byline || item?.author || null;
@@ -168,7 +169,7 @@
       .replace(/<img[^>]*>/gi, "");
   }
 
-  $: bodyHtml = isReddit ? stripInlineImages(readerData?.contentHtml || "") : readerData?.contentHtml || "";
+  $: bodyHtml = isReddit ? stripInlineImages(readerData?.contentHtml || "") : (readerData?.contentHtml || "");
 </script>
 
 <article class="reader-content {themeClass}">
@@ -264,7 +265,18 @@
               {$playbackSpeed}x
             </button>
           </div>
-          <div class="hero-player-progress" on:click={handleHeroSeek}>
+          <div
+            class="hero-player-progress"
+            role="slider"
+            aria-label="Audio Progress"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow={$progress}
+            aria-valuetext="{$formattedCurrentTime} of {$formattedDuration}"
+            tabindex="0"
+            on:click={handleHeroSeek}
+            on:keypress={(e) => (e.key === 'Enter' || e.key === ' ') ? handleHeroSeek(e) : null}
+          >
             <div
               class="hero-player-progress-fill"
               style="width: {$progress}%"
@@ -288,7 +300,7 @@
         AI Summary
       </div>
       <div class="prose prose-invert prose-sm max-w-none font-sans">
-        {@html formatSummary(summary)}
+        {@html sanitizeHtml(formatSummary(summary))}
       </div>
     </div>
   {:else if summaryLoading}
@@ -308,7 +320,7 @@
       id="reader-body-content"
     >
       {#if !isYouTube}
-        {@html formatContent(bodyHtml)}
+        {@html sanitizeHtml(formatContent(bodyHtml))}
       {/if}
     </div>
   {/if}

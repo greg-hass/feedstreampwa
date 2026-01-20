@@ -92,7 +92,8 @@ export const GetItemsQuerySchema = z.object({
     limit: z.string().transform(Number).optional().default(20),
     offset: z.string().transform(Number).optional().default(0),
     q: SearchQueryValidator.optional(),
-    timeFilter: TimeFilterSchema.optional()
+    timeFilter: TimeFilterSchema.optional(),
+    since: z.string().datetime().optional() // ISO 8601 timestamp for delta updates
 });
 
 export const MarkReadSchema = z.object({

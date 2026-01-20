@@ -17,10 +17,12 @@
     duplicateGroupCount,
     getPreferredItem,
     type DuplicateSettings,
+    type DuplicateGroup,
   } from "$lib/stores/duplicates";
   import { items } from "$lib/stores/items";
   import { toggleRead } from "$lib/stores/items";
   import { toast } from "$lib/stores/toast";
+  import type { Article } from "$lib/types";
 
   export let isOpen = false;
 
@@ -51,7 +53,7 @@
     return total - groups; // Items that could be removed
   }
 
-  function markAllAsRead(group: any) {
+  function markAllAsRead(group: DuplicateGroup) {
     for (const item of group.items) {
       if (!item.is_read) {
         toggleRead(item);
@@ -60,7 +62,7 @@
     toast.success(`Marked ${group.items.length} items as read`);
   }
 
-  async function removeDuplicates(group: any) {
+  async function removeDuplicates(group: DuplicateGroup) {
     const preferred = getPreferredItem(group, $duplicateSettings.keepInFeed);
     let removed = 0;
 
@@ -80,7 +82,7 @@
     scanForDuplicates();
   }
 
-  function openItem(item: any) {
+  function openItem(item: Article) {
     window.open(item.url, "_blank");
   }
 

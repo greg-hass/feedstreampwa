@@ -22,6 +22,8 @@
   import * as itemsApi from "$lib/api/items";
   import { parseIntervalMs, formatCountdown, getCountdownInterval, LIVE_POLL_INTERVAL_MS, LIVE_POLL_LIMIT, LIVE_INSERT_RESET_MS, LIVE_PRESERVE_SCROLL_THRESHOLD } from "$lib/utils/refresh";
   import { getPageTitle } from "$lib/utils/pageTitle";
+  import { INTERSECTION_MARGIN, MOBILE_BREAKPOINT } from "$lib/constants/gestures";
+  import type { Item, TimeFilter } from "$lib/types";
   import {
     isAddFeedModalOpen,
     isCreateFolderModalOpen,
@@ -156,7 +158,8 @@
     if (wasRefreshing && !$refreshState.isRefreshing) {
       awaitingRefreshResults = true;
       refreshItemsLoadingSeen = false;
-      loadItems({ ...getLoadParams(), refresh: true });
+      // Delta updates: Only fetch new items since last fetch
+      loadItems({ ...getLoadParams(), delta: true });
     }
     wasRefreshing = $refreshState.isRefreshing;
   }
@@ -230,7 +233,7 @@
   $: pageTitle = getPageTitle($viewMode, $activeSmartFolder, $activeFolderId, $selectedFeedUrl, $folders);
 
   function getLoadParams() {
-    const params: any = {};
+    const params: Record<string, string | boolean | TimeFilter> = {};
     if ($viewMode === "feed" && $selectedFeedUrl)
       params.feedUrl = $selectedFeedUrl;
     if ($viewMode === "smart" && $activeSmartFolder)
@@ -407,7 +410,7 @@
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     const checkMobile = () => {
-      isMobile = window.innerWidth <= 768;
+      isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);
@@ -418,7 +421,7 @@
           loadMore();
         }
       },
-      { rootMargin: "400px" }
+      { rootMargin: INTERSECTION_MARGIN }
     );
 
     if (sentinel) observer.observe(sentinel);
