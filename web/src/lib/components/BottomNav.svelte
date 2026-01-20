@@ -15,7 +15,7 @@
 </script>
 
 <nav
-  class="md:hidden fixed bottom-0 left-0 right-0 min-h-[52px] bg-zinc-950 border-t border-zinc-800 z-[2100] flex items-center justify-around px-2 pt-1.5 select-none safe-bottom"
+  class="md:hidden fixed bottom-0 left-0 right-0 min-h-[52px] bg-zinc-950 border-t border-zinc-700/80 z-[2100] flex items-center justify-around px-2 pt-1.5 select-none safe-bottom shadow-[0_-4px_24px_rgba(0,0,0,0.5)]"
 >
   <!-- Menu Button -->
   <button

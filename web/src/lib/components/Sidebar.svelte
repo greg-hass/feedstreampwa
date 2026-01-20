@@ -36,7 +36,7 @@
 <svelte:window on:keydown={handleKeydown} />
 
 <aside
-  class="hidden md:flex flex-col w-[280px] h-screen fixed left-0 top-0 z-40 bg-zinc-950 border-r border-zinc-800"
+  class="hidden md:flex flex-col w-[280px] h-screen fixed left-0 top-0 z-40 bg-zinc-950 border-r border-zinc-700/80 shadow-[4px_0_24px_rgba(0,0,0,0.3)]"
 >
   <!-- Brand -->
   <div class="p-6 pt-6 flex-shrink-0">
