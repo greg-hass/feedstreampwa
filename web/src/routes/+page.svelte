@@ -8,7 +8,6 @@
     Shuffle,
   } from "lucide-svelte";
 
-  // Components
   import MobileHeader from "$lib/components/MobileHeader.svelte";
   import FeedGrid from "$lib/components/FeedGrid.svelte";
   import SearchBar from "$lib/components/SearchBar.svelte";
@@ -17,8 +16,12 @@
   import PullToRefresh from "$lib/components/PullToRefresh.svelte";
   import OnboardingFlow from "$lib/components/OnboardingFlow.svelte";
   import BulkActionsBar from "$lib/components/BulkActionsBar.svelte";
+  import KeyboardShortcutsHelp from "$lib/components/KeyboardShortcutsHelp.svelte";
+  import ReadingStatsModal from "$lib/components/ReadingStatsModal.svelte";
 
-  // Stores
+  import * as itemsApi from "$lib/api/items";
+  import { parseIntervalMs, formatCountdown, getCountdownInterval, LIVE_POLL_INTERVAL_MS, LIVE_POLL_LIMIT, LIVE_INSERT_RESET_MS, LIVE_PRESERVE_SCROLL_THRESHOLD } from "$lib/utils/refresh";
+  import { getPageTitle } from "$lib/utils/pageTitle";
   import {
     isAddFeedModalOpen,
     isCreateFolderModalOpen,
@@ -61,14 +64,9 @@
     type KeyboardShortcut,
   } from "$lib/stores/keyboard";
   import { diversitySettings } from "$lib/stores/diversity";
-  import KeyboardShortcutsHelp from "$lib/components/KeyboardShortcutsHelp.svelte";
-  import ReadingStatsModal from "$lib/components/ReadingStatsModal.svelte";
-  import * as itemsApi from "$lib/api/items";
 
-  // State for modals
   let showStats = false;
 
-  // Register shortcuts
   onMount(() => {
     registerShortcuts([
       {
@@ -119,17 +117,11 @@
     handleKeyboardEvent(e, $shortcuts);
   }
 
-  // Local state
   let isMobile = false;
   let sentinel: HTMLElement;
   let wasRefreshing = false;
   let showOnboarding = false;
   let articlesList: HTMLDivElement;
-
-  const LIVE_POLL_INTERVAL_MS = 1500;
-  const LIVE_POLL_LIMIT = 30;
-  const LIVE_INSERT_RESET_MS = 2000;
-  const LIVE_PRESERVE_SCROLL_THRESHOLD = 120;
 
   let liveRefreshTimer: ReturnType<typeof setTimeout> | null = null;
   let liveRefreshActive = false;
@@ -153,7 +145,6 @@
   let refreshCountdownTitle = "Auto refresh is off";
   let countdownTimer: ReturnType<typeof setInterval> | null = null;
 
-  // Watch for refresh completion to reload items
   $: {
     if ($refreshState.isRefreshing && !wasRefreshing) {
       refreshSnapshotIds = new Set($items.map((item) => item.id));
@@ -236,28 +227,7 @@
     );
   }
 
-  // Derived
-  $: pageTitle = (() => {
-    if ($viewMode === "smart" && $activeSmartFolder) {
-      const folderNames: Record<string, string> = {
-        rss: "RSS Feeds",
-        youtube: "YouTube",
-        reddit: "Reddit",
-        podcast: "Podcasts",
-      };
-      return folderNames[$activeSmartFolder] || "Smart Folder";
-    } else if ($viewMode === "folder" && $activeFolderId) {
-      const folder = $folders.find((f) => f.id === $activeFolderId);
-      return folder?.name || "Folder";
-    } else if ($viewMode === "feed" && $selectedFeedUrl) {
-      return "Feed";
-    } else if ($viewMode === "unread") {
-      return "Unread";
-    } else if ($viewMode === "bookmarks") {
-      return "Bookmarks";
-    }
-    return "All Articles";
-  })();
+  $: pageTitle = getPageTitle($viewMode, $activeSmartFolder, $activeFolderId, $selectedFeedUrl, $folders);
 
   function getLoadParams() {
     const params: any = {};
@@ -275,30 +245,6 @@
 
   function loadMore() {
     loadItems({ ...getLoadParams(), refresh: false });
-  }
-
-  function parseIntervalMs(interval: string | undefined): number | null {
-    if (!interval || interval === "off") return null;
-    const match = interval.match(/^(\d+)([mhd])$/);
-    if (!match) return null;
-    const value = parseInt(match[1], 10);
-    if (!Number.isFinite(value)) return null;
-    const unit = match[2];
-    if (unit === "m") return value * 60 * 1000;
-    if (unit === "h") return value * 60 * 60 * 1000;
-    if (unit === "d") return value * 24 * 60 * 60 * 1000;
-    return null;
-  }
-
-  function formatCountdown(ms: number): string {
-    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    if (hours > 0) {
-      return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-    }
-    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   }
 
   function queueLiveInsertIds(ids: string[]) {
@@ -442,33 +388,22 @@
     viewDensity.set(densities[nextIndex]);
   }
 
-  // Throttled countdown timer - runs slower when tab is hidden
-  const COUNTDOWN_INTERVAL_ACTIVE = 1000;
-  const COUNTDOWN_INTERVAL_HIDDEN = 10000;
-
   function setupCountdownTimer(interval: number) {
     if (countdownTimer) clearInterval(countdownTimer);
     countdownTimer = setInterval(updateRefreshCountdown, interval);
   }
 
   function handleVisibilityChange() {
-    if (document.hidden) {
-      // Tab is hidden - slow down the timer
-      setupCountdownTimer(COUNTDOWN_INTERVAL_HIDDEN);
-    } else {
-      // Tab is visible - use normal interval and update immediately
-      updateRefreshCountdown();
-      setupCountdownTimer(COUNTDOWN_INTERVAL_ACTIVE);
-    }
+    const interval = getCountdownInterval(document.hidden);
+    if (!document.hidden) updateRefreshCountdown();
+    setupCountdownTimer(interval);
   }
 
   onMount(() => {
-    // Initial load
     loadItems();
     updateRefreshCountdown();
-    setupCountdownTimer(COUNTDOWN_INTERVAL_ACTIVE);
+    setupCountdownTimer(getCountdownInterval(false));
 
-    // Listen for visibility changes to throttle countdown
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     const checkMobile = () => {
@@ -477,7 +412,6 @@
     checkMobile();
     window.addEventListener("resize", checkMobile);
 
-    // Infinite Scroll Observer
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && $hasMore && !$itemsLoading) {
@@ -504,7 +438,6 @@
     }
   });
 
-  // Reactive reload
   $: if (
     $viewMode ||
     $activeSmartFolder ||
@@ -521,15 +454,12 @@
   <title>FeedStream - Private feed reader</title>
 </svelte:head>
 
-<!-- Pull to Refresh (Mobile Only) -->
 {#if isMobile}
   <PullToRefresh on:refresh={refreshAll} />
 {/if}
 
-<!-- Sticky Header Container (Desktop Search + Filter) -->
 {#if !isMobile}
   <div class="sticky-header">
-    <!-- Page Header -->
     <div class="page-header">
       <div class="flex items-center justify-between">
         <h1 class="text-3xl font-bold text-white">{pageTitle}</h1>
@@ -608,7 +538,6 @@
       </div>
     </div>
 
-    <!-- Search Bar -->
     <div class="search-bar-full">
       <SearchBar
         bind:value={$searchQuery}
@@ -621,7 +550,6 @@
       />
     </div>
 
-    <!-- Filter Chips -->
     {#if showTimeFilter}
       <FilterChips
         timeFilter={$timeFilter}
@@ -630,7 +558,6 @@
     {/if}
   </div>
 {:else}
-  <!-- Mobile Header (Already Sticky) -->
   <MobileHeader
     bind:searchQuery={$searchQuery}
     onSearchInput={() => loadItems()}
@@ -645,7 +572,6 @@
     refreshStreamStatus={$refreshStream.status}
   />
 
-  <!-- Sticky Filter Chips for Mobile -->
   {#if showTimeFilter}
     <div class="mobile-sticky-filters" bind:clientHeight={mobileFiltersHeight}>
       <FilterChips
@@ -656,7 +582,6 @@
   {/if}
 {/if}
 
-<!-- Articles List -->
 <div class="articles-list" bind:this={articlesList}>
   {#if $itemsLoading && $items.length === 0}
     <div class="flex flex-col gap-0 w-full">
@@ -717,7 +642,6 @@
       }}
     />
 
-    <!-- Loading spinner at bottom for infinite scroll -->
     {#if $itemsLoading}
       <div class="py-4 flex justify-center">
         <div
@@ -738,23 +662,20 @@
 <svelte:window on:keydown={handleKeydown} />
 
 <style>
-  /* Prevent horizontal scroll */
   :global(body) {
     overflow-x: hidden;
     max-width: 100vw;
   }
 
-  /* Fixed Header Container (Desktop) */
   .sticky-header {
     position: sticky;
     top: 0;
     z-index: 20;
     background: theme("colors.background");
-    padding: 0 0 12px 0; /* Remove top padding, let parent handle alignment */
-    border-bottom: 1px solid theme("colors.stroke"); /* Use theme color */
+    padding: 0 0 12px 0;
+    border-bottom: 1px solid theme("colors.stroke");
   }
 
-  /* Mobile Fixed Filter Chips */
   .mobile-sticky-filters {
     position: fixed;
     top: var(--mobile-header-height, 52px);
@@ -763,10 +684,9 @@
     z-index: 25;
     background: theme("colors.background");
     padding: 12px 0;
-    border-bottom: 1px solid theme("colors.stroke"); /* Use theme color */
+    border-bottom: 1px solid theme("colors.stroke");
   }
 
-  /* Page Header */
   .page-header {
     margin-bottom: 12px;
   }

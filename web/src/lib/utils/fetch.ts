@@ -1,22 +1,14 @@
-/**
- * Fetch utility with timeout support
- */
+const DEFAULT_TIMEOUT_MS = 30000;
 
 export interface FetchWithTimeoutOptions extends RequestInit {
-    timeout?: number; // Timeout in milliseconds
+    timeout?: number;
 }
 
-/**
- * Fetch with automatic timeout
- * @param url - The URL to fetch
- * @param options - Fetch options including optional timeout (default: 30000ms)
- * @returns Promise<Response>
- */
 export async function fetchWithTimeout(
     url: string,
     options: FetchWithTimeoutOptions = {}
 ): Promise<Response> {
-    const { timeout = 30000, ...fetchOptions } = options;
+    const { timeout = DEFAULT_TIMEOUT_MS, ...fetchOptions } = options;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -37,12 +29,6 @@ export async function fetchWithTimeout(
     }
 }
 
-/**
- * Fetch with authentication token
- * @param url - The URL to fetch
- * @param options - Fetch options
- * @returns Promise<Response>
- */
 export async function fetchWithAuth(
     url: string,
     options: RequestInit = {}
