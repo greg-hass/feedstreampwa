@@ -670,6 +670,12 @@
     max-width: 100vw;
   }
 
+  /* Fix for sticky positioning - ensure no parent interferes */
+  :global(html, body) {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
   .sticky-header {
     position: sticky;
     top: 0;
@@ -677,6 +683,12 @@
     background: theme("colors.background");
     padding: 0 0 12px 0;
     border-bottom: 1px solid theme("colors.stroke");
+  }
+
+  /* Ensure articles scroll properly below sticky header */
+  .articles-list {
+    position: relative;
+    z-index: 1;
   }
 
   .mobile-sticky-filters {
