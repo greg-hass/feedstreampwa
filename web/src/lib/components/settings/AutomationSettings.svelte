@@ -1,23 +1,20 @@
 <script lang="ts">
   import { Sparkles, Loader2, AlertCircle, Trash2 } from "lucide-svelte";
+  import type { AutomationRule } from "$lib/types";
   import { onMount } from "svelte";
 
-  interface Rule {
-    id: string;
-    name?: string;
-    keyword: string;
-    field: string;
-    action: string;
-    feed_url?: string;
-  }
-
-  export let rules: Rule[] = [];
+  export let rules: AutomationRule[] = [];
   export let rulesLoading = false;
   export let rulesError: string | null = null;
   export let loadRules: () => Promise<void>;
   export let handleCreateRule: () => Promise<void>;
   export let handleDeleteRule: (id: string) => Promise<void>;
-  export let newRule = { keyword: "", field: "title", action: "mark_read", name: "" };
+  export let newRule = {
+    keyword: "",
+    field: "title",
+    action: "mark_read",
+    name: "",
+  };
 
   onMount(() => {
     loadRules();
@@ -34,7 +31,9 @@
     </div>
   {:else if rulesError}
     <div class="flex flex-col items-center justify-center py-12 text-center">
-      <div class="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mb-4">
+      <div
+        class="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mb-4"
+      >
         <AlertCircle size={32} class="text-red-400" />
       </div>
       <h3 class="text-lg font-semibold text-white mb-2">Failed to Load</h3>
@@ -92,9 +91,13 @@
 
     <!-- Rules List -->
     <div class="space-y-3">
-      <h3 class="text-xs font-medium text-white/40 uppercase tracking-wider">Active Rules</h3>
+      <h3 class="text-xs font-medium text-white/40 uppercase tracking-wider">
+        Active Rules
+      </h3>
       {#if rules.length === 0}
-        <div class="text-white/30 text-center py-8 text-sm italic border border-white/5 rounded-xl border-dashed">
+        <div
+          class="text-white/30 text-center py-8 text-sm italic border border-white/5 rounded-xl border-dashed"
+        >
           No rules defined. Add one above!
         </div>
       {:else}
@@ -103,15 +106,19 @@
             class="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 group hover:border-white/10 transition-colors"
           >
             <div class="flex flex-col">
-              <span class="text-white text-sm font-medium">{rule.name || rule.keyword}</span>
+              <span class="text-white text-sm font-medium"
+                >{rule.name || rule.keyword}</span
+              >
               <span class="text-white/40 text-xs mt-0.5">
                 If <span class="text-white/60">{rule.field}</span>
                 contains "<span class="text-white/60">{rule.keyword}</span>" →
-                <span class="text-accent/80 font-medium uppercase text-[10px]">{rule.action.replace("_", " ")}</span>
+                <span class="text-accent/80 font-medium uppercase text-[10px]"
+                  >{rule.action.replace("_", " ")}</span
+                >
               </span>
             </div>
             <button
-              on:click={() => handleDeleteRule(rule.id)}
+              on:click={() => rule.id && handleDeleteRule(rule.id)}
               class="text-white/20 hover:text-red-400 hover:bg-red-500/10 p-2 rounded-lg transition-colors"
               ><Trash2 size={16} /></button
             >

@@ -10,7 +10,7 @@ export default {
         surface: 'var(--tw-colors-surface)',
         raised: 'var(--tw-colors-raised)',
         stroke: 'var(--tw-colors-stroke)',
-        accent: 'var(--tw-colors-accent)',
+        accent: 'rgb(var(--accent-color-rgb) / <alpha-value>)',
 
         // Dark theme (default)
         DEFAULT: '#050507',

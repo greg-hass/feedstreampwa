@@ -369,7 +369,7 @@
 
   {#if !isPodcast}
     <div
-      class="reader-body {fontSizeClass} {fontFamilyClass} mx-auto w-full max-w-none"
+      class="reader-body {fontSizeClass} {fontFamilyClass} {maxWidthClass} mx-auto w-full"
       id="reader-body-content"
     >
       {#if !isYouTube}

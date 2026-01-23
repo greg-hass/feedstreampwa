@@ -32,7 +32,7 @@
 
 @layer base {
   body {
-    @apply antialiased overflow-x-hidden min-h-screen selection:bg-accent/30 selection:text-accent;
+    @apply antialiased overflow-x-hidden min-h-screen;
     background-color: var(--tw-colors-background);
     color: var(--text-base);
     font-family: var(--font-sans);
@@ -40,6 +40,11 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     scrollbar-gutter: stable;
+  }
+
+  ::selection {
+    background-color: rgba(var(--accent-color-rgb), 0.3);
+    color: var(--tw-colors-accent);
   }
 
   /* Smooth interactions for all interactive elements */
