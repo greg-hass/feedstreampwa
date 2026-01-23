@@ -37,7 +37,7 @@
     if (item.external_id) return item.external_id;
     if (item.url) {
       const match = item.url.match(
-        /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/,
       );
       if (match) return match[1];
     }
@@ -70,12 +70,14 @@
   $: hasDuration = typeof durationSeconds === "number" && durationSeconds > 0;
   $: progressSeconds = Math.max(0, item.playback_position || 0);
   $: hasProgress = progressSeconds > 5;
-  $: progressPercent = hasDuration
-    ? Math.min(100, (progressSeconds / durationSeconds) * 100)
-    : 0;
-  $: remainingSeconds = hasDuration
-    ? Math.max(0, durationSeconds - progressSeconds)
-    : null;
+  $: progressPercent =
+    hasDuration && durationSeconds
+      ? Math.min(100, (progressSeconds / durationSeconds) * 100)
+      : 0;
+  $: remainingSeconds =
+    hasDuration && durationSeconds
+      ? Math.max(0, durationSeconds - progressSeconds)
+      : null;
 
   // Format Date
   // Format Date
@@ -185,7 +187,8 @@
       : null;
 
   $: isPlayable =
-    (feedType === "podcast" && (enclosureUrl || fallbackAudioUrl || item.url)) ||
+    (feedType === "podcast" &&
+      (enclosureUrl || fallbackAudioUrl || item.url)) ||
     Boolean(enclosureUrl || fallbackAudioUrl) ||
     feedType === "youtube" ||
     item.external_id;
@@ -202,7 +205,10 @@
       onSwipeRight: () => dispatch("toggleRead", { item }),
       onSwipeLeft: () => dispatch("toggleStar", { item }),
       onSwipeProgress: (progress, direction) => {
-        touchDiff = direction === 'right' ? progress * SWIPE_THRESHOLD : -progress * SWIPE_THRESHOLD;
+        touchDiff =
+          direction === "right"
+            ? progress * SWIPE_THRESHOLD
+            : -progress * SWIPE_THRESHOLD;
       },
       onSwipeEnd: () => {
         touchDiff = 0;
@@ -214,9 +220,11 @@
 </script>
 
 <article
-  class="group relative flex flex-col w-full overflow-hidden rounded-xl bg-zinc-900 border border-zinc-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-zinc-800 hover:border-zinc-700 cursor-pointer"
+  class="group relative flex flex-col w-full overflow-hidden rounded-2xl bg-surface border border-stroke transition-all duration-300 hover:bg-raised hover:border-zinc-700/50 cursor-pointer shadow-sm hover:shadow-md"
   bind:this={articleElement}
-  style="transform: translateX({touchDiff}px); transition: {touchDiff !== 0 ? 'none' : 'transform 0.3s'}"
+  style="transform: translateX({touchDiff}px); transition: {touchDiff !== 0
+    ? 'none'
+    : 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)'}"
   on:click={handleOpen}
   on:keypress={(e) => e.key === "Enter" && handleOpen()}
   tabindex="0"
@@ -246,26 +254,25 @@
   <!-- Image Preview (Conditional) -->
   <div class="relative z-10 bg-zinc-900 h-full flex flex-col">
     {#if thumbnailUrl}
-      <div class="relative w-full aspect-video overflow-hidden">
+      <div class="relative w-full aspect-video overflow-hidden bg-zinc-950/20">
         <img
           src={thumbnailUrl}
           alt={item.title}
-          class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          class="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-[1.03]"
           loading="lazy"
         />
 
-        <!-- Gradient Overlay -->
+        <!-- Soft Gradient Overlay -->
         <div
-          class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60"
+          class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-40"
         ></div>
 
         <!-- Source Badge -->
         <div
-          class="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 flex items-center gap-1.5 shadow-lg"
+          class="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-zinc-950/40 backdrop-blur-md border border-white/10 flex items-center gap-2 shadow-sm"
         >
-          <svelte:component this={Icon} size={12} class={currentStyle.color} />
-          <span
-            class="text-[10px] font-medium tracking-wide text-white/90 uppercase"
+          <svelte:component this={Icon} size={14} class={currentStyle.color} />
+          <span class="text-[11px] font-bold tracking-tight text-white/90"
             >{item.feed_title}</span
           >
           {#if isCached}
@@ -273,23 +280,22 @@
           {/if}
           {#if showDiversityBadge}
             <div
-              class="px-1.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center gap-1"
+              class="px-1.5 py-0.5 rounded-full bg-accent/20 border border-accent/30 flex items-center gap-1"
               title="New source - explore diverse content"
             >
-              <span class="text-[8px] font-semibold text-cyan-400">NEW</span>
+              <span class="text-[9px] font-bold text-accent">NEW</span>
             </div>
           {/if}
         </div>
       </div>
     {:else}
       <!-- No Image: Header strip -->
-      <div class="px-3 md:px-5 pt-3 md:pt-5 pb-2 flex items-center gap-2">
+      <div class="px-5 pt-5 pb-2 flex items-center gap-2">
         <div
-          class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-zinc-800 border border-zinc-700"
+          class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-raised/50 border border-stroke shadow-sm"
         >
-          <svelte:component this={Icon} size={12} class={currentStyle.color} />
-          <span
-            class="text-[10px] font-medium tracking-wide text-zinc-400 uppercase"
+          <svelte:component this={Icon} size={14} class={currentStyle.color} />
+          <span class="text-[11px] font-bold tracking-tight text-muted"
             >{item.feed_title}</span
           >
           {#if isCached}
@@ -297,10 +303,10 @@
           {/if}
           {#if showDiversityBadge}
             <div
-              class="px-1.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center gap-1"
+              class="px-1.5 py-0.5 rounded-full bg-accent/20 border border-accent/20 flex items-center gap-1"
               title="New source - explore diverse content"
             >
-              <span class="text-[8px] font-semibold text-cyan-400">NEW</span>
+              <span class="text-[9px] font-bold text-accent">NEW</span>
             </div>
           {/if}
         </div>
@@ -311,20 +317,20 @@
     <div class="flex flex-col flex-1 p-3 md:p-5 pt-2 md:pt-3">
       <!-- Meta -->
       <div
-        class="flex items-center justify-between mb-2 text-xs text-indigo-400"
+        class="flex items-center justify-between mb-3 text-[13px] font-medium text-muted"
       >
         <span>{dateStr}</span>
         {#if item.is_read}
-          <span class="text-zinc-600 flex items-center gap-1"
-            ><CheckCircle2 size={12} /> Read</span
+          <span class="text-zinc-600/60 flex items-center gap-1.5"
+            ><CheckCircle2 size={13} /> Read</span
           >
         {/if}
       </div>
 
       <!-- Title -->
       <h3
-        class="text-base font-semibold text-accent leading-tight line-clamp-2 md:line-clamp-3 mb-2 group-hover:text-accent/80 transition-colors {item.is_read
-          ? 'text-zinc-500'
+        class="text-[17px] font-bold text-accent leading-[1.3] line-clamp-2 md:line-clamp-3 mb-3 group-hover:text-accent/90 transition-colors {item.is_read
+          ? 'text-zinc-500/80'
           : ''}"
       >
         {item.title}
@@ -332,7 +338,9 @@
 
       {#if isPodcast}
         <div class="mb-3 flex flex-col gap-2">
-          <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-400">
+          <div
+            class="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-400"
+          >
             <span
               class="inline-flex items-center gap-1 rounded-full bg-zinc-800/80 border border-zinc-700 px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase text-zinc-200"
             >
@@ -364,8 +372,8 @@
 
       {#if item.summary}
         <p
-          class="text-sm text-zinc-400 line-clamp-2 leading-relaxed mb-4 hidden sm:block {item.is_read
-            ? 'text-zinc-600'
+          class="text-[14px] text-zinc-400/90 line-clamp-2 leading-relaxed mb-6 hidden sm:block {item.is_read
+            ? 'text-zinc-600/70'
             : ''}"
         >
           {stripHtml(item.summary)}
@@ -377,69 +385,75 @@
 
       <!-- Actions Bar -->
       <div
-        class="flex items-center justify-between pt-4 mt-2 border-t border-zinc-800 opacity-80 md:opacity-0 md:translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300"
+        class="flex items-center justify-between pt-4 mt-2 border-t border-stroke opacity-60 md:opacity-0 md:translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-400 ease-out"
       >
         <!-- Read Later / Bookmark Toggle -->
         <button
-          class="p-2 rounded-full hover:bg-zinc-800 transition-colors {item.is_read
-            ? 'text-green-400'
-            : 'text-zinc-500 hover:text-white'}"
+          class="w-11 h-11 flex items-center justify-center rounded-xl hover:bg-raised transition-colors {item.is_read
+            ? 'text-accent'
+            : 'text-muted hover:text-white'}"
           title={item.is_read ? "Mark as Unread" : "Mark as Read"}
           aria-label={item.is_read ? "Mark as Unread" : "Mark as Read"}
           on:click={handleRead}
         >
           {#if item.is_read}
-            <CheckCircle2 size={18} />
+            <CheckCircle2 size={20} />
           {:else}
-            <div
-              class="w-[18px] h-[18px] border-2 border-current rounded-full"
-            ></div>
+            <div class="w-5 h-5 border-2 border-current rounded-full"></div>
           {/if}
         </button>
 
         <div class="flex items-center gap-1">
           {#if isPlayable}
             <button
-              class="p-2 rounded-full hover:bg-zinc-800 text-zinc-500 hover:text-accent transition-colors"
-              title={isPodcast ? (hasProgress ? "Resume Episode" : "Play Episode") : "Play"}
-              aria-label={isPodcast ? (hasProgress ? "Resume Episode" : "Play Episode") : "Play"}
+              class="w-11 h-11 flex items-center justify-center rounded-xl hover:bg-raised text-muted hover:text-accent transition-colors"
+              title={isPodcast
+                ? hasProgress
+                  ? "Resume Episode"
+                  : "Play Episode"
+                : "Play"}
+              aria-label={isPodcast
+                ? hasProgress
+                  ? "Resume Episode"
+                  : "Play Episode"
+                : "Play"}
               on:click={handlePlay}
             >
-              <PlayCircle size={18} />
+              <PlayCircle size={20} />
             </button>
           {/if}
 
           <button
-            class="p-2 rounded-full hover:bg-zinc-800 text-zinc-500 hover:text-[#FF9500] transition-colors"
+            class="w-11 h-11 flex items-center justify-center rounded-xl hover:bg-raised text-muted hover:text-[#FF9500] transition-colors"
             title="Bookmark"
             aria-label={item.is_starred ? "Remove Bookmark" : "Add Bookmark"}
             on:click={handleStar}
           >
             <Bookmark
-              size={18}
+              size={20}
               class={item.is_starred ? "fill-[#FF9500] text-[#FF9500]" : ""}
             />
           </button>
 
           <button
-            class="p-2 rounded-full hover:bg-zinc-800 text-zinc-500 hover:text-blue-400 transition-colors"
+            class="w-11 h-11 flex items-center justify-center rounded-xl hover:bg-raised text-muted hover:text-blue-500 transition-colors"
             title="Share"
             aria-label="Share Article"
             on:click={handleShare}
           >
-            <Share2 size={18} />
+            <Share2 size={20} />
           </button>
 
           <a
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
-            class="p-2 rounded-full hover:bg-zinc-800 text-zinc-500 hover:text-blue-400 transition-colors"
+            class="w-11 h-11 flex items-center justify-center rounded-xl hover:bg-raised text-muted hover:text-blue-500 transition-colors"
             title="Open Link"
             aria-label="Open Article in New Tab"
             on:click|stopPropagation
           >
-            <ExternalLink size={18} />
+            <ExternalLink size={20} />
           </a>
         </div>
       </div>

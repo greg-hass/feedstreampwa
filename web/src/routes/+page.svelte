@@ -20,9 +20,20 @@
   import ReadingStatsModal from "$lib/components/ReadingStatsModal.svelte";
 
   import * as itemsApi from "$lib/api/items";
-  import { parseIntervalMs, formatCountdown, getCountdownInterval, LIVE_POLL_INTERVAL_MS, LIVE_POLL_LIMIT, LIVE_INSERT_RESET_MS, LIVE_PRESERVE_SCROLL_THRESHOLD } from "$lib/utils/refresh";
+  import {
+    parseIntervalMs,
+    formatCountdown,
+    getCountdownInterval,
+    LIVE_POLL_INTERVAL_MS,
+    LIVE_POLL_LIMIT,
+    LIVE_INSERT_RESET_MS,
+    LIVE_PRESERVE_SCROLL_THRESHOLD,
+  } from "$lib/utils/refresh";
   import { getPageTitle } from "$lib/utils/pageTitle";
-  import { INTERSECTION_MARGIN, MOBILE_BREAKPOINT } from "$lib/constants/gestures";
+  import {
+    INTERSECTION_MARGIN,
+    MOBILE_BREAKPOINT,
+  } from "$lib/constants/gestures";
   import type { Item, TimeFilter } from "$lib/types";
   import {
     isAddFeedModalOpen,
@@ -82,7 +93,7 @@
         description: "Focus search",
         action: () => {
           const searchInput = document.querySelector(
-            'input[type="search"]'
+            'input[type="search"]',
           ) as HTMLInputElement;
           if (searchInput) {
             searchInput.focus();
@@ -192,7 +203,7 @@
     }
     if (!$itemsLoading && refreshItemsLoadingSeen && refreshSnapshotIds) {
       const newCount = $items.filter(
-        (item) => !refreshSnapshotIds?.has(item.id)
+        (item) => !refreshSnapshotIds?.has(item.id),
       ).length;
       if (newCount > 0) {
         newArticlesCount = newCount;
@@ -226,11 +237,17 @@
   $: if (typeof document !== "undefined") {
     document.documentElement.style.setProperty(
       "--mobile-filters-height",
-      `${showTimeFilter ? mobileFiltersHeight : 0}px`
+      `${showTimeFilter ? mobileFiltersHeight : 0}px`,
     );
   }
 
-  $: pageTitle = getPageTitle($viewMode, $activeSmartFolder, $activeFolderId, $selectedFeedUrl, $folders);
+  $: pageTitle = getPageTitle(
+    $viewMode,
+    $activeSmartFolder,
+    $activeFolderId,
+    $selectedFeedUrl,
+    $folders,
+  );
 
   function getLoadParams() {
     const params: Record<string, string | boolean | TimeFilter> = {};
@@ -259,7 +276,6 @@
     }, LIVE_INSERT_RESET_MS);
   }
 
-
   function updateRefreshCountdown() {
     if ($refreshState.isRefreshing) {
       refreshCountdown = "Refreshing";
@@ -273,7 +289,8 @@
       return;
     }
 
-    const base = lastSyncMs && Number.isFinite(lastSyncMs) ? lastSyncMs : Date.now();
+    const base =
+      lastSyncMs && Number.isFinite(lastSyncMs) ? lastSyncMs : Date.now();
     const now = Date.now();
     const elapsed = Math.max(0, now - base);
     const remainder = elapsed % syncIntervalMs;
@@ -375,7 +392,7 @@
     } catch (err) {
       console.error("Failed to refresh feeds:", err);
       toast.error(
-        err instanceof Error ? err.message : "Failed to refresh feeds"
+        err instanceof Error ? err.message : "Failed to refresh feeds",
       );
     }
   }
@@ -431,7 +448,7 @@
           loadMore();
         }
       },
-      { rootMargin: INTERSECTION_MARGIN }
+      { rootMargin: INTERSECTION_MARGIN },
     );
 
     if (sentinel) observer.observe(sentinel);
@@ -477,76 +494,74 @@
     <div class="page-header">
       <div class="flex items-center justify-between">
         <h1 class="text-3xl font-bold text-white">{pageTitle}</h1>
-        <div class="flex items-center gap-2">
-          <div class="flex items-center gap-2">
+        <div class="flex items-center gap-3">
+          <div
+            class="flex items-center bg-surface/50 border border-stroke rounded-2xl p-1 gap-1"
+          >
             <button
-              class="p-2.5 rounded-xl bg-zinc-700 hover:bg-zinc-600 transition-all shadow-lg shadow-black/20 text-white"
+              class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-raised transition-all text-muted hover:text-white"
               on:click={refreshAll}
               class:spinning={$refreshState.isRefreshing}
               title="Refresh"
             >
-              <RefreshCw size={20} />
+              <RefreshCw size={18} />
             </button>
-            <span
-              class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-white/60"
-              title={$refreshStream.status === "connected"
-                ? "Live updates connected"
-                : "Reconnecting to live updates"}
-            >
+            <div class="h-6 w-px bg-stroke/50 mx-1"></div>
+            <div class="flex items-center px-2 gap-2">
               <span
-                class={`h-2 w-2 rounded-full ${$refreshStream.status === "connected"
-                  ? "bg-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.45)]"
-                  : "bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.45)] animate-pulse"}`}
+                class={`h-2 w-2 rounded-full ${
+                  $refreshStream.status === "connected"
+                    ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"
+                    : "bg-amber-500 animate-pulse"
+                }`}
               ></span>
-              {$refreshStream.status === "connected" ? "Live" : "Reconnecting"}
-            </span>
-            <span
-              class="text-xs font-semibold text-white/60"
-              title={refreshCountdownTitle}
-            >
-              {refreshCountdown}
-            </span>
+              <span
+                class="text-[11px] font-bold tracking-tight text-muted uppercase"
+              >
+                {$refreshStream.status === "connected" ? "Live" : "Syncing"}
+              </span>
+            </div>
           </div>
-          <button
-            class="p-2.5 rounded-xl bg-gradient-to-br from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 transition-all shadow-lg shadow-slate-500/20 text-white relative group"
-            on:click={cycleDensity}
-            title="View Density: {$viewDensity}"
+          <div
+            class="flex items-center bg-surface/50 border border-stroke rounded-2xl p-1 gap-1"
           >
-            <LayoutGrid size={20} />
-            <span
-              class="absolute -bottom-1 -right-1 text-[9px] font-bold bg-white text-slate-900 rounded-full w-4 h-4 flex items-center justify-center"
+            <button
+              class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-raised transition-all text-muted hover:text-white relative"
+              on:click={cycleDensity}
+              title="View Density: {$viewDensity}"
             >
-              {$viewDensity === "compact"
-                ? "C"
-                : $viewDensity === "spacious"
-                  ? "S"
-                  : "M"}
-            </span>
-          </button>
+              <LayoutGrid size={18} />
+              <span
+                class="absolute top-2 right-2 w-1.5 h-1.5 bg-accent rounded-full opacity-50"
+              ></span>
+            </button>
+            <button
+              class="w-10 h-10 flex items-center justify-center rounded-xl transition-all {$diversitySettings.enabled
+                ? 'bg-accent/10 text-accent border border-accent/20'
+                : 'text-muted hover:text-white hover:bg-raised'}"
+              on:click={() => diversitySettings.toggle()}
+              title="Source Diversity: {$diversitySettings.enabled
+                ? 'On'
+                : 'Off'}"
+            >
+              <Shuffle size={18} />
+            </button>
+          </div>
+
           <button
-            class="p-2.5 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-600 hover:from-cyan-600 hover:to-teal-700 transition-all shadow-lg shadow-cyan-500/20 text-white {$diversitySettings.enabled
-              ? 'ring-2 ring-white/50'
-              : ''}"
-            on:click={() => diversitySettings.toggle()}
-            title="Source Diversity: {$diversitySettings.enabled
-              ? 'On'
-              : 'Off'} - Highlight diverse sources"
-          >
-            <Shuffle size={20} />
-          </button>
-          <button
-            class="p-2.5 rounded-xl bg-[#fbbf24] hover:bg-[#f59e0b] transition-all shadow-lg shadow-black/20 text-zinc-900"
+            class="h-10 px-4 rounded-xl border border-stroke bg-surface hover:bg-raised text-muted hover:text-white transition-all font-bold text-sm flex items-center gap-2"
             on:click={() => isCreateFolderModalOpen.set(true)}
-            title="Add Folder"
           >
-            <FolderPlus size={20} />
+            <FolderPlus size={18} />
+            <span>Folder</span>
           </button>
+
           <button
-            class="p-2.5 rounded-xl bg-accent hover:bg-accent hover:shadow-xl hover:shadow-accent/30 transition-all shadow-lg shadow-accent/20 text-white"
+            class="h-10 px-4 rounded-xl bg-accent hover:bg-accent/90 text-white transition-all font-bold text-sm shadow-lg shadow-accent/20 flex items-center gap-2"
             on:click={() => isAddFeedModalOpen.set(true)}
-            title="Add Feed"
           >
             <Plus size={20} />
+            <span>Add Feed</span>
           </button>
         </div>
       </div>
@@ -581,8 +596,8 @@
     }}
     onRefresh={refreshAll}
     isRefreshing={$refreshState.isRefreshing}
-    refreshCountdown={refreshCountdown}
-    refreshCountdownTitle={refreshCountdownTitle}
+    {refreshCountdown}
+    {refreshCountdownTitle}
     refreshStreamStatus={$refreshStream.status}
   />
 
@@ -691,11 +706,11 @@
     position: sticky;
     top: 0;
     z-index: 20;
-    background: theme("colors.background");
-    padding: 0 0 12px 0;
+    background-color: var(--tw-colors-background);
+    padding: 24px 0 16px 0;
     border-bottom: 1px solid theme("colors.stroke");
-    /* Add subtle shadow for elevation */
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    /* Minimal refined shadow */
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
   }
 
   /* Ensure articles scroll properly below sticky header */
@@ -773,8 +788,7 @@
 
     .articles-list {
       padding-top: calc(
-        var(--mobile-header-height, 52px) +
-          var(--mobile-filters-height, 60px)
+        var(--mobile-header-height, 52px) + var(--mobile-filters-height, 60px)
       );
     }
   }

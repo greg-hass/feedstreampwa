@@ -62,19 +62,26 @@
     if (!html) return "";
     let cleaned = html.trim();
     if (cleaned.toLowerCase().includes("<p>")) return cleaned;
-    
+
     if (cleaned.includes("\n\n")) {
       return cleaned
         .split(/\n\n+/)
         .map((p) => p.trim())
         .filter((p) => p.length > 0)
-        .map((p) => `<p>${p.replace(/\n/g, " ").replace(/\s+/g, " ").trim()}</p>`)
+        .map(
+          (p) => `<p>${p.replace(/\n/g, " ").replace(/\s+/g, " ").trim()}</p>`,
+        )
         .join("");
     }
 
     if (cleaned.toLowerCase().includes("<br")) {
-      const withParas = cleaned.replace(/<br\s*\/?>(\s*<br\s*\/?>\s*)+/gi, "</p><p>");
-      return withParas.toLowerCase().startsWith("<p>") ? withParas : `<p>${withParas}</p>`;
+      const withParas = cleaned.replace(
+        /<br\s*\/?>(\s*<br\s*\/?>\s*)+/gi,
+        "</p><p>",
+      );
+      return withParas.toLowerCase().startsWith("<p>")
+        ? withParas
+        : `<p>${withParas}</p>`;
     }
 
     return `<p>${cleaned}</p>`;
@@ -87,12 +94,16 @@
       .replace(/\*(.*?)\*/g, "<em>$1</em>")
       .replace(/^\s*-\s+(.*)/gm, "<li>$1</li>");
 
-    html = html.replace(/((<li>.*<\/li>\n?)+)/g, '<ul class="list-disc pl-5 my-3 space-y-1 text-white/80">$1</ul>');
+    html = html.replace(
+      /((<li>.*<\/li>\n?)+)/g,
+      '<ul class="list-disc pl-5 my-3 space-y-1 text-white/80">$1</ul>',
+    );
 
     return html
       .split("\n\n")
       .map((p) => {
-        if (p.trim().startsWith("<ul") || p.trim().startsWith("<li>")) return p.trim();
+        if (p.trim().startsWith("<ul") || p.trim().startsWith("<li>"))
+          return p.trim();
         return `<p class="mb-3 text-white/90 leading-relaxed">${p.trim()}</p>`;
       })
       .join("");
@@ -106,11 +117,14 @@
   $: isPodcast = item?.source === "podcast" || Boolean(item?.enclosure);
   $: isReddit = item?.source === "reddit";
   $: coverImage = isPodcast
-    ? item?.feed_icon_url || readerData?.imageUrl || item?.media_thumbnail || null
-    : (readerData?.imageUrl || item?.media_thumbnail || null);
+    ? item?.feed_icon_url ||
+      readerData?.imageUrl ||
+      item?.media_thumbnail ||
+      null
+    : readerData?.imageUrl || item?.media_thumbnail || null;
   $: coverUrl = heroImageError
     ? item?.feed_icon_url || null
-    : (coverImage || item?.feed_icon_url || null);
+    : coverImage || item?.feed_icon_url || null;
   $: heroStyle = coverUrl ? `--hero-image: url("${coverUrl}")` : "";
   $: feedTitle = item?.feed_title || readerData?.siteName || "FeedStream";
   $: displayAuthor = readerData?.byline || item?.author || null;
@@ -132,7 +146,7 @@
     displayAuthor,
     displayDate,
     readTimeLabel,
-    durationLabel
+    durationLabel,
   ].filter((part): part is string => Boolean(part));
 
   $: if (item?.id) {
@@ -146,7 +160,10 @@
     const target = event.currentTarget as HTMLDivElement | null;
     if (!target || !$currentMedia || !$currentMedia.id) return;
     const rect = target.getBoundingClientRect();
-    const percent = Math.min(Math.max((event.clientX - rect.left) / rect.width, 0), 1);
+    const percent = Math.min(
+      Math.max((event.clientX - rect.left) / rect.width, 0),
+      1,
+    );
     const total = $duration || $currentMedia.media_duration_seconds || 0;
     const newTime = percent * total;
     if (newTime > 0 && total > 0) {
@@ -169,7 +186,9 @@
       .replace(/<img[^>]*>/gi, "");
   }
 
-  $: bodyHtml = isReddit ? stripInlineImages(readerData?.contentHtml || "") : (readerData?.contentHtml || "");
+  $: bodyHtml = isReddit
+    ? stripInlineImages(readerData?.contentHtml || "")
+    : readerData?.contentHtml || "";
 </script>
 
 <article class="reader-content {themeClass}">
@@ -204,7 +223,7 @@
       </div>
 
       <h1 class="hero-title" id="reader-title">
-        {readerData.title || "Untitled"}
+        {readerData?.title || "Untitled"}
       </h1>
 
       {#if metaParts.length}
@@ -225,48 +244,67 @@
 
       <div class="hero-actions">
         {#if isPodcast && onPlay}
-          <button class="hero-action hero-action-primary" on:click={onPlay}>
-            <Play size={16} class="fill-current" />
-            {playLabel}
+          <button
+            class="w-11 h-11 md:w-auto md:px-5 md:h-11 flex items-center justify-center gap-2 rounded-full bg-accent text-white font-bold shadow-lg shadow-accent/25 hover:shadow-accent/40 hover:-translate-y-0.5 active:scale-95 transition-all"
+            on:click={onPlay}
+          >
+            <Play size={18} class="fill-current" />
+            <span class="hidden md:inline">{playLabel}</span>
           </button>
         {/if}
-        {#if readerData.url}
+        {#if readerData?.url}
           <a
             href={readerData.url}
             target="_blank"
             rel="noopener noreferrer"
-            class="hero-action hero-action-ghost"
+            class="w-11 h-11 md:w-auto md:px-5 md:h-11 flex items-center justify-center gap-2 rounded-full bg-white/10 border border-white/10 text-white font-bold hover:bg-white/15 hover:-translate-y-0.5 active:scale-95 transition-all"
             title="Open Original"
           >
-            <ExternalLink size={16} />
-            Open Original
+            <ExternalLink size={18} />
+            <span class="hidden md:inline">Open Original</span>
           </a>
         {/if}
       </div>
 
       {#if isCurrentPodcast}
-        <div class="hero-player">
-          <div class="hero-player-controls">
-            <button class="hero-player-icon" on:click={() => skip(-15)} title="Rewind 15s">
-              <SkipBack size={16} />
+        <div
+          class="hero-player mt-6 p-4 rounded-2xl bg-black/40 border border-white/10 backdrop-blur-xl"
+        >
+          <div class="hero-player-controls flex items-center gap-4">
+            <button
+              class="w-11 h-11 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white active:scale-90 transition-all"
+              on:click={() => skip(-15)}
+              title="Rewind 15s"
+            >
+              <SkipBack size={20} />
             </button>
-            <button class="hero-player-btn" on:click={togglePlayPause}>
+            <button
+              class="px-6 h-11 flex items-center gap-3 rounded-full bg-accent text-white font-bold active:scale-95 transition-all"
+              on:click={togglePlayPause}
+            >
               {#if $isPlaying}
-                <Pause size={16} class="fill-current" />
+                <Pause size={20} class="fill-current" />
               {:else}
-                <Play size={16} class="fill-current" />
+                <Play size={20} class="fill-current" />
               {/if}
               <span>{$isPlaying ? "Pause" : "Play"}</span>
             </button>
-            <button class="hero-player-icon" on:click={() => skip(30)} title="Forward 30s">
-              <SkipForward size={16} />
+            <button
+              class="w-11 h-11 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white active:scale-90 transition-all"
+              on:click={() => skip(30)}
+              title="Forward 30s"
+            >
+              <SkipForward size={20} />
             </button>
-            <button class="hero-player-speed" on:click={cycleHeroSpeed}>
+            <button
+              class="w-11 h-11 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white font-bold text-xs"
+              on:click={cycleHeroSpeed}
+            >
               {$playbackSpeed}x
             </button>
           </div>
           <div
-            class="hero-player-progress"
+            class="hero-player-progress mt-4 h-2 w-full rounded-full bg-white/10 overflow-hidden cursor-pointer"
             role="slider"
             aria-label="Audio Progress"
             aria-valuemin="0"
@@ -275,16 +313,21 @@
             aria-valuetext="{$formattedCurrentTime} of {$formattedDuration}"
             tabindex="0"
             on:click={handleHeroSeek}
-            on:keypress={(e) => (e.key === 'Enter' || e.key === ' ') ? handleHeroSeek(e) : null}
+            on:keypress={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                // Keyboard seek not implemented for slider via this handler
+              }
+            }}
           >
             <div
-              class="hero-player-progress-fill"
+              class="hero-player-progress-fill h-full bg-accent shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.5)]"
               style="width: {$progress}%"
             ></div>
           </div>
-          <div class="hero-player-time">
+          <div
+            class="hero-player-time mt-2 flex justify-between text-[11px] font-bold text-white/50 tracking-wider"
+          >
             <span>{$formattedCurrentTime}</span>
-            <span>/</span>
             <span>{$formattedDuration}</span>
           </div>
         </div>
@@ -293,23 +336,33 @@
   </header>
 
   {#if summary}
-    <div class="mb-10 p-6 bg-accent/10 border border-accent/20 rounded-xl relative overflow-hidden group">
-      <div class="absolute top-0 left-0 w-1 h-full bg-accent"></div>
-      <div class="flex items-center gap-2 mb-4 text-accent text-sm font-bold uppercase tracking-wider">
-        <Sparkles size={14} />
-        AI Summary
+    <div
+      class="mb-12 p-8 bg-accent/5 border border-accent/10 rounded-[2rem] relative overflow-hidden"
+    >
+      <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+        <Sparkles size={120} class="text-accent" />
       </div>
-      <div class="prose prose-invert prose-sm max-w-none font-sans">
+      <div
+        class="flex items-center gap-2.5 mb-5 text-accent text-[11px] font-black uppercase tracking-[0.2em]"
+      >
+        <Sparkles size={14} />
+        Deep Insights
+      </div>
+      <div
+        class="prose prose-invert prose-base max-w-none text-base leading-relaxed opacity-90"
+      >
         {@html sanitizeHtml(formatSummary(summary))}
       </div>
     </div>
   {:else if summaryLoading}
-    <div class="mb-10 p-6 bg-white/5 border border-white/10 rounded-xl animate-pulse">
-      <div class="h-4 bg-white/10 rounded w-1/4 mb-4"></div>
-      <div class="space-y-3">
-        <div class="h-3 bg-white/10 rounded w-full"></div>
-        <div class="h-3 bg-white/10 rounded w-5/6"></div>
-        <div class="h-3 bg-white/10 rounded w-4/6"></div>
+    <div
+      class="mb-12 p-8 bg-surface border border-stroke rounded-[2rem] animate-pulse"
+    >
+      <div class="h-4 bg-raised rounded w-32 mb-6"></div>
+      <div class="space-y-4">
+        <div class="h-3 bg-raised rounded w-full"></div>
+        <div class="h-3 bg-raised rounded w-11/12"></div>
+        <div class="h-3 bg-raised rounded w-4/5"></div>
       </div>
     </div>
   {/if}
@@ -360,8 +413,11 @@
     content: "";
     position: absolute;
     inset: 0;
-    background:
-      radial-gradient(600px circle at 15% 10%, rgba(var(--accent-color-rgb, 56, 189, 248), 0.2), transparent 60%),
+    background: radial-gradient(
+        600px circle at 15% 10%,
+        rgba(var(--accent-color-rgb, 56, 189, 248), 0.2),
+        transparent 60%
+      ),
       linear-gradient(180deg, rgba(10, 10, 15, 0.2), rgba(10, 10, 15, 0.75));
   }
 
@@ -453,7 +509,10 @@
     border: 1px solid transparent;
     text-decoration: none;
     color: inherit;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      background 0.2s ease;
   }
 
   .hero-action-primary {
@@ -630,7 +689,8 @@
     border-radius: 12px;
     overflow-x: auto;
     margin: 2em 0;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+      monospace;
     font-size: 0.9em;
   }
 </style>

@@ -41,7 +41,8 @@
   function handleScroll() {
     if (!scrollContainer || !$currentItem) return;
 
-    const scrollHeight = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+    const scrollHeight =
+      scrollContainer.scrollHeight - scrollContainer.clientHeight;
     if (scrollHeight <= 0) return;
 
     const scrollPercent = scrollContainer.scrollTop / scrollHeight;
@@ -69,7 +70,8 @@
       // Small delay to ensure content is fully rendered
       setTimeout(() => {
         if (!scrollContainer) return;
-        const scrollHeight = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+        const scrollHeight =
+          scrollContainer.scrollHeight - scrollContainer.clientHeight;
         if (scrollHeight > 0) {
           scrollContainer.scrollTop = savedPercent * scrollHeight;
           hasRestoredPosition = true;
@@ -100,7 +102,9 @@
     if (!$currentItem?.url) return;
     discussionsLoading = true;
     try {
-      const res = await fetch(`/api/discussions?url=${encodeURIComponent($currentItem.url)}`);
+      const res = await fetch(
+        `/api/discussions?url=${encodeURIComponent($currentItem.url)}`,
+      );
       const data = await res.json();
       if (data.ok) discussions = data.discussions;
     } catch (e) {
@@ -114,7 +118,8 @@
     if (!$currentItem) return;
     const confirmed = await confirmDialog.confirm({
       title: "Delete Article",
-      message: "Are you sure you want to delete this article? This action cannot be undone.",
+      message:
+        "Are you sure you want to delete this article? This action cannot be undone.",
       confirmText: "Delete",
       type: "danger",
     });
@@ -137,13 +142,18 @@
     if (!shareUrl) return;
 
     const shareData = {
-      title: $readerData?.title || $currentItem?.title || "Article from FeedStream",
+      title:
+        $readerData?.title || $currentItem?.title || "Article from FeedStream",
       text: $readerData?.excerpt || $currentItem?.summary || undefined,
       url: shareUrl,
     };
 
     try {
-      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      if (
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare(shareData)
+      ) {
         await navigator.share(shareData);
       } else {
         await navigator.clipboard.writeText(shareUrl);
@@ -160,11 +170,18 @@
       speechSynthesis.cancel();
       ttsActive = false;
     } else {
-      const text = ($readerData?.contentHtml || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+      const text = ($readerData?.contentHtml || "")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
       if (!text) return;
       currentUtterance = new SpeechSynthesisUtterance(text);
-      currentUtterance.onend = () => { ttsActive = false; };
-      currentUtterance.onerror = () => { ttsActive = false; };
+      currentUtterance.onend = () => {
+        ttsActive = false;
+      };
+      currentUtterance.onerror = () => {
+        ttsActive = false;
+      };
       ttsActive = true;
       speechSynthesis.speak(currentUtterance);
     }
@@ -218,16 +235,30 @@
       img.addEventListener("error", (e) => {
         const target = e.target as HTMLElement;
         target.style.display = "none";
-        if (target.parentElement?.tagName === "FIGURE") target.parentElement.style.display = "none";
+        if (target.parentElement?.tagName === "FIGURE")
+          target.parentElement.style.display = "none";
       });
       img.setAttribute("data-error-handled", "true");
     });
   });
 
   // Style classes
-  $: fontSizeClass = { small: "text-base", medium: "text-lg", large: "text-xl", xlarge: "text-2xl" }[$readerSettings.fontSize];
-  $: fontFamilyClass = { sans: "font-sans", serif: "font-serif", mono: "font-mono" }[$readerSettings.fontFamily];
-  $: maxWidthClass = { narrow: "max-w-2xl", medium: "max-w-3xl", wide: "max-w-4xl" }[$readerSettings.readingWidth];
+  $: fontSizeClass = {
+    small: "text-base",
+    medium: "text-lg",
+    large: "text-xl",
+    xlarge: "text-2xl",
+  }[$readerSettings.fontSize];
+  $: fontFamilyClass = {
+    sans: "font-sans",
+    serif: "font-serif",
+    mono: "font-mono",
+  }[$readerSettings.fontFamily];
+  $: maxWidthClass = {
+    narrow: "max-w-2xl",
+    medium: "max-w-3xl",
+    wide: "max-w-4xl",
+  }[$readerSettings.readingWidth];
   $: themeClass = `theme-${$readerSettings.theme}`;
 </script>
 
@@ -244,18 +275,28 @@
     role="button"
     tabindex="0"
   >
-    <div class="reader-container" role="dialog" aria-modal="true" aria-labelledby="reader-title" tabindex="-1">
+    <div
+      class="reader-container"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reader-title"
+      tabindex="-1"
+    >
       <ReadingProgress {scrollContainer} />
 
-      <ReaderHeader 
-        {handleClose} 
-        {handleDelete} 
-        {handleShare} 
-        {toggleTTS} 
-        {ttsActive} 
+      <ReaderHeader
+        {handleClose}
+        {handleDelete}
+        {handleShare}
+        {toggleTTS}
+        {ttsActive}
       />
 
-      <div class="reader-scroll-container" bind:this={scrollContainer} on:scroll={handleScroll}>
+      <div
+        class="reader-scroll-container"
+        bind:this={scrollContainer}
+        on:scroll={handleScroll}
+      >
         {#if $readerLoading}
           <div class="reader-loading">
             <div class="reader-spinner"></div>
@@ -265,7 +306,12 @@
           <div class="reader-error">
             <p>{$readerError}</p>
             {#if $currentItem?.url}
-              <a href={$currentItem.url} target="_blank" rel="noopener noreferrer" class="reader-fallback-btn">Open Original Article</a>
+              <a
+                href={$currentItem.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="reader-fallback-btn">Open Original Article</a
+              >
             {/if}
           </div>
         {:else if $readerData}
@@ -273,14 +319,14 @@
             <YouTubePlayer url={$readerData.url} item={$currentItem} />
           {/if}
 
-          <ArticleContent 
-            readerData={$readerData} 
-            item={$currentItem} 
-            {summary} 
-            {summaryLoading} 
-            {fontSizeClass} 
-            {fontFamilyClass} 
-            {maxWidthClass} 
+          <ArticleContent
+            readerData={$readerData}
+            item={$currentItem}
+            {summary}
+            {summaryLoading}
+            {fontSizeClass}
+            {fontFamilyClass}
+            {maxWidthClass}
             {themeClass}
             onPlay={handlePlayMedia}
           />
@@ -290,11 +336,11 @@
   </div>
 {/if}
 
-<DiscussionsPanel 
-  {showDiscussions} 
-  {discussions} 
-  {discussionsLoading} 
-  toggleDiscussions={() => (showDiscussions = !showDiscussions)} 
+<DiscussionsPanel
+  {showDiscussions}
+  {discussions}
+  {discussionsLoading}
+  toggleDiscussions={() => (showDiscussions = !showDiscussions)}
 />
 
 <style>
@@ -304,23 +350,23 @@
     z-index: 2000;
     display: flex;
     justify-content: center;
-    background-color: var(--bg, #121212);
-    background-image:
-      radial-gradient(1200px circle at 20% -10%, rgba(var(--accent-color-rgb, 56, 189, 248), 0.12), transparent 60%),
-      radial-gradient(900px circle at 90% 10%, rgba(255, 255, 255, 0.06), transparent 55%);
+    background-color: var(--bg, #0c0c0e);
     color: var(--text, #e5e7eb);
-    backdrop-filter: blur(10px);
-    animation: fadeIn 0.2s ease-out;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    animation: fadeIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
   .reader-container {
     width: 100%;
     max-width: 1100px;
     height: 100vh;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
     display: flex;
     flex-direction: column;
     background: transparent;
-    animation: scaleIn 0.25s ease-out;
+    animation: scaleIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
   .reader-scroll-container {
@@ -331,28 +377,83 @@
   }
 
   @media (min-width: 769px) {
-    .reader-scroll-container { padding: 36px 48px 90px; }
+    .reader-scroll-container {
+      padding: 36px 48px 90px;
+    }
   }
 
-  /* Theme Definitions */
-  .theme-light { --bg: #ffffff; --text: #1a1a1a; --divider: rgba(0, 0, 0, 0.1); }
-  .theme-sepia { --bg: #f4ecd8; --text: #433422; --divider: rgba(67, 52, 34, 0.1); }
-  .theme-dark { --bg: #2b313e; --text: #e2e8f0; --divider: rgba(255, 255, 255, 0.1); }
-  .theme-black { --bg: #000000; --text: #ffffff; --divider: rgba(255, 255, 255, 0.1); }
+  /* Theme Definitions - Refined */
+  .theme-light {
+    --bg: #fafafa;
+    --text: #1a1a1a;
+    --divider: rgba(0, 0, 0, 0.08);
+  }
+  .theme-sepia {
+    --bg: #f4ece0;
+    --text: #433422;
+    --divider: rgba(67, 52, 34, 0.08);
+  }
+  .theme-dark {
+    --bg: #151518;
+    --text: #e2e8f0;
+    --divider: rgba(255, 255, 255, 0.08);
+  }
+  .theme-black {
+    --bg: #0c0c0e;
+    --text: #d4d4d8;
+    --divider: rgba(255, 255, 255, 0.05);
+  }
 
-  .reader-loading, .reader-error {
-    display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 100px 20px; gap: 24px; opacity: 0.6;
+  .reader-loading,
+  .reader-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 100px 20px;
+    gap: 24px;
+    opacity: 0.6;
   }
 
   .reader-spinner {
-    width: 32px; height: 32px; border: 3px solid rgba(128, 128, 128, 0.2); border-top-color: var(--accent-color); border-radius: 50%; animation: spin 1s linear infinite;
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(128, 128, 128, 0.2);
+    border-top-color: var(--accent-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
   }
 
   .reader-fallback-btn {
-    padding: 12px 24px; background: var(--accent-color); color: white; border-radius: 8px; font-weight: 600; text-decoration: none;
+    padding: 12px 24px;
+    background: var(--accent-color);
+    color: white;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
   }
 
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes scaleIn { from { transform: scale(0.98); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes scaleIn {
+    from {
+      transform: scale(0.98);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
 </style>
