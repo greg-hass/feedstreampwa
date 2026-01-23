@@ -127,14 +127,36 @@ export async function openReader(item: Item) {
         }
     }
 
-    readerLoading.set(true);
-    readerData.set(null);
+    const isYouTube = item.source === 'youtube' || (item.url && (item.url.includes('youtube.com') || item.url.includes('youtu.be')));
+
+    if (isYouTube) {
+        // For YouTube, we don't need the scraper to show the video
+        // We set minimal reader data immediately
+        const formattedData: ReaderData = {
+            url: item.url,
+            title: item.title,
+            byline: item.author || null,
+            excerpt: item.summary || null,
+            siteName: 'YouTube',
+            imageUrl: item.media_thumbnail || null,
+            contentHtml: '', // Will be handled by YouTubePlayer
+            fromCache: false
+        };
+        readerData.set(formattedData);
+        readerLoading.set(false);
+        // We still try to fetch in background for summary/metadata if desired, 
+        // but we don't block the UI
+    } else {
+        readerLoading.set(true);
+        readerData.set(null);
+    }
 
     try {
         const data = await itemsApi.fetchReaderContent(item.url);
 
         // Check if we got valid content
         if (!data || !data.contentHtml) {
+            if (isYouTube) return; // Silent failure for YouTube is fine, we have the video
             throw new Error('No content returned from reader API');
         }
 
@@ -159,11 +181,12 @@ export async function openReader(item: Item) {
             cacheArticleContent(item.id, formattedData).catch(console.error);
         }
     } catch (err) {
+        if (isYouTube) return; // YouTube already has basic data
         const errorMessage = err instanceof Error ? err.message : "Failed to load reader";
         console.error('Reader error:', errorMessage, 'for URL:', item.url);
         openOriginalUrl(item.url);
     } finally {
-        readerLoading.set(false);
+        if (!isYouTube) readerLoading.set(false);
     }
 }
 

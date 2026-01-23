@@ -260,6 +260,9 @@
     wide: "max-w-4xl",
   }[$readerSettings.readingWidth];
   $: themeClass = `theme-${$readerSettings.theme}`;
+  $: displayUrl = $readerData?.url || $currentItem?.url || "";
+  $: isYouTube =
+    displayUrl.includes("youtube.com") || displayUrl.includes("youtu.be");
 </script>
 
 {#if $showReader}
@@ -297,7 +300,7 @@
         bind:this={scrollContainer}
         on:scroll={handleScroll}
       >
-        {#if $readerLoading}
+        {#if $readerLoading && !($currentItem?.source === "youtube" || ($currentItem?.url && ($currentItem.url.includes("youtube.com") || $currentItem.url.includes("youtu.be"))))}
           <div class="reader-loading">
             <div class="reader-spinner"></div>
             <span>Loading article...</span>
@@ -314,22 +317,24 @@
               >
             {/if}
           </div>
-        {:else if $readerData}
-          {#if $readerData.url && ($readerData.url.includes("youtube.com/watch") || $readerData.url.includes("youtu.be/"))}
-            <YouTubePlayer url={$readerData.url} item={$currentItem} />
+        {:else if $readerData || $currentItem}
+          {#if isYouTube && displayUrl}
+            <YouTubePlayer url={displayUrl} item={$currentItem} />
           {/if}
 
-          <ArticleContent
-            readerData={$readerData}
-            item={$currentItem}
-            {summary}
-            {summaryLoading}
-            {fontSizeClass}
-            {fontFamilyClass}
-            {maxWidthClass}
-            {themeClass}
-            onPlay={handlePlayMedia}
-          />
+          {#if $readerData}
+            <ArticleContent
+              readerData={$readerData}
+              item={$currentItem}
+              {summary}
+              {summaryLoading}
+              {fontSizeClass}
+              {fontFamilyClass}
+              {maxWidthClass}
+              {themeClass}
+              onPlay={handlePlayMedia}
+            />
+          {/if}
         {/if}
       </div>
     </div>

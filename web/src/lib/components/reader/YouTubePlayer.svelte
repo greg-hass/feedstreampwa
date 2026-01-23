@@ -13,22 +13,31 @@
     data: number;
   }
 
-  interface YouTubeAPI {
-    Player: new (elementId: string, config: {
-      height: string;
-      width: string;
-      videoId: string;
-      playerVars: { autoplay: number; playsinline: number; modestbranding: number; rel: number; start: number };
-      events: { onStateChange: (event: YouTubeEvent) => void };
-    }) => YouTubePlayer;
-    PlayerState: { PLAYING: number; PAUSED: number; ENDED: number };
-  }
-
   declare global {
     interface Window {
       YT?: YouTubeAPI;
       onYouTubeIframeAPIReady?: () => void;
     }
+  }
+
+  interface YouTubeAPI {
+    Player: new (
+      elementId: string,
+      config: {
+        height: string;
+        width: string;
+        videoId: string;
+        playerVars: {
+          autoplay: number;
+          playsinline: number;
+          modestbranding: number;
+          rel: number;
+          start: number;
+        };
+        events: { onStateChange: (event: YouTubeEvent) => void };
+      },
+    ) => YouTubePlayer;
+    PlayerState: { PLAYING: number; PAUSED: number; ENDED: number };
   }
 
   export let url: string;
@@ -46,11 +55,16 @@
     }
 
     let videoId = null;
-    if (url.includes("v=")) {
-      videoId = url.split("v=")[1]?.split("&")[0];
-    } else if (url.includes("youtu.be/")) {
-      videoId = url.split("youtu.be/")[1]?.split("?")[0];
-    } else if (item?.external_id) {
+    try {
+      const regExp =
+        /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts|live)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+      const match = url.match(regExp);
+      videoId = match && match[1] ? match[1] : null;
+    } catch (e) {
+      console.warn("Regex matching failed", e);
+    }
+
+    if (!videoId && item?.external_id) {
       videoId = item.external_id;
     }
 
@@ -62,7 +76,9 @@
       if (!container) return;
 
       if (ytPlayer) {
-        try { ytPlayer.destroy(); } catch (e) {}
+        try {
+          ytPlayer.destroy();
+        } catch (e) {}
       }
 
       const startPos = Math.floor(item?.playback_position || 0);
@@ -144,7 +160,9 @@
     stopProgressSync();
     if (ytInitTimeout) clearTimeout(ytInitTimeout);
     if (ytPlayer) {
-      try { ytPlayer.destroy(); } catch (e) {}
+      try {
+        ytPlayer.destroy();
+      } catch (e) {}
     }
   });
 </script>
