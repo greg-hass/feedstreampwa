@@ -2,50 +2,68 @@
   import { contextMenu, renameModal, feedFolderPopover } from "$lib/stores/ui";
   import { deleteFolder } from "$lib/stores/folders";
   import { removeFeed } from "$lib/stores/feeds";
+  import type { Feed, Folder } from "$lib/types";
 
   function close() {
-    contextMenu.update((s) => ({ ...s, isOpen: false }));
+    contextMenu.update((s: any) => ({ ...s, isOpen: false }));
   }
 
   function handleRename() {
     const { type, target } = $contextMenu;
+    if (!target) return;
+
+    let targetId = "";
+    let currentName = "";
+
+    if (type === "folder") {
+      const folder = target as Folder;
+      targetId = folder.id;
+      currentName = folder.name;
+    } else {
+      const feed = target as Feed;
+      targetId = feed.url;
+      currentName = feed.title || "";
+    }
+
     renameModal.set({
       isOpen: true,
       type,
-      targetId: type === "folder" ? target.id : target.url,
-      currentName: type === "folder" ? target.name : target.title || "",
+      targetId,
+      currentName,
     });
     close();
   }
 
   function handleMove(e: MouseEvent) {
-    const { target } = $contextMenu;
-    // Open popover
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    handleMoveFromRect(rect);
+  }
+
+  function handleMoveFromRect(rect: DOMRect) {
+    const { target, type } = $contextMenu;
+    if (type !== "feed" || !target) return;
+
     feedFolderPopover.set({
       isOpen: true,
-      feed: target,
-      position: { x: rect.right + 10, y: rect.top }, // Adjust as needed, usually simple logic
+      feed: target as Feed,
+      position: { x: rect.right + 5, y: rect.top },
     });
-    // Wait, Sidebar implementation of openFeedFolderPopover used event.currentTarget.
-    // Here we are inside context menu.
-    // The original logic was:
-    // const button = event.currentTarget as HTMLElement;
-    // const rect = button.getBoundingClientRect();
-    // feedFolderPopoverPosition = { x: rect.left, y: rect.bottom + 4 };
-
-    // Here we want to open it relative to context menu item? Or mouse?
-    // Let's just use simple positioning for now.
-
     close();
+  }
+
+  function handleMoveToFolder(e: MouseEvent) {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    handleMoveFromRect(rect);
   }
 
   function handleDelete() {
     const { type, target } = $contextMenu;
+    if (!target) return;
+
     if (type === "folder") {
-      deleteFolder(target.id);
+      deleteFolder((target as Folder).id);
     } else {
-      removeFeed(target.url);
+      removeFeed((target as Feed).url);
     }
     close();
   }
@@ -92,19 +110,7 @@
       </button>
 
       {#if $contextMenu.type === "feed"}
-        <button
-          class="menu-item"
-          on:click|stopPropagation={(e) => {
-            // For popover positioning we need the button rect
-            const rect = e.currentTarget.getBoundingClientRect();
-            feedFolderPopover.set({
-              isOpen: true,
-              feed: $contextMenu.target,
-              position: { x: rect.right + 5, y: rect.top },
-            });
-            close();
-          }}
-        >
+        <button class="menu-item" on:click|stopPropagation={handleMoveToFolder}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path
               d="M2 4h5l1 2h8v10H2V4z"

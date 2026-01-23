@@ -2,44 +2,6 @@
   import { onMount, onDestroy } from "svelte";
   import type { Item } from "$lib/types";
 
-  // Minimal YouTube iframe API types
-  interface YouTubePlayer {
-    destroy(): void;
-    getCurrentTime(): number;
-    getPlayerState(): number;
-  }
-
-  interface YouTubeEvent {
-    data: number;
-  }
-
-  declare global {
-    interface Window {
-      YT?: YouTubeAPI;
-      onYouTubeIframeAPIReady?: () => void;
-    }
-  }
-
-  interface YouTubeAPI {
-    Player: new (
-      elementId: string,
-      config: {
-        height: string;
-        width: string;
-        videoId: string;
-        playerVars: {
-          autoplay: number;
-          playsinline: number;
-          modestbranding: number;
-          rel: number;
-          start: number;
-        };
-        events: { onStateChange: (event: YouTubeEvent) => void };
-      },
-    ) => YouTubePlayer;
-    PlayerState: { PLAYING: number; PAUSED: number; ENDED: number };
-  }
-
   export let url: string;
   export let item: Item | null;
 
@@ -83,7 +45,7 @@
 
       const startPos = Math.floor(item?.playback_position || 0);
 
-      ytPlayer = new window.YT.Player("yt-player-container", {
+      ytPlayer = new window.YT!.Player("yt-player-container", {
         height: "100%",
         width: "100%",
         videoId: videoId,
@@ -96,7 +58,7 @@
         },
         events: {
           onStateChange: (event: YouTubeEvent) => {
-            if (event.data === window.YT.PlayerState.PLAYING) {
+            if (window.YT && event.data === window.YT.PlayerState.PLAYING) {
               startProgressSync();
             } else {
               stopProgressSync();

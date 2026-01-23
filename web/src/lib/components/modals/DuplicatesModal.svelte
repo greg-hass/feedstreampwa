@@ -83,7 +83,9 @@
   }
 
   function openItem(item: Article) {
-    window.open(item.url, "_blank");
+    if (item.url) {
+      window.open(item.url, "_blank");
+    }
   }
 
   function setMethod(method: string) {
@@ -405,8 +407,7 @@
                               <span class="text-white/30">·</span>
                               <span class="text-xs text-white/40">
                                 {new Date(
-                                  item.published ||
-                                    item.created_at
+                                  item.published || item.created_at,
                                 ).toLocaleDateString()}
                               </span>
                               {#if item.is_read}

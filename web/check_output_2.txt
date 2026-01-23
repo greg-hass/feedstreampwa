@@ -1,0 +1,844 @@
+
+> feedstream-web@0.0.1 check
+> svelte-kit sync && svelte-check --tsconfig ./tsconfig.json
+
+
+====================================
+Loading svelte-check in workspace: /Volumes/USB STORAGE/projects/feedstream-pwa/web
+Getting Svelte diagnostics...
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/lib/utils/retry.ts:60:9
+Error: Variable 'lastError' is used before being assigned. 
+
+  throw lastError;
+}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/lib/utils/sanitize.ts:11:7
+Error: No overload matches this call.
+  The last overload gave the following error.
+    Object literal may only specify known properties, and ''*'' does not exist in type 'string[]'. 
+    ALLOWED_ATTR: {
+      '*': ALLOWED_ATTR,
+      'a': ['href', 'title', 'class', 'rel', 'target'],
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/lib/components/AuthModal.svelte:92:5
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+  >
+    <div
+      class="bg-[#1a1a1a] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md p-6 relative"
+      on:click|stopPropagation
+    >
+      <!-- Close Button -->
+      <button
+        on:click={() => (isOpen = false)}
+        class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+        aria-label="Close"
+      >
+        <X size={20} />
+      </button>
+
+      <!-- Header -->
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold text-white mb-2">
+          {mode === "login" ? "Welcome Back" : "Create Account"}
+        </h2>
+        <p class="text-gray-400 text-sm">
+          {mode === "login"
+            ? "Sign in to access your feeds"
+            : "Join FeedStream to manage your feeds"}
+        </p>
+      </div>
+
+      <!-- Auth Form -->
+      <form on:submit|preventDefault={handleSubmit} class="space-y-4">
+        <!-- Email -->
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-300 mb-2">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            bind:value={email}
+            placeholder="you@example.com"
+            required
+            class="w-full px-4 py-3 bg-[#121212] border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+          />
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-300 mb-2">
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            bind:value={password}
+            placeholder="••••••••••"
+            required
+            minlength={8}
+            class="w-full px-4 py-3 bg-[#121212] border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+          />
+        </div>
+
+        <!-- Confirm Password (Register only) -->
+        {#if mode === "register"}
+          <div>
+            <label for="confirmPassword" class="block text-sm font-medium text-gray-300 mb-2">
+              Confirm Password
+            </label>
+            <input
+              id="confirmPassword"
+              type="password"
+              bind:value={confirmPassword}
+              placeholder="••••••••••"
+              required
+              minlength={8}
+              class="w-full px-4 py-3 bg-[#121212] border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+            />
+          </div>
+        {/if}
+
+        <!-- Error Message -->
+        {#if $authError}
+          <div class="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm">
+            {$authError}
+          </div>
+        {/if}
+
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          disabled={$authLoading}
+          class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold py-3 px-4 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          {#if $authLoading}
+            <div class="w-5 h-5 border-2 border-white/30 border-t-transparent rounded-full animate-spin"></div>
+          {:else}
+            {mode === "login" ? "Sign In" : "Create Account"}
+          {/if}
+        </button>
+      </form>
+
+      <!-- Switch Mode -->
+      <div class="mt-6 text-center">
+        <p class="text-gray-400 text-sm">
+          {mode === "login"
+            ? "Don't have an account? "
+            : "Already have an account? "}
+          <button
+            on:click={switchMode}
+            class="text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+            type="button"
+          >
+            {mode === "login" ? "Sign up" : "Sign in"}
+          </button>
+        </p>
+      </div>
+
+      <!-- Logout (if logged in) -->
+      {#if $isLoggedIn && $currentUser}
+        <div class="mt-6 pt-6 border-t border-white/10">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-400">Logged in as</p>
+              <p class="text-white font-medium">{$currentUser.email}</p>
+            </div>
+            <button
+              on:click={handleLogout}
+              class="text-red-400 hover:text-red-300 text-sm font-medium transition-colors flex items-center gap-1"
+              type="button"
+            >
+              <LogIn size={16} />
+              Sign Out
+            </button>
+          </div>
+        </div>
+      {/if}
+    </div>
+  </div>
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/lib/components/AuthModal.svelte:92:5
+Warn: A11y: <div> with click handler must have an ARIA role (svelte)
+  >
+    <div
+      class="bg-[#1a1a1a] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md p-6 relative"
+      on:click|stopPropagation
+    >
+      <!-- Close Button -->
+      <button
+        on:click={() => (isOpen = false)}
+        class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+        aria-label="Close"
+      >
+        <X size={20} />
+      </button>
+
+      <!-- Header -->
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold text-white mb-2">
+          {mode === "login" ? "Welcome Back" : "Create Account"}
+        </h2>
+        <p class="text-gray-400 text-sm">
+          {mode === "login"
+            ? "Sign in to access your feeds"
+            : "Join FeedStream to manage your feeds"}
+        </p>
+      </div>
+
+      <!-- Auth Form -->
+      <form on:submit|preventDefault={handleSubmit} class="space-y-4">
+        <!-- Email -->
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-300 mb-2">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            bind:value={email}
+            placeholder="you@example.com"
+            required
+            class="w-full px-4 py-3 bg-[#121212] border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+          />
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-300 mb-2">
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            bind:value={password}
+            placeholder="••••••••••"
+            required
+            minlength={8}
+            class="w-full px-4 py-3 bg-[#121212] border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+          />
+        </div>
+
+        <!-- Confirm Password (Register only) -->
+        {#if mode === "register"}
+          <div>
+            <label for="confirmPassword" class="block text-sm font-medium text-gray-300 mb-2">
+              Confirm Password
+            </label>
+            <input
+              id="confirmPassword"
+              type="password"
+              bind:value={confirmPassword}
+              placeholder="••••••••••"
+              required
+              minlength={8}
+              class="w-full px-4 py-3 bg-[#121212] border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+            />
+          </div>
+        {/if}
+
+        <!-- Error Message -->
+        {#if $authError}
+          <div class="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm">
+            {$authError}
+          </div>
+        {/if}
+
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          disabled={$authLoading}
+          class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold py-3 px-4 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          {#if $authLoading}
+            <div class="w-5 h-5 border-2 border-white/30 border-t-transparent rounded-full animate-spin"></div>
+          {:else}
+            {mode === "login" ? "Sign In" : "Create Account"}
+          {/if}
+        </button>
+      </form>
+
+      <!-- Switch Mode -->
+      <div class="mt-6 text-center">
+        <p class="text-gray-400 text-sm">
+          {mode === "login"
+            ? "Don't have an account? "
+            : "Already have an account? "}
+          <button
+            on:click={switchMode}
+            class="text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+            type="button"
+          >
+            {mode === "login" ? "Sign up" : "Sign in"}
+          </button>
+        </p>
+      </div>
+
+      <!-- Logout (if logged in) -->
+      {#if $isLoggedIn && $currentUser}
+        <div class="mt-6 pt-6 border-t border-white/10">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-400">Logged in as</p>
+              <p class="text-white font-medium">{$currentUser.email}</p>
+            </div>
+            <button
+              on:click={handleLogout}
+              class="text-red-400 hover:text-red-300 text-sm font-medium transition-colors flex items-center gap-1"
+              type="button"
+            >
+              <LogIn size={16} />
+              Sign Out
+            </button>
+          </div>
+        </div>
+      {/if}
+    </div>
+  </div>
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/lib/components/AuthModal.svelte:86:3
+Warn: A11y: visible, non-interactive elements with an on:click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as <button type="button"> or <a> might be more appropriate. See https://svelte.dev/docs/accessibility-warnings#a11y-click-events-have-key-events for more details. (svelte)
+{#if isOpen}
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+    on:click={() => (isOpen = false)}
+    role="dialog"
+    aria-modal="true"
+  >
+    <div
+      class="bg-[#1a1a1a] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md p-6 relative"
+      on:click|stopPropagation
+    >
+      <!-- Close Button -->
+      <button
+        on:click={() => (isOpen = false)}
+        class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+        aria-label="Close"
+      >
+        <X size={20} />
+      </button>
+
+      <!-- Header -->
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold text-white mb-2">
+          {mode === "login" ? "Welcome Back" : "Create Account"}
+        </h2>
+        <p class="text-gray-400 text-sm">
+          {mode === "login"
+            ? "Sign in to access your feeds"
+            : "Join FeedStream to manage your feeds"}
+        </p>
+      </div>
+
+      <!-- Auth Form -->
+      <form on:submit|preventDefault={handleSubmit} class="space-y-4">
+        <!-- Email -->
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-300 mb-2">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            bind:value={email}
+            placeholder="you@example.com"
+            required
+            class="w-full px-4 py-3 bg-[#121212] border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+          />
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-300 mb-2">
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            bind:value={password}
+            placeholder="••••••••••"
+            required
+            minlength={8}
+            class="w-full px-4 py-3 bg-[#121212] border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+          />
+        </div>
+
+        <!-- Confirm Password (Register only) -->
+        {#if mode === "register"}
+          <div>
+            <label for="confirmPassword" class="block text-sm font-medium text-gray-300 mb-2">
+              Confirm Password
+            </label>
+            <input
+              id="confirmPassword"
+              type="password"
+              bind:value={confirmPassword}
+              placeholder="••••••••••"
+              required
+              minlength={8}
+              class="w-full px-4 py-3 bg-[#121212] border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+            />
+          </div>
+        {/if}
+
+        <!-- Error Message -->
+        {#if $authError}
+          <div class="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm">
+            {$authError}
+          </div>
+        {/if}
+
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          disabled={$authLoading}
+          class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold py-3 px-4 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          {#if $authLoading}
+            <div class="w-5 h-5 border-2 border-white/30 border-t-transparent rounded-full animate-spin"></div>
+          {:else}
+            {mode === "login" ? "Sign In" : "Create Account"}
+          {/if}
+        </button>
+      </form>
+
+      <!-- Switch Mode -->
+      <div class="mt-6 text-center">
+        <p class="text-gray-400 text-sm">
+          {mode === "login"
+            ? "Don't have an account? "
+            : "Already have an account? "}
+          <button
+            on:click={switchMode}
+            class="text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+            type="button"
+          >
+            {mode === "login" ? "Sign up" : "Sign in"}
+          </button>
+        </p>
+      </div>
+
+      <!-- Logout (if logged in) -->
+      {#if $isLoggedIn && $currentUser}
+        <div class="mt-6 pt-6 border-t border-white/10">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-400">Logged in as</p>
+              <p class="text-white font-medium">{$currentUser.email}</p>
+            </div>
+            <button
+              on:click={handleLogout}
+              class="text-red-400 hover:text-red-300 text-sm font-medium transition-colors flex items-center gap-1"
+              type="button"
+            >
+              <LogIn size={16} />
+              Sign Out
+            </button>
+          </div>
+        </div>
+      {/if}
+    </div>
+  </div>
+{/if}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/lib/components/AuthModal.svelte:86:3
+Warn: A11y: Non-interactive element <div> should not be assigned mouse or keyboard event listeners. (svelte)
+{#if isOpen}
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+    on:click={() => (isOpen = false)}
+    role="dialog"
+    aria-modal="true"
+  >
+    <div
+      class="bg-[#1a1a1a] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md p-6 relative"
+      on:click|stopPropagation
+    >
+      <!-- Close Button -->
+      <button
+        on:click={() => (isOpen = false)}
+        class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+        aria-label="Close"
+      >
+        <X size={20} />
+      </button>
+
+      <!-- Header -->
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold text-white mb-2">
+          {mode === "login" ? "Welcome Back" : "Create Account"}
+        </h2>
+        <p class="text-gray-400 text-sm">
+          {mode === "login"
+            ? "Sign in to access your feeds"
+            : "Join FeedStream to manage your feeds"}
+        </p>
+      </div>
+
+      <!-- Auth Form -->
+      <form on:submit|preventDefault={handleSubmit} class="space-y-4">
+        <!-- Email -->
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-300 mb-2">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            bind:value={email}
+            placeholder="you@example.com"
+            required
+            class="w-full px-4 py-3 bg-[#121212] border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+          />
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-300 mb-2">
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            bind:value={password}
+            placeholder="••••••••••"
+            required
+            minlength={8}
+            class="w-full px-4 py-3 bg-[#121212] border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+          />
+        </div>
+
+        <!-- Confirm Password (Register only) -->
+        {#if mode === "register"}
+          <div>
+            <label for="confirmPassword" class="block text-sm font-medium text-gray-300 mb-2">
+              Confirm Password
+            </label>
+            <input
+              id="confirmPassword"
+              type="password"
+              bind:value={confirmPassword}
+              placeholder="••••••••••"
+              required
+              minlength={8}
+              class="w-full px-4 py-3 bg-[#121212] border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+            />
+          </div>
+        {/if}
+
+        <!-- Error Message -->
+        {#if $authError}
+          <div class="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm">
+            {$authError}
+          </div>
+        {/if}
+
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          disabled={$authLoading}
+          class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold py-3 px-4 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          {#if $authLoading}
+            <div class="w-5 h-5 border-2 border-white/30 border-t-transparent rounded-full animate-spin"></div>
+          {:else}
+            {mode === "login" ? "Sign In" : "Create Account"}
+          {/if}
+        </button>
+      </form>
+
+      <!-- Switch Mode -->
+      <div class="mt-6 text-center">
+        <p class="text-gray-400 text-sm">
+          {mode === "login"
+            ? "Don't have an account? "
+            : "Already have an account? "}
+          <button
+            on:click={switchMode}
+            class="text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+            type="button"
+          >
+            {mode === "login" ? "Sign up" : "Sign in"}
+          </button>
+        </p>
+      </div>
+
+      <!-- Logout (if logged in) -->
+      {#if $isLoggedIn && $currentUser}
+        <div class="mt-6 pt-6 border-t border-white/10">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-400">Logged in as</p>
+              <p class="text-white font-medium">{$currentUser.email}</p>
+            </div>
+            <button
+              on:click={handleLogout}
+              class="text-red-400 hover:text-red-300 text-sm font-medium transition-colors flex items-center gap-1"
+              type="button"
+            >
+              <LogIn size={16} />
+              Sign Out
+            </button>
+          </div>
+        </div>
+      {/if}
+    </div>
+  </div>
+{/if}
+
+
+/Volumes/USB STORAGE/projects/feedstream-pwa/web/src/lib/components/FeedCard.svelte:222:1
+Warn: A11y: Non-interactive element <article> cannot have interactive role 'button' (svelte)
+
+<article
+  class="group relative flex flex-col w-full overflow-hidden rounded-2xl bg-surface border border-stroke transition-all duration-300 hover:bg-raised hover:border-zinc-700/50 cursor-pointer shadow-sm hover:shadow-md"
+  bind:this={articleElement}
+  style="transform: translateX({touchDiff}px); transition: {touchDiff !== 0
+    ? 'none'
+    : 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)'}"
+  on:click={handleOpen}
+  on:keypress={(e) => e.key === "Enter" && handleOpen()}
+  tabindex="0"
+  role="button"
+  aria-label="Open article: {item.title || 'Untitled'}"
+>
+  <!-- Background Indicators for Swipe -->
+  {#if Math.abs(touchDiff) > 20}
+    <div
+      class="absolute inset-y-0 w-full flex items-center px-6 z-0 transition-opacity duration-200"
+      style="
+        opacity: {Math.min(Math.abs(touchDiff) / SWIPE_THRESHOLD, 1)};
+        background: {touchDiff > 0 ? '#10B981' : '#FF9500'};
+        justify-content: {touchDiff > 0 ? 'flex-start' : 'flex-end'};
+        left: {touchDiff > 0 ? '-100%' : '100%'};
+        transform: translateX({touchDiff > 0 ? '100%' : '-100%'});
+      "
+    >
+      {#if touchDiff > 0}
+        <CheckCircle2 class="text-white" size={32} />
+      {:else}
+        <Bookmark class="text-white" size={32} fill="currentColor" />
+      {/if}
+    </div>
+  {/if}
+
+  <!-- Image Preview (Conditional) -->
+  <div class="relative z-10 bg-zinc-900 h-full flex flex-col">
+    {#if thumbnailUrl}
+      <div class="relative w-full aspect-video overflow-hidden bg-zinc-950/20">
+        <img
+          src={thumbnailUrl}
+          alt={item.title}
+          class="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-[1.03]"
+          loading="lazy"
+        />
+
+        <!-- Soft Gradient Overlay -->
+        <div
+          class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-40"
+        ></div>
+
+        <!-- Source Badge -->
+        <div
+          class="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-zinc-950/40 backdrop-blur-md border border-white/10 flex items-center gap-2 shadow-sm"
+        >
+          <svelte:component this={Icon} size={14} class={currentStyle.color} />
+          <span class="text-[11px] font-bold tracking-tight text-white/90"
+            >{item.feed_title}</span
+          >
+          {#if isCached}
+            <OfflineBadge size="sm" showText={false} />
+          {/if}
+          {#if showDiversityBadge}
+            <div
+              class="px-1.5 py-0.5 rounded-full bg-accent/20 border border-accent/30 flex items-center gap-1"
+              title="New source - explore diverse content"
+            >
+              <span class="text-[9px] font-bold text-accent">NEW</span>
+            </div>
+          {/if}
+        </div>
+      </div>
+    {:else}
+      <!-- No Image: Header strip -->
+      <div class="px-5 pt-5 pb-2 flex items-center gap-2">
+        <div
+          class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-raised/50 border border-stroke shadow-sm"
+        >
+          <svelte:component this={Icon} size={14} class={currentStyle.color} />
+          <span class="text-[11px] font-bold tracking-tight text-muted"
+            >{item.feed_title}</span
+          >
+          {#if isCached}
+            <OfflineBadge size="sm" showText={false} />
+          {/if}
+          {#if showDiversityBadge}
+            <div
+              class="px-1.5 py-0.5 rounded-full bg-accent/20 border border-accent/20 flex items-center gap-1"
+              title="New source - explore diverse content"
+            >
+              <span class="text-[9px] font-bold text-accent">NEW</span>
+            </div>
+          {/if}
+        </div>
+      </div>
+    {/if}
+
+    <!-- Content Body -->
+    <div class="flex flex-col flex-1 p-3 md:p-5 pt-2 md:pt-3">
+      <!-- Meta -->
+      <div
+        class="flex items-center justify-between mb-3 text-[13px] font-medium text-muted"
+      >
+        <span>{dateStr}</span>
+        {#if item.is_read}
+          <span class="text-zinc-600/60 flex items-center gap-1.5"
+            ><CheckCircle2 size={13} /> Read</span
+          >
+        {/if}
+      </div>
+
+      <!-- Title -->
+      <h3
+        class="text-[17px] font-bold text-accent leading-[1.3] line-clamp-2 md:line-clamp-3 mb-3 group-hover:text-accent/90 transition-colors {item.is_read
+          ? 'text-zinc-500/80'
+          : ''}"
+      >
+        {item.title}
+      </h3>
+
+      {#if isPodcast}
+        <div class="mb-3 flex flex-col gap-2">
+          <div
+            class="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-400"
+          >
+            <span
+              class="inline-flex items-center gap-1 rounded-full bg-zinc-800/80 border border-zinc-700 px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase text-zinc-200"
+            >
+              <Radio size={12} class="text-accent" />
+              Podcast
+            </span>
+            {#if hasDuration}
+              <span class="text-zinc-500">
+                {hasProgress
+                  ? `${formatDuration(remainingSeconds)} left`
+                  : formatDuration(durationSeconds)}
+              </span>
+            {:else if hasProgress}
+              <span class="text-zinc-500">
+                Resume at {formatDuration(progressSeconds)}
+              </span>
+            {/if}
+          </div>
+          {#if hasDuration}
+            <div class="h-1.5 w-full rounded-full bg-white/5">
+              <div
+                class="h-full rounded-full bg-accent/80 transition-all"
+                style="width: {progressPercent}%"
+              ></div>
+            </div>
+          {/if}
+        </div>
+      {/if}
+
+      {#if item.summary}
+        <p
+          class="text-[14px] text-zinc-400/90 line-clamp-2 leading-relaxed mb-6 hidden sm:block {item.is_read
+            ? 'text-zinc-600/70'
+            : ''}"
+        >
+          {stripHtml(item.summary)}
+        </p>
+      {/if}
+
+      <!-- Spacer to push actions to bottom -->
+      <div class="mt-auto"></div>
+
+      <!-- Actions Bar -->
+      <div
+        class="flex items-center justify-between pt-4 mt-2 border-t border-stroke opacity-60 md:opacity-0 md:translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-400 ease-out"
+      >
+        <!-- Read Later / Bookmark Toggle -->
+        <button
+          class="w-11 h-11 flex items-center justify-center rounded-xl hover:bg-raised transition-colors {item.is_read
+            ? 'text-accent'
+            : 'text-muted hover:text-white'}"
+          title={item.is_read ? "Mark as Unread" : "Mark as Read"}
+          aria-label={item.is_read ? "Mark as Unread" : "Mark as Read"}
+          on:click={handleRead}
+        >
+          {#if item.is_read}
+            <CheckCircle2 size={20} />
+          {:else}
+            <div class="w-5 h-5 border-2 border-current rounded-full"></div>
+          {/if}
+        </button>
+
+        <div class="flex items-center gap-1">
+          {#if isPlayable}
+            <button
+              class="w-11 h-11 flex items-center justify-center rounded-xl hover:bg-raised text-muted hover:text-accent transition-colors"
+              title={isPodcast
+                ? hasProgress
+                  ? "Resume Episode"
+                  : "Play Episode"
+                : "Play"}
+              aria-label={isPodcast
+                ? hasProgress
+                  ? "Resume Episode"
+                  : "Play Episode"
+                : "Play"}
+              on:click={handlePlay}
+            >
+              <PlayCircle size={20} />
+            </button>
+          {/if}
+
+          <button
+            class="w-11 h-11 flex items-center justify-center rounded-xl hover:bg-raised text-muted hover:text-[#FF9500] transition-colors"
+            title="Bookmark"
+            aria-label={item.is_starred ? "Remove Bookmark" : "Add Bookmark"}
+            on:click={handleStar}
+          >
+            <Bookmark
+              size={20}
+              class={item.is_starred ? "fill-[#FF9500] text-[#FF9500]" : ""}
+            />
+          </button>
+
+          <button
+            class="w-11 h-11 flex items-center justify-center rounded-xl hover:bg-raised text-muted hover:text-blue-500 transition-colors"
+            title="Share"
+            aria-label="Share Article"
+            on:click={handleShare}
+          >
+            <Share2 size={20} />
+          </button>
+
+          <a
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="w-11 h-11 flex items-center justify-center rounded-xl hover:bg-raised text-muted hover:text-blue-500 transition-colors"
+            title="Open Link"
+            aria-label="Open Article in New Tab"
+            on:click|stopPropagation
+          >
+            <ExternalLink size={20} />
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Close the wrapper div -->
+</article>
+
+
+====================================
+svelte-check found 2 errors and 5 warnings in 4 files

@@ -12,7 +12,10 @@
     getReadingPosition,
     clearReadingPosition,
   } from "$lib/stores/reader";
-  import { readerSettings } from "$lib/stores/readerSettings";
+  import {
+    readerSettings,
+    type ReaderSettings,
+  } from "$lib/stores/readerSettings";
   import ReadingProgress from "$lib/components/ReadingProgress.svelte";
   import * as itemsApi from "$lib/api/items";
   import { toast } from "$lib/stores/toast";
@@ -198,6 +201,19 @@
     }
   }
 
+  function handleOverlayClick(e: MouseEvent) {
+    if (e.currentTarget === e.target) {
+      handleClose();
+    }
+  }
+
+  function handleOverlayKeydown(e: KeyboardEvent) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleClose();
+    }
+  }
+
   // Lifecycle & Watchers
   $: if ($currentItem?.id) {
     summary = null;
@@ -243,23 +259,30 @@
   });
 
   // Style classes
-  $: fontSizeClass = {
-    small: "text-base",
-    medium: "text-lg",
-    large: "text-xl",
-    xlarge: "text-2xl",
-  }[$readerSettings.fontSize];
-  $: fontFamilyClass = {
-    sans: "font-sans",
-    serif: "font-serif",
-    mono: "font-mono",
-  }[$readerSettings.fontFamily];
-  $: maxWidthClass = {
-    narrow: "max-w-2xl",
-    medium: "max-w-3xl",
-    wide: "max-w-4xl",
-  }[$readerSettings.readingWidth];
-  $: themeClass = `theme-${$readerSettings.theme}`;
+  $: settingsValue = $readerSettings as ReaderSettings;
+  $: fontSizeClass = (
+    {
+      small: "text-base",
+      medium: "text-lg",
+      large: "text-xl",
+      xlarge: "text-2xl",
+    } as Record<string, string>
+  )[settingsValue.fontSize];
+  $: fontFamilyClass = (
+    {
+      sans: "font-sans",
+      serif: "font-serif",
+      mono: "font-mono",
+    } as Record<string, string>
+  )[settingsValue.fontFamily];
+  $: maxWidthClass = (
+    {
+      narrow: "max-w-2xl",
+      medium: "max-w-3xl",
+      wide: "max-w-4xl",
+    } as Record<string, string>
+  )[settingsValue.readingWidth];
+  $: themeClass = `theme-${settingsValue.theme}`;
   $: displayUrl = $readerData?.url || $currentItem?.url || "";
   $: isYouTube =
     displayUrl.includes("youtube.com") || displayUrl.includes("youtu.be");
@@ -268,13 +291,8 @@
 {#if $showReader}
   <div
     class="reader-overlay {themeClass}"
-    on:click={(e) => e.currentTarget === e.target && handleClose()}
-    on:keydown={(e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        handleClose();
-      }
-    }}
+    on:click={handleOverlayClick}
+    on:keydown={handleOverlayKeydown}
     role="button"
     tabindex="0"
   >
