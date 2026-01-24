@@ -188,7 +188,7 @@
       <span class="text-zinc-500">{timeAgo}</span>
       
       {#if item.is_starred}
-         <Bookmark size={12} class="text-orange-400 fill-orange-400 ml-auto" />
+         <Bookmark size={12} class="text-emerald-400 fill-emerald-400 ml-auto" />
       {/if}
     </div>
 
@@ -221,7 +221,7 @@
            on:click={handleStar}
            title="Bookmark"
          >
-           <Bookmark size={16} class={item.is_starred ? "fill-orange-400 text-orange-400" : ""} />
+           <Bookmark size={16} class="{item.is_starred ? 'fill-emerald-400 text-emerald-400 animate-bookmark-pop' : ''}" />
          </button>
          
          <button 
@@ -243,4 +243,16 @@
 
 <style>
   /* No special styles needed, utility first */
+
+  /* Bookmark Pop Animation */
+  @keyframes bookmarkPop {
+    0% { transform: scale(1) rotate(0deg); }
+    40% { transform: scale(1.3) rotate(-15deg); }
+    60% { transform: scale(1.1) rotate(5deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+
+  :global(.animate-bookmark-pop) {
+    animation: bookmarkPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
 </style>

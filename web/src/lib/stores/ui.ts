@@ -43,7 +43,7 @@ export const contextMenu = writable<{
 });
 
 // View mode types
-export type ViewMode = 'all' | 'unread' | 'bookmarks' | 'smart' | 'folder' | 'feed';
+export type ViewMode = 'all' | 'unread' | 'bookmarks' | 'smart' | 'folder' | 'feed' | 'discover';
 export type SmartFolder = 'rss' | 'youtube' | 'reddit' | 'podcast';
 
 // View state
@@ -55,6 +55,13 @@ export const selectedFeedUrl = writable<string | null>(null);
 // View mode actions
 export function setViewAll() {
     viewMode.set('all');
+    activeSmartFolder.set(null);
+    activeFolderId.set(null);
+    selectedFeedUrl.set(null);
+}
+
+export function setViewDiscover() {
+    viewMode.set('discover');
     activeSmartFolder.set(null);
     activeFolderId.set(null);
     selectedFeedUrl.set(null);

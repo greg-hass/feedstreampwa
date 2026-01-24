@@ -211,48 +211,7 @@
               ? "text-accent"
               : "text-current group-hover:text-white"}
           />
-          All Articles
-        </div>
-        {#if $allArticlesUnread > 0}
-          <span
-            class="text-xs font-medium {$viewMode === 'all'
-              ? 'text-white/70'
-              : 'text-white/40'}"
-          >
-            {formatUnreadTotal($allArticlesUnread, $allArticlesTotal)}
-          </span>
-        {/if}
-      </button>
-
-      <!-- Unread Button -->
-      <button
-        on:click={() => {
-          setViewUnread();
-          closeMenu();
-        }}
-        class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative overflow-hidden
-        {$viewMode === 'unread'
-          ? 'bg-white/10 text-white shadow-inner border border-white/5'
-          : 'text-white/60 hover:text-white hover:bg-white/5'}"
-      >
-        <div class="flex items-center gap-3">
-          <Eye
-            size={24}
-            class={$viewMode === "unread"
-              ? "text-blue-400"
-              : "text-current group-hover:text-white"}
-          />
-          Unread
-        </div>
-        {#if $allArticlesUnread > 0}
-          <span
-            class="text-xs font-medium {$viewMode === 'unread'
-              ? 'text-white/70'
-              : 'text-white/40'}"
-          >
-            {$allArticlesUnread}
-          </span>
-        {/if}
+        All Articles
       </button>
 
       <!-- Bookmarks Button -->

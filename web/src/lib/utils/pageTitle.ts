@@ -27,6 +27,7 @@ export function getPageTitle(
 
   if (viewMode === "unread") return "Unread";
   if (viewMode === "bookmarks") return "Bookmarks";
+  if (viewMode === "discover") return "Discover";
 
   return "All Articles";
 }

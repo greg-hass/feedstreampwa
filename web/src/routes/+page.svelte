@@ -18,6 +18,7 @@
   import BulkActionsBar from "$lib/components/BulkActionsBar.svelte";
   import KeyboardShortcutsHelp from "$lib/components/KeyboardShortcutsHelp.svelte";
   import ReadingStatsModal from "$lib/components/ReadingStatsModal.svelte";
+  import DiscoverView from "$lib/components/DiscoverView.svelte";
 
   import * as itemsApi from "$lib/api/items";
   import {
@@ -588,6 +589,7 @@
   </div>
 {:else}
   <MobileHeader
+    title={pageTitle}
     bind:searchQuery={$searchQuery}
     onSearchInput={() => loadItems()}
     onSearchClear={() => {
@@ -600,7 +602,7 @@
     refreshStreamStatus={$refreshStream.status}
   />
 
-  {#if showTimeFilter}
+  {#if showTimeFilter && $viewMode !== 'discover'}
     <div class="mobile-sticky-filters" bind:clientHeight={mobileFiltersHeight}>
       <FilterChips
         timeFilter={$timeFilter}
@@ -610,77 +612,83 @@
   {/if}
 {/if}
 
-<div class="articles-list" bind:this={articlesList}>
-  {#if $itemsLoading && $items.length === 0}
-    <div class="flex flex-col gap-0 w-full">
-      {#each Array(5) as _ (Math.random())}
-        <SkeletonCard density={$viewDensity} />
-      {/each}
-    </div>
-  {:else if $itemsError}
-    <div class="empty-state error">{$itemsError}</div>
-  {:else if $items.length === 0}
-    <div class="empty-state">
-      No articles found. Add some feeds to get started!
-    </div>
-  {:else}
-    {#if showNewArticlesBanner}
-      <div
-        class="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent/30 bg-accent/10 px-4 py-3"
-        role="status"
-        aria-live="polite"
-      >
-        <span class="text-sm font-semibold text-white">
-          {newArticlesCount} new article{newArticlesCount === 1 ? "" : "s"} added
-        </span>
-        <div class="flex items-center gap-2">
-          <button
-            class="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white shadow-lg shadow-accent/30 transition-all hover:shadow-accent/40"
-            on:click={viewNewArticles}
-          >
-            View
-          </button>
-          <button
-            class="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-white/70 transition-colors hover:text-white"
-            on:click={dismissNewArticlesBanner}
-          >
-            Dismiss
-          </button>
-        </div>
+{#if $viewMode === 'discover'}
+  <div class="articles-list pt-4 px-4 md:pt-6">
+    <DiscoverView />
+  </div>
+{:else}
+  <div class="articles-list" bind:this={articlesList}>
+    {#if $itemsLoading && $items.length === 0}
+      <div class="flex flex-col gap-0 w-full">
+        {#each Array(5) as _ (Math.random())}
+          <SkeletonCard density={$viewDensity} />
+        {/each}
       </div>
-    {/if}
-    <FeedGrid
-      items={$items}
-      {liveInsertIds}
-      density={$viewDensity}
-      on:open={(e) => openReader(e.detail.item)}
-      on:toggleStar={(e) => toggleStar(e.detail.item)}
-      on:toggleRead={(e) => toggleRead(e.detail.item)}
-      on:play={(e) => {
-        const item = e.detail.item;
-        if (
-          item.source === "youtube" ||
-          (item.url &&
-            (item.url.includes("youtube.com") || item.url.includes("youtu.be")))
-        ) {
-          openReader(item);
-        } else {
-          playMedia(item);
-        }
-      }}
-    />
-
-    {#if $itemsLoading}
-      <div class="py-4 flex justify-center">
+    {:else if $itemsError}
+      <div class="empty-state error">{$itemsError}</div>
+    {:else if $items.length === 0}
+      <div class="empty-state">
+        No articles found. Add some feeds to get started!
+      </div>
+    {:else}
+      {#if showNewArticlesBanner}
         <div
-          class="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"
-        ></div>
-      </div>
-    {/if}
+          class="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent/30 bg-accent/10 px-4 py-3"
+          role="status"
+          aria-live="polite"
+        >
+          <span class="text-sm font-semibold text-white">
+            {newArticlesCount} new article{newArticlesCount === 1 ? "" : "s"} added
+          </span>
+          <div class="flex items-center gap-2">
+            <button
+              class="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white shadow-lg shadow-accent/30 transition-all hover:shadow-accent/40"
+              on:click={viewNewArticles}
+            >
+              View
+            </button>
+            <button
+              class="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-white/70 transition-colors hover:text-white"
+              on:click={dismissNewArticlesBanner}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      {/if}
+      <FeedGrid
+        items={$items}
+        {liveInsertIds}
+        density={$viewDensity}
+        on:open={(e) => openReader(e.detail.item)}
+        on:toggleStar={(e) => toggleStar(e.detail.item)}
+        on:toggleRead={(e) => toggleRead(e.detail.item)}
+        on:play={(e) => {
+          const item = e.detail.item;
+          if (
+            item.source === "youtube" ||
+            (item.url &&
+              (item.url.includes("youtube.com") || item.url.includes("youtu.be")))
+          ) {
+            openReader(item);
+          } else {
+            playMedia(item);
+          }
+        }}
+      />
 
-    <div bind:this={sentinel} class="h-4 w-full"></div>
-  {/if}
-</div>
+      {#if $itemsLoading}
+        <div class="py-4 flex justify-center">
+          <div
+            class="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"
+          ></div>
+        </div>
+      {/if}
+
+      <div bind:this={sentinel} class="h-4 w-full"></div>
+    {/if}
+  </div>
+{/if}
 
 <OnboardingFlow />
 <BulkActionsBar />

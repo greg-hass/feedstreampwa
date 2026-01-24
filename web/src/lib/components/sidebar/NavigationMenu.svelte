@@ -3,12 +3,14 @@
     LayoutDashboard,
     Eye,
     Bookmark,
+    Sparkles
   } from "lucide-svelte";
   import {
     viewMode,
     setViewAll,
     setViewUnread,
     setViewBookmarks,
+    setViewDiscover
   } from "$lib/stores/ui";
   import {
     allArticlesUnread,
@@ -39,7 +41,7 @@
         <LayoutDashboard
           size={24}
           class={$viewMode === 'all'
-            ? "text-accent"
+            ? "text-emerald-400"
             : "text-current group-hover:text-white"}
         />
       </div>
@@ -57,35 +59,25 @@
     {/if}
   </button>
 
-  <!-- Unread -->
+  <!-- Discover Button -->
   <button
     class="w-full flex items-center justify-between gap-3 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
-      {$viewMode === 'unread'
+      {$viewMode === 'discover'
       ? 'bg-white/10 text-white shadow-inner border border-white/5'
       : 'text-white/60 hover:text-white hover:bg-white/5'}"
-    on:click={setViewUnread}
+    on:click={setViewDiscover}
   >
     <div class="flex items-center gap-3">
       <div class="w-6 flex items-center justify-center">
-        <Eye
+        <Sparkles
           size={24}
-          class={$viewMode === "unread"
-            ? "text-blue-400"
+          class={$viewMode === "discover"
+            ? "text-emerald-400"
             : "text-current group-hover:text-white"}
         />
       </div>
-      Unread
+      Discover
     </div>
-
-    {#if $allArticlesUnread > 0}
-      <span
-        class="text-xs font-medium {$viewMode === 'unread'
-          ? 'text-white/70'
-          : 'text-white/40'}"
-      >
-        {$allArticlesUnread}
-      </span>
-    {/if}
   </button>
 
   <!-- Bookmarks -->
@@ -101,7 +93,7 @@
         <Bookmark
           size={24}
           class={$viewMode === "bookmarks"
-            ? "text-[#FF9500]"
+            ? "text-emerald-400"
             : "text-current group-hover:text-white"}
           fill={$viewMode === "bookmarks" ? "currentColor" : "none"}
         />

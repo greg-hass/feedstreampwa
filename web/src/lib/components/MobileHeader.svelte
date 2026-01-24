@@ -1,8 +1,9 @@
 <script lang="ts">
   import { tick } from "svelte";
   import { Search, Plus, RefreshCw, X, FolderPlus, Rss } from "lucide-svelte";
-  import { isAddFeedModalOpen, isCreateFolderModalOpen } from "$lib/stores/ui";
+  import { isAddFeedModalOpen, isCreateFolderModalOpen, isMobileMenuOpen } from "$lib/stores/ui";
 
+  export let title = "FeedStream";
   export let searchQuery = "";
   export let onSearchInput: () => void = () => {};
   export let onSearchClear: () => void = () => {};
@@ -18,6 +19,10 @@
 
   function openAddFeed() {
     isAddFeedModalOpen.set(true);
+  }
+
+  function toggleMenu() {
+    isMobileMenuOpen.update((v) => !v);
   }
 
   async function toggleSearch() {
@@ -58,19 +63,23 @@
 
 <!-- Mobile-only sticky header -->
 <header
-  class="md:hidden fixed top-0 left-0 right-0 w-full z-30 bg-background/95 backdrop-blur-sm border-b border-stroke pt-safe"
+  class="md:hidden fixed top-0 left-0 right-0 w-full z-30 bg-background border-b border-stroke pt-safe"
   bind:clientHeight={headerHeight}
 >
   <div class="flex items-center justify-between gap-2 px-4 py-3">
-    <!-- Brand -->
-    <div class="flex items-center gap-2.5 min-w-0">
+    <!-- Brand / Menu Toggle -->
+    <button 
+      class="flex items-center gap-3 min-w-0 active:opacity-70 transition-opacity text-left"
+      on:click={toggleMenu}
+      aria-label="Open menu"
+    >
       <div
         class="w-8 h-8 rounded-full bg-surface border border-stroke flex items-center justify-center"
       >
         <Rss size={16} class="text-accent" />
       </div>
-      <span class="text-lg font-bold text-white tracking-tight">FeedStream</span>
-    </div>
+      <span class="text-lg font-bold text-white tracking-tight truncate max-w-[160px]">{title}</span>
+    </button>
 
     <!-- Actions -->
     <div class="flex items-center gap-2 flex-shrink-0">
@@ -101,7 +110,7 @@
       
       <button
         on:click={openAddFeed}
-        class="w-9 h-9 flex items-center justify-center rounded-full bg-accent text-zinc-950 active:scale-95 transition-all shadow-lg shadow-accent/20"
+        class="w-9 h-9 flex items-center justify-center rounded-full bg-accent text-zinc-950 active:scale-95 transition-all shadow-lg shadow-accent/20 z-40"
         aria-label="Add feed"
       >
         <Plus size={20} strokeWidth={2.5} />

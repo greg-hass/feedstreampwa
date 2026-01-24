@@ -71,7 +71,7 @@
   .segment.active {
     background: var(--accent-color);
     color: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* Stronger solid shadow */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); /* Stronger solid shadow */
   }
 
   /* Mobile Filter Chips */

@@ -1,46 +1,22 @@
 <script lang="ts">
-  import { LayoutDashboard, List, Bookmark, Menu, Eye } from "lucide-svelte";
+  import { LayoutDashboard, Sparkles, Bookmark, Settings } from "lucide-svelte";
   import {
-    isMobileMenuOpen,
     setViewAll,
     setViewBookmarks,
-    setViewUnread,
     viewMode,
+    isSettingsModalOpen,
+    setViewDiscover
   } from "$lib/stores/ui";
   import { libraryTotal, allArticlesUnread } from "$lib/stores/counts";
 
-  function toggleMenu() {
-    isMobileMenuOpen.update((v) => !v);
+  function openSettings() {
+    isSettingsModalOpen.set(true);
   }
 </script>
 
 <nav
   class="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-stroke z-[2100] flex items-center justify-around px-2 pt-2 pb-safe select-none"
 >
-  <!-- Menu Button -->
-  <button
-    on:click={toggleMenu}
-    class="flex flex-col items-center justify-center w-full gap-1 active:scale-95 transition-transform duration-200 py-1"
-  >
-    <div
-      class="relative p-1.5 rounded-2xl transition-all duration-300 {$isMobileMenuOpen
-        ? 'bg-zinc-800 text-white'
-        : 'text-zinc-500'}"
-    >
-      <Menu
-        size={24}
-        strokeWidth={$isMobileMenuOpen ? 2.5 : 2}
-      />
-    </div>
-    <span
-      class="text-[10px] font-medium transition-colors {$isMobileMenuOpen
-        ? 'text-white'
-        : 'text-zinc-500'}"
-    >
-      Menu
-    </span>
-  </button>
-
   <!-- All Articles Button -->
   <button
     on:click={setViewAll}
@@ -73,35 +49,28 @@
     </span>
   </button>
 
-  <!-- Unread Button (Today) -->
+  <!-- Discover Button -->
   <button
-    on:click={setViewUnread}
+    on:click={setViewDiscover}
     class="flex flex-col items-center justify-center w-full gap-1 active:scale-95 transition-transform duration-200 py-1"
   >
     <div
       class="relative p-1.5 rounded-2xl transition-all duration-300 {$viewMode ===
-      'unread'
+      'discover'
         ? 'bg-zinc-800 text-white'
         : 'text-zinc-500'}"
     >
-      <Eye
+      <Sparkles
         size={24}
-        strokeWidth={$viewMode === "unread" ? 2.5 : 2}
+        strokeWidth={$viewMode === "discover" ? 2.5 : 2}
       />
-      {#if $allArticlesUnread > 0}
-        <span
-          class="absolute -top-1 -right-1 bg-accent text-zinc-950 text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border-2 border-background"
-        >
-          {$allArticlesUnread > 99 ? "99+" : $allArticlesUnread}
-        </span>
-      {/if}
     </div>
     <span
-      class="text-[10px] font-medium transition-colors {$viewMode === 'unread'
+      class="text-[10px] font-medium transition-colors {$viewMode === 'discover'
         ? 'text-white'
         : 'text-zinc-500'}"
     >
-      Today
+      Discover
     </span>
   </button>
 
@@ -119,11 +88,14 @@
       <Bookmark
         size={24}
         fill={$viewMode === "bookmarks" ? "currentColor" : "none"}
+        class={$viewMode === "bookmarks"
+          ? "text-emerald-400"
+          : "text-zinc-500"}
         strokeWidth={$viewMode === "bookmarks" ? 2.5 : 2}
       />
       {#if $libraryTotal > 0}
         <span
-          class="absolute -top-1 -right-1 bg-accent text-zinc-950 text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border-2 border-background"
+          class="absolute -top-1 -right-1 bg-emerald-500 text-zinc-950 text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border-2 border-background"
         >
           {$libraryTotal}
         </span>
@@ -135,6 +107,30 @@
         : 'text-zinc-500'}"
     >
       Saved
+    </span>
+  </button>
+
+  <!-- Settings Button -->
+  <button
+    on:click={openSettings}
+    class="flex flex-col items-center justify-center w-full gap-1 active:scale-95 transition-transform duration-200 py-1"
+  >
+    <div
+      class="relative p-1.5 rounded-2xl transition-all duration-300 {$isSettingsModalOpen
+        ? 'bg-zinc-800 text-white'
+        : 'text-zinc-500'}"
+    >
+      <Settings
+        size={24}
+        strokeWidth={$isSettingsModalOpen ? 2.5 : 2}
+      />
+    </div>
+    <span
+      class="text-[10px] font-medium transition-colors {$isSettingsModalOpen
+        ? 'text-white'
+        : 'text-zinc-500'}"
+    >
+      Settings
     </span>
   </button>
 </nav>
