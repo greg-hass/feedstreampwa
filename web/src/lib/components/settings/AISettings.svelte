@@ -78,12 +78,21 @@
         </a>
       </div>
       <div class="relative">
-        <input
-          type={showGeminiKey ? "text" : "password"}
-          bind:value={geminiKey}
-          placeholder="Enter your Gemini API key"
-          class="w-full px-4 py-2.5 pr-24 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-mono text-sm"
-        />
+        {#if showGeminiKey}
+          <input
+            type="text"
+            bind:value={geminiKey}
+            placeholder="Enter your Gemini API key"
+            class="w-full px-4 py-2.5 pr-24 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-mono text-sm"
+          />
+        {:else}
+          <input
+            type="password"
+            bind:value={geminiKey}
+            placeholder="Enter your Gemini API key"
+            class="w-full px-4 py-2.5 pr-24 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-mono text-sm"
+          />
+        {/if}
         <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
           <button
             type="button"
@@ -128,12 +137,21 @@
         </a>
       </div>
       <div class="relative">
-        <input
-          type={showOpenAIKey ? "text" : "password"}
-          bind:value={openaiKey}
-          placeholder="Enter your OpenAI API key"
-          class="w-full px-4 py-2.5 pr-24 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-mono text-sm"
-        />
+        {#if showOpenAIKey}
+          <input
+            type="text"
+            bind:value={openaiKey}
+            placeholder="Enter your OpenAI API key"
+            class="w-full px-4 py-2.5 pr-24 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-mono text-sm"
+          />
+        {:else}
+          <input
+            type="password"
+            bind:value={openaiKey}
+            placeholder="Enter your OpenAI API key"
+            class="w-full px-4 py-2.5 pr-24 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-mono text-sm"
+          />
+        {/if}
         <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
           <button
             type="button"

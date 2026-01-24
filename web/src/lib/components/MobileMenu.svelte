@@ -38,6 +38,7 @@
     setViewAll,
     setViewUnread,
     setViewBookmarks,
+    setViewDiscover,
     setViewFolder,
     setViewFeed,
     setViewSettings,
