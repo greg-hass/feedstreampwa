@@ -2,6 +2,9 @@ import type { PageLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import * as itemsApi from '$lib/api/items';
 
+// Disable prerendering for this dynamic route
+export const prerender = false;
+
 export const load: PageLoad = async ({ params }) => {
     const itemId = params.id;
 
