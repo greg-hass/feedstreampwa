@@ -1,0 +1,32 @@
+
+[UX AUDIT] 89 files checked
+--------------------------------------------------
+[!] ISSUES (13):
+  - [Cognitive Load] app.css: Form inputs without labels. Use <label> for accessibility and clarity.
+  - [Color] SettingsModal.svelte: PURPLE DETECTED ('purple'). Banned by Maestro rules. Use Teal/Cyan/Emerald instead.
+  - [Color] AddFeedModal.svelte: PURPLE DETECTED ('purple'). Banned by Maestro rules. Use Teal/Cyan/Emerald instead.
+  - [Color] MobileMenu.svelte: PURPLE DETECTED ('purple'). Banned by Maestro rules. Use Teal/Cyan/Emerald instead.
+  - [Color] FeedListItem.svelte: PURPLE DETECTED ('purple'). Banned by Maestro rules. Use Teal/Cyan/Emerald instead.
+  - [Color] OnboardingFlow.svelte: PURPLE DETECTED ('purple'). Banned by Maestro rules. Use Teal/Cyan/Emerald instead.
+  - [Color] ReadingProgress.svelte: PURPLE DETECTED ('#8B5CF6'). Banned by Maestro rules. Use Teal/Cyan/Emerald instead.
+  - [Motion] ReadingProgress.svelte: Scroll-driven animation without throttling. Add requestAnimationFrame for 60fps.
+  - [Color] EmptyState.svelte: PURPLE DETECTED ('purple'). Banned by Maestro rules. Use Teal/Cyan/Emerald instead.
+  - [Color] AIRecommendationsModal.svelte: PURPLE DETECTED ('purple'). Banned by Maestro rules. Use Teal/Cyan/Emerald instead.
+[*] WARNINGS (417):
+  - [Von Restorff] app.css: No primary CTA
+  - [Trust] app.css: Form without security indicators. Add 'SSL Secure' or lock icon.
+  - [Typography] app.css: Fixed font sizes without clamp(). Consider fluid typography: clamp(MIN, PREFERRED, MAX)
+  - [Performance] app.css: Animating expensive properties (width, left, top, height). Use transform/opacity where possible.
+  - [Color] app.css: 14 distinct colors. Consider 60-30-10 rule: dominant (60%), secondary (30%), accent (10%).
+  - [Color] app.css: Pure black (#000000) detected. Use #1a1a1a or darker grays for better dark mode.
+  - [Color] app.css: Color variables without HSL. Consider HSL for easier palette adjustment (Hue, Saturation, Lightness).
+  - [Animation] app.css: Very fast animation (0.01ms). Minimum 50ms for visibility.
+  - [Animation] app.css: Very fast animation (0.01ms). Minimum 50ms for visibility.
+  - [Motion] app.css: Many animations (16). Ensure majority serve functional purpose (feedback, guidance), not decoration.
+  - [Serial Position] app.html: Last nav item may not be important. Place key actions at start/end.
+  - [Persuasion] app.html: Social proof without specific numbers. Use 'Join 10,000+' format.
+  - [Fitts' Law] +page.svelte: Small targets (< 44px)
+  - [Von Restorff] +page.svelte: No primary CTA
+  - [Reflective] +page.svelte: Long-form content without brand story/values. Add 'About' or 'Why We Exist' section.
+[+] PASSED CHECKS: 27
+STATUS: FAIL

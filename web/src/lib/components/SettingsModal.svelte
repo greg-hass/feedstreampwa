@@ -274,7 +274,7 @@
         <div class="flex items-center justify-between mb-6">
           <div class="flex items-center gap-3">
             <div
-              class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/20 flex items-center justify-center"
+              class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-teal-500/20 border border-blue-500/20 flex items-center justify-center"
             >
               <SettingsIcon size={20} class="text-blue-400" />
             </div>

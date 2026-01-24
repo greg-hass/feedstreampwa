@@ -4,29 +4,34 @@
 
 /* Base Design Tokens */
 :root {
-  /* Refined Zinc Scale (Neutral Dark) */
-  --tw-colors-background: #0c0c0e; /* Deep Zinc - avoid #000 */
-  --tw-colors-surface: #151518;    /* Zinc 900 refined */
-  --tw-colors-raised: #1f1f23;     /* Zinc 800 refined */
-  --tw-colors-stroke: #252529;     /* Subtle borders */
-  --tw-colors-accent: #10B981;     /* Emerald Green */
-  --text-base: #e4e4e7;            /* Zinc 200 */
-  --text-muted: #a1a1aa;           /* Zinc 400 */
+  /* OLED Deep Theme (True Black & Zinc) */
+  --tw-colors-background: #000000; /* OLED Black */
+  --tw-colors-surface: #09090b;    /* Zinc 950 */
+  --tw-colors-raised: #18181b;     /* Zinc 900 */
+  --tw-colors-stroke: #27272a;     /* Zinc 800 - Subtle Borders */
   
+  --tw-colors-accent: #10B981;     /* Electric Emerald */
   --accent-color: #10B981;
   --accent-color-rgb: 16, 185, 129;
 
-  /* Typography Scale */
+  --text-base: #fafafa;            /* Zinc 50 */
+  --text-muted: #a1a1aa;           /* Zinc 400 */
+  
+  /* Typography Scale - Premium Tightness */
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* Safe Area Variables (Fallback) */
+  --safe-top: env(safe-area-inset-top, 20px);
+  --safe-bottom: env(safe-area-inset-bottom, 20px);
 }
 
-/* Light theme */
+/* Light theme - High Contrast Swiss Style */
 :root.light {
-  --tw-colors-background: #fafafa; /* Off-white - avoid #fff */
+  --tw-colors-background: #ffffff;
   --tw-colors-surface: #f4f4f5;    /* Zinc 100 */
-  --tw-colors-raised: #eaeaec;     /* Zinc 200 refined */
-  --tw-colors-stroke: #e1e1e6;     /* Subtle light borders */
-  --text-base: #18181b;            /* Zinc 900 */
+  --tw-colors-raised: #e4e4e7;     /* Zinc 200 */
+  --tw-colors-stroke: #d4d4d8;     /* Zinc 300 */
+  --text-base: #09090b;            /* Zinc 950 */
   --text-muted: #52525b;           /* Zinc 600 */
 }
 
@@ -42,54 +47,63 @@
     scrollbar-gutter: stable;
   }
 
+  /* Premium Typography */
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight font-bold text-balance;
+  }
+
   ::selection {
     background-color: rgba(var(--accent-color-rgb), 0.3);
     color: var(--tw-colors-accent);
   }
 
-  /* Smooth interactions for all interactive elements */
+  /* Smooth interactions */
   button, a, [role="button"] {
-    @apply transition-all duration-200 cursor-pointer outline-none;
+    @apply transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] cursor-pointer outline-none;
     -webkit-tap-highlight-color: transparent;
   }
 
   button:active, a:active, [role="button"]:active {
-    @apply scale-[0.98];
+    @apply scale-[0.96];
   }
 
-  /* Focus rings for keyboard navigation */
   button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
     @apply ring-2 ring-accent ring-offset-2 ring-offset-background;
   }
 }
 
 @layer utilities {
-  /* Solid UI Utilities */
+  /* Solid Premium Surfaces */
   .surface-base {
     @apply bg-surface border border-stroke;
   }
 
   .surface-raised {
-    @apply bg-raised border border-stroke shadow-lg;
+    @apply bg-raised border border-stroke;
   }
 
-  /* Standard Solid Hover State */
+  /* Premium Card Hover */
   .hover-solid {
-    @apply hover:bg-raised hover:border-zinc-700 transition-colors duration-200;
+    @apply hover:bg-raised transition-colors duration-200;
   }
 
   .card-hover {
-    @apply hover-solid;
+    @apply hover-solid active:bg-zinc-800;
   }
 
-  /* Deprecated glass classes mapped to solid for compatibility */
-  .glass {
-    @apply surface-base;
+  /* Text Utilities */
+  .text-balance {
+    text-wrap: balance;
   }
 
-  .glass-panel {
-    @apply surface-base;
+  /* Mask Utilities for Scroll Fades */
+  .mask-t-b {
+    mask-image: linear-gradient(to bottom, transparent 0%, black 20px, black calc(100% - 20px), transparent 100%);
   }
+  
+  /* Safe Area Spacing */
+  .pt-safe { padding-top: var(--safe-top); }
+  .pb-safe { padding-bottom: var(--safe-bottom); }
 
   /* Scrollbar - Elegant & Slim */
   .scrollbar-hide::-webkit-scrollbar {
@@ -100,11 +114,9 @@
     scrollbar-width: none;
   }
 
-  /* Animations */
-  .animate-fade-in { animation: fadeIn 0.3s ease-out; }
-  .animate-slide-in-up { animation: slideInUp 0.4s ease-out; }
-  .animate-slide-in-down { animation: slideInDown 0.4s ease-out; }
-  .animate-scale-in { animation: scaleIn 0.3s ease-out; }
+  /* Animations - iOS Spring */
+  .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.2, 0, 0, 1); }
+  .animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.2, 0, 0, 1); }
 }
 
 /* Custom Scrollbar */

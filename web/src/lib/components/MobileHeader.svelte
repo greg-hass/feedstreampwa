@@ -8,7 +8,6 @@
   export let onSearchClear: () => void = () => {};
   export let onRefresh: () => void = () => {};
   export let isRefreshing = false;
-  export let refreshCountdown = "Off";
   export let refreshCountdownTitle = "Auto refresh is off";
   export let refreshStreamStatus: "connecting" | "connected" | "reconnecting" =
     "connecting";
@@ -59,93 +58,73 @@
 
 <!-- Mobile-only sticky header -->
 <header
-  class="md:hidden fixed top-0 left-0 right-0 w-full z-30 bg-zinc-950 border-b border-zinc-800"
+  class="md:hidden fixed top-0 left-0 right-0 w-full z-30 bg-background/95 backdrop-blur-sm border-b border-stroke pt-safe"
   bind:clientHeight={headerHeight}
 >
-  <div class="flex items-center justify-between gap-2 px-3 py-2">
-    <div class="flex items-center gap-2 min-w-0">
+  <div class="flex items-center justify-between gap-2 px-4 py-3">
+    <!-- Brand -->
+    <div class="flex items-center gap-2.5 min-w-0">
       <div
-        class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20"
+        class="w-8 h-8 rounded-full bg-surface border border-stroke flex items-center justify-center"
       >
-        <Rss size={16} class="text-white" />
+        <Rss size={16} class="text-accent" />
       </div>
-      <span class="text-base font-semibold text-white truncate">FeedStream</span>
+      <span class="text-lg font-bold text-white tracking-tight">FeedStream</span>
     </div>
 
-    <div class="flex items-center gap-1.5 flex-shrink-0">
+    <!-- Actions -->
+    <div class="flex items-center gap-2 flex-shrink-0">
       <button
         on:click={toggleSearch}
-        class="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white active:scale-95 transition-all"
-        class:text-accent={searchQuery.length > 0}
+        class="w-9 h-9 flex items-center justify-center rounded-full bg-surface border border-stroke text-zinc-400 hover:text-white active:scale-95 transition-all"
         aria-label={isSearchOpen ? "Close search" : "Open search"}
-        aria-expanded={isSearchOpen}
       >
         {#if isSearchOpen}
-          <X size={20} />
+          <X size={18} />
         {:else}
-          <Search size={20} />
+          <Search size={18} />
         {/if}
       </button>
 
       <button
         on:click={onRefresh}
-        class="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-zinc-700 hover:bg-zinc-600 text-white active:scale-95 transition-all"
+        class="w-9 h-9 flex items-center justify-center rounded-full bg-surface border border-stroke text-zinc-400 hover:text-white active:scale-95 transition-all"
         title={refreshCountdownTitle}
-        aria-label="Refresh"
       >
-        <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-white/70">
-          <span
-            class={`h-2 w-2 rounded-full ${refreshStreamStatus === "connected"
-              ? "bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.45)]"
-              : "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.45)] animate-pulse"}`}
-            title={refreshStreamStatus === "connected"
-              ? "Live updates connected"
-              : "Reconnecting to live updates"}
-          ></span>
-          {refreshCountdown}
-        </span>
-        <span class={isRefreshing ? "animate-spin" : ""} aria-hidden="true">
-          <RefreshCw size={20} />
-        </span>
+        <div class="relative">
+          <RefreshCw size={18} class={isRefreshing ? "animate-spin text-accent" : ""} />
+          {#if refreshStreamStatus === "connected"}
+             <span class="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full border-2 border-surface"></span>
+          {/if}
+        </div>
       </button>
-
-      <button
-        on:click={() => isCreateFolderModalOpen.set(true)}
-        class="p-2 rounded-xl bg-[#fbbf24] hover:bg-[#f59e0b] text-zinc-900 active:scale-95 transition-all"
-        aria-label="Add folder"
-      >
-        <FolderPlus size={20} />
-      </button>
-
+      
       <button
         on:click={openAddFeed}
-        class="p-2 rounded-xl bg-accent text-white active:scale-95 transition-all"
+        class="w-9 h-9 flex items-center justify-center rounded-full bg-accent text-zinc-950 active:scale-95 transition-all shadow-lg shadow-accent/20"
         aria-label="Add feed"
       >
-        <Plus size={20} />
+        <Plus size={20} strokeWidth={2.5} />
       </button>
     </div>
   </div>
 
-  <div class="mobile-search" class:open={isSearchOpen}>
-    <div class="relative px-3 pb-2">
-      <span class="mobile-search-icon" aria-hidden="true">
-        <Search size={18} />
-      </span>
+  <div class="mobile-search bg-background border-b border-stroke" class:open={isSearchOpen}>
+    <div class="relative px-4 py-3">
+      <Search size={16} class="absolute left-7 top-1/2 -translate-y-1/2 text-zinc-500" />
       <input
         bind:this={searchInput}
         type="search"
-        placeholder="Search..."
+        placeholder="Search articles..."
         bind:value={searchQuery}
         on:input={onSearchInput}
         on:keydown={handleSearchKeydown}
-        class="w-full bg-zinc-900 pl-10 pr-10 py-2 rounded-xl text-white placeholder-zinc-500 outline-none border border-zinc-800 focus:border-accent/50 transition-colors text-sm"
+        class="w-full bg-surface pl-10 pr-10 h-10 rounded-xl text-white placeholder-zinc-500 outline-none border border-stroke focus:border-accent transition-colors text-sm font-medium"
       />
       {#if searchQuery}
         <button
           on:click={handleSearchClear}
-          class="mobile-search-clear"
-          aria-label="Clear search"
+          class="absolute right-7 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
         >
           <X size={16} />
         </button>
@@ -158,53 +137,12 @@
   .mobile-search {
     max-height: 0;
     opacity: 0;
-    transform: translateY(-8px);
     overflow: hidden;
-    transition: max-height 0.3s ease, opacity 0.2s ease, transform 0.25s ease;
-    will-change: max-height, opacity, transform;
+    transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
   }
 
   .mobile-search.open {
-    max-height: 80px;
+    max-height: 70px;
     opacity: 1;
-    transform: translateY(0);
   }
-
-  .mobile-search-icon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: rgba(255, 255, 255, 0.4);
-    pointer-events: none;
-  }
-
-  .mobile-search-clear {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: rgba(255, 255, 255, 0.4);
-    background: none;
-    border: none;
-    padding: 0;
-    border-radius: 999px;
-    line-height: 0;
-    cursor: pointer;
-  }
-
-  .mobile-search-clear:hover {
-    color: rgba(255, 255, 255, 0.85);
-  }
-
 </style>

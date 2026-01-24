@@ -15,28 +15,25 @@
 </script>
 
 <nav
-  class="md:hidden fixed bottom-0 left-0 right-0 min-h-[52px] bg-zinc-950 border-t border-zinc-700/80 z-[2100] flex items-center justify-around px-2 pt-1.5 select-none safe-bottom shadow-[0_-4px_24px_rgba(0,0,0,0.5)]"
+  class="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-stroke z-[2100] flex items-center justify-around px-2 pt-2 pb-safe select-none"
 >
   <!-- Menu Button -->
   <button
     on:click={toggleMenu}
-    class="flex flex-col items-center justify-center w-full gap-1 active:scale-95 transition-transform duration-100 py-2"
+    class="flex flex-col items-center justify-center w-full gap-1 active:scale-95 transition-transform duration-200 py-1"
   >
     <div
-      class="relative p-1.5 rounded-xl transition-all duration-300 {$isMobileMenuOpen
-        ? 'bg-zinc-800'
-        : ''}"
+      class="relative p-1.5 rounded-2xl transition-all duration-300 {$isMobileMenuOpen
+        ? 'bg-zinc-800 text-white'
+        : 'text-zinc-500'}"
     >
       <Menu
-        size={22}
-        class="transition-colors duration-300 {$isMobileMenuOpen
-          ? 'text-accent'
-          : 'text-zinc-500'}"
+        size={24}
         strokeWidth={$isMobileMenuOpen ? 2.5 : 2}
       />
     </div>
     <span
-      class="text-[10px] font-medium {$isMobileMenuOpen
+      class="text-[10px] font-medium transition-colors {$isMobileMenuOpen
         ? 'text-white'
         : 'text-zinc-500'}"
     >
@@ -47,31 +44,28 @@
   <!-- All Articles Button -->
   <button
     on:click={setViewAll}
-    class="flex flex-col items-center justify-center w-full gap-1 active:scale-95 transition-transform duration-100 py-2"
+    class="flex flex-col items-center justify-center w-full gap-1 active:scale-95 transition-transform duration-200 py-1"
   >
     <div
-      class="relative p-1.5 rounded-xl transition-all duration-300 {$viewMode ===
+      class="relative p-1.5 rounded-2xl transition-all duration-300 {$viewMode ===
       'all'
-        ? 'bg-zinc-800'
-        : ''}"
+        ? 'bg-zinc-800 text-white'
+        : 'text-zinc-500'}"
     >
       <LayoutDashboard
-        size={22}
-        class="transition-colors duration-300 {$viewMode === 'all'
-          ? 'text-accent'
-          : 'text-zinc-500'}"
+        size={24}
         strokeWidth={$viewMode === "all" ? 2.5 : 2}
       />
       {#if $allArticlesUnread > 0}
         <span
-          class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border border-zinc-950 shadow-lg"
+          class="absolute -top-1 -right-1 bg-accent text-zinc-950 text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border-2 border-background"
         >
           {$allArticlesUnread > 99 ? "99+" : $allArticlesUnread}
         </span>
       {/if}
     </div>
     <span
-      class="text-[10px] font-medium {$viewMode === 'all'
+      class="text-[10px] font-medium transition-colors {$viewMode === 'all'
         ? 'text-white'
         : 'text-zinc-500'}"
     >
@@ -79,34 +73,31 @@
     </span>
   </button>
 
-  <!-- Unread Button (labeled as Today in the image) -->
+  <!-- Unread Button (Today) -->
   <button
     on:click={setViewUnread}
-    class="flex flex-col items-center justify-center w-full gap-1 active:scale-95 transition-transform duration-100 py-2"
+    class="flex flex-col items-center justify-center w-full gap-1 active:scale-95 transition-transform duration-200 py-1"
   >
     <div
-      class="relative p-1.5 rounded-xl transition-all duration-300 {$viewMode ===
+      class="relative p-1.5 rounded-2xl transition-all duration-300 {$viewMode ===
       'unread'
-        ? 'bg-zinc-800'
-        : ''}"
+        ? 'bg-zinc-800 text-white'
+        : 'text-zinc-500'}"
     >
       <Eye
-        size={22}
-        class="transition-colors duration-300 {$viewMode === 'unread'
-          ? 'text-accent'
-          : 'text-zinc-500'}"
+        size={24}
         strokeWidth={$viewMode === "unread" ? 2.5 : 2}
       />
       {#if $allArticlesUnread > 0}
         <span
-          class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border border-zinc-950 shadow-lg"
+          class="absolute -top-1 -right-1 bg-accent text-zinc-950 text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border-2 border-background"
         >
           {$allArticlesUnread > 99 ? "99+" : $allArticlesUnread}
         </span>
       {/if}
     </div>
     <span
-      class="text-[10px] font-medium {$viewMode === 'unread'
+      class="text-[10px] font-medium transition-colors {$viewMode === 'unread'
         ? 'text-white'
         : 'text-zinc-500'}"
     >
@@ -117,42 +108,40 @@
   <!-- Bookmarks Button -->
   <button
     on:click={setViewBookmarks}
-    class="flex flex-col items-center justify-center w-full gap-1 active:scale-95 transition-transform duration-100 py-2"
+    class="flex flex-col items-center justify-center w-full gap-1 active:scale-95 transition-transform duration-200 py-1"
   >
     <div
-      class="relative p-1.5 rounded-xl transition-all duration-300 {$viewMode ===
+      class="relative p-1.5 rounded-2xl transition-all duration-300 {$viewMode ===
       'bookmarks'
-        ? 'bg-zinc-800'
-        : ''}"
+        ? 'bg-zinc-800 text-white'
+        : 'text-zinc-500'}"
     >
       <Bookmark
-        size={22}
-        class="transition-colors duration-300 {$viewMode === 'bookmarks'
-          ? 'text-[#FF9500]'
-          : 'text-zinc-500'}"
+        size={24}
         fill={$viewMode === "bookmarks" ? "currentColor" : "none"}
         strokeWidth={$viewMode === "bookmarks" ? 2.5 : 2}
       />
       {#if $libraryTotal > 0}
         <span
-          class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border border-zinc-950"
+          class="absolute -top-1 -right-1 bg-accent text-zinc-950 text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border-2 border-background"
         >
           {$libraryTotal}
         </span>
       {/if}
     </div>
     <span
-      class="text-[10px] font-medium {$viewMode === 'bookmarks'
+      class="text-[10px] font-medium transition-colors {$viewMode === 'bookmarks'
         ? 'text-white'
         : 'text-zinc-500'}"
     >
-      Bookmarks
+      Saved
     </span>
   </button>
 </nav>
 
 <style>
-  .safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 16px);
+  /* Use global variable for safe area */
+  .pb-safe {
+    padding-bottom: var(--safe-bottom, 20px);
   }
 </style>

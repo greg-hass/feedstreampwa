@@ -59,9 +59,9 @@
 
   .reading-progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #8b5cf6, #ec4899);
+    background: linear-gradient(90deg, #10b981, #3b82f6);
     transition: width 0.1s ease-out;
-    box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
   }
 
   .reading-progress-label {

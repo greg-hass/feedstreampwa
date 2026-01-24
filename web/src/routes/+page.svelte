@@ -596,7 +596,6 @@
     }}
     onRefresh={refreshAll}
     isRefreshing={$refreshState.isRefreshing}
-    {refreshCountdown}
     {refreshCountdownTitle}
     refreshStreamStatus={$refreshStream.status}
   />
@@ -709,8 +708,6 @@
     background-color: var(--tw-colors-background);
     padding: 24px 0 16px 0;
     border-bottom: 1px solid theme("colors.stroke");
-    /* Minimal refined shadow */
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
   }
 
   /* Ensure articles scroll properly below sticky header */
@@ -728,8 +725,6 @@
     background: theme("colors.background");
     padding: 12px 0;
     border-bottom: 1px solid theme("colors.stroke");
-    /* Add elevation to separate from content */
-    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.3);
   }
 
   .page-header {

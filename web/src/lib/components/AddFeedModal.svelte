@@ -72,10 +72,10 @@
       value: "podcast" as FeedType,
       label: "Podcasts",
       icon: Radio,
-      color: "text-purple-400",
-      bg: "bg-purple-500/10",
-      border: "border-purple-500/20",
-      hover: "hover:bg-purple-500/20",
+      color: "text-cyan-400",
+      bg: "bg-cyan-500/10",
+      border: "border-cyan-500/20",
+      hover: "hover:bg-cyan-500/20",
     },
   ];
 
@@ -314,8 +314,16 @@
             <Search size={20} class="text-emerald-400" />
           </div>
           <div>
-            <h2 id="add-feed-modal-title" class="text-xl font-semibold text-white">Smart Feed Discovery</h2>
-            <p id="add-feed-modal-description" class="sr-only">Search and add RSS feeds, YouTube channels, Reddit communities, and podcasts</p>
+            <h2
+              id="add-feed-modal-title"
+              class="text-xl font-semibold text-white"
+            >
+              Smart Feed Discovery
+            </h2>
+            <p id="add-feed-modal-description" class="sr-only">
+              Search and add RSS feeds, YouTube channels, Reddit communities,
+              and podcasts
+            </p>
           </div>
         </div>
         <button
@@ -391,7 +399,7 @@
           {#each typeOptions as option}
             <button
               class="px-3 py-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 {selectedTypes.has(
-                option.value
+                option.value,
               )
                 ? `${option.bg} ${option.color} border ${option.border}`
                 : 'bg-white/5 text-white/40 border border-white/10 hover:bg-white/10 hover:border-white/20'}"

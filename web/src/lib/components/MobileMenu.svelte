@@ -132,7 +132,7 @@
   function handleContextMenu(
     e: MouseEvent,
     type: "folder" | "feed",
-    target: Feed | Folder
+    target: Feed | Folder,
   ) {
     e.preventDefault();
     e.stopPropagation();
@@ -401,8 +401,8 @@
           <Mic
             size={24}
             class={$viewMode === "smart" && $activeSmartFolder === "podcast"
-              ? "text-indigo-400"
-              : "text-indigo-400/70 group-hover:text-indigo-400"}
+              ? "text-blue-400"
+              : "text-blue-400/70 group-hover:text-blue-400"}
           />
           Podcasts
         </div>
@@ -628,7 +628,7 @@
     >
       <!-- AI Recommendations -->
       <button
-        class="w-full flex items-center gap-3 px-3 py-2 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 hover:from-purple-500/20 hover:to-pink-500/20 transition-all text-white group"
+        class="w-full flex items-center gap-3 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 hover:from-emerald-500/20 hover:to-teal-500/20 transition-all text-white group"
         on:click={() => {
           closeMenu();
           isAIRecommendationsOpen = true;
@@ -636,7 +636,7 @@
       >
         <Sparkles
           size={24}
-          class="text-purple-400 group-hover:text-purple-300"
+          class="text-emerald-400 group-hover:text-emerald-300"
         />
         <span class="text-sm font-semibold">AI Recommendations</span>
       </button>

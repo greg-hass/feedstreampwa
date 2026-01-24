@@ -36,17 +36,17 @@
 <svelte:window on:keydown={handleKeydown} />
 
 <aside
-  class="hidden md:flex flex-col w-[280px] h-screen fixed left-0 top-0 z-40 bg-zinc-950 border-r border-zinc-700/80 shadow-[4px_0_24px_rgba(0,0,0,0.3)]"
+  class="hidden md:flex flex-col w-[280px] h-screen fixed left-0 top-0 z-40 bg-zinc-950 border-r border-zinc-800"
 >
   <!-- Brand -->
-  <div class="p-6 pt-6 flex-shrink-0">
+  <div class="p-6 pt-8 flex-shrink-0">
     <h1
-      class="text-2xl font-bold tracking-tight text-white flex items-center gap-2"
+      class="text-xl font-bold tracking-tight text-white flex items-center gap-2.5 select-none"
     >
       <div
-        class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20"
+        class="w-7 h-7 rounded-full bg-surface border border-stroke flex items-center justify-center"
       >
-        <Rss size={18} class="text-white" />
+        <Rss size={16} class="text-accent" />
       </div>
       FeedStream
     </h1>
