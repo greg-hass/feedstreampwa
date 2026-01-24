@@ -44,7 +44,7 @@
   ];
 </script>
 
-<div class="max-w-5xl mx-auto pb-20">
+<div class="pb-20">
   <div class="mb-8">
     <div class="flex items-center gap-3 mb-2">
       <div
@@ -59,10 +59,10 @@
     </p>
   </div>
 
-  <div class="flex flex-col lg:flex-row gap-8">
+  <div class="flex flex-col md:flex-row gap-8">
     <!-- Sidebar -->
-    <div class="w-full lg:w-64 flex-shrink-0">
-      <div class="lg:sticky lg:top-24 space-y-1">
+    <div class="w-full md:w-56 flex-shrink-0">
+      <div class="md:sticky md:top-2">
         {#each tabs as tab}
           <button
             class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left

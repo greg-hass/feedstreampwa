@@ -6,6 +6,7 @@
   export let onInput: (value: string) => void = () => {};
   export let onClear: () => void = () => {};
   export let onKeydown: (event: KeyboardEvent) => void = () => {};
+  export let inputEl: HTMLInputElement | null = null;
 </script>
 
 <div class="search-box">
@@ -13,6 +14,7 @@
     <Search size={18} />
   </span>
   <input
+    bind:this={inputEl}
     type="text"
     {placeholder}
     bind:value

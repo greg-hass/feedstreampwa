@@ -1,7 +1,11 @@
 <script lang="ts">
   import { tick } from "svelte";
   import { Search, Plus, RefreshCw, X, FolderPlus, Rss } from "lucide-svelte";
-  import { isCreateFolderModalOpen, isMobileMenuOpen, setViewAddFeed } from "$lib/stores/ui";
+  import {
+    isCreateFolderModalOpen,
+    isMobileMenuOpen,
+    setViewAddFeed,
+  } from "$lib/stores/ui";
 
   export let title = "FeedStream";
   export let searchQuery = "";
@@ -56,19 +60,19 @@
   $: if (typeof document !== "undefined") {
     document.documentElement.style.setProperty(
       "--mobile-header-height",
-      `${headerHeight}px`
+      `${headerHeight}px`,
     );
   }
 </script>
 
 <!-- Mobile-only sticky header -->
 <header
-  class="md:hidden fixed top-0 left-0 right-0 w-full z-30 bg-background border-b border-stroke pt-safe"
+  class="md:hidden fixed top-0 left-0 right-0 w-full z-30 bg-[#121212] border-b border-[#2c2c2e] pt-safe"
   bind:clientHeight={headerHeight}
 >
   <div class="flex items-center justify-between gap-2 px-4 py-3">
     <!-- Brand / Menu Toggle -->
-    <button 
+    <button
       class="flex items-center gap-3 min-w-0 active:opacity-70 transition-opacity text-left"
       on:click={toggleMenu}
       aria-label="Open menu"
@@ -78,7 +82,10 @@
       >
         <Rss size={16} class="text-accent" />
       </div>
-      <span class="text-lg font-bold text-white tracking-tight truncate max-w-[160px]">{title}</span>
+      <span
+        class="text-lg font-bold text-white tracking-tight truncate max-w-[160px]"
+        >{title}</span
+      >
     </button>
 
     <!-- Actions -->
@@ -101,13 +108,18 @@
         title={refreshCountdownTitle}
       >
         <div class="relative">
-          <RefreshCw size={18} class={isRefreshing ? "animate-spin text-accent" : ""} />
+          <RefreshCw
+            size={18}
+            class={isRefreshing ? "animate-spin text-accent" : ""}
+          />
           {#if refreshStreamStatus === "connected"}
-             <span class="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full border-2 border-surface"></span>
+            <span
+              class="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full border-2 border-surface"
+            ></span>
           {/if}
         </div>
       </button>
-      
+
       <button
         on:click={openAddFeed}
         class="w-9 h-9 flex items-center justify-center rounded-full bg-emerald-500 text-black active:scale-95 transition-all shadow-lg shadow-emerald-500/20 z-50 relative"
@@ -118,9 +130,15 @@
     </div>
   </div>
 
-  <div class="mobile-search bg-background border-b border-stroke" class:open={isSearchOpen}>
+  <div
+    class="mobile-search bg-[#121212] border-b border-[#2c2c2e]"
+    class:open={isSearchOpen}
+  >
     <div class="relative px-4 py-3">
-      <Search size={16} class="absolute left-7 top-1/2 -translate-y-1/2 text-zinc-500" />
+      <Search
+        size={16}
+        class="absolute left-7 top-1/2 -translate-y-1/2 text-zinc-500"
+      />
       <input
         bind:this={searchInput}
         type="search"

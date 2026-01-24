@@ -19,10 +19,8 @@
     FolderOpen,
     ChevronRight,
     ChevronDown,
-    Sparkles,
-    Activity,
-    Copy,
     Plus,
+    Sparkles,
     MoreVertical,
   } from "lucide-svelte";
   import RedditIcon from "./icons/RedditIcon.svelte";
@@ -59,10 +57,6 @@
   import { toast } from "$lib/stores/toast";
   import type { Feed, Folder } from "$lib/types";
 
-  import AIRecommendationsModal from "$lib/components/modals/AIRecommendationsModal.svelte";
-  import FeedHealthModal from "$lib/components/modals/FeedHealthModal.svelte";
-  import DuplicatesModal from "$lib/components/modals/DuplicatesModal.svelte";
-
   $: activeUrl = $page.url.pathname;
 
   let openFolders: Record<string, boolean> = {};
@@ -71,10 +65,6 @@
   let isSubmitting = false;
   let inlineInputEl: HTMLInputElement | null = null;
   let wasCreatingInline = false;
-
-  let isAIRecommendationsOpen = false;
-  let isFeedHealthOpen = false;
-  let isDuplicatesOpen = false;
 
   $: if (isCreatingInline && !wasCreatingInline) {
     wasCreatingInline = true;
@@ -147,7 +137,7 @@
 {#if $isMobileMenuOpen}
   <!-- Backdrop -->
   <div
-    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] md:hidden"
+    class="fixed inset-0 bg-black/80 z-[60] md:hidden"
     on:click={handleBackdropClick}
     on:keydown={(e) => e.key === "Enter" && handleBackdropClick()}
     role="button"
@@ -201,10 +191,7 @@
           : 'text-white/60 hover:text-white hover:bg-white/5'}"
       >
         <div class="flex items-center gap-3">
-          <LayoutDashboard
-            size={24}
-            class="text-emerald-400"
-          />
+          <LayoutDashboard size={24} class="text-emerald-400" />
           All Articles
         </div>
         {#if $allArticlesUnread > 0}
@@ -230,10 +217,7 @@
           : 'text-white/60 hover:text-white hover:bg-white/5'}"
       >
         <div class="flex items-center gap-3">
-          <Sparkles
-            size={24}
-            class="text-emerald-400"
-          />
+          <Sparkles size={24} class="text-emerald-400" />
           Discover
         </div>
       </button>
@@ -605,50 +589,10 @@
       {/if}
     </div>
 
-    <!-- AI Recommendations, Feed Health, Duplicates & Settings -->
+    <!-- Settings -->
     <div
       class="flex-shrink-0 p-4 border-t border-white/5 bg-[#121212] space-y-2"
     >
-      <!-- AI Recommendations -->
-      <button
-        class="w-full flex items-center gap-3 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 hover:from-emerald-500/20 hover:to-teal-500/20 transition-all text-white group"
-        on:click={() => {
-          closeMenu();
-          isAIRecommendationsOpen = true;
-        }}
-      >
-        <Sparkles
-          size={24}
-          class="text-emerald-400 group-hover:text-emerald-300"
-        />
-        <span class="text-sm font-semibold">AI Recommendations</span>
-      </button>
-
-      <!-- Feed Health -->
-      <button
-        class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors text-white/60 hover:text-white"
-        on:click={() => {
-          closeMenu();
-          isFeedHealthOpen = true;
-        }}
-      >
-        <Activity size={24} />
-        <span class="text-sm font-medium">Feed Health</span>
-      </button>
-
-      <!-- Duplicates -->
-      <button
-        class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-colors text-white/60 hover:text-white"
-        on:click={() => {
-          closeMenu();
-          isDuplicatesOpen = true;
-        }}
-      >
-        <Copy size={24} class="text-orange-400 group-hover:text-orange-300" />
-        <span class="text-sm font-medium">Duplicates</span>
-      </button>
-
-      <!-- Settings -->
       <button
         class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 cursor-pointer transition-colors w-full text-white/60 hover:text-white"
         on:click={() => {
@@ -662,13 +606,3 @@
     </div>
   </aside>
 {/if}
-
-<!-- Modals (outside the if block so they persist when menu closes) -->
-<AIRecommendationsModal
-  bind:isOpen={isAIRecommendationsOpen}
-  on:close={() => (isAIRecommendationsOpen = false)}
-/>
-
-<FeedHealthModal bind:isOpen={isFeedHealthOpen} />
-
-<DuplicatesModal bind:isOpen={isDuplicatesOpen} />

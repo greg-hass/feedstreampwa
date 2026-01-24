@@ -16,10 +16,7 @@
     setViewFeed,
     contextMenu,
   } from "$lib/stores/ui";
-  import {
-    feedsTree,
-    folderUnreadCounts,
-  } from "$lib/stores/counts";
+  import { feedsTree, folderUnreadCounts } from "$lib/stores/counts";
   import { folders, createFolder } from "$lib/stores/folders";
   import { toast } from "$lib/stores/toast";
   import type { Feed, Folder } from "$lib/types";
@@ -63,7 +60,7 @@
   function handleContextMenu(
     e: MouseEvent,
     type: "folder" | "feed",
-    target: Feed | Folder
+    target: Feed | Folder,
   ) {
     e.preventDefault();
     e.stopPropagation();
@@ -78,27 +75,22 @@
 </script>
 
 <div class="space-y-1 mt-6">
-  <div class="flex items-center justify-between px-3 mb-3">
-    <div
-      class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] font-semibold text-amber-200 uppercase tracking-[0.22em]"
-    >
-      <span class="h-1.5 w-1.5 rounded-full bg-amber-300/80"></span>
+  <div class="flex items-center justify-between px-3 mb-2 mt-8">
+    <div class="text-xs font-semibold text-white/40 uppercase tracking-wider">
       Feeds & Folders
     </div>
     <button
       class="text-white/40 hover:text-white transition-colors"
       on:click={() => (isCreatingInline = true)}
-      title="New folder (Shift + N)"
+      title="New folder"
     >
-      <Plus size={14} />
+      <Plus size={16} />
     </button>
   </div>
 
   <!-- Inline Quick Create -->
   {#if isCreatingInline}
-    <div
-      class="px-3 mb-2 animate-in fade-in slide-in-from-top-1 duration-200"
-    >
+    <div class="px-3 mb-2 animate-in fade-in slide-in-from-top-1 duration-200">
       <input
         type="text"
         bind:value={inlineFolderName}
@@ -116,7 +108,7 @@
     {#each $folders as folder}
       <div class="flex flex-col">
         <button
-          class="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+          class="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
             {$viewMode === 'folder' && $activeFolderId === folder.id
             ? 'bg-white/10 text-white shadow-inner border border-white/5'
             : 'text-white/60 hover:text-white hover:bg-white/5'}"
@@ -193,9 +185,7 @@
                       <Rss size={10} class="text-white/40" />
                     </div>
                   {/if}
-                  <span class="truncate text-xs"
-                    >{feed.title || feed.url}</span
-                  >
+                  <span class="truncate text-xs">{feed.title || feed.url}</span>
                 </div>
 
                 <div class="flex items-center gap-1">
@@ -229,13 +219,13 @@
   <!-- Uncategorized Feeds -->
   {#if $feedsTree.uncategorized.length > 0}
     <div
-      class="mt-4 mb-2 px-3 text-[11px] font-semibold text-white/40 uppercase tracking-[0.22em]"
+      class="mt-4 mb-2 px-3 text-xs font-semibold text-white/30 uppercase tracking-wider"
     >
       Uncategorized
     </div>
     {#each $feedsTree.uncategorized as feed}
       <button
-        class="w-full flex items-center justify-between gap-3 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+        class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
           {$viewMode === 'feed' && $selectedFeedUrl === feed.url
           ? 'bg-white/10 text-white shadow-inner border border-white/5'
           : 'text-white/60 hover:text-white hover:bg-white/5'}"

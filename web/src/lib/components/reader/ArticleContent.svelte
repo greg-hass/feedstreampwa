@@ -388,37 +388,24 @@
 
   .studio-hero {
     position: relative;
-    border-radius: 24px;
+    border-radius: 20px;
     overflow: hidden;
-    border: 1px solid var(--divider, rgba(255, 255, 255, 0.1));
-    background: rgba(10, 12, 18, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #09090b;
     background-size: cover;
     background-position: center;
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
-  }
-
-  .studio-hero::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image: var(--hero-image, none);
-    background-size: cover;
-    background-position: center;
-    filter: blur(22px);
-    transform: scale(1.08);
-    opacity: 0.7;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   }
 
   .studio-hero::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: radial-gradient(
-        600px circle at 15% 10%,
-        rgba(var(--accent-color-rgb, 56, 189, 248), 0.2),
-        transparent 60%
-      ),
-      linear-gradient(180deg, rgba(10, 10, 15, 0.2), rgba(10, 10, 15, 0.75));
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.2) 0%,
+      rgba(0, 0, 0, 0.8) 100%
+    );
   }
 
   .hero-overlay {
@@ -544,9 +531,8 @@
     gap: 12px;
     padding: 12px 14px;
     border-radius: 16px;
-    background: rgba(6, 8, 12, 0.55);
+    background: #18181b;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(8px);
   }
 
   .hero-player-controls {

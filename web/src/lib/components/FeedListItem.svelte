@@ -15,7 +15,7 @@
     Clock,
     Share2,
     MoreHorizontal,
-    X
+    X,
   } from "lucide-svelte";
   import RedditIcon from "$lib/components/icons/RedditIcon.svelte";
   import OfflineBadge from "$lib/components/OfflineBadge.svelte";
@@ -123,7 +123,9 @@
       return;
     }
 
-    const existingScript = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
+    const existingScript = document.querySelector(
+      'script[src="https://www.youtube.com/iframe_api"]',
+    );
     if (existingScript) {
       // API loading, wait for it
       const checkYT = setInterval(() => {
@@ -179,10 +181,15 @@
   });
 
   // Extract YouTube video ID
-  function extractYouTubeId(externalId: string | null | undefined, url: string | null | undefined): string | null {
+  function extractYouTubeId(
+    externalId: string | null | undefined,
+    url: string | null | undefined,
+  ): string | null {
     if (externalId) return externalId;
     if (url) {
-      const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+      const match = url.match(
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/,
+      );
       if (match) return match[1];
     }
     return null;
@@ -206,18 +213,24 @@
     return {
       youtubeVideoId,
       youtubeThumbnail,
-      thumbnailUrl: youtubeThumbnail ||
-        (feedType === "podcast" ? item.feed_icon_url || item.media_thumbnail : item.media_thumbnail),
+      thumbnailUrl:
+        youtubeThumbnail ||
+        (feedType === "podcast"
+          ? item.feed_icon_url || item.media_thumbnail
+          : item.media_thumbnail),
       readTimeText: readTime > 0 ? formatReadTime(readTime) : null,
       isCached: $offlineArticles.has(item.id),
-      showDiversityBadge: $diversitySettings.enabled && (item as ItemWithDiversity)._isDiverseSource,
+      showDiversityBadge:
+        $diversitySettings.enabled &&
+        (item as ItemWithDiversity)._isDiverseSource,
     };
   })();
 
   $: podcastMeta = (() => {
     const isPodcast = feedType === "podcast";
     const durationSeconds = item.media_duration_seconds ?? null;
-    const hasDuration = typeof durationSeconds === "number" && durationSeconds > 0;
+    const hasDuration =
+      typeof durationSeconds === "number" && durationSeconds > 0;
     const progressSeconds = Math.max(0, item.playback_position || 0);
     const hasProgress = progressSeconds > 5;
 
@@ -227,14 +240,21 @@
       hasDuration,
       progressSeconds,
       hasProgress,
-      progressPercent: hasDuration ? Math.min(100, (progressSeconds / durationSeconds) * 100) : 0,
-      remainingSeconds: hasDuration ? Math.max(0, durationSeconds - progressSeconds) : null,
+      progressPercent: hasDuration
+        ? Math.min(100, (progressSeconds / durationSeconds) * 100)
+        : 0,
+      remainingSeconds: hasDuration
+        ? Math.max(0, durationSeconds - progressSeconds)
+        : null,
       playLabel: isPodcast ? (hasProgress ? "Resume" : "Listen") : "Play",
     };
   })();
 
   // Simplified logic: Compact = List (no image), Comfortable = Right Image, Spacious = Top Image (Card)
-  $: showImage = density !== "compact" && (itemMeta.thumbnailUrl || itemMeta.youtubeVideoId) && !imageError;
+  $: showImage =
+    density !== "compact" &&
+    (itemMeta.thumbnailUrl || itemMeta.youtubeVideoId) &&
+    !imageError;
   $: isCardLayout = density === "spacious";
 
   const styles = {
@@ -273,31 +293,38 @@
   function handleImageError() {
     imageError = true;
   }
-  
+
   $: if (item.id) imageError = false;
 </script>
 
 <!-- svelte-ignore a11y-no-noninteractive-element-to-interactive-role -->
 <article
   class="group relative flex w-full transition-colors overflow-hidden
-  {isCardLayout ? 'flex-col p-0 bg-surface border border-stroke rounded-2xl mb-4' : 'flex-col py-4 px-4 border-b border-stroke/50 last:border-0'}
+  {isCardLayout
+    ? 'flex-col p-0 bg-surface border border-[#2c2c2e] rounded-2xl mb-4'
+    : 'flex-col py-4 px-4 border-b border-[#2c2c2e] last:border-0'}
   {item.is_read ? 'opacity-60' : 'opacity-100'}
   {isInlinePlayerActive ? '' : 'cursor-pointer'}"
   on:click={(e) => !isInlinePlayerActive && handleClick(e)}
-  on:keypress={(e) => e.key === "Enter" && !isInlinePlayerActive && handleClick(e)}
+  on:keypress={(e) =>
+    e.key === "Enter" && !isInlinePlayerActive && handleClick(e)}
   tabindex="0"
   role="button"
 >
   <!-- Main row for non-card layout -->
-  <div class="{isCardLayout ? 'flex flex-col' : 'flex flex-row items-start gap-4'}">
-
+  <div
+    class={isCardLayout ? "flex flex-col" : "flex flex-row items-start gap-4"}
+  >
     <!-- Image Section (Right side thumbnail for comfortable layout) -->
-    {#if showImage && !isInlinePlayerActive}
+    {#if showImage && !isInlinePlayerActive && (!itemMeta.youtubeVideoId || !isMobile)}
       <div
-        class="{isCardLayout ? 'w-full aspect-video' : 'w-24 h-24 md:w-32 md:h-24 flex-shrink-0 order-last'} bg-zinc-900 overflow-hidden relative"
+        class="{isCardLayout
+          ? 'w-full aspect-video'
+          : 'w-24 h-24 md:w-32 md:h-24 flex-shrink-0 order-last'} bg-zinc-900 overflow-hidden relative"
         class:rounded-xl={!isCardLayout}
         on:click={itemMeta.youtubeVideoId ? handleInlinePlay : undefined}
-        on:keypress={(e) => e.key === "Enter" && itemMeta.youtubeVideoId && handleInlinePlay(e)}
+        on:keypress={(e) =>
+          e.key === "Enter" && itemMeta.youtubeVideoId && handleInlinePlay(e)}
         role={itemMeta.youtubeVideoId ? "button" : undefined}
         tabindex={itemMeta.youtubeVideoId ? 0 : undefined}
       >
@@ -305,17 +332,23 @@
           <img
             src={itemMeta.youtubeThumbnail}
             alt=""
-            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            class="w-full h-full object-cover"
             on:error={handleYouTubeThumbnailError}
           />
-          <div class="absolute inset-0 flex items-center justify-center bg-black/20">
-            <PlayCircle size={isCardLayout ? 48 : 32} class="text-white drop-shadow-lg opacity-90" fill="rgba(255,0,0,0.8)" />
+          <div
+            class="absolute inset-0 flex items-center justify-center bg-[#09090b]/40"
+          >
+            <PlayCircle
+              size={isCardLayout ? 48 : 32}
+              class="text-white drop-shadow-lg opacity-90"
+              fill="rgba(255,0,0,0.8)"
+            />
           </div>
         {:else}
           <img
             src={itemMeta.thumbnailUrl}
             alt=""
-            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            class="w-full h-full object-cover"
             on:error={handleImageError}
           />
         {/if}
@@ -324,74 +357,137 @@
 
     <!-- Content Section -->
     <div class="flex-1 min-w-0 flex flex-col {isCardLayout ? 'p-4' : ''}">
-
       <!-- Meta Header -->
       <div class="flex items-center gap-2 text-xs mb-1.5">
         {#if item.feed_icon_url}
           <img src={item.feed_icon_url} alt="" class="w-4 h-4 rounded-full" />
         {:else}
-          <svelte:component this={currentStyle.icon} size={14} class={currentStyle.color} />
+          <svelte:component
+            this={currentStyle.icon}
+            size={14}
+            class={currentStyle.color}
+          />
         {/if}
 
-        <span class="font-medium text-zinc-300 truncate max-w-[120px]">{item.feed_title}</span>
+        <span class="font-medium text-zinc-300 truncate max-w-[120px]"
+          >{item.feed_title}</span
+        >
         <span class="text-zinc-600">•</span>
         <span class="text-zinc-500">{timeAgo}</span>
 
         {#if item.is_starred}
-           <Bookmark size={12} class="text-emerald-400 fill-emerald-400 ml-auto" />
+          <Bookmark
+            size={12}
+            class="text-emerald-400 fill-emerald-400 ml-auto"
+          />
         {/if}
       </div>
 
       <!-- Title -->
-      <h3 class="{isCardLayout ? 'text-xl' : 'text-[17px]'} font-bold leading-tight text-balance text-white mb-2 tracking-tight">
+      <h3
+        class="{isCardLayout
+          ? 'text-xl'
+          : 'text-[17px]'} font-bold leading-tight text-balance text-white mb-2 tracking-tight"
+      >
         {item.title}
       </h3>
 
+      <!-- YouTube Video Section (Mobile) -->
+      {#if itemMeta.youtubeVideoId && isMobile}
+        <div
+          class="mt-2 mb-3 relative w-full aspect-video rounded-xl overflow-hidden bg-black shadow-lg"
+          on:click|stopPropagation
+        >
+          {#if isInlinePlayerActive}
+            <div id={inlinePlayerId} class="absolute inset-0"></div>
+            <button
+              class="absolute -top-2 -right-2 z-20 p-1.5 bg-[#121212] rounded-full border border-[#2c2c2e] text-white shadow-xl"
+              on:click={closeInlinePlayer}
+            >
+              <X size={14} />
+            </button>
+          {:else}
+            <button
+              class="w-full h-full relative group/yt"
+              on:click={handleInlinePlay}
+            >
+              <img
+                src={itemMeta.youtubeThumbnail}
+                alt=""
+                class="w-full h-full object-cover"
+                on:error={handleYouTubeThumbnailError}
+              />
+              <div
+                class="absolute inset-0 flex items-center justify-center bg-[#09090b]/40 group-hover/yt:bg-[#09090b]/60 transition-colors"
+              >
+                <div
+                  class="w-14 h-14 rounded-full bg-red-600 flex items-center justify-center shadow-2xl"
+                >
+                  <PlayCircle
+                    size={28}
+                    class="text-white ml-1"
+                    fill="currentColor"
+                  />
+                </div>
+              </div>
+            </button>
+          {/if}
+        </div>
+      {/if}
+
       <!-- Summary / Snippet (Card only or if no image) -->
-      {#if (isCardLayout || !showImage) && item.summary && density !== 'compact' && !isInlinePlayerActive}
-         <p class="text-sm text-zinc-400 line-clamp-2 mb-3 leading-relaxed">
-           {item.summary.replace(/<[^>]*>?/gm, "")}
-         </p>
+      {#if (isCardLayout || !showImage) && item.summary && density !== "compact" && !isInlinePlayerActive && (!itemMeta.youtubeVideoId || !isMobile)}
+        <p class="text-sm text-zinc-400 line-clamp-2 mb-3 leading-relaxed">
+          {item.summary.replace(/<[^>]*>?/gm, "")}
+        </p>
       {/if}
 
       <!-- Footer Actions -->
       <div class="mt-auto flex items-center justify-between pt-1">
-         <div class="flex items-center gap-4 text-zinc-500">
-           {#if itemMeta.readTimeText && !isInlinePlayerActive}
-             <span class="text-xs flex items-center gap-1 font-medium">
-               <Clock size={12} /> {itemMeta.readTimeText}
-             </span>
-           {/if}
-         </div>
+        <div class="flex items-center gap-4 text-zinc-500">
+          {#if itemMeta.readTimeText && !isInlinePlayerActive}
+            <span class="text-xs flex items-center gap-1 font-medium">
+              <Clock size={12} />
+              {itemMeta.readTimeText}
+            </span>
+          {/if}
+        </div>
 
-         <!-- Quick Actions (Hover only on desktop, or visible if spacious) -->
-         <div class="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-           <button
-             class="p-1.5 rounded-full hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
-             on:click={handleStar}
-             title="Bookmark"
-           >
-             <Bookmark size={16} class="{item.is_starred ? 'fill-emerald-400 text-emerald-400 animate-bookmark-pop' : ''}" />
-           </button>
+        <!-- Quick Actions (Hover only on desktop, or visible if spacious) -->
+        <div
+          class="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+        >
+          <button
+            class="p-1.5 rounded-full hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+            on:click={handleStar}
+            title="Bookmark"
+          >
+            <Bookmark
+              size={16}
+              class={item.is_starred
+                ? "fill-emerald-400 text-emerald-400 animate-bookmark-pop"
+                : ""}
+            />
+          </button>
 
-           <button
-             class="p-1.5 rounded-full hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
-             on:click={handleRead}
-             title="Mark read"
-           >
-             {#if item.is_read}
-               <CheckCircle2 size={16} class="text-emerald-500" />
-             {:else}
-               <div class="w-4 h-4 rounded-full border-2 border-zinc-500"></div>
-             {/if}
-           </button>
-         </div>
+          <button
+            class="p-1.5 rounded-full hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+            on:click={handleRead}
+            title="Mark read"
+          >
+            {#if item.is_read}
+              <CheckCircle2 size={16} class="text-emerald-500" />
+            {:else}
+              <div class="w-4 h-4 rounded-full border-2 border-zinc-500"></div>
+            {/if}
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Inline YouTube Player (shows below title when tapped) -->
-  {#if isInlinePlayerActive && itemMeta.youtubeVideoId}
+  <!-- Inline YouTube Player (Desktop only here, Mobile moved above) -->
+  {#if isInlinePlayerActive && itemMeta.youtubeVideoId && !isMobile}
     <div class="mt-3 relative">
       <!-- Close button -->
       <button
@@ -407,14 +503,10 @@
         class="relative w-full rounded-xl overflow-hidden bg-black"
         style="padding-bottom: 56.25%;"
       >
-        <div
-          id={inlinePlayerId}
-          class="absolute inset-0"
-        ></div>
+        <div id={inlinePlayerId} class="absolute inset-0"></div>
       </div>
     </div>
   {/if}
-
 </article>
 
 <style>
@@ -422,10 +514,18 @@
 
   /* Bookmark Pop Animation */
   @keyframes bookmarkPop {
-    0% { transform: scale(1) rotate(0deg); }
-    40% { transform: scale(1.3) rotate(-15deg); }
-    60% { transform: scale(1.1) rotate(5deg); }
-    100% { transform: scale(1) rotate(0deg); }
+    0% {
+      transform: scale(1) rotate(0deg);
+    }
+    40% {
+      transform: scale(1.3) rotate(-15deg);
+    }
+    60% {
+      transform: scale(1.1) rotate(5deg);
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+    }
   }
 
   :global(.animate-bookmark-pop) {

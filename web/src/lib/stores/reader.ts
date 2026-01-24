@@ -66,8 +66,15 @@ export async function openReader(item: Item) {
         toggleRead(item);
     }
 
-    // Navigate to reader route
-    goto(`/reader/${item.id}`);
+    currentItem.set(item);
+
+    // If it's desktop, we show it in the 3rd column (no navigation needed)
+    // If it's mobile, we navigate to the reader route
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+        goto(`/reader/${item.id}`);
+    } else {
+        showReader.set(true); // This will trigger the ReaderView even in desktop layout
+    }
 }
 
 // Legacy function for compatibility - navigates back to home

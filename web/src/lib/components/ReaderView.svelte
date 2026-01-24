@@ -286,32 +286,29 @@
   $: displayUrl = $readerData?.url || $currentItem?.url || "";
   $: isYouTube =
     displayUrl.includes("youtube.com") || displayUrl.includes("youtu.be");
+
+  export let isEmbedded = false;
 </script>
 
-{#if $showReader}
+{#if $showReader || isEmbedded}
   <div
     class="reader-overlay {themeClass}"
-    on:click={handleOverlayClick}
-    on:keydown={handleOverlayKeydown}
-    role="button"
-    tabindex="0"
+    class:reader-embedded={isEmbedded}
+    on:click={!isEmbedded ? handleOverlayClick : undefined}
+    on:keydown={!isEmbedded ? handleOverlayKeydown : undefined}
+    role={!isEmbedded ? "button" : "region"}
+    tabindex={!isEmbedded ? 0 : -1}
   >
     <div
       class="reader-container"
       role="dialog"
-      aria-modal="true"
+      aria-modal={!isEmbedded}
       aria-labelledby="reader-title"
       tabindex="-1"
     >
       <ReadingProgress {scrollContainer} />
 
-      <ReaderHeader
-        {handleClose}
-        {handleDelete}
-        {handleShare}
-        {toggleTTS}
-        {ttsActive}
-      />
+      <ReaderHeader {handleClose} {handleShare} {toggleTTS} {ttsActive} />
 
       <div
         class="reader-scroll-container"
@@ -373,11 +370,18 @@
     z-index: 2000;
     display: flex;
     justify-content: center;
-    background-color: var(--bg, #0c0c0e);
+    background-color: var(--bg, #000000);
     color: var(--text, #e5e7eb);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    animation: fadeIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  .reader-overlay.reader-embedded {
+    position: relative;
+    z-index: 10;
+    background: var(--bg, #000000);
+    animation: none;
+    height: 100vh;
+    border-left: 1px solid theme("colors.stroke");
   }
 
   .reader-container {
@@ -389,7 +393,12 @@
     display: flex;
     flex-direction: column;
     background: transparent;
-    animation: scaleIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    animation: fadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .reader-embedded .reader-container {
+    max-width: none;
+    animation: none;
   }
 
   .reader-scroll-container {
@@ -466,16 +475,6 @@
       opacity: 0;
     }
     to {
-      opacity: 1;
-    }
-  }
-  @keyframes scaleIn {
-    from {
-      transform: scale(0.98);
-      opacity: 0;
-    }
-    to {
-      transform: scale(1);
       opacity: 1;
     }
   }

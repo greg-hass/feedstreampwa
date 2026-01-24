@@ -57,7 +57,7 @@
     class={`relative w-full min-h-screen md:pl-[280px] pb-[140px] ${isMediaVisible ? "md:pb-[96px]" : "md:pb-0"} transition-all duration-300 ease-out overflow-x-hidden focus:outline-none`}
   >
     <div
-      class="w-full max-w-[1600px] mx-auto p-2 md:px-6 md:pt-6 lg:px-8 lg:pt-6"
+      class="w-full h-full p-2 md:p-0"
     >
       <ErrorBoundary>
         <slot />

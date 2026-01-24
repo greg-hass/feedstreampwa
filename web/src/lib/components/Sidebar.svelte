@@ -36,26 +36,24 @@
 <svelte:window on:keydown={handleKeydown} />
 
 <aside
-  class="hidden md:flex flex-col w-[280px] h-screen fixed left-0 top-0 z-40 bg-zinc-950 border-r border-zinc-800"
+  class="hidden md:flex flex-col w-[280px] h-screen fixed left-0 top-0 z-40 bg-[#121212] border-r border-[#2c2c2e]"
 >
   <!-- Brand -->
   <div class="p-6 pt-8 flex-shrink-0">
     <h1
-      class="text-xl font-bold tracking-tight text-white flex items-center gap-2.5 select-none"
+      class="text-2xl font-bold tracking-tight text-white flex items-center gap-2 select-none"
     >
       <div
-        class="w-7 h-7 rounded-full bg-surface border border-stroke flex items-center justify-center"
+        class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20"
       >
-        <Rss size={16} class="text-accent" />
+        <Rss size={18} class="text-white" />
       </div>
       FeedStream
     </h1>
   </div>
 
   <!-- Scrollable Content Area -->
-  <div
-    class="flex-1 px-4 py-2 overflow-y-auto scrollbar-hide min-h-0"
-  >
+  <div class="flex-1 px-4 py-2 overflow-y-auto scrollbar-hide min-h-0">
     <NavigationMenu />
     <SmartFoldersSection />
     <FoldersTree

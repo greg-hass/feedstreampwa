@@ -242,7 +242,7 @@
   }
 </script>
 
-<div class="max-w-5xl mx-auto pb-20">
+<div class="pb-20">
   <!-- Header -->
   <div class="mb-8">
     <div class="flex items-center gap-3 mb-2">

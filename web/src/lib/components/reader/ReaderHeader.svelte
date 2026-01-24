@@ -3,34 +3,56 @@
     ChevronLeft,
     ChevronUp,
     ChevronDown,
-    ZoomOut,
-    ZoomIn,
-    Trash2,
+    Type,
     Share,
     Headphones,
-    Loader2
+    Bookmark,
+    Play,
   } from "lucide-svelte";
   import { readerSettings } from "$lib/stores/readerSettings";
-  import { readerNavigation, navigateToPrev, navigateToNext } from "$lib/stores/reader";
+  import {
+    readerNavigation,
+    navigateToPrev,
+    navigateToNext,
+    currentItem,
+  } from "$lib/stores/reader";
+  import { toggleStar } from "$lib/stores/items";
   import type { FontSize } from "$lib/types";
 
   export let handleClose: () => void;
-  export let handleDelete: () => Promise<void>;
   export let handleShare: () => Promise<void>;
   export let toggleTTS: () => void;
   export let ttsActive: boolean;
 
+  let showTextSizes = false;
+  const fontSizes: FontSize[] = ["small", "medium", "large"];
+
+  function setFontSize(size: FontSize) {
+    readerSettings.setFontSize(size);
+    showTextSizes = false;
+  }
+
+  function handleToggleBookmark() {
+    if ($currentItem) {
+      toggleStar($currentItem);
+    }
+  }
+
   // Keyboard navigation
   function handleKeydown(e: KeyboardEvent) {
     // Only handle if reader is focused and not in an input
-    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    if (
+      e.target instanceof HTMLInputElement ||
+      e.target instanceof HTMLTextAreaElement
+    )
+      return;
 
-    if (e.key === 'j' || e.key === 'ArrowDown') {
+    if (e.key === "j" || e.key === "ArrowDown") {
       if ($readerNavigation.hasNext) {
         e.preventDefault();
         navigateToNext();
       }
-    } else if (e.key === 'k' || e.key === 'ArrowUp') {
+    } else if (e.key === "k" || e.key === "ArrowUp") {
       if ($readerNavigation.hasPrev) {
         e.preventDefault();
         navigateToPrev();
@@ -58,81 +80,122 @@
     small: "80%",
     medium: "100%",
     large: "120%",
-    xlarge: "140%"
+    xlarge: "140%",
   };
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
 
 <div class="reader-header-new">
-  <div class="header-top">
+  <div class="flex items-center justify-between gap-4">
+    <!-- Left: Back -->
     <button class="back-button" on:click={handleClose}>
-      <ChevronLeft size={20} />
-      <span>Back</span>
+      <ChevronLeft size={24} />
+      <span class="hidden sm:inline">Back</span>
     </button>
 
-    <!-- Article Navigation -->
-    {#if $readerNavigation.total > 1}
-      <div class="nav-controls">
-        <button
-          class="nav-button"
-          on:click={navigateToPrev}
-          disabled={!$readerNavigation.hasPrev}
-          title="Previous article (k or ↑)"
-          aria-label="Go to previous article"
+    <!-- Right: Controls -->
+    <div class="flex items-center gap-1 sm:gap-2">
+      <!-- Article Navigation -->
+      {#if $readerNavigation.total > 1}
+        <div
+          class="flex items-center bg-white/5 rounded-full border border-white/5 px-1 mr-2"
         >
-          <ChevronUp size={18} />
-        </button>
-        <span class="nav-position">
-          {$readerNavigation.currentIndex + 1} / {$readerNavigation.total}
-        </span>
+          <button
+            class="p-1.5 opacity-60 hover:opacity-100 disabled:opacity-20 transition-opacity"
+            on:click={navigateToPrev}
+            disabled={!$readerNavigation.hasPrev}
+            title="Previous article"
+          >
+            <ChevronUp size={18} />
+          </button>
+          <span
+            class="text-[11px] font-bold opacity-40 px-1 min-w-[32px] text-center"
+          >
+            {$readerNavigation.currentIndex + 1}/{$readerNavigation.total}
+          </span>
+          <button
+            class="p-1.5 opacity-60 hover:opacity-100 disabled:opacity-20 transition-opacity"
+            on:click={navigateToNext}
+            disabled={!$readerNavigation.hasNext}
+            title="Next article"
+          >
+            <ChevronDown size={18} />
+          </button>
+        </div>
+      {/if}
+
+      <!-- Text Size Multi-selector -->
+      <div class="relative">
         <button
-          class="nav-button"
-          on:click={navigateToNext}
-          disabled={!$readerNavigation.hasNext}
-          title="Next article (j or ↓)"
-          aria-label="Go to next article"
+          class="header-action-btn {showTextSizes
+            ? 'bg-white/10 text-white'
+            : ''}"
+          on:click={() => (showTextSizes = !showTextSizes)}
+          title="Text Appearance"
         >
-          <ChevronDown size={18} />
+          <Type size={20} />
         </button>
+
+        {#if showTextSizes}
+          <div
+            class="absolute top-full right-0 mt-2 bg-zinc-900 border border-white/10 rounded-2xl p-2 shadow-2xl flex items-center gap-1 z-[100] animate-in fade-in slide-in-from-top-2 duration-200"
+          >
+            {#each fontSizes as size}
+              <button
+                class="flex flex-col items-center justify-center w-10 h-10 rounded-xl transition-all
+                  {$readerSettings.fontSize === size
+                  ? 'bg-accent text-zinc-950 font-bold'
+                  : 'hover:bg-white/5 text-white/60'}"
+                on:click={() => setFontSize(size)}
+              >
+                <span
+                  style="font-size: {size === 'small'
+                    ? '12px'
+                    : size === 'medium'
+                      ? '16px'
+                      : '20px'}">A</span
+                >
+              </button>
+            {/each}
+          </div>
+        {/if}
       </div>
-    {/if}
-  </div>
 
-  <div class="header-controls-row">
-    <div class="zoom-controls">
-      <button on:click={decreaseFontSize} title="Decrease Font Size" aria-label="Decrease font size">
-        <ZoomOut size={18} />
-      </button>
-      <span class="zoom-level" aria-live="polite">
-        {zoomLabels[$readerSettings.fontSize]}
-      </span>
-      <button on:click={increaseFontSize} title="Increase Font Size" aria-label="Increase font size">
-        <ZoomIn size={18} />
-      </button>
-    </div>
-
-    <div class="control-divider"></div>
-
-    <div class="action-buttons">
+      <!-- Bookmark button -->
       <button
-        on:click={handleDelete}
-        title="Delete Article"
-        aria-label="Delete article"
-        class="hover:text-red-400 transition-colors"
+        class="header-action-btn"
+        on:click={handleToggleBookmark}
+        title={$currentItem?.is_starred ? "Remove bookmark" : "Add bookmark"}
       >
-        <Trash2 size={20} />
+        <Bookmark
+          size={20}
+          class={$currentItem?.is_starred
+            ? "fill-[#FF9500] text-[#FF9500] animate-bookmark-pop"
+            : "text-white/60"}
+        />
       </button>
-      <button on:click={handleShare} title="Share" aria-label="Share article">
+
+      <!-- Share -->
+      <button class="header-action-btn" on:click={handleShare} title="Share">
         <Share size={20} />
       </button>
+
+      <!-- TTS -->
       <button
+        class="header-action-btn {ttsActive ? 'text-accent bg-accent/10' : ''}"
         on:click={toggleTTS}
-        title={ttsActive ? "Stop Listening" : "Listen"}
-        aria-label={ttsActive ? "Stop listening" : "Listen to article"}
-        class={ttsActive ? "text-accent" : ""}
+        title={ttsActive ? "Stop listening" : "Listen"}
       >
-        <Headphones size={20} />
+        {#if ttsActive}
+          <div class="flex items-center gap-1 px-1">
+            <div class="w-1 h-3 bg-current animate-pulse"></div>
+            <div class="w-1 h-4 bg-current animate-pulse delay-75"></div>
+            <div class="w-1 h-2 bg-current animate-pulse delay-150"></div>
+          </div>
+        {:else}
+          <Headphones size={20} />
+        {/if}
       </button>
     </div>
   </div>
@@ -141,173 +204,65 @@
 <style>
   .reader-header-new {
     flex-shrink: 0;
-    padding: 12px 18px;
-    background: rgba(8, 10, 14, 0.75);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
+    padding: 14px 24px;
+    background: #121212;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     z-index: 50;
-  }
-
-  .header-top {
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  .nav-controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 8px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .nav-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: transparent;
-    border: none;
-    color: inherit;
-    cursor: pointer;
-    opacity: 0.7;
-    transition: all 0.2s;
-  }
-
-  .nav-button:hover:not(:disabled) {
-    opacity: 1;
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .nav-button:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-
-  .nav-position {
-    font-size: 12px;
-    font-weight: 600;
-    min-width: 50px;
-    text-align: center;
-    opacity: 0.7;
-    font-variant-numeric: tabular-nums;
   }
 
   .back-button {
     display: flex;
     align-items: center;
-    gap: 4px;
-    color: inherit;
-    opacity: 0.7;
-    font-size: 14px;
-    font-weight: 500;
+    gap: 6px;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
     background: none;
     border: none;
-    padding: 4px 0;
     cursor: pointer;
-    transition: opacity 0.2s;
+    transition: transform 0.2s;
   }
 
   .back-button:hover {
-    opacity: 1;
+    transform: translateX(-4px);
   }
 
-  .header-controls-row {
+  .header-action-btn {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .zoom-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: inherit;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .zoom-controls button {
-    background: none;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: transparent;
     border: none;
-    color: inherit;
-    padding: 4px;
+    color: rgba(255, 255, 255, 0.6);
     cursor: pointer;
-    opacity: 0.7;
-    display: flex;
-    align-items: center;
+    transition: all 0.2s;
   }
 
-  .zoom-controls button:hover {
-    opacity: 1;
+  .header-action-btn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.08);
   }
 
-  .zoom-level {
-    font-size: 14px;
-    font-weight: 600;
-    min-width: 45px;
-    text-align: center;
-    opacity: 0.85;
-  }
-
-  .control-divider {
-    width: 1px;
-    height: 20px;
-    background: rgba(255, 255, 255, 0.12);
-  }
-
-  .action-buttons {
-    display: flex;
-    gap: 12px;
-  }
-
-  .action-buttons button {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: inherit;
-    padding: 6px;
-    cursor: pointer;
-    opacity: 0.8;
-    border-radius: 999px;
-    transition: opacity 0.2s;
-  }
-
-  .action-buttons button:hover {
-    opacity: 1;
-  }
-
-  @media (max-width: 640px) {
-    .reader-header-new {
-      padding: 10px 12px;
+  /* Bookmark Pop Animation */
+  @keyframes bookmarkPop {
+    0% {
+      transform: scale(1) rotate(0deg);
     }
-
-    .header-top {
-      margin-bottom: 8px;
+    40% {
+      transform: scale(1.3) rotate(-15deg);
     }
-
-    .zoom-controls {
-      width: 100%;
-      justify-content: space-between;
+    60% {
+      transform: scale(1.1) rotate(5deg);
     }
-
-    .action-buttons {
-      width: 100%;
-      justify-content: space-between;
+    100% {
+      transform: scale(1) rotate(0deg);
     }
+  }
 
-    .control-divider {
-      display: none;
-    }
+  :global(.animate-bookmark-pop) {
+    animation: bookmarkPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
   }
 </style>

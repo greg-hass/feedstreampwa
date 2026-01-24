@@ -258,7 +258,7 @@
         <img
           src={thumbnailUrl}
           alt={item.title}
-          class="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-[1.03]"
+          class="w-full h-full object-cover"
           loading="lazy"
         />
 

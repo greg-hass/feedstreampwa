@@ -5,18 +5,18 @@
 /* Base Design Tokens */
 :root {
   /* OLED Deep Theme (True Black & Zinc) */
-  --tw-colors-background: #000000; /* OLED Black */
-  --tw-colors-surface: #09090b;    /* Zinc 950 */
-  --tw-colors-raised: #18181b;     /* Zinc 900 */
-  --tw-colors-stroke: #27272a;     /* Zinc 800 - Subtle Borders */
-  
-  --tw-colors-accent: #10B981;     /* Electric Emerald */
+  --tw-colors-background: #000000;
+  --tw-colors-surface: #09090b;
+  --tw-colors-raised: #1c1c1e;
+  --tw-colors-stroke: #2c2c2e;
+
+  --tw-colors-accent: #10B981;
   --accent-color: #10B981;
   --accent-color-rgb: 16, 185, 129;
 
-  --text-base: #fafafa;            /* Zinc 50 */
-  --text-muted: #a1a1aa;           /* Zinc 400 */
-  
+  --text-base: #ffffff;
+  --text-muted: #8e8e93;
+
   /* Typography Scale - Premium Tightness */
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
@@ -28,11 +28,16 @@
 /* Light theme - High Contrast Swiss Style */
 :root.light {
   --tw-colors-background: #ffffff;
-  --tw-colors-surface: #f4f4f5;    /* Zinc 100 */
-  --tw-colors-raised: #e4e4e7;     /* Zinc 200 */
-  --tw-colors-stroke: #d4d4d8;     /* Zinc 300 */
-  --text-base: #09090b;            /* Zinc 950 */
-  --text-muted: #52525b;           /* Zinc 600 */
+  --tw-colors-surface: #f4f4f5;
+  /* Zinc 100 */
+  --tw-colors-raised: #e4e4e7;
+  /* Zinc 200 */
+  --tw-colors-stroke: #d4d4d8;
+  /* Zinc 300 */
+  --text-base: #09090b;
+  /* Zinc 950 */
+  --text-muted: #52525b;
+  /* Zinc 600 */
 }
 
 @layer base {
@@ -48,7 +53,12 @@
   }
 
   /* Premium Typography */
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply tracking-tight font-bold text-balance;
   }
 
@@ -58,21 +68,28 @@
   }
 
   /* Smooth interactions */
-  button, a, [role="button"] {
-    @apply transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] cursor-pointer outline-none;
+  button,
+  a,
+  [role="button"] {
+    @apply transition-all duration-300 ease-[cubic-bezier(0.2, 0, 0, 1)] cursor-pointer outline-none;
     -webkit-tap-highlight-color: transparent;
   }
 
-  button:active, a:active, [role="button"]:active {
-    @apply scale-[0.96];
+  button:active,
+  a:active,
+  [role="button"]:active {
+    @apply opacity-70 transition-opacity duration-100;
   }
 
-  button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible {
     @apply ring-2 ring-accent ring-offset-2 ring-offset-background;
   }
 }
 
 @layer utilities {
+
   /* Solid Premium Surfaces */
   .surface-base {
     @apply bg-surface border border-stroke;
@@ -80,6 +97,28 @@
 
   .surface-raised {
     @apply bg-raised border border-stroke;
+  }
+
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #3f3f46 transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #3f3f46;
+    border-radius: 99px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #52525b;
   }
 
   /* Premium Card Hover */
@@ -100,51 +139,136 @@
   .mask-t-b {
     mask-image: linear-gradient(to bottom, transparent 0%, black 20px, black calc(100% - 20px), transparent 100%);
   }
-  
+
   /* Safe Area Spacing */
-  .pt-safe { padding-top: var(--safe-top); }
-  .pb-safe { padding-bottom: var(--safe-bottom); }
+  .pt-safe {
+    padding-top: var(--safe-top);
+  }
+
+  .pb-safe {
+    padding-bottom: var(--safe-bottom);
+  }
 
   /* Scrollbar - Elegant & Slim */
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
 
   /* Animations - iOS Spring */
-  .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.2, 0, 0, 1); }
-  .animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.2, 0, 0, 1); }
+  .animate-fade-in {
+    animation: fadeIn 0.4s cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s cubic-bezier(0.2, 0, 0, 1);
+  }
 }
 
 /* Custom Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 ::-webkit-scrollbar-thumb {
-  background: #3f3f46; /* Zinc 700 */
+  background: #3f3f46;
+  /* Zinc 700 */
   border-radius: 99px;
   transition: background 0.2s;
 }
-::-webkit-scrollbar-thumb:hover { background: #52525b; /* Zinc 600 */ }
+
+::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+  /* Zinc 600 */
+}
 
 /* Keyframes */
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes slideInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-@keyframes pageTransition { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
 
-.page-transition { animation: pageTransition 0.3s ease-out; }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pageTransition {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition {
+  animation: pageTransition 0.3s ease-out;
+}
 
 /* Micro-interactions */
-button, a { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-button:active, a:active { transform: scale(0.98); }
+button,
+a {
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:active,
+a:active {
+  opacity: 0.7;
+}
 
 /* ===== Reduced Motion Support ===== */
 /* Respects user's OS-level motion preferences for accessibility */
 @media (prefers-reduced-motion: reduce) {
+
   /* Disable all animations */
   *,
   *::before,

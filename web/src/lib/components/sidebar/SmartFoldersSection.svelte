@@ -1,10 +1,5 @@
 <script lang="ts">
-  import {
-    Rss,
-    Youtube,
-    Hash,
-    Mic,
-  } from "lucide-svelte";
+  import { Rss, Youtube, Hash, Mic } from "lucide-svelte";
   import {
     viewMode,
     activeSmartFolder,
@@ -21,15 +16,14 @@
 
 <div class="space-y-1 mt-6">
   <div
-    class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-semibold text-emerald-200 uppercase tracking-[0.22em] mb-3"
+    class="text-xs font-semibold text-white/40 uppercase tracking-wider px-3 mb-2 mt-8"
   >
-    <span class="h-1.5 w-1.5 rounded-full bg-emerald-300/80"></span>
     Smart Folders
   </div>
 
   <!-- RSS -->
   <button
-    class="w-full flex items-center justify-between gap-3 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+    class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
       {$viewMode === 'smart' && $activeSmartFolder === 'rss'
       ? 'bg-white/10 text-white shadow-inner border border-white/5'
       : 'text-white/60 hover:text-white hover:bg-white/5'}"
@@ -59,7 +53,7 @@
 
   <!-- YouTube -->
   <button
-    class="w-full flex items-center justify-between gap-3 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+    class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
       {$viewMode === 'smart' && $activeSmartFolder === 'youtube'
       ? 'bg-white/10 text-white shadow-inner border border-white/5'
       : 'text-white/60 hover:text-white hover:bg-white/5'}"
@@ -89,7 +83,7 @@
 
   <!-- Reddit -->
   <button
-    class="w-full flex items-center justify-between gap-3 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+    class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
       {$viewMode === 'smart' && $activeSmartFolder === 'reddit'
       ? 'bg-white/10 text-white shadow-inner border border-white/5'
       : 'text-white/60 hover:text-white hover:bg-white/5'}"
@@ -119,7 +113,7 @@
 
   <!-- Podcasts -->
   <button
-    class="w-full flex items-center justify-between gap-3 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
+    class="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden
       {$viewMode === 'smart' && $activeSmartFolder === 'podcast'
       ? 'bg-white/10 text-white shadow-inner border border-white/5'
       : 'text-white/60 hover:text-white hover:bg-white/5'}"
@@ -129,8 +123,8 @@
       <Mic
         size={24}
         class={$viewMode === "smart" && $activeSmartFolder === "podcast"
-          ? "text-indigo-400"
-          : "text-indigo-400/70 group-hover:text-indigo-400"}
+          ? "text-blue-400"
+          : "text-blue-400/70 group-hover:text-blue-400"}
       />
       Podcasts
     </div>

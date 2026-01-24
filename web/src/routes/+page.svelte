@@ -6,6 +6,9 @@
     FolderPlus,
     LayoutGrid,
     Shuffle,
+    Rss,
+    X,
+    Search,
   } from "lucide-svelte";
 
   import MobileHeader from "$lib/components/MobileHeader.svelte";
@@ -21,6 +24,7 @@
   import DiscoverView from "$lib/components/DiscoverView.svelte";
   import SettingsView from "$lib/components/SettingsView.svelte";
   import AddFeedView from "$lib/components/AddFeedView.svelte";
+  import ReaderView from "$lib/components/ReaderView.svelte";
 
   import * as itemsApi from "$lib/api/items";
   import {
@@ -70,7 +74,7 @@
   } from "$lib/stores/feeds";
   import { settings } from "$lib/stores/settings";
   import { loadFolders, folders } from "$lib/stores/folders";
-  import { openReader } from "$lib/stores/reader";
+  import { openReader, showReader, currentItem } from "$lib/stores/reader";
   import { playMedia } from "$lib/stores/media";
   import { toast } from "$lib/stores/toast";
   import {
@@ -139,6 +143,31 @@
   let wasRefreshing = false;
   let showOnboarding = false;
   let articlesList: HTMLDivElement;
+  let isSearchOpen = false;
+  let desktopSearchInput: HTMLInputElement | null = null;
+
+  async function toggleSearchDesktop() {
+    isSearchOpen = !isSearchOpen;
+    if (isSearchOpen) {
+      await tick();
+      desktopSearchInput?.focus();
+    }
+  }
+
+  function handleDesktopSearchKeydown(event: KeyboardEvent) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      isSearchOpen = false;
+      desktopSearchInput?.blur();
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setSearchQuery("");
+      loadItems();
+      isSearchOpen = false;
+      desktopSearchInput?.blur();
+    }
+  }
 
   let liveRefreshTimer: ReturnType<typeof setTimeout> | null = null;
   let liveRefreshActive = false;
@@ -489,110 +518,167 @@
   <title>FeedStream - Private feed reader</title>
 </svelte:head>
 
-{#if isMobile}
-  <PullToRefresh on:refresh={refreshAll} />
-{/if}
-
-{#if !isMobile && $viewMode !== 'discover' && $viewMode !== 'settings' && $viewMode !== 'add-feed'}
-  <div class="sticky-header">
-    <div class="page-header">
-      <div class="flex items-center justify-between">
-        <h1 class="text-3xl font-bold text-white">{pageTitle}</h1>
-        <div class="flex items-center gap-3">
-          <div
-            class="flex items-center bg-surface/50 border border-stroke rounded-2xl p-1 gap-1"
-          >
-            <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-raised transition-all text-muted hover:text-white"
-              on:click={refreshAll}
-              class:spinning={$refreshState.isRefreshing}
-              title="Refresh"
-            >
-              <RefreshCw size={18} />
-            </button>
-            <div class="h-6 w-px bg-stroke/50 mx-1"></div>
-            <div class="flex items-center px-2 gap-2">
-              <span
-                class={`h-2 w-2 rounded-full ${
-                  $refreshStream.status === "connected"
-                    ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"
-                    : "bg-amber-500 animate-pulse"
-                }`}
-              ></span>
-              <span
-                class="text-[11px] font-bold tracking-tight text-muted uppercase"
+{#if !isMobile}
+  <div class="flex h-screen overflow-hidden bg-background">
+    <!-- Left Column: Articles List -->
+    <div class="w-1/2 flex flex-col border-r border-[#2c2c2e] overflow-hidden">
+      <div
+        class="sticky-header px-6 bg-[#121212] border-b border-[#2c2c2e] pt-4"
+      >
+        <div class="page-header mb-4">
+          <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-bold text-white tracking-tight">
+              {pageTitle}
+            </h1>
+            <div class="flex items-center gap-2">
+              <button
+                class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[#1c1c1e] transition-all text-[#8e8e93] hover:text-white border border-[#2c2c2e] bg-[#09090b]"
+                on:click={toggleSearchDesktop}
+                title="Search"
               >
-                {$refreshStream.status === "connected" ? "Live" : "Syncing"}
-              </span>
+                {#if isSearchOpen}
+                  <X size={16} />
+                {:else}
+                  <Search size={16} />
+                {/if}
+              </button>
+              <button
+                class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[#1c1c1e] transition-all text-[#8e8e93] hover:text-white border border-[#2c2c2e] bg-[#09090b]"
+                on:click={refreshAll}
+                class:spinning={$refreshState.isRefreshing}
+                title="Refresh"
+              >
+                <RefreshCw size={16} />
+              </button>
+              <button
+                class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[#1c1c1e] transition-all text-[#8e8e93] hover:text-white border border-[#2c2c2e] bg-[#09090b]"
+                on:click={cycleDensity}
+                title="Density"
+              >
+                <LayoutGrid size={16} />
+              </button>
             </div>
           </div>
-          <div
-            class="flex items-center bg-surface/50 border border-stroke rounded-2xl p-1 gap-1"
-          >
-            <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-raised transition-all text-muted hover:text-white relative"
-              on:click={cycleDensity}
-              title="View Density: {$viewDensity}"
-            >
-              <LayoutGrid size={18} />
-              <span
-                class="absolute top-2 right-2 w-1.5 h-1.5 bg-accent rounded-full opacity-50"
-              ></span>
-            </button>
-            <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl transition-all {$diversitySettings.enabled
-                ? 'bg-accent/10 text-accent border border-accent/20'
-                : 'text-muted hover:text-white hover:bg-raised'}"
-              on:click={() => diversitySettings.toggle()}
-              title="Source Diversity: {$diversitySettings.enabled
-                ? 'On'
-                : 'Off'}"
-            >
-              <Shuffle size={18} />
-            </button>
-          </div>
-
-          <button
-            class="h-10 px-4 rounded-xl border border-stroke bg-surface hover:bg-raised text-muted hover:text-white transition-all font-bold text-sm flex items-center gap-2"
-            on:click={() => isCreateFolderModalOpen.set(true)}
-          >
-            <FolderPlus size={18} />
-            <span>Folder</span>
-          </button>
-
-          <button
-            class="h-10 px-4 rounded-xl bg-accent hover:bg-accent/90 text-white transition-all font-bold text-sm shadow-lg shadow-accent/20 flex items-center gap-2"
-            on:click={() => setViewAddFeed()}
-          >
-            <Plus size={20} />
-            <span>Add Feed</span>
-          </button>
         </div>
+
+        <div
+          class="desktop-search overflow-hidden transition-all duration-300 ease-out"
+          class:open={isSearchOpen}
+        >
+          <div class="pb-4">
+            <SearchBar
+              bind:inputEl={desktopSearchInput}
+              bind:value={$searchQuery}
+              placeholder="Search..."
+              onInput={() => loadItems()}
+              onKeydown={handleDesktopSearchKeydown}
+              onClear={() => {
+                setSearchQuery("");
+                loadItems();
+              }}
+            />
+          </div>
+        </div>
+
+        {#if showTimeFilter}
+          <div class="pb-4">
+            <FilterChips
+              timeFilter={$timeFilter}
+              on:change={(e) => setTimeFilter(e.detail)}
+            />
+          </div>
+        {/if}
+      </div>
+
+      <div
+        class="flex-1 overflow-y-auto custom-scrollbar px-6 py-4"
+        bind:this={articlesList}
+      >
+        {#if $itemsLoading && $items.length === 0}
+          <div class="flex flex-col gap-0 w-full">
+            {#each Array(5) as _ (Math.random())}
+              <SkeletonCard density={$viewDensity} />
+            {/each}
+          </div>
+        {:else if $itemsError}
+          <div class="empty-state error">{$itemsError}</div>
+        {:else if $items.length === 0}
+          <div class="empty-state">No articles found.</div>
+        {:else}
+          {#if showNewArticlesBanner}
+            <!-- Banner Simplified for Desktop -->
+            <button
+              class="w-full mb-4 py-2 bg-accent/10 border border-accent/20 rounded-xl text-accent text-sm font-semibold hover:bg-accent/20 transition-colors"
+              on:click={viewNewArticles}
+            >
+              {newArticlesCount} new articles
+            </button>
+          {/if}
+          <FeedGrid
+            items={$items}
+            {liveInsertIds}
+            density={$viewDensity}
+            on:open={(e) => openReader(e.detail.item)}
+            on:toggleStar={(e) => toggleStar(e.detail.item)}
+            on:toggleRead={(e) => toggleRead(e.detail.item)}
+            on:play={(e) => {
+              const item = e.detail.item;
+              if (
+                item.source === "youtube" ||
+                (item.url &&
+                  (item.url.includes("youtube.com") ||
+                    item.url.includes("youtu.be")))
+              ) {
+                openReader(item);
+              } else {
+                playMedia(item);
+              }
+            }}
+          />
+
+          {#if $itemsLoading}
+            <div class="py-4 flex justify-center">
+              <div
+                class="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"
+              ></div>
+            </div>
+          {/if}
+
+          <div bind:this={sentinel} class="h-4 w-full"></div>
+        {/if}
       </div>
     </div>
 
-    <div class="search-bar-full">
-      <SearchBar
-        bind:value={$searchQuery}
-        placeholder="Search articles..."
-        onInput={() => loadItems()}
-        onClear={() => {
-          setSearchQuery("");
-          loadItems();
-        }}
-      />
+    <!-- Right Column: Detail View (Reader / Discover / Settings) -->
+    <div class="w-1/2 flex flex-col bg-surface/10 overflow-hidden relative">
+      {#if $viewMode === "discover"}
+        <div class="h-full overflow-y-auto custom-scrollbar p-8">
+          <DiscoverView />
+        </div>
+      {:else if $viewMode === "settings"}
+        <div class="h-full overflow-y-auto custom-scrollbar p-8">
+          <SettingsView />
+        </div>
+      {:else if $viewMode === "add-feed"}
+        <div class="h-full overflow-y-auto custom-scrollbar p-8">
+          <AddFeedView />
+        </div>
+      {:else if $showReader && $currentItem}
+        <ReaderView isEmbedded={true} />
+      {:else}
+        <div
+          class="flex-1 flex flex-col items-center justify-center text-muted select-none opacity-20"
+        >
+          <Rss size={64} class="mb-4" />
+          <p class="text-lg font-medium">Select an article to read</p>
+        </div>
+      {/if}
     </div>
-
-    {#if showTimeFilter}
-      <FilterChips
-        timeFilter={$timeFilter}
-        on:change={(e) => setTimeFilter(e.detail)}
-      />
-    {/if}
   </div>
-{/if}
+{:else}
+  <!-- Mobile Layout (Existing) -->
+  <PullToRefresh on:refresh={refreshAll} />
 
-{#if isMobile}
   <MobileHeader
     title={pageTitle}
     bind:searchQuery={$searchQuery}
@@ -607,7 +693,7 @@
     refreshStreamStatus={$refreshStream.status}
   />
 
-  {#if showTimeFilter && $viewMode !== 'discover' && $viewMode !== 'settings' && $viewMode !== 'add-feed'}
+  {#if showTimeFilter && $viewMode !== "discover" && $viewMode !== "settings" && $viewMode !== "add-feed"}
     <div class="mobile-sticky-filters" bind:clientHeight={mobileFiltersHeight}>
       <FilterChips
         timeFilter={$timeFilter}
@@ -615,23 +701,15 @@
       />
     </div>
   {/if}
-{/if}
 
-{#if $viewMode === 'discover'}
-  <div class="articles-list pt-4 px-4 md:pt-6">
-    <DiscoverView />
-  </div>
-{:else if $viewMode === 'settings'}
-  <div class="articles-list pt-4 px-4 md:pt-6">
-    <SettingsView />
-  </div>
-{:else if $viewMode === 'add-feed'}
-  <div class="articles-list pt-4 px-4 md:pt-6">
-    <AddFeedView />
-  </div>
-{:else}
-  <div class="articles-list" bind:this={articlesList}>
-    {#if $itemsLoading && $items.length === 0}
+  <div class="articles-list p-4 pb-20" bind:this={articlesList}>
+    {#if $viewMode === "discover"}
+      <DiscoverView />
+    {:else if $viewMode === "settings"}
+      <SettingsView />
+    {:else if $viewMode === "add-feed"}
+      <AddFeedView />
+    {:else if $itemsLoading && $items.length === 0}
       <div class="flex flex-col gap-0 w-full">
         {#each Array(5) as _ (Math.random())}
           <SkeletonCard density={$viewDensity} />
@@ -640,33 +718,19 @@
     {:else if $itemsError}
       <div class="empty-state error">{$itemsError}</div>
     {:else if $items.length === 0}
-      <div class="empty-state">
-        No articles found. Add some feeds to get started!
-      </div>
+      <div class="empty-state">No articles found.</div>
     {:else}
       {#if showNewArticlesBanner}
         <div
-          class="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent/30 bg-accent/10 px-4 py-3"
-          role="status"
-          aria-live="polite"
+          class="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-accent/30 bg-accent/10 px-4 py-3"
         >
           <span class="text-sm font-semibold text-white">
-            {newArticlesCount} new article{newArticlesCount === 1 ? "" : "s"} added
+            {newArticlesCount} new articles
           </span>
-          <div class="flex items-center gap-2">
-            <button
-              class="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white shadow-lg shadow-accent/30 transition-all hover:shadow-accent/40"
-              on:click={viewNewArticles}
-            >
-              View
-            </button>
-            <button
-              class="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-white/70 transition-colors hover:text-white"
-              on:click={dismissNewArticlesBanner}
-            >
-              Dismiss
-            </button>
-          </div>
+          <button
+            class="bg-accent px-3 py-1 rounded-full text-xs font-semibold"
+            on:click={viewNewArticles}>View</button
+          >
         </div>
       {/if}
       <FeedGrid
@@ -676,28 +740,7 @@
         on:open={(e) => openReader(e.detail.item)}
         on:toggleStar={(e) => toggleStar(e.detail.item)}
         on:toggleRead={(e) => toggleRead(e.detail.item)}
-        on:play={(e) => {
-          const item = e.detail.item;
-          if (
-            item.source === "youtube" ||
-            (item.url &&
-              (item.url.includes("youtube.com") || item.url.includes("youtu.be")))
-          ) {
-            openReader(item);
-          } else {
-            playMedia(item);
-          }
-        }}
       />
-
-      {#if $itemsLoading}
-        <div class="py-4 flex justify-center">
-          <div
-            class="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"
-          ></div>
-        </div>
-      {/if}
-
       <div bind:this={sentinel} class="h-4 w-full"></div>
     {/if}
   </div>
@@ -807,5 +850,15 @@
         var(--mobile-header-height, 52px) + var(--mobile-filters-height, 60px)
       );
     }
+  }
+  .desktop-search {
+    max-height: 0;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .desktop-search.open {
+    max-height: 80px;
+    opacity: 1;
   }
 </style>
