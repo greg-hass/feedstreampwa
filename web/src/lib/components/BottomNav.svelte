@@ -33,13 +33,6 @@
         size={24}
         strokeWidth={$viewMode === "all" ? 2.5 : 2}
       />
-      {#if $allArticlesUnread > 0}
-        <span
-          class="absolute -top-1 -right-1 bg-accent text-zinc-950 text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[14px] text-center border-2 border-background"
-        >
-          {$allArticlesUnread > 99 ? "99+" : $allArticlesUnread}
-        </span>
-      {/if}
     </div>
     <span
       class="text-[10px] font-medium transition-colors {$viewMode === 'all'
