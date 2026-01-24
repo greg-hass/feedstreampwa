@@ -14,6 +14,7 @@
   import { settings, updateSyncInterval } from "$lib/stores/settings";
   import DuplicatesModal from "$lib/components/modals/DuplicatesModal.svelte";
   import AISettings from "$lib/components/settings/AISettings.svelte";
+  import FeedHealthView from "$lib/components/FeedHealthView.svelte";
 
   let activeTab = "general";
   let isDuplicatesOpen = false;
@@ -174,17 +175,7 @@
 
       {:else if activeTab === "feeds"}
         <div class="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <section class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-            <div class="px-6 py-4 border-b border-zinc-800">
-              <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                <Activity size={20} class="text-zinc-500" />
-                Feed Health
-              </h3>
-            </div>
-            <div class="p-6">
-              <p class="text-zinc-400 text-sm">Feed health monitoring coming soon.</p>
-            </div>
-          </section>
+          <FeedHealthView />
         </div>
 
       {:else if activeTab === "maintenance"}
