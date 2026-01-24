@@ -40,9 +40,7 @@
       <div class="w-6 flex items-center justify-center">
         <LayoutDashboard
           size={24}
-          class={$viewMode === 'all'
-            ? "text-emerald-400"
-            : "text-current group-hover:text-white"}
+          class="text-emerald-400"
         />
       </div>
       All Articles
@@ -71,9 +69,7 @@
       <div class="w-6 flex items-center justify-center">
         <Sparkles
           size={24}
-          class={$viewMode === "discover"
-            ? "text-emerald-400"
-            : "text-current group-hover:text-white"}
+          class="text-emerald-400"
         />
       </div>
       Discover
@@ -92,9 +88,7 @@
       <div class="w-6 flex items-center justify-center">
         <Bookmark
           size={24}
-          class={$viewMode === "bookmarks"
-            ? "text-emerald-400"
-            : "text-current group-hover:text-white"}
+          class="text-emerald-400"
           fill={$viewMode === "bookmarks" ? "currentColor" : "none"}
         />
       </div>

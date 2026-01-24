@@ -5,12 +5,13 @@
     setViewBookmarks,
     viewMode,
     isSettingsModalOpen,
-    setViewDiscover
+    setViewDiscover,
+    setViewSettings
   } from "$lib/stores/ui";
   import { libraryTotal, allArticlesUnread } from "$lib/stores/counts";
 
   function openSettings() {
-    isSettingsModalOpen.set(true);
+    setViewSettings();
   }
 </script>
 
@@ -116,17 +117,18 @@
     class="flex flex-col items-center justify-center w-full gap-1 active:scale-95 transition-transform duration-200 py-1"
   >
     <div
-      class="relative p-1.5 rounded-2xl transition-all duration-300 {$isSettingsModalOpen
+      class="relative p-1.5 rounded-2xl transition-all duration-300 {$viewMode === 'settings'
         ? 'bg-zinc-800 text-white'
         : 'text-zinc-500'}"
     >
       <Settings
         size={24}
-        strokeWidth={$isSettingsModalOpen ? 2.5 : 2}
+        class={$viewMode === 'settings' ? 'text-emerald-400' : 'text-current'}
+        strokeWidth={$viewMode === 'settings' ? 2.5 : 2}
       />
     </div>
     <span
-      class="text-[10px] font-medium transition-colors {$isSettingsModalOpen
+      class="text-[10px] font-medium transition-colors {$viewMode === 'settings'
         ? 'text-white'
         : 'text-zinc-500'}"
     >

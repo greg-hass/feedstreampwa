@@ -110,7 +110,7 @@
       
       <button
         on:click={openAddFeed}
-        class="w-9 h-9 flex items-center justify-center rounded-full bg-accent text-zinc-950 active:scale-95 transition-all shadow-lg shadow-accent/20 z-40"
+        class="w-9 h-9 flex items-center justify-center rounded-full bg-emerald-500 text-black active:scale-95 transition-all shadow-lg shadow-emerald-500/20 z-50 relative"
         aria-label="Add feed"
       >
         <Plus size={20} strokeWidth={2.5} />

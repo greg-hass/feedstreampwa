@@ -19,6 +19,7 @@
   import KeyboardShortcutsHelp from "$lib/components/KeyboardShortcutsHelp.svelte";
   import ReadingStatsModal from "$lib/components/ReadingStatsModal.svelte";
   import DiscoverView from "$lib/components/DiscoverView.svelte";
+  import SettingsView from "$lib/components/SettingsView.svelte";
 
   import * as itemsApi from "$lib/api/items";
   import {
@@ -602,7 +603,7 @@
     refreshStreamStatus={$refreshStream.status}
   />
 
-  {#if showTimeFilter && $viewMode !== 'discover'}
+  {#if showTimeFilter && $viewMode !== 'discover' && $viewMode !== 'settings'}
     <div class="mobile-sticky-filters" bind:clientHeight={mobileFiltersHeight}>
       <FilterChips
         timeFilter={$timeFilter}
@@ -615,6 +616,10 @@
 {#if $viewMode === 'discover'}
   <div class="articles-list pt-4 px-4 md:pt-6">
     <DiscoverView />
+  </div>
+{:else if $viewMode === 'settings'}
+  <div class="articles-list pt-4 px-4 md:pt-6">
+    <SettingsView />
   </div>
 {:else}
   <div class="articles-list" bind:this={articlesList}>

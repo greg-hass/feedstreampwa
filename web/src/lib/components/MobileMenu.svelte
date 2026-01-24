@@ -40,6 +40,7 @@
     setViewBookmarks,
     setViewFolder,
     setViewFeed,
+    setViewSettings,
     contextMenu,
   } from "$lib/stores/ui";
   import {
@@ -207,11 +208,39 @@
         <div class="flex items-center gap-3">
           <LayoutDashboard
             size={24}
-            class={$viewMode === "all"
-              ? "text-accent"
-              : "text-current group-hover:text-white"}
+            class="text-emerald-400"
           />
-        All Articles
+          All Articles
+        </div>
+        {#if $allArticlesUnread > 0}
+          <span
+            class="text-xs font-medium {$viewMode === 'all'
+              ? 'text-white/70'
+              : 'text-white/40'}"
+          >
+            {formatUnreadTotal($allArticlesUnread, $allArticlesTotal)}
+          </span>
+        {/if}
+      </button>
+
+      <!-- Discover Button -->
+      <button
+        on:click={() => {
+          setViewDiscover();
+          closeMenu();
+        }}
+        class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative overflow-hidden
+        {$viewMode === 'discover'
+          ? 'bg-white/10 text-white shadow-inner border border-white/5'
+          : 'text-white/60 hover:text-white hover:bg-white/5'}"
+      >
+        <div class="flex items-center gap-3">
+          <Sparkles
+            size={24}
+            class="text-emerald-400"
+          />
+          Discover
+        </div>
       </button>
 
       <!-- Bookmarks Button -->
@@ -228,9 +257,7 @@
         <div class="flex items-center gap-3">
           <Bookmark
             size={24}
-            class={$viewMode === "bookmarks"
-              ? "text-[#FF9500]"
-              : "text-current group-hover:text-white"}
+            class="text-emerald-400"
             fill={$viewMode === "bookmarks" ? "currentColor" : "none"}
           />
           Bookmarks
@@ -245,6 +272,8 @@
           </span>
         {/if}
       </button>
+
+      <!-- Bookmarks Button -->
 
       <!-- Smart Folders Section -->
       <div
@@ -627,7 +656,10 @@
       <!-- Settings -->
       <button
         class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 cursor-pointer transition-colors w-full text-white/60 hover:text-white"
-        on:click={handleSettings}
+        on:click={() => {
+          setViewSettings();
+          closeMenu();
+        }}
       >
         <Settings size={24} />
         <span class="text-sm font-medium">Settings</span>
