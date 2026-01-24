@@ -71,7 +71,7 @@
   button,
   a,
   [role="button"] {
-    @apply transition-all duration-300 ease-[cubic-bezier(0.2, 0, 0, 1)] cursor-pointer outline-none;
+    @apply transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] cursor-pointer outline-none;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -161,11 +161,11 @@
 
   /* Animations - iOS Spring */
   .animate-fade-in {
-    animation: fadeIn 0.4s cubic-bezier(0.2, 0, 0, 1);
+    animation: fadeIn 0.4s cubic-bezier(0.2,0,0,1);
   }
 
   .animate-slide-up {
-    animation: slideUp 0.5s cubic-bezier(0.2, 0, 0, 1);
+    animation: slideUp 0.5s cubic-bezier(0.2,0,0,1);
   }
 }
 

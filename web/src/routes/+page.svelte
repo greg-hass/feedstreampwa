@@ -849,7 +849,7 @@
   .desktop-search {
     max-height: 0;
     opacity: 0;
-    transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+    transition: all 0.3s cubic-bezier(0.2,0,0,1);
   }
 
   .desktop-search.open {
