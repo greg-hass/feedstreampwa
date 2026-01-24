@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  import { createEventDispatcher, onDestroy, onMount, tick } from "svelte";
   import type { Item } from "$lib/types";
   import type { ViewDensity } from "$lib/stores/ui";
   import { calculateReadTime, formatReadTime } from "$lib/utils/readTime";
@@ -14,7 +14,8 @@
     CheckCircle2,
     Clock,
     Share2,
-    MoreHorizontal
+    MoreHorizontal,
+    X
   } from "lucide-svelte";
   import RedditIcon from "$lib/components/icons/RedditIcon.svelte";
   import OfflineBadge from "$lib/components/OfflineBadge.svelte";
@@ -27,6 +28,7 @@
   import { offlineArticles } from "$lib/stores/offlineArticles";
   import { diversitySettings } from "$lib/stores/diversity";
   import type { ItemWithDiversity } from "$lib/stores/diversity";
+  import * as itemsApi from "$lib/api/items";
 
   export let item: Item;
   export let feedType: "rss" | "youtube" | "reddit" | "podcast" = "rss";
@@ -34,6 +36,147 @@
   export let timeAgo: string = "";
 
   const dispatch = createEventDispatcher();
+
+  // Inline YouTube player state
+  let isInlinePlayerActive = false;
+  let inlinePlayerId: string;
+  let ytPlayer: any = null;
+  let ytProgressInterval: ReturnType<typeof setInterval> | null = null;
+  let isMobile = false;
+
+  onMount(() => {
+    isMobile = window.innerWidth < 768;
+    inlinePlayerId = `yt-inline-${item.id}`;
+  });
+
+  function handleInlinePlay(e: Event) {
+    e.stopPropagation();
+    if (!itemMeta.youtubeVideoId) return;
+
+    isInlinePlayerActive = true;
+
+    // Mark as read when playing
+    if (item.is_read === 0) {
+      itemsApi.toggleItemRead(item.id, true).catch(console.error);
+    }
+
+    // Wait for DOM to update then initialize player
+    tick().then(() => {
+      initInlineYouTubePlayer();
+    });
+  }
+
+  function closeInlinePlayer(e?: Event) {
+    if (e) e.stopPropagation();
+    syncPlaybackPosition();
+    stopProgressSync();
+    if (ytPlayer) {
+      try {
+        ytPlayer.destroy();
+      } catch (err) {}
+      ytPlayer = null;
+    }
+    isInlinePlayerActive = false;
+  }
+
+  function initInlineYouTubePlayer() {
+    if (!window.YT) {
+      loadYouTubeAPI();
+      return;
+    }
+
+    const videoId = itemMeta.youtubeVideoId;
+    if (!videoId) return;
+
+    const container = document.getElementById(inlinePlayerId);
+    if (!container) return;
+
+    const startPos = Math.floor(item.playback_position || 0);
+
+    ytPlayer = new window.YT.Player(inlinePlayerId, {
+      height: "100%",
+      width: "100%",
+      videoId: videoId,
+      playerVars: {
+        autoplay: 1,
+        playsinline: 1,
+        modestbranding: 1,
+        rel: 0,
+        start: startPos,
+      },
+      events: {
+        onStateChange: (event: any) => {
+          if (window.YT && event.data === window.YT.PlayerState.PLAYING) {
+            startProgressSync();
+          } else {
+            stopProgressSync();
+            syncPlaybackPosition();
+          }
+        },
+      },
+    });
+  }
+
+  function loadYouTubeAPI() {
+    if (window.YT) {
+      initInlineYouTubePlayer();
+      return;
+    }
+
+    const existingScript = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
+    if (existingScript) {
+      // API loading, wait for it
+      const checkYT = setInterval(() => {
+        if (window.YT && window.YT.Player) {
+          clearInterval(checkYT);
+          initInlineYouTubePlayer();
+        }
+      }, 100);
+      return;
+    }
+
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName("script")[0];
+    firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+
+    const originalCallback = (window as any).onYouTubeIframeAPIReady;
+    (window as any).onYouTubeIframeAPIReady = () => {
+      if (originalCallback) originalCallback();
+      initInlineYouTubePlayer();
+    };
+  }
+
+  function startProgressSync() {
+    if (ytProgressInterval) clearInterval(ytProgressInterval);
+    ytProgressInterval = setInterval(syncPlaybackPosition, 5000);
+  }
+
+  function stopProgressSync() {
+    if (ytProgressInterval) {
+      clearInterval(ytProgressInterval);
+      ytProgressInterval = null;
+    }
+  }
+
+  async function syncPlaybackPosition() {
+    if (!ytPlayer || !ytPlayer.getCurrentTime || !item) return;
+    try {
+      const currentTime = ytPlayer.getCurrentTime();
+      await itemsApi.updateVideoProgress(item.id, currentTime);
+    } catch (e) {
+      console.error("Failed to sync playback position:", e);
+    }
+  }
+
+  onDestroy(() => {
+    stopProgressSync();
+    if (ytPlayer) {
+      try {
+        ytPlayer.destroy();
+      } catch (e) {}
+    }
+  });
 
   // Extract YouTube video ID
   function extractYouTubeId(externalId: string | null | undefined, url: string | null | undefined): string | null {
@@ -136,108 +279,141 @@
 
 <!-- svelte-ignore a11y-no-noninteractive-element-to-interactive-role -->
 <article
-  class="group relative flex w-full transition-colors cursor-pointer overflow-hidden
-  {isCardLayout ? 'flex-col p-0 bg-surface border border-stroke rounded-2xl mb-4' : 'flex-row py-4 px-4 border-b border-stroke/50 last:border-0 items-start gap-4'}
-  {item.is_read ? 'opacity-60' : 'opacity-100'}"
-  on:click={handleClick}
-  on:keypress={(e) => e.key === "Enter" && handleClick(e)}
+  class="group relative flex w-full transition-colors overflow-hidden
+  {isCardLayout ? 'flex-col p-0 bg-surface border border-stroke rounded-2xl mb-4' : 'flex-col py-4 px-4 border-b border-stroke/50 last:border-0'}
+  {item.is_read ? 'opacity-60' : 'opacity-100'}
+  {isInlinePlayerActive ? '' : 'cursor-pointer'}"
+  on:click={(e) => !isInlinePlayerActive && handleClick(e)}
+  on:keypress={(e) => e.key === "Enter" && !isInlinePlayerActive && handleClick(e)}
   tabindex="0"
   role="button"
 >
-  
-  <!-- Image Section -->
-  {#if showImage}
-    <div 
-      class="{isCardLayout ? 'w-full aspect-video' : 'w-24 h-24 md:w-32 md:h-24 flex-shrink-0 order-last'} bg-zinc-900 overflow-hidden relative"
-      class:rounded-xl={!isCardLayout}
-    >
-      {#if itemMeta.youtubeVideoId}
-        <img
-          src={itemMeta.youtubeThumbnail}
-          alt=""
-          class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          on:error={handleYouTubeThumbnailError}
-        />
-        <div class="absolute inset-0 flex items-center justify-center bg-black/20">
-          <PlayCircle size={isCardLayout ? 48 : 24} class="text-white drop-shadow-lg opacity-90" fill="rgba(0,0,0,0.5)" />
-        </div>
-      {:else}
-        <img
-          src={itemMeta.thumbnailUrl}
-          alt=""
-          class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          on:error={handleImageError}
-        />
-      {/if}
-    </div>
-  {/if}
+  <!-- Main row for non-card layout -->
+  <div class="{isCardLayout ? 'flex flex-col' : 'flex flex-row items-start gap-4'}">
 
-  <!-- Content Section -->
-  <div class="flex-1 min-w-0 flex flex-col {isCardLayout ? 'p-4' : ''}">
-    
-    <!-- Meta Header -->
-    <div class="flex items-center gap-2 text-xs mb-1.5">
-      {#if item.feed_icon_url}
-        <img src={item.feed_icon_url} alt="" class="w-4 h-4 rounded-full" />
-      {:else}
-        <svelte:component this={currentStyle.icon} size={14} class={currentStyle.color} />
-      {/if}
-      
-      <span class="font-medium text-zinc-300 truncate max-w-[120px]">{item.feed_title}</span>
-      <span class="text-zinc-600">•</span>
-      <span class="text-zinc-500">{timeAgo}</span>
-      
-      {#if item.is_starred}
-         <Bookmark size={12} class="text-emerald-400 fill-emerald-400 ml-auto" />
-      {/if}
-    </div>
-
-    <!-- Title -->
-    <h3 class="{isCardLayout ? 'text-xl' : 'text-[17px]'} font-bold leading-tight text-balance text-white mb-2 tracking-tight">
-      {item.title}
-    </h3>
-    
-    <!-- Summary / Snippet (Card only or if no image) -->
-    {#if (isCardLayout || !showImage) && item.summary && density !== 'compact'}
-       <p class="text-sm text-zinc-400 line-clamp-2 mb-3 leading-relaxed">
-         {item.summary.replace(/<[^>]*>?/gm, "")}
-       </p>
+    <!-- Image Section (Right side thumbnail for comfortable layout) -->
+    {#if showImage && !isInlinePlayerActive}
+      <div
+        class="{isCardLayout ? 'w-full aspect-video' : 'w-24 h-24 md:w-32 md:h-24 flex-shrink-0 order-last'} bg-zinc-900 overflow-hidden relative"
+        class:rounded-xl={!isCardLayout}
+        on:click={itemMeta.youtubeVideoId ? handleInlinePlay : undefined}
+        on:keypress={(e) => e.key === "Enter" && itemMeta.youtubeVideoId && handleInlinePlay(e)}
+        role={itemMeta.youtubeVideoId ? "button" : undefined}
+        tabindex={itemMeta.youtubeVideoId ? 0 : undefined}
+      >
+        {#if itemMeta.youtubeVideoId}
+          <img
+            src={itemMeta.youtubeThumbnail}
+            alt=""
+            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            on:error={handleYouTubeThumbnailError}
+          />
+          <div class="absolute inset-0 flex items-center justify-center bg-black/20">
+            <PlayCircle size={isCardLayout ? 48 : 32} class="text-white drop-shadow-lg opacity-90" fill="rgba(255,0,0,0.8)" />
+          </div>
+        {:else}
+          <img
+            src={itemMeta.thumbnailUrl}
+            alt=""
+            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            on:error={handleImageError}
+          />
+        {/if}
+      </div>
     {/if}
 
-    <!-- Footer Actions -->
-    <div class="mt-auto flex items-center justify-between pt-1">
-       <div class="flex items-center gap-4 text-zinc-500">
-         {#if itemMeta.readTimeText}
-           <span class="text-xs flex items-center gap-1 font-medium">
-             <Clock size={12} /> {itemMeta.readTimeText}
-           </span>
-         {/if}
-       </div>
-       
-       <!-- Quick Actions (Hover only on desktop, or visible if spacious) -->
-       <div class="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-         <button 
-           class="p-1.5 rounded-full hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
-           on:click={handleStar}
-           title="Bookmark"
-         >
-           <Bookmark size={16} class="{item.is_starred ? 'fill-emerald-400 text-emerald-400 animate-bookmark-pop' : ''}" />
-         </button>
-         
-         <button 
-           class="p-1.5 rounded-full hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
-           on:click={handleRead}
-           title="Mark read"
-         >
-           {#if item.is_read}
-             <CheckCircle2 size={16} class="text-emerald-500" />
-           {:else}
-             <div class="w-4 h-4 rounded-full border-2 border-zinc-500"></div>
+    <!-- Content Section -->
+    <div class="flex-1 min-w-0 flex flex-col {isCardLayout ? 'p-4' : ''}">
+
+      <!-- Meta Header -->
+      <div class="flex items-center gap-2 text-xs mb-1.5">
+        {#if item.feed_icon_url}
+          <img src={item.feed_icon_url} alt="" class="w-4 h-4 rounded-full" />
+        {:else}
+          <svelte:component this={currentStyle.icon} size={14} class={currentStyle.color} />
+        {/if}
+
+        <span class="font-medium text-zinc-300 truncate max-w-[120px]">{item.feed_title}</span>
+        <span class="text-zinc-600">•</span>
+        <span class="text-zinc-500">{timeAgo}</span>
+
+        {#if item.is_starred}
+           <Bookmark size={12} class="text-emerald-400 fill-emerald-400 ml-auto" />
+        {/if}
+      </div>
+
+      <!-- Title -->
+      <h3 class="{isCardLayout ? 'text-xl' : 'text-[17px]'} font-bold leading-tight text-balance text-white mb-2 tracking-tight">
+        {item.title}
+      </h3>
+
+      <!-- Summary / Snippet (Card only or if no image) -->
+      {#if (isCardLayout || !showImage) && item.summary && density !== 'compact' && !isInlinePlayerActive}
+         <p class="text-sm text-zinc-400 line-clamp-2 mb-3 leading-relaxed">
+           {item.summary.replace(/<[^>]*>?/gm, "")}
+         </p>
+      {/if}
+
+      <!-- Footer Actions -->
+      <div class="mt-auto flex items-center justify-between pt-1">
+         <div class="flex items-center gap-4 text-zinc-500">
+           {#if itemMeta.readTimeText && !isInlinePlayerActive}
+             <span class="text-xs flex items-center gap-1 font-medium">
+               <Clock size={12} /> {itemMeta.readTimeText}
+             </span>
            {/if}
-         </button>
-       </div>
+         </div>
+
+         <!-- Quick Actions (Hover only on desktop, or visible if spacious) -->
+         <div class="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+           <button
+             class="p-1.5 rounded-full hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+             on:click={handleStar}
+             title="Bookmark"
+           >
+             <Bookmark size={16} class="{item.is_starred ? 'fill-emerald-400 text-emerald-400 animate-bookmark-pop' : ''}" />
+           </button>
+
+           <button
+             class="p-1.5 rounded-full hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+             on:click={handleRead}
+             title="Mark read"
+           >
+             {#if item.is_read}
+               <CheckCircle2 size={16} class="text-emerald-500" />
+             {:else}
+               <div class="w-4 h-4 rounded-full border-2 border-zinc-500"></div>
+             {/if}
+           </button>
+         </div>
+      </div>
     </div>
   </div>
+
+  <!-- Inline YouTube Player (shows below title when tapped) -->
+  {#if isInlinePlayerActive && itemMeta.youtubeVideoId}
+    <div class="mt-3 relative">
+      <!-- Close button -->
+      <button
+        class="absolute -top-2 -right-2 z-10 p-1.5 bg-zinc-900 rounded-full border border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors shadow-lg"
+        on:click={closeInlinePlayer}
+        title="Close video"
+      >
+        <X size={16} />
+      </button>
+
+      <!-- Video container -->
+      <div
+        class="relative w-full rounded-xl overflow-hidden bg-black"
+        style="padding-bottom: 56.25%;"
+      >
+        <div
+          id={inlinePlayerId}
+          class="absolute inset-0"
+        ></div>
+      </div>
+    </div>
+  {/if}
 
 </article>
 
