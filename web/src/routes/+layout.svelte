@@ -9,7 +9,6 @@
   import Toast from "$lib/components/Toast.svelte";
   import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
   import ErrorBoundary from "$lib/components/ErrorBoundary.svelte";
-  import ReaderView from "$lib/components/ReaderView.svelte";
   import CreateFolderModal from "$lib/components/modals/CreateFolderModal.svelte";
   import RenameModal from "$lib/components/modals/RenameModal.svelte";
   import FeedFolderPopover from "$lib/components/modals/FeedFolderPopover.svelte";
@@ -96,7 +95,6 @@
   <ConfirmDialog />
 
   <!-- Other Global Modals -->
-  <ReaderView />
   <CreateFolderModal />
   <RenameModal />
   <FeedFolderPopover />

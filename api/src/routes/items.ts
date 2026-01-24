@@ -221,6 +221,50 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
         return { ok: true, total, items };
     });
 
+    // Get single item by ID
+    fastify.get('/items/:id', async (request: FastifyRequest, reply: FastifyReply) => {
+        const { id } = request.params as { id: string };
+
+        try {
+            const item = db.prepare(`
+                SELECT
+                    i.id,
+                    i.feed_url,
+                    i.source,
+                    i.url,
+                    i.title,
+                    i.author,
+                    i.summary,
+                    i.content,
+                    i.media_url,
+                    i.media_thumbnail,
+                    i.media_type,
+                    i.is_read,
+                    i.is_starred,
+                    i.playback_position,
+                    i.guid,
+                    i.published_at,
+                    i.fetched_at,
+                    f.title as feed_title,
+                    f.kind
+                FROM items i
+                LEFT JOIN feeds f ON i.feed_url = f.url
+                WHERE i.id = ?
+            `).get(id);
+
+            if (!item) {
+                reply.code(404);
+                return { ok: false, error: 'Item not found' };
+            }
+
+            return { ok: true, item };
+        } catch (error) {
+            console.error('Failed to fetch item:', error);
+            reply.code(500);
+            return { ok: false, error: 'Failed to fetch item' };
+        }
+    });
+
     // Mark item as read/unread
     fastify.post('/items/:id/read', async (request: FastifyRequest, reply: FastifyReply) => {
         const { id } = request.params as { id: string };

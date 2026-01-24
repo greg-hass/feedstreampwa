@@ -168,3 +168,18 @@ export async function deleteItem(itemId: string): Promise<void> {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 }
+
+export async function getItemById(itemId: string): Promise<Article | null> {
+    const response = await fetchWithTimeout(`${API_BASE}/items/${itemId}`);
+
+    if (response.status === 404) {
+        return null;
+    }
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.item || null;
+}

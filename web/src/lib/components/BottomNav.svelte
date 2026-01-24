@@ -26,11 +26,12 @@
     <div
       class="relative p-1.5 rounded-2xl transition-all duration-300 {$viewMode ===
       'all'
-        ? 'bg-zinc-800 text-white'
-        : 'text-zinc-500'}"
+        ? 'bg-zinc-800'
+        : ''}"
     >
       <LayoutDashboard
         size={24}
+        class={$viewMode === 'all' ? 'text-emerald-400' : 'text-zinc-500'}
         strokeWidth={$viewMode === "all" ? 2.5 : 2}
       />
     </div>
@@ -51,11 +52,12 @@
     <div
       class="relative p-1.5 rounded-2xl transition-all duration-300 {$viewMode ===
       'discover'
-        ? 'bg-zinc-800 text-white'
-        : 'text-zinc-500'}"
+        ? 'bg-zinc-800'
+        : ''}"
     >
       <Sparkles
         size={24}
+        class={$viewMode === 'discover' ? 'text-emerald-400' : 'text-zinc-500'}
         strokeWidth={$viewMode === "discover" ? 2.5 : 2}
       />
     </div>

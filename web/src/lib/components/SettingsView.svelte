@@ -9,17 +9,19 @@
     Clock,
     CheckCircle2,
     Rss,
+    Sparkles,
   } from "lucide-svelte";
   import { settings, updateSyncInterval } from "$lib/stores/settings";
   import DuplicatesModal from "$lib/components/modals/DuplicatesModal.svelte";
-  import FeedHealthModal from "$lib/components/modals/FeedHealthModal.svelte";
+  import FeedHealthView from "$lib/components/FeedHealthView.svelte";
+  import AISettings from "$lib/components/settings/AISettings.svelte";
 
   let activeTab = "general";
   let isDuplicatesOpen = false;
-  let isFeedHealthOpen = false;
 
   const tabs = [
     { id: "general", label: "General", icon: Settings },
+    { id: "ai", label: "AI", icon: Sparkles },
     { id: "appearance", label: "Appearance", icon: Palette },
     { id: "feeds", label: "Feeds & Content", icon: Rss },
     { id: "maintenance", label: "Maintenance", icon: Database },
@@ -34,16 +36,16 @@
   }
 
   const syncOptions = [
-    { value: 0, label: "Manual only" },
-    { value: 900000, label: "Every 15 minutes" },
-    { value: 1800000, label: "Every 30 minutes" },
-    { value: 3600000, label: "Every hour" },
-    { value: 14400000, label: "Every 4 hours" },
+    { value: "0", label: "Manual only" },
+    { value: "900000", label: "Every 15 minutes" },
+    { value: "1800000", label: "Every 30 minutes" },
+    { value: "3600000", label: "Every hour" },
+    { value: "14400000", label: "Every 4 hours" },
   ];
 </script>
 
-<div class="max-w-6xl mx-auto pb-20 px-4 md:px-8">
-  <div class="mb-8 pt-6">
+<div class="max-w-5xl mx-auto pb-20">
+  <div class="mb-8">
     <div class="flex items-center gap-3 mb-2">
       <div
         class="w-10 h-10 rounded-xl bg-gradient-to-br from-zinc-700 to-zinc-600 flex items-center justify-center shadow-lg shadow-zinc-500/10"
@@ -99,11 +101,11 @@
                 </div>
                 <select
                   class="bg-zinc-950 border border-zinc-700 text-white text-sm rounded-lg px-3 py-2 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                  value={$settings.sync_interval}
-                  on:change={(e) => updateSyncInterval(e.currentTarget.value)}
+                  value={$settings.sync_interval === 'off' ? '0' : $settings.sync_interval}
+                  on:change={(e) => updateSyncInterval(e.currentTarget.value === '0' ? 'off' : e.currentTarget.value)}
                 >
                   {#each syncOptions as option}
-                    <option value={option.value}>{option.label}</option>
+                    <option value={option.value} class="bg-zinc-950 text-white">{option.label}</option>
                   {/each}
                 </select>
               </div>
@@ -124,7 +126,16 @@
             </div>
           </section>
         </div>
-      
+
+      {:else if activeTab === "ai"}
+        <div class="space-y-6">
+          <section class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+            <div class="p-6">
+              <AISettings />
+            </div>
+          </section>
+        </div>
+
       {:else if activeTab === "appearance"}
         <div class="space-y-6">
           <section class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
@@ -163,27 +174,8 @@
         </div>
 
       {:else if activeTab === "feeds"}
-        <div class="space-y-6">
-          <section class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-            <div class="px-6 py-4 border-b border-zinc-800">
-              <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                <Activity size={20} class="text-zinc-500" />
-                Feed Health
-              </h3>
-            </div>
-            <div class="p-6">
-              <p class="text-zinc-400 text-sm mb-6 leading-relaxed">
-                Monitor your feeds for connection errors, parsing issues, or unreachable hosts. Cleaning up broken feeds can significantly improve refresh performance and reduce data usage.
-              </p>
-              <button 
-                class="w-full sm:w-auto px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
-                on:click={() => isFeedHealthOpen = true}
-              >
-                <Activity size={18} />
-                Check Feed Health
-              </button>
-            </div>
-          </section>
+        <div class="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <FeedHealthView />
         </div>
 
       {:else if activeTab === "maintenance"}
@@ -255,4 +247,3 @@
 </div>
 
 <DuplicatesModal bind:isOpen={isDuplicatesOpen} />
-<FeedHealthModal bind:isOpen={isFeedHealthOpen} />

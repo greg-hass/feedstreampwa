@@ -1,16 +1,18 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../db/client.js';
 import { aiRecommendationService } from '../services/ai-recommendations.js';
+import { geminiAI } from '../services/gemini-ai.js';
+import { openaiAI } from '../services/openai-ai.js';
 import { createBackup, listBackups } from '../services/backup-service.js';
 import { findDiscussions } from '../services/discussion-service.js';
 import { env } from '../config/index.js';
 import fs from 'fs';
 import sanitizeHtml from 'sanitize-html';
-import { 
-    SettingsSchema, 
-    CreateRuleSchema, 
-    SummarizeItemSchema, 
-    DiscussionQuerySchema 
+import {
+    SettingsSchema,
+    CreateRuleSchema,
+    SummarizeItemSchema,
+    DiscussionQuerySchema
 } from '../types/schemas.js';
 
 const upsertHealthCheck = db.prepare(`
@@ -203,9 +205,43 @@ export default async function systemRoutes(fastify: FastifyInstance, options: an
             if (!textContent || textContent.length < 50) {
                  return { ok: true, summary: "Content too short or empty to summarize." };
             }
-            
-            const summary = await aiRecommendationService.summarizeArticle(db, item.title, textContent);
-            return { ok: true, summary };
+
+            // Try AI providers in order: Gemini 2.0 Flash -> OpenAI GPT-4o Mini
+            let summary: string;
+            let provider: string;
+
+            try {
+                // Try Gemini first (free tier available, fast)
+                if (await geminiAI.isAvailable(db)) {
+                    summary = await geminiAI.summarizeArticle(db, item.title, textContent);
+                    provider = `Gemini ${geminiAI.getModelName()}`;
+                } else if (await openaiAI.isAvailable(db)) {
+                    // Fall back to OpenAI if Gemini not available
+                    summary = await openaiAI.summarizeArticle(db, item.title, textContent);
+                    provider = `OpenAI ${openaiAI.getModelName()}`;
+                } else {
+                    reply.code(400);
+                    return { ok: false, error: 'No AI provider configured. Please add an API key in Settings → AI.' };
+                }
+
+                request.log.info({ provider, itemId }, 'Generated summary');
+                return { ok: true, summary, provider };
+            } catch (providerError: any) {
+                // If one provider fails, try the other
+                request.log.warn({ err: providerError }, 'Primary AI provider failed, trying fallback');
+
+                try {
+                    if (await openaiAI.isAvailable(db)) {
+                        summary = await openaiAI.summarizeArticle(db, item.title, textContent);
+                        provider = `OpenAI ${openaiAI.getModelName()} (fallback)`;
+                        return { ok: true, summary, provider };
+                    }
+                } catch (fallbackError: any) {
+                    request.log.error({ err: fallbackError }, 'Fallback AI provider also failed');
+                }
+
+                throw providerError; // Re-throw original error
+            }
         } catch (e: any) {
             request.log.error(e);
             reply.code(500);

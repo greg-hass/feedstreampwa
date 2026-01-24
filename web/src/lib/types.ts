@@ -103,6 +103,7 @@ export type FeedSearchResult = SearchResult;
 export interface Settings {
     sync_interval: string;
     gemini_api_key?: string;
+    openai_api_key?: string;
     [key: string]: string | undefined;
 }
 
