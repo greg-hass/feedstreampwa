@@ -1,7 +1,7 @@
 <script lang="ts">
   import { tick } from "svelte";
   import { Search, Plus, RefreshCw, X, FolderPlus, Rss } from "lucide-svelte";
-  import { isAddFeedModalOpen, isCreateFolderModalOpen, isMobileMenuOpen } from "$lib/stores/ui";
+  import { isCreateFolderModalOpen, isMobileMenuOpen, setViewAddFeed } from "$lib/stores/ui";
 
   export let title = "FeedStream";
   export let searchQuery = "";
@@ -18,7 +18,7 @@
   let searchInput: HTMLInputElement | null = null;
 
   function openAddFeed() {
-    isAddFeedModalOpen.set(true);
+    setViewAddFeed();
   }
 
   function toggleMenu() {

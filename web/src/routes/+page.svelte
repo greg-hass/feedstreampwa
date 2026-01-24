@@ -20,6 +20,7 @@
   import ReadingStatsModal from "$lib/components/ReadingStatsModal.svelte";
   import DiscoverView from "$lib/components/DiscoverView.svelte";
   import SettingsView from "$lib/components/SettingsView.svelte";
+  import AddFeedView from "$lib/components/AddFeedView.svelte";
 
   import * as itemsApi from "$lib/api/items";
   import {
@@ -39,6 +40,7 @@
   import type { Item, TimeFilter } from "$lib/types";
   import {
     isAddFeedModalOpen,
+    setViewAddFeed,
     isCreateFolderModalOpen,
     viewMode,
     activeSmartFolder,
@@ -491,7 +493,7 @@
   <PullToRefresh on:refresh={refreshAll} />
 {/if}
 
-{#if !isMobile}
+{#if !isMobile && $viewMode !== 'discover' && $viewMode !== 'settings' && $viewMode !== 'add-feed'}
   <div class="sticky-header">
     <div class="page-header">
       <div class="flex items-center justify-between">
@@ -560,7 +562,7 @@
 
           <button
             class="h-10 px-4 rounded-xl bg-accent hover:bg-accent/90 text-white transition-all font-bold text-sm shadow-lg shadow-accent/20 flex items-center gap-2"
-            on:click={() => isAddFeedModalOpen.set(true)}
+            on:click={() => setViewAddFeed()}
           >
             <Plus size={20} />
             <span>Add Feed</span>
@@ -588,7 +590,9 @@
       />
     {/if}
   </div>
-{:else}
+{/if}
+
+{#if isMobile}
   <MobileHeader
     title={pageTitle}
     bind:searchQuery={$searchQuery}
@@ -603,7 +607,7 @@
     refreshStreamStatus={$refreshStream.status}
   />
 
-  {#if showTimeFilter && $viewMode !== 'discover' && $viewMode !== 'settings'}
+  {#if showTimeFilter && $viewMode !== 'discover' && $viewMode !== 'settings' && $viewMode !== 'add-feed'}
     <div class="mobile-sticky-filters" bind:clientHeight={mobileFiltersHeight}>
       <FilterChips
         timeFilter={$timeFilter}
@@ -620,6 +624,10 @@
 {:else if $viewMode === 'settings'}
   <div class="articles-list pt-4 px-4 md:pt-6">
     <SettingsView />
+  </div>
+{:else if $viewMode === 'add-feed'}
+  <div class="articles-list pt-4 px-4 md:pt-6">
+    <AddFeedView />
   </div>
 {:else}
   <div class="articles-list" bind:this={articlesList}>

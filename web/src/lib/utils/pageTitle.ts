@@ -28,6 +28,8 @@ export function getPageTitle(
   if (viewMode === "unread") return "Unread";
   if (viewMode === "bookmarks") return "Bookmarks";
   if (viewMode === "discover") return "Discover";
+  if (viewMode === "settings") return "Settings";
+  if (viewMode === "add-feed") return "Add Feed";
 
   return "All Articles";
 }

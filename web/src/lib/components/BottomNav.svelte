@@ -4,7 +4,6 @@
     setViewAll,
     setViewBookmarks,
     viewMode,
-    isSettingsModalOpen,
     setViewDiscover,
     setViewSettings
   } from "$lib/stores/ui";

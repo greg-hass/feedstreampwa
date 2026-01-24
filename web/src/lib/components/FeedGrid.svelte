@@ -62,9 +62,8 @@
 </div>
 
 <style>
-  /* Content-visibility optimization for off-screen items */
+  /* Content-visibility optimization removed to prevent flickering */
   .feed-item-wrapper {
-    content-visibility: auto;
     contain-intrinsic-size: auto 120px; /* Estimated height for comfortable density */
   }
 

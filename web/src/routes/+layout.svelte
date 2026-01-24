@@ -4,7 +4,6 @@
   import BottomNav from "$lib/components/BottomNav.svelte";
   import MobileMenu from "$lib/components/MobileMenu.svelte";
   import MediaPlayer from "$lib/components/MediaPlayer.svelte";
-  import SettingsModal from "$lib/components/SettingsModal.svelte";
   import AddFeedModal from "$lib/components/AddFeedModal.svelte";
   import Toast from "$lib/components/Toast.svelte";
   import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
@@ -81,9 +80,6 @@
 
   <!-- Mobile Menu (Slide-in Drawer) -->
   <MobileMenu />
-
-  <!-- Settings Modal (Global Overlay) -->
-  <SettingsModal />
 
   <!-- Add Feed Modal (Global Overlay) -->
   <AddFeedModal />

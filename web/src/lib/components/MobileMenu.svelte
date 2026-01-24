@@ -28,7 +28,6 @@
   import RedditIcon from "./icons/RedditIcon.svelte";
   import {
     isMobileMenuOpen,
-    isSettingsModalOpen,
     isCreateFolderModalOpen,
     viewMode,
     activeSmartFolder,
@@ -91,11 +90,6 @@
 
   function closeMenu() {
     isMobileMenuOpen.set(false);
-  }
-
-  function handleSettings() {
-    closeMenu();
-    isSettingsModalOpen.set(true);
   }
 
   // Close menu when clicking backdrop

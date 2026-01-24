@@ -17,6 +17,9 @@ export const hasMore = writable(true);
 export const currentOffset = writable(0);
 const PAGE_SIZE = 50;
 
+// Track current params to detect context changes
+let currentParamsString = '';
+
 // Delta update tracking
 export const lastItemsFetchTimestamp = writable<string | null>(null);
 
@@ -46,11 +49,29 @@ export async function loadItems(params: {
 
     if (!isRefresh && !isDelta && get(itemsLoading)) return;
 
+    // Detect context change
+    const newParamsString = JSON.stringify({
+        feedUrl: params.feedUrl,
+        folderId: params.folderId,
+        smartFolder: params.smartFolder,
+        unreadOnly: params.unreadOnly,
+        starredOnly: params.starredOnly,
+        timeFilter: params.timeFilter ?? get(timeFilter),
+        query: get(searchQuery)
+    });
+
+    const isContextChange = newParamsString !== currentParamsString;
+    currentParamsString = newParamsString;
+
     itemsLoading.set(true);
     if (isRefresh && !isDelta) {
         itemsError.set(null);
-        // Don't clear items immediately to avoid flash
-        // items.set([]);
+        
+        // Clear items if context changed to avoid showing wrong data
+        if (isContextChange) {
+            items.set([]);
+        }
+        
         currentOffset.set(0);
         hasMore.set(true);
     }
