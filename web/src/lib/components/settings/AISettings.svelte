@@ -34,9 +34,6 @@
       saving = false;
     }
   }
-
-  $: geminiKey = $settings.gemini_api_key || '';
-  $: openaiKey = $settings.openai_api_key || '';
 </script>
 
 <div class="space-y-6">
