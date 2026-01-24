@@ -800,10 +800,6 @@
     font-weight: 700;
   }
 
-  .search-bar-full {
-    margin-bottom: 12px;
-  }
-
   .articles-list {
     display: flex;
     flex-direction: column;
@@ -840,8 +836,7 @@
   }
 
   @media (max-width: 768px) {
-    .page-header,
-    .search-bar-full {
+    .page-header {
       margin-bottom: 12px;
     }
 

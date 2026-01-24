@@ -296,8 +296,7 @@
     class:reader-embedded={isEmbedded}
     on:click={!isEmbedded ? handleOverlayClick : undefined}
     on:keydown={!isEmbedded ? handleOverlayKeydown : undefined}
-    role={!isEmbedded ? "button" : "region"}
-    tabindex={!isEmbedded ? 0 : -1}
+    role="presentation"
   >
     <div
       class="reader-container"

@@ -317,18 +317,16 @@
   >
     <!-- Image Section (Right side thumbnail for comfortable layout) -->
     {#if showImage && !isInlinePlayerActive && (!itemMeta.youtubeVideoId || !isMobile)}
-      <div
-        class="{isCardLayout
-          ? 'w-full aspect-video'
-          : 'w-24 h-24 md:w-32 md:h-24 flex-shrink-0 order-last'} bg-zinc-900 overflow-hidden relative"
-        class:rounded-xl={!isCardLayout}
-        on:click={itemMeta.youtubeVideoId ? handleInlinePlay : undefined}
-        on:keypress={(e) =>
-          e.key === "Enter" && itemMeta.youtubeVideoId && handleInlinePlay(e)}
-        role={itemMeta.youtubeVideoId ? "button" : undefined}
-        tabindex={itemMeta.youtubeVideoId ? 0 : undefined}
-      >
-        {#if itemMeta.youtubeVideoId}
+      {#if itemMeta.youtubeVideoId}
+        <button
+          class="{isCardLayout
+            ? 'w-full aspect-video'
+            : 'w-24 h-24 md:w-32 md:h-24 flex-shrink-0 order-last'} bg-zinc-900 overflow-hidden relative border-0 p-0 block cursor-pointer"
+          class:rounded-xl={!isCardLayout}
+          on:click|stopPropagation={handleInlinePlay}
+          type="button"
+          aria-label="Play video"
+        >
           <img
             src={itemMeta.youtubeThumbnail}
             alt=""
@@ -344,15 +342,23 @@
               fill="rgba(255,0,0,0.8)"
             />
           </div>
-        {:else}
+        </button>
+      {:else}
+        <div
+          class="{isCardLayout
+            ? 'w-full aspect-video'
+            : 'w-24 h-24 md:w-32 md:h-24 flex-shrink-0 order-last'} bg-zinc-900 overflow-hidden relative"
+          class:rounded-xl={!isCardLayout}
+          role="presentation"
+        >
           <img
             src={itemMeta.thumbnailUrl}
             alt=""
             class="w-full h-full object-cover"
             on:error={handleImageError}
           />
-        {/if}
-      </div>
+        </div>
+      {/if}
     {/if}
 
     <!-- Content Section -->
@@ -397,6 +403,7 @@
         <div
           class="mt-2 mb-3 relative w-full aspect-video rounded-xl overflow-hidden bg-black shadow-lg"
           on:click|stopPropagation
+          role="presentation"
         >
           {#if isInlinePlayerActive}
             <div id={inlinePlayerId} class="absolute inset-0"></div>
