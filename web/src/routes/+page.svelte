@@ -852,19 +852,6 @@
     color: #ff5252;
   }
 
-  .spinning {
-    animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
   @media (min-width: 769px) {
     .articles-list {
       padding-top: 20px; /* Reduced from 132px since header is sticky */
