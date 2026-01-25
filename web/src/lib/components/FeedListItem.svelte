@@ -180,7 +180,6 @@
     }
   });
 
-  // Extract YouTube video ID
   function extractYouTubeId(
     externalId: string | null | undefined,
     url: string | null | undefined,
@@ -193,6 +192,14 @@
       if (match) return match[1];
     }
     return null;
+  }
+
+  function extractImageFromContent(
+    html: string | null | undefined,
+  ): string | null {
+    if (!html) return null;
+    const match = html.match(/<img[^>]+src="([^">]+)"/);
+    return match ? match[1] : null;
   }
 
   let ytThumbnailQuality = "maxresdefault";
@@ -209,6 +216,9 @@
       ? `https://img.youtube.com/vi/${youtubeVideoId}/${ytThumbnailQuality}.jpg`
       : null;
     const readTime = item.summary ? calculateReadTime(item.summary) : 0;
+    const extractedImage = extractImageFromContent(
+      item.content || item.summary,
+    );
 
     return {
       youtubeVideoId,
@@ -217,7 +227,7 @@
         youtubeThumbnail ||
         (feedType === "podcast"
           ? item.feed_icon_url || item.media_thumbnail
-          : item.media_thumbnail),
+          : item.media_thumbnail || extractedImage),
       readTimeText: readTime > 0 ? formatReadTime(readTime) : null,
       isCached: $offlineArticles.has(item.id),
       showDiversityBadge:
@@ -252,9 +262,7 @@
 
   // Simplified logic: Compact = List (no image), Comfortable = Right Image, Spacious = Top Image (Card)
   $: showImage =
-    density !== "compact" &&
-    (itemMeta.thumbnailUrl || itemMeta.youtubeVideoId) &&
-    !imageError;
+    density !== "compact" && (itemMeta.thumbnailUrl || itemMeta.youtubeVideoId);
   $: isCardLayout = density === "spacious";
 
   const styles = {
@@ -351,12 +359,24 @@
           class:rounded-xl={!isCardLayout}
           role="presentation"
         >
-          <img
-            src={itemMeta.thumbnailUrl}
-            alt=""
-            class="w-full h-full object-cover"
-            on:error={handleImageError}
-          />
+          {#if imageError || !itemMeta.thumbnailUrl}
+            <div
+              class="absolute inset-0 flex items-center justify-center bg-zinc-900/50"
+            >
+              <svelte:component
+                this={currentStyle.icon}
+                size={24}
+                class="opacity-20 text-white"
+              />
+            </div>
+          {:else}
+            <img
+              src={itemMeta.thumbnailUrl}
+              alt=""
+              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              on:error={handleImageError}
+            />
+          {/if}
         </div>
       {/if}
     {/if}
@@ -459,39 +479,41 @@
             </span>
           {/if}
         </div>
-
-        <!-- Quick Actions (Hover only on desktop, or visible if spacious) -->
-        <div
-          class="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
-        >
-          <button
-            class="p-1.5 rounded-full hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
-            on:click={handleStar}
-            title="Bookmark"
-          >
-            <Bookmark
-              size={16}
-              class={item.is_starred
-                ? "fill-emerald-400 text-emerald-400 animate-bookmark-pop"
-                : ""}
-            />
-          </button>
-
-          <button
-            class="p-1.5 rounded-full hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
-            on:click={handleRead}
-            title="Mark read"
-          >
-            {#if item.is_read}
-              <CheckCircle2 size={16} class="text-emerald-500" />
-            {:else}
-              <div class="w-4 h-4 rounded-full border-2 border-zinc-500"></div>
-            {/if}
-          </button>
-        </div>
       </div>
     </div>
   </div>
+
+  <!-- Quick Actions (Unified Position: Bottom Right) -->
+  {#if !isInlinePlayerActive}
+    <div
+      class="absolute bottom-4 right-4 flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200 z-10"
+    >
+      <button
+        class="p-2 rounded-xl bg-black/40 backdrop-blur-md border border-white/5 text-zinc-400 hover:text-white hover:bg-black/60 transition-all duration-200 shadow-xl"
+        on:click={handleStar}
+        title="Bookmark"
+      >
+        <Bookmark
+          size={16}
+          class={item.is_starred
+            ? "fill-emerald-400 text-emerald-400 animate-bookmark-pop"
+            : ""}
+        />
+      </button>
+
+      <button
+        class="p-2 rounded-xl bg-black/40 backdrop-blur-md border border-white/5 text-zinc-400 hover:text-white hover:bg-black/60 transition-all duration-200 shadow-xl"
+        on:click={handleRead}
+        title="Mark read"
+      >
+        {#if item.is_read}
+          <CheckCircle2 size={16} class="text-emerald-500" />
+        {:else}
+          <div class="w-4 h-4 rounded-full border-2 border-zinc-500"></div>
+        {/if}
+      </button>
+    </div>
+  {/if}
 
   <!-- Inline YouTube Player (Desktop only here, Mobile moved above) -->
   {#if isInlinePlayerActive && itemMeta.youtubeVideoId && !isMobile}

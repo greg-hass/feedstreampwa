@@ -15,6 +15,16 @@ export const currentItem = writable<Item | null>(null);
 
 const readerCache = new Map<string, ReaderData>();
 
+// Sync currentItem with items list updates
+items.subscribe(($items) => {
+    const current = get(currentItem);
+    if (!current) return;
+    const updated = $items.find(i => i.id === current.id);
+    if (updated && (updated.is_starred !== current.is_starred || updated.is_read !== current.is_read)) {
+        currentItem.set(updated);
+    }
+});
+
 // Navigation state - derived from items list and currentItem
 export const readerNavigation = derived(
     [items, currentItem],

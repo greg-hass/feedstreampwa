@@ -23,6 +23,7 @@
   export let handleShare: () => Promise<void>;
   export let toggleTTS: () => void;
   export let ttsActive: boolean;
+  export let isEmbedded = false;
 
   let showTextSizes = false;
   const fontSizes: FontSize[] = ["small", "medium", "large"];
@@ -89,10 +90,14 @@
 <div class="reader-header-new">
   <div class="flex items-center justify-between gap-4">
     <!-- Left: Back -->
-    <button class="back-button" on:click={handleClose}>
-      <ChevronLeft size={24} />
-      <span class="hidden sm:inline">Back</span>
-    </button>
+    {#if !isEmbedded}
+      <button class="back-button" on:click={handleClose}>
+        <ChevronLeft size={24} />
+        <span class="hidden sm:inline">Back</span>
+      </button>
+    {:else}
+      <div class="w-6 h-6 sm:hidden"></div>
+    {/if}
 
     <!-- Right: Controls -->
     <div class="flex items-center gap-1 sm:gap-2">
@@ -171,7 +176,7 @@
         <Bookmark
           size={20}
           class={$currentItem?.is_starred
-            ? "fill-[#FF9500] text-[#FF9500] animate-bookmark-pop"
+            ? "fill-emerald-400 text-emerald-400 animate-bookmark-pop"
             : "text-white/60"}
         />
       </button>

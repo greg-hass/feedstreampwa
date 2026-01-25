@@ -438,7 +438,13 @@
     >
       <ReadingProgress {scrollContainer} />
 
-      <ReaderHeader {handleClose} {handleShare} {toggleTTS} {ttsActive} />
+      <ReaderHeader
+        {handleClose}
+        {handleShare}
+        {toggleTTS}
+        {ttsActive}
+        {isEmbedded}
+      />
 
       <div
         class="reader-scroll-container"
