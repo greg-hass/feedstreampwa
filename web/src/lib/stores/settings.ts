@@ -7,7 +7,8 @@ import * as settingsApi from '../api/settings';
 export const settings = writable<Settings>({
     sync_interval: 'off',
     gemini_api_key: '',
-    openai_api_key: ''
+    openai_api_key: '',
+    purge_retention: 'never'
 });
 export const settingsLoading = writable(false);
 export const settingsError = writable<string | null>(null);
@@ -16,7 +17,8 @@ export const settingsError = writable<string | null>(null);
 const defaultSettings: Settings = {
     sync_interval: 'off',
     gemini_api_key: '',
-    openai_api_key: ''
+    openai_api_key: '',
+    purge_retention: 'never'
 };
 
 // Actions
@@ -61,6 +63,16 @@ export async function updateOpenAIApiKey(apiKey: string): Promise<void> {
         settings.update((s) => ({ ...s, openai_api_key: apiKey }));
     } catch (err) {
         console.error('Failed to update OpenAI API key:', err);
+        throw err;
+    }
+}
+
+export async function updatePurgeRetention(retention: string): Promise<void> {
+    try {
+        await settingsApi.updateSettings({ purge_retention: retention });
+        settings.update((s) => ({ ...s, purge_retention: retention }));
+    } catch (err) {
+        console.error('Failed to update purge retention:', err);
         throw err;
     }
 }

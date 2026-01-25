@@ -10,14 +10,44 @@
     CheckCircle2,
     Rss,
     Sparkles,
+    Trash2,
+    Loader2,
   } from "lucide-svelte";
-  import { settings, updateSyncInterval } from "$lib/stores/settings";
+  import { settings, updateSyncInterval, updatePurgeRetention } from "$lib/stores/settings";
+  import { toast } from "$lib/stores/toast";
   import DuplicatesModal from "$lib/components/modals/DuplicatesModal.svelte";
   import AISettings from "$lib/components/settings/AISettings.svelte";
   import FeedHealthView from "$lib/components/FeedHealthView.svelte";
 
   let activeTab = "general";
   let isDuplicatesOpen = false;
+  let isPurging = false;
+
+  const purgeOptions = [
+    { value: "never", label: "Never" },
+    { value: "7", label: "7 days" },
+    { value: "14", label: "14 days" },
+    { value: "30", label: "30 days" },
+    { value: "60", label: "60 days" },
+    { value: "90", label: "90 days" },
+  ];
+
+  async function handlePurgeNow() {
+    isPurging = true;
+    try {
+      const response = await fetch("/api/items/purge", { method: "POST" });
+      if (!response.ok) {
+        throw new Error("Failed to purge items");
+      }
+      const result = await response.json();
+      toast.success(`Purged ${result.deleted} old items`);
+    } catch (err) {
+      toast.error("Failed to purge items");
+      console.error("Purge failed:", err);
+    } finally {
+      isPurging = false;
+    }
+  }
 
   const tabs = [
     { id: "general", label: "General", icon: Settings },
@@ -180,6 +210,58 @@
 
       {:else if activeTab === "maintenance"}
         <div class="space-y-6">
+          <!-- Purge Old Items Section -->
+          <section class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-zinc-800">
+              <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                <Trash2 size={20} class="text-zinc-500" />
+                Purge Old Items
+              </h3>
+            </div>
+            <div class="divide-y divide-zinc-800">
+              <div class="p-6 flex items-center justify-between">
+                <div>
+                  <div class="font-medium text-white">Auto-purge Retention</div>
+                  <div class="text-sm text-zinc-500 mt-1">Automatically delete read items older than this</div>
+                </div>
+                <select
+                  class="bg-zinc-950 border border-zinc-700 text-white text-sm rounded-lg px-3 py-2 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  value={$settings.purge_retention || 'never'}
+                  on:change={(e) => updatePurgeRetention(e.currentTarget.value)}
+                >
+                  {#each purgeOptions as option}
+                    <option value={option.value} class="bg-zinc-950 text-white">{option.label}</option>
+                  {/each}
+                </select>
+              </div>
+              <div class="p-6 flex items-center justify-between">
+                <div>
+                  <div class="font-medium text-white">Purge Now</div>
+                  <div class="text-sm text-zinc-500 mt-1">Manually delete old read items based on retention setting</div>
+                </div>
+                <button
+                  class="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                  on:click={handlePurgeNow}
+                  disabled={isPurging || $settings.purge_retention === 'never'}
+                >
+                  {#if isPurging}
+                    <Loader2 size={16} class="animate-spin" />
+                    Purging...
+                  {:else}
+                    Purge
+                  {/if}
+                </button>
+              </div>
+              <div class="px-6 py-4 bg-zinc-950/50">
+                <p class="text-xs text-zinc-500 flex items-center gap-2">
+                  <span class="text-amber-500">★</span>
+                  Bookmarked items are never purged, even if they exceed the retention period.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Database Maintenance Section -->
           <section class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
             <div class="px-6 py-4 border-b border-zinc-800">
               <h3 class="text-lg font-bold text-white flex items-center gap-2">
@@ -193,7 +275,7 @@
                   <div class="font-medium text-white">Manage Duplicates</div>
                   <div class="text-sm text-zinc-500 mt-1">Find and merge duplicate feed entries</div>
                 </div>
-                <button 
+                <button
                   class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-sm font-medium transition-colors border border-zinc-700 hover:border-zinc-600"
                   on:click={() => isDuplicatesOpen = true}
                 >

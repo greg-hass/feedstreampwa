@@ -455,4 +455,49 @@ export default async function itemRoutes(fastify: FastifyInstance, options: any)
             return { ok: false, error: 'Failed to delete item from database' };
         }
     });
+
+    // Purge old items (respects bookmarks)
+    fastify.post('/items/purge', async (request: FastifyRequest, reply: FastifyReply) => {
+        try {
+            // Get the purge retention setting from meta table
+            const retentionSetting = db.prepare("SELECT value FROM meta WHERE key = 'purge_retention'").get() as { value: string } | undefined;
+            const retentionDays = retentionSetting?.value || 'never';
+
+            if (retentionDays === 'never') {
+                return { ok: true, deleted: 0, message: 'Purge retention is set to never' };
+            }
+
+            const days = parseInt(retentionDays, 10);
+            if (isNaN(days) || days <= 0) {
+                reply.code(400);
+                return { ok: false, error: 'Invalid retention setting' };
+            }
+
+            // Calculate cutoff date
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - days);
+            const cutoffIso = cutoffDate.toISOString();
+
+            // Delete old read items that are NOT bookmarked
+            const result = db.prepare(`
+                DELETE FROM items
+                WHERE is_read = 1
+                  AND is_starred = 0
+                  AND COALESCE(published, created_at) < ?
+            `).run(cutoffIso);
+
+            fastify.log.info({ deleted: result.changes, cutoffDate: cutoffIso, retentionDays: days }, 'Purged old items');
+
+            return {
+                ok: true,
+                deleted: result.changes,
+                cutoffDate: cutoffIso,
+                retentionDays: days
+            };
+        } catch (error: any) {
+            fastify.log.error({ error }, 'Failed to purge items');
+            reply.code(500);
+            return { ok: false, error: 'Failed to purge items from database' };
+        }
+    });
 }

@@ -328,7 +328,7 @@
   class="group relative flex w-full overflow-hidden
   {isCardLayout
     ? 'flex-col p-0 bg-surface border border-[#2c2c2e] rounded-2xl mb-4'
-    : 'flex-col py-4 px-4 border-b border-[#2c2c2e] last:border-0'}
+    : 'flex-col py-4 border-b border-[#2c2c2e] last:border-0'}
   {item.is_read ? 'opacity-60' : 'opacity-100'}
   {isInlinePlayerActive ? '' : 'cursor-pointer'}"
   on:click={(e) => !isInlinePlayerActive && handleClick(e)}

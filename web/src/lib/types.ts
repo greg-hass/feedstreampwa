@@ -104,6 +104,7 @@ export interface Settings {
     sync_interval: string;
     gemini_api_key?: string;
     openai_api_key?: string;
+    purge_retention?: string; // 'never' | '7' | '14' | '30' | '60' | '90' days
     [key: string]: string | undefined;
 }
 
