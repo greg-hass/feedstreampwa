@@ -205,23 +205,6 @@
         {/if}
       </button>
 
-      <!-- Discover Button -->
-      <button
-        on:click={() => {
-          setViewDiscover();
-          closeMenu();
-        }}
-        class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative overflow-hidden
-        {$viewMode === 'discover'
-          ? 'bg-white/10 text-white shadow-inner border border-white/5'
-          : 'text-white/60 hover:text-white hover:bg-white/5'}"
-      >
-        <div class="flex items-center gap-3">
-          <Sparkles size={24} class="text-emerald-400" />
-          Discover
-        </div>
-      </button>
-
       <!-- Bookmarks Button -->
       <button
         on:click={() => {
@@ -252,7 +235,22 @@
         {/if}
       </button>
 
-      <!-- Bookmarks Button -->
+      <!-- Discover Button -->
+      <button
+        on:click={() => {
+          setViewDiscover();
+          closeMenu();
+        }}
+        class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative overflow-hidden
+        {$viewMode === 'discover'
+          ? 'bg-white/10 text-white shadow-inner border border-white/5'
+          : 'text-white/60 hover:text-white hover:bg-white/5'}"
+      >
+        <div class="flex items-center gap-3">
+          <Sparkles size={24} class="text-emerald-400" />
+          Discover
+        </div>
+      </button>
 
       <!-- Smart Folders Section -->
       <div
@@ -386,7 +384,7 @@
       </button>
 
       <!-- Feeds & Folders Tree -->
-      <div class="flex items-center justify-between px-3 mb-2 mt-8">
+      <div class="flex items-center justify-between gap-2 px-8 py-3">
         <div
           class="text-xs font-semibold text-white/40 uppercase tracking-wider"
         >
@@ -589,7 +587,6 @@
       {/if}
     </div>
 
-    <!-- Settings -->
     <div
       class="flex-shrink-0 p-4 border-t border-white/5 bg-[#121212] space-y-2"
     >

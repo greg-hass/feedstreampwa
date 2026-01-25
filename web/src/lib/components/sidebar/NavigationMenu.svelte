@@ -46,20 +46,6 @@
     {/if}
   </button>
 
-  <!-- Discover Button -->
-  <button
-    class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative overflow-hidden
-      {$viewMode === 'discover'
-      ? 'bg-[#1c1c1e] text-white border border-[#2c2c2e]'
-      : 'text-[#8e8e93] hover:text-white hover:bg-[#161617]'}"
-    on:click={setViewDiscover}
-  >
-    <div class="flex items-center gap-3">
-      <Sparkles size={24} class="text-emerald-400" />
-      Discover
-    </div>
-  </button>
-
   <!-- Bookmarks -->
   <button
     class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative overflow-hidden
@@ -86,5 +72,19 @@
         {$libraryTotal}
       </span>
     {/if}
+  </button>
+
+  <!-- Discover Button -->
+  <button
+    class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative overflow-hidden
+      {$viewMode === 'discover'
+      ? 'bg-[#1c1c1e] text-white border border-[#2c2c2e]'
+      : 'text-[#8e8e93] hover:text-white hover:bg-[#161617]'}"
+    on:click={setViewDiscover}
+  >
+    <div class="flex items-center gap-3">
+      <Sparkles size={24} class="text-emerald-400" />
+      Discover
+    </div>
   </button>
 </div>

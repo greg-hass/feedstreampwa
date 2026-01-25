@@ -521,11 +521,16 @@
 {#if !isMobile}
   <div class="flex h-screen overflow-hidden bg-background">
     <!-- Left Column: Articles List -->
-    <div class="w-1/2 flex flex-col border-r border-[#2c2c2e] overflow-hidden">
+    <div
+      class="w-1/2 flex flex-col border-r border-[#2c2c2e] overflow-hidden"
+      class:hidden={$viewMode === "discover" ||
+        $viewMode === "settings" ||
+        $viewMode === "add-feed"}
+    >
       <div
         class="sticky-header px-6 bg-[#121212] border-b border-[#2c2c2e] pt-4"
       >
-        <div class="page-header mb-4">
+        <div class="page-header mb-4 px-4">
           <div class="flex items-center justify-between">
             <h1 class="text-2xl font-bold text-white tracking-tight">
               {pageTitle}
@@ -562,7 +567,7 @@
         </div>
 
         <div
-          class="desktop-search overflow-hidden transition-all duration-300 ease-out"
+          class="desktop-search overflow-hidden transition-all duration-300 ease-out px-6"
           class:open={isSearchOpen}
         >
           <div class="pb-4">
@@ -581,7 +586,7 @@
         </div>
 
         {#if showTimeFilter}
-          <div class="pb-4">
+          <div class="pb-4 px-4">
             <FilterChips
               timeFilter={$timeFilter}
               on:change={(e) => setTimeFilter(e.detail)}
@@ -650,17 +655,24 @@
     </div>
 
     <!-- Right Column: Detail View (Reader / Discover / Settings) -->
-    <div class="w-1/2 flex flex-col bg-surface/10 overflow-hidden relative">
+    <div
+      class="flex flex-col bg-surface/10 overflow-hidden relative
+      {$viewMode === 'discover' ||
+      $viewMode === 'settings' ||
+      $viewMode === 'add-feed'
+        ? 'w-full'
+        : 'w-1/2'}"
+    >
       {#if $viewMode === "discover"}
-        <div class="h-full overflow-y-auto custom-scrollbar p-8">
+        <div class="h-full overflow-y-auto custom-scrollbar px-10 py-8">
           <DiscoverView />
         </div>
       {:else if $viewMode === "settings"}
-        <div class="h-full overflow-y-auto custom-scrollbar p-8">
+        <div class="h-full overflow-y-auto custom-scrollbar px-10 py-8">
           <SettingsView />
         </div>
       {:else if $viewMode === "add-feed"}
-        <div class="h-full overflow-y-auto custom-scrollbar p-8">
+        <div class="h-full overflow-y-auto custom-scrollbar px-10 py-8">
           <AddFeedView />
         </div>
       {:else if $showReader && $currentItem}
@@ -849,7 +861,7 @@
   .desktop-search {
     max-height: 0;
     opacity: 0;
-    transition: all 0.3s cubic-bezier(0.2,0,0,1);
+    transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
   }
 
   .desktop-search.open {
