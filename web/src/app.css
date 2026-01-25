@@ -71,7 +71,8 @@
   button,
   a,
   [role="button"] {
-    @apply transition-all duration-300 ease-[cubic-bezier(0.2, 0, 0, 1)] cursor-pointer outline-none;
+    @apply transition-all duration-300 cursor-pointer outline-none;
+    transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
     -webkit-tap-highlight-color: transparent;
   }
 
