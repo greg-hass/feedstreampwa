@@ -616,61 +616,63 @@
       </div>
 
       <div
-        class="flex-1 overflow-y-auto custom-scrollbar px-6 py-4"
+        class="flex-1 overflow-y-auto custom-scrollbar"
         bind:this={articlesList}
       >
-        {#if $itemsLoading && $items.length === 0}
-          <div class="flex flex-col gap-0 w-full">
-            {#each Array(5) as _ (Math.random())}
-              <SkeletonCard density={$viewDensity} />
-            {/each}
-          </div>
-        {:else if $itemsError}
-          <div class="empty-state error">{$itemsError}</div>
-        {:else if $items.length === 0}
-          <div class="empty-state">No articles found.</div>
-        {:else}
-          {#if showNewArticlesBanner}
-            <!-- Banner Simplified for Desktop -->
-            <button
-              class="w-full mb-4 py-2 bg-accent/10 border border-accent/20 rounded-xl text-accent text-sm font-semibold hover:bg-accent/20 transition-colors"
-              on:click={viewNewArticles}
-            >
-              {newArticlesCount} new articles
-            </button>
-          {/if}
-          <FeedGrid
-            items={$items}
-            {liveInsertIds}
-            density={$viewDensity}
-            on:open={(e) => openReader(e.detail.item)}
-            on:toggleStar={(e) => toggleStar(e.detail.item)}
-            on:toggleRead={(e) => toggleRead(e.detail.item)}
-            on:play={(e) => {
-              const item = e.detail.item;
-              if (
-                item.source === "youtube" ||
-                (item.url &&
-                  (item.url.includes("youtube.com") ||
-                    item.url.includes("youtu.be")))
-              ) {
-                openReader(item);
-              } else {
-                playMedia(item);
-              }
-            }}
-          />
-
-          {#if $itemsLoading}
-            <div class="py-4 flex justify-center">
-              <div
-                class="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"
-              ></div>
+        <div class="px-6 py-4">
+          {#if $itemsLoading && $items.length === 0}
+            <div class="flex flex-col gap-0 w-full">
+              {#each Array(5) as _ (Math.random())}
+                <SkeletonCard density={$viewDensity} />
+              {/each}
             </div>
-          {/if}
+          {:else if $itemsError}
+            <div class="empty-state error">{$itemsError}</div>
+          {:else if $items.length === 0}
+            <div class="empty-state">No articles found.</div>
+          {:else}
+            {#if showNewArticlesBanner}
+              <!-- Banner Simplified for Desktop -->
+              <button
+                class="w-full mb-4 py-2 bg-accent/10 border border-accent/20 rounded-xl text-accent text-sm font-semibold hover:bg-accent/20 transition-colors"
+                on:click={viewNewArticles}
+              >
+                {newArticlesCount} new articles
+              </button>
+            {/if}
+            <FeedGrid
+              items={$items}
+              {liveInsertIds}
+              density={$viewDensity}
+              on:open={(e) => openReader(e.detail.item)}
+              on:toggleStar={(e) => toggleStar(e.detail.item)}
+              on:toggleRead={(e) => toggleRead(e.detail.item)}
+              on:play={(e) => {
+                const item = e.detail.item;
+                if (
+                  item.source === "youtube" ||
+                  (item.url &&
+                    (item.url.includes("youtube.com") ||
+                      item.url.includes("youtu.be")))
+                ) {
+                  openReader(item);
+                } else {
+                  playMedia(item);
+                }
+              }}
+            />
 
-          <div bind:this={sentinel} class="h-4 w-full"></div>
-        {/if}
+            {#if $itemsLoading}
+              <div class="py-4 flex justify-center">
+                <div
+                  class="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"
+                ></div>
+              </div>
+            {/if}
+
+            <div bind:this={sentinel} class="h-4 w-full"></div>
+          {/if}
+        </div>
       </div>
     </div>
 
