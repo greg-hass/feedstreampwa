@@ -338,7 +338,7 @@
     class={isCardLayout ? "flex flex-col" : "flex flex-row items-start gap-4"}
   >
     <!-- Image Section (Right side thumbnail for comfortable layout) -->
-    {#if showImage && !isInlinePlayerActive && (!itemMeta.youtubeVideoId || !isMobile) && !imageError}
+    {#if showImage && !isInlinePlayerActive && (!itemMeta.youtubeVideoId || !isMobile) && !imageError && itemMeta.thumbnailUrl}
       {#if itemMeta.youtubeVideoId}
         <button
           class="{isCardLayout
@@ -373,24 +373,12 @@
           class:rounded-xl={!isCardLayout}
           role="presentation"
         >
-          {#if imageError || !itemMeta.thumbnailUrl}
-            <div
-              class="absolute inset-0 flex items-center justify-center bg-zinc-900/50"
-            >
-              <svelte:component
-                this={currentStyle.icon}
-                size={24}
-                class="opacity-20 text-white"
-              />
-            </div>
-          {:else}
-            <img
-              src={itemMeta.thumbnailUrl}
-              alt=""
-              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              on:error={handleImageError}
-            />
-          {/if}
+          <img
+            src={itemMeta.thumbnailUrl}
+            alt=""
+            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            on:error={handleImageError}
+          />
         </div>
       {/if}
     {/if}
