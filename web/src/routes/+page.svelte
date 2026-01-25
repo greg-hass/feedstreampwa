@@ -532,7 +532,7 @@
         $viewMode === "add-feed"}
     >
       <div
-        class="sticky-header px-6 bg-[#121212] border-b border-[#2c2c2e] pt-4"
+        class="sticky-header pl-6 pr-[calc(1.5rem+6px)] bg-[#121212] border-b border-[#2c2c2e] pt-4"
       >
         <div class="page-header mb-4">
           <div class="flex items-center justify-between">
