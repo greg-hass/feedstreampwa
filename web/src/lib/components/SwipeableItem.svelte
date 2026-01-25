@@ -1,7 +1,15 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import { CheckCircle2, Bookmark } from "lucide-svelte";
-  import { SWIPE_THRESHOLD, MAX_SWIPE, INTENT_THRESHOLD } from "$lib/constants/gestures";
+  import {
+    SWIPE_THRESHOLD,
+    MAX_SWIPE,
+    INTENT_THRESHOLD,
+  } from "$lib/constants/gestures";
+
+  // Less sensitive thresholds
+  const S_THRESHOLD = SWIPE_THRESHOLD * 1.5; // 180px
+  const I_THRESHOLD = INTENT_THRESHOLD * 2.5; // 62.5px
 
   const dispatch = createEventDispatcher();
 
@@ -13,8 +21,8 @@
   $: swipeDistance = isSwiping
     ? Math.max(Math.min(currentX - startX, MAX_SWIPE), -MAX_SWIPE)
     : 0;
-  $: swipeProgress = Math.abs(swipeDistance) / SWIPE_THRESHOLD;
-  $: shouldTrigger = Math.abs(swipeDistance) >= SWIPE_THRESHOLD;
+  $: swipeProgress = Math.abs(swipeDistance) / S_THRESHOLD;
+  $: shouldTrigger = Math.abs(swipeDistance) >= S_THRESHOLD;
 
   $: backgroundColor = (() => {
     if (!isSwiping) return "transparent";
@@ -50,7 +58,7 @@
     // Determine scrolling vs swiping intent early
     if (
       !swipeDirection &&
-      (Math.abs(diffX) > INTENT_THRESHOLD || Math.abs(diffY) > INTENT_THRESHOLD)
+      (Math.abs(diffX) > I_THRESHOLD || Math.abs(diffY) > I_THRESHOLD)
     ) {
       // If vertical movement is greater than horizontal, it's a scroll
       if (Math.abs(diffY) > Math.abs(diffX) * 1.5) {
@@ -115,7 +123,7 @@
     const newX = e.clientX;
     const diffX = newX - startX;
 
-    if (!isSwiping && Math.abs(diffX) > INTENT_THRESHOLD) {
+    if (!isSwiping && Math.abs(diffX) > I_THRESHOLD) {
       isSwiping = true;
       swipeDirection = diffX > 0 ? "right" : "left";
     }

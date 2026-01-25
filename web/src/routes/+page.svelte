@@ -528,9 +528,9 @@
         $viewMode === "add-feed"}
     >
       <div
-        class="sticky-header px-6 bg-[#121212] border-b border-[#2c2c2e] pt-4"
+        class="sticky-header px-10 bg-[#121212] border-b border-[#2c2c2e] pt-4"
       >
-        <div class="page-header mb-4 px-4">
+        <div class="page-header mb-4">
           <div class="flex items-center justify-between">
             <h1 class="text-2xl font-bold text-white tracking-tight">
               {pageTitle}
@@ -567,7 +567,7 @@
         </div>
 
         <div
-          class="desktop-search overflow-hidden transition-all duration-300 ease-out px-6"
+          class="desktop-search overflow-hidden transition-all duration-300 ease-out"
           class:open={isSearchOpen}
         >
           <div class="pb-4">
@@ -586,7 +586,7 @@
         </div>
 
         {#if showTimeFilter}
-          <div class="pb-4 px-4">
+          <div class="pb-4">
             <FilterChips
               timeFilter={$timeFilter}
               on:change={(e) => setTimeFilter(e.detail)}
