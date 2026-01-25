@@ -528,7 +528,7 @@
         $viewMode === "add-feed"}
     >
       <div
-        class="sticky-header px-10 bg-[#121212] border-b border-[#2c2c2e] pt-4"
+        class="sticky-header px-4 bg-[#121212] border-b border-[#2c2c2e] pt-4"
       >
         <div class="page-header mb-4">
           <div class="flex items-center justify-between">
@@ -664,15 +664,15 @@
         : 'w-1/2'}"
     >
       {#if $viewMode === "discover"}
-        <div class="h-full overflow-y-auto custom-scrollbar px-10 py-8">
+        <div class="h-full overflow-y-auto custom-scrollbar px-6 py-8">
           <DiscoverView />
         </div>
       {:else if $viewMode === "settings"}
-        <div class="h-full overflow-y-auto custom-scrollbar px-10 py-8">
+        <div class="h-full overflow-y-auto custom-scrollbar px-6 py-8">
           <SettingsView />
         </div>
       {:else if $viewMode === "add-feed"}
-        <div class="h-full overflow-y-auto custom-scrollbar px-10 py-8">
+        <div class="h-full overflow-y-auto custom-scrollbar px-6 py-8">
           <AddFeedView />
         </div>
       {:else if $showReader && $currentItem}

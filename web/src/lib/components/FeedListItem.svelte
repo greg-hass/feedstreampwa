@@ -220,14 +220,28 @@
       item.content || item.summary,
     );
 
+    let thumbUrl =
+      youtubeThumbnail ||
+      (feedType === "podcast"
+        ? item.feed_icon_url || item.media_thumbnail
+        : item.media_thumbnail || extractedImage);
+
+    // Filter Reddit placeholders
+    if (
+      thumbUrl &&
+      typeof thumbUrl === "string" &&
+      (thumbUrl.toLowerCase() === "self" ||
+        thumbUrl.toLowerCase() === "default" ||
+        thumbUrl.toLowerCase() === "nsfw" ||
+        thumbUrl.toLowerCase() === "none")
+    ) {
+      thumbUrl = null;
+    }
+
     return {
       youtubeVideoId,
       youtubeThumbnail,
-      thumbnailUrl:
-        youtubeThumbnail ||
-        (feedType === "podcast"
-          ? item.feed_icon_url || item.media_thumbnail
-          : item.media_thumbnail || extractedImage),
+      thumbnailUrl: thumbUrl,
       readTimeText: readTime > 0 ? formatReadTime(readTime) : null,
       isCached: $offlineArticles.has(item.id),
       showDiversityBadge:
@@ -324,7 +338,7 @@
     class={isCardLayout ? "flex flex-col" : "flex flex-row items-start gap-4"}
   >
     <!-- Image Section (Right side thumbnail for comfortable layout) -->
-    {#if showImage && !isInlinePlayerActive && (!itemMeta.youtubeVideoId || !isMobile)}
+    {#if showImage && !isInlinePlayerActive && (!itemMeta.youtubeVideoId || !isMobile) && !imageError}
       {#if itemMeta.youtubeVideoId}
         <button
           class="{isCardLayout
@@ -400,13 +414,6 @@
         >
         <span class="text-zinc-600">•</span>
         <span class="text-zinc-500">{timeAgo}</span>
-
-        {#if item.is_starred}
-          <Bookmark
-            size={12}
-            class="text-emerald-400 fill-emerald-400 ml-auto"
-          />
-        {/if}
       </div>
 
       <!-- Title -->
@@ -479,41 +486,41 @@
             </span>
           {/if}
         </div>
+
+        <!-- Quick Actions (Moved to Footer) -->
+        {#if !isInlinePlayerActive}
+          <div class="flex items-center gap-1">
+            <button
+              class="p-2 rounded-xl text-zinc-400 hover:text-white transition-all duration-200"
+              on:click={handleStar}
+              title="Bookmark"
+            >
+              <Bookmark
+                size={18}
+                class={item.is_starred
+                  ? "fill-emerald-400 text-emerald-400 animate-bookmark-pop"
+                  : ""}
+              />
+            </button>
+
+            <button
+              class="p-2 rounded-xl text-zinc-500 hover:text-emerald-500 transition-all duration-200"
+              on:click={handleRead}
+              title="Mark read"
+            >
+              {#if item.is_read}
+                <CheckCircle2 size={18} class="text-emerald-500" />
+              {:else}
+                <div
+                  class="w-4 h-4 rounded-full border-2 border-zinc-500 hover:border-emerald-500"
+                ></div>
+              {/if}
+            </button>
+          </div>
+        {/if}
       </div>
     </div>
   </div>
-
-  <!-- Quick Actions (Unified Position: Bottom Right) -->
-  {#if !isInlinePlayerActive}
-    <div
-      class="absolute bottom-4 right-4 flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200 z-10"
-    >
-      <button
-        class="p-2 rounded-xl bg-black/40 backdrop-blur-md border border-white/5 text-zinc-400 hover:text-white hover:bg-black/60 transition-all duration-200 shadow-xl"
-        on:click={handleStar}
-        title="Bookmark"
-      >
-        <Bookmark
-          size={16}
-          class={item.is_starred
-            ? "fill-emerald-400 text-emerald-400 animate-bookmark-pop"
-            : ""}
-        />
-      </button>
-
-      <button
-        class="p-2 rounded-xl bg-black/40 backdrop-blur-md border border-white/5 text-zinc-400 hover:text-white hover:bg-black/60 transition-all duration-200 shadow-xl"
-        on:click={handleRead}
-        title="Mark read"
-      >
-        {#if item.is_read}
-          <CheckCircle2 size={16} class="text-emerald-500" />
-        {:else}
-          <div class="w-4 h-4 rounded-full border-2 border-zinc-500"></div>
-        {/if}
-      </button>
-    </div>
-  {/if}
 
   <!-- Inline YouTube Player (Desktop only here, Mobile moved above) -->
   {#if isInlinePlayerActive && itemMeta.youtubeVideoId && !isMobile}

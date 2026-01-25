@@ -70,7 +70,7 @@
   class="md:hidden fixed top-0 left-0 right-0 w-full z-30 bg-[#121212] border-b border-[#2c2c2e] pt-safe"
   bind:clientHeight={headerHeight}
 >
-  <div class="flex items-center justify-between gap-2 px-8 py-3">
+  <div class="flex items-center justify-between gap-2 px-4 py-3">
     <!-- Brand / Menu Toggle -->
     <button
       class="flex items-center gap-3 min-w-0 active:opacity-70 transition-opacity text-left"
@@ -134,10 +134,10 @@
     class="mobile-search bg-[#121212] border-b border-[#2c2c2e]"
     class:open={isSearchOpen}
   >
-    <div class="relative px-8 py-3">
+    <div class="relative px-4 py-3">
       <Search
         size={16}
-        class="absolute left-11 top-1/2 -translate-y-1/2 text-zinc-500"
+        class="absolute left-7 top-1/2 -translate-y-1/2 text-zinc-500"
       />
       <input
         bind:this={searchInput}
@@ -151,7 +151,7 @@
       {#if searchQuery}
         <button
           on:click={handleSearchClear}
-          class="absolute right-11 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+          class="absolute right-7 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
         >
           <X size={16} />
         </button>
