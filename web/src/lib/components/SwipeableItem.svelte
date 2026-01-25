@@ -26,9 +26,8 @@
 
   $: backgroundColor = (() => {
     if (!isSwiping) return "transparent";
-    if (swipeDistance > 0)
-      return `rgba(var(--accent-color-rgb), ${swipeProgress * 0.3})`;
-    if (swipeDistance < 0) return `rgba(251, 146, 60, ${swipeProgress * 0.3})`;
+    if (swipeDistance > 0) return `rgba(59, 130, 246, ${swipeProgress * 0.4})`; // Blue for Read
+    if (swipeDistance < 0) return `rgba(16, 185, 129, ${swipeProgress * 0.4})`; // Emerald for Bookmark
     return "transparent";
   })();
 
@@ -165,15 +164,32 @@
   <div class="swipe-background" style="background-color: {backgroundColor}">
     {#if isSwiping && swipeDistance > 0}
       <!-- Mark as Read indicator (right swipe) -->
-      <div class="swipe-indicator left" style="opacity: {swipeProgress}">
-        <CheckCircle2 size={24} class="text-accent" />
-        <span class="text-sm font-semibold text-accent">Mark Read</span>
+      <div
+        class="swipe-indicator left"
+        style="opacity: {swipeProgress}; transform: translateX({Math.min(
+          0,
+          swipeDistance - 80,
+        )}px)"
+      >
+        <CheckCircle2 size={24} class="text-blue-400" />
+        <span class="text-sm font-bold text-blue-400 uppercase tracking-tighter"
+          >Read</span
+        >
       </div>
     {:else if isSwiping && swipeDistance < 0}
       <!-- Bookmark indicator (left swipe) -->
-      <div class="swipe-indicator right" style="opacity: {swipeProgress}">
-        <span class="text-sm font-semibold text-orange-400">Bookmark</span>
-        <Bookmark size={24} class="text-orange-400" />
+      <div
+        class="swipe-indicator right"
+        style="opacity: {swipeProgress}; transform: translateX({Math.max(
+          0,
+          swipeDistance + 80,
+        )}px)"
+      >
+        <span
+          class="text-sm font-bold text-emerald-400 uppercase tracking-tighter"
+          >Save</span
+        >
+        <Bookmark size={24} class="text-emerald-400" />
       </div>
     {/if}
   </div>
@@ -223,7 +239,8 @@
 
   .swipe-content {
     position: relative;
-    background: var(--background);
+    background: #121212;
     will-change: transform;
+    z-index: 1;
   }
 </style>
