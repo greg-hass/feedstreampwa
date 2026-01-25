@@ -45,21 +45,16 @@
       class="feed-item-wrapper"
       class:live-insert={liveInsertIds.has(item.id)}
     >
-      <SwipeableItem
-        on:markRead={() => dispatch("toggleRead", { item })}
-        on:toggleBookmark={() => dispatch("toggleStar", { item })}
-      >
-        <FeedListItem
-          {item}
-          {density}
-          feedType={guessType(item)}
-          timeAgo={timeAgoMap.get(item.id) || ""}
-          on:open
-          on:toggleStar
-          on:toggleRead
-          on:play
-        />
-      </SwipeableItem>
+      <FeedListItem
+        {item}
+        {density}
+        feedType={guessType(item)}
+        timeAgo={timeAgoMap.get(item.id) || ""}
+        on:open
+        on:toggleStar
+        on:toggleRead
+        on:play
+      />
     </div>
   {/each}
 </div>

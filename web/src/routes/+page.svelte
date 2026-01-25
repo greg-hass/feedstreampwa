@@ -441,6 +441,10 @@
     viewDensity.set(densities[nextIndex]);
   }
 
+  function onDensityCycle() {
+    cycleDensity();
+  }
+
   function setupCountdownTimer(interval: number) {
     if (countdownTimer) clearInterval(countdownTimer);
     countdownTimer = setInterval(updateRefreshCountdown, interval);
@@ -537,6 +541,13 @@
             </h1>
             <div class="flex items-center gap-2">
               <button
+                class="w-9 h-9 flex items-center justify-center rounded-xl bg-emerald-500 text-black active:scale-95 transition-all shadow-lg shadow-emerald-500/20"
+                on:click={setViewAddFeed}
+                title="Add Feed"
+              >
+                <Plus size={18} strokeWidth={2.5} />
+              </button>
+              <button
                 class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[#1c1c1e] transition-all text-[#8e8e93] hover:text-white border border-[#2c2c2e] bg-[#09090b]"
                 on:click={toggleSearchDesktop}
                 title="Search"
@@ -547,14 +558,28 @@
                   <Search size={16} />
                 {/if}
               </button>
-              <button
-                class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[#1c1c1e] transition-all text-[#8e8e93] hover:text-white border border-[#2c2c2e] bg-[#09090b]"
-                on:click={refreshAll}
-                class:spinning={$refreshState.isRefreshing}
-                title="Refresh"
+              <div
+                class="flex items-center gap-1 bg-[#09090b] border border-[#2c2c2e] rounded-xl px-2 h-9"
               >
-                <RefreshCw size={16} />
-              </button>
+                <button
+                  class="flex items-center justify-center transition-all text-[#8e8e93] hover:text-white"
+                  on:click={refreshAll}
+                  class:spinning={$refreshState.isRefreshing}
+                  title={refreshCountdownTitle}
+                >
+                  <RefreshCw
+                    size={14}
+                    class={$refreshState.isRefreshing
+                      ? "animate-spin text-accent"
+                      : ""}
+                  />
+                </button>
+                <span
+                  class="text-[10px] font-mono font-bold text-zinc-500 min-w-[35px] text-center uppercase tracking-tighter"
+                >
+                  {refreshCountdown}
+                </span>
+              </div>
               <button
                 class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[#1c1c1e] transition-all text-[#8e8e93] hover:text-white border border-[#2c2c2e] bg-[#09090b]"
                 on:click={cycleDensity}
@@ -700,7 +725,9 @@
       loadItems();
     }}
     onRefresh={refreshAll}
+    {onDensityCycle}
     isRefreshing={$refreshState.isRefreshing}
+    {refreshCountdown}
     {refreshCountdownTitle}
     refreshStreamStatus={$refreshStream.status}
   />

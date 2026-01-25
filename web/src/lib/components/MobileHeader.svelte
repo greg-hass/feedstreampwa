@@ -1,6 +1,14 @@
 <script lang="ts">
   import { tick } from "svelte";
-  import { Search, Plus, RefreshCw, X, FolderPlus, Rss } from "lucide-svelte";
+  import {
+    Search,
+    Plus,
+    RefreshCw,
+    X,
+    FolderPlus,
+    Rss,
+    LayoutGrid,
+  } from "lucide-svelte";
   import {
     isCreateFolderModalOpen,
     isMobileMenuOpen,
@@ -13,7 +21,9 @@
   export let onSearchClear: () => void = () => {};
   export let onRefresh: () => void = () => {};
   export let isRefreshing = false;
+  export let refreshCountdown = "Off";
   export let refreshCountdownTitle = "Auto refresh is off";
+  export let onDensityCycle: () => void = () => {};
   export let refreshStreamStatus: "connecting" | "connected" | "reconnecting" =
     "connecting";
 
@@ -103,18 +113,31 @@
       </button>
 
       <button
-        on:click={onRefresh}
+        on:click={onDensityCycle}
         class="w-9 h-9 flex items-center justify-center rounded-full bg-surface border border-stroke text-zinc-400 hover:text-white active:scale-95 transition-all"
+        title="Density"
+      >
+        <LayoutGrid size={18} />
+      </button>
+
+      <button
+        on:click={onRefresh}
+        class="flex items-center gap-1.5 h-9 px-2.5 rounded-full bg-surface border border-stroke text-zinc-400 hover:text-white active:scale-95 transition-all"
         title={refreshCountdownTitle}
       >
-        <div class="relative">
+        <div class="relative flex items-center gap-1.5">
           <RefreshCw
-            size={18}
+            size={16}
             class={isRefreshing ? "animate-spin text-accent" : ""}
           />
+          <span
+            class="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-tighter"
+          >
+            {refreshCountdown}
+          </span>
           {#if refreshStreamStatus === "connected"}
             <span
-              class="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full border-2 border-surface"
+              class="absolute -top-1 -right-4 w-1.5 h-1.5 bg-accent rounded-full border border-surface"
             ></span>
           {/if}
         </div>

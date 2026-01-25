@@ -6,6 +6,9 @@
     readerData,
     readerLoading,
     readerError,
+    navigateToPrev,
+    navigateToNext,
+    readerNavigation,
     currentItem,
     closeReader,
     saveReadingPosition,
@@ -45,6 +48,62 @@
   let savePositionTimer: ReturnType<typeof setTimeout> | null = null;
   let hasRestoredPosition = false;
   const readerCache = new Map<string, ReaderData>();
+
+  // Swipe navigation state
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchEndX = 0;
+  let touchEndY = 0;
+  let isSwipeGesture = false;
+  const MIN_SWIPE_DISTANCE = 60;
+  const MAX_VERTICAL_DEVIATION = 40;
+
+  function handleTouchStart(e: TouchEvent) {
+    touchStartX = e.touches[0].screenX;
+    touchStartY = e.touches[0].screenY;
+    isSwipeGesture = false;
+  }
+
+  function handleTouchMove(e: TouchEvent) {
+    touchEndX = e.touches[0].screenX;
+    touchEndY = e.touches[0].screenY;
+
+    const deltaX = Math.abs(touchEndX - touchStartX);
+    const deltaY = Math.abs(touchEndY - touchStartY);
+
+    if (deltaX > 20 && deltaX > deltaY) {
+      isSwipeGesture = true;
+      // Prevent browser "back" swipe only if we're doing our own swipe
+      if (e.cancelable) e.preventDefault();
+    }
+  }
+
+  function handleTouchEnd() {
+    if (!isSwipeGesture) return;
+
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = Math.abs(touchEndY - touchStartY);
+
+    if (
+      Math.abs(deltaX) > MIN_SWIPE_DISTANCE &&
+      deltaY < MAX_VERTICAL_DEVIATION
+    ) {
+      if (deltaX > 0) {
+        // Swipe Right -> Previous
+        if ($readerNavigation.hasPrev) {
+          navigateToPrev();
+          if (navigator.vibrate) navigator.vibrate(10);
+        }
+      } else {
+        // Swipe Left -> Next
+        if ($readerNavigation.hasNext) {
+          navigateToNext();
+          if (navigator.vibrate) navigator.vibrate(10);
+        }
+      }
+    }
+    isSwipeGesture = false;
+  }
 
   // Save reading position on scroll (debounced)
   function handleScroll() {
@@ -453,6 +512,9 @@
         class="reader-scroll-container"
         bind:this={scrollContainer}
         on:scroll={handleScroll}
+        on:touchstart|passive={handleTouchStart}
+        on:touchmove={handleTouchMove}
+        on:touchend={handleTouchEnd}
       >
         {#if $readerLoading && !($currentItem?.source === "youtube" || ($currentItem?.url && ($currentItem.url.includes("youtube.com") || $currentItem.url.includes("youtu.be"))))}
           <div class="reader-loading">
