@@ -15,10 +15,10 @@
 
   // Compute timeAgo for all items at once when $now updates (single subscription)
   $: timeAgoMap = new Map(
-    items.map(item => [
+    items.map((item) => [
       item.id,
-      computeTimeAgo(item.published || item.created_at, $now)
-    ])
+      computeTimeAgo(item.published || item.created_at, $now),
+    ]),
   );
 
   // Simple helper to visualize the "Premium" accents based on available data
@@ -41,7 +41,10 @@
 <!-- List View - Single column, full width -->
 <div class="flex flex-col gap-0 w-full">
   {#each items as item (item.id)}
-    <div class="feed-item-wrapper" class:live-insert={liveInsertIds.has(item.id)}>
+    <div
+      class="feed-item-wrapper"
+      class:live-insert={liveInsertIds.has(item.id)}
+    >
       <SwipeableItem
         on:markRead={() => dispatch("toggleRead", { item })}
         on:toggleBookmark={() => dispatch("toggleStar", { item })}
@@ -64,7 +67,7 @@
 <style>
   /* Content-visibility optimization removed to prevent flickering */
   .feed-item-wrapper {
-    contain-intrinsic-size: auto 120px; /* Estimated height for comfortable density */
+    /* Removed contain-intrinsic-size to prevent jumping in spacious mode */
   }
 
   .live-insert {

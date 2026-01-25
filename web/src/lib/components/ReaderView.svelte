@@ -365,7 +365,10 @@
   }
 
   $: if (typeof document !== "undefined") {
-    document.body.style.overflow = $showReader ? "hidden" : "";
+    // Only lock body scroll if the reader is in full-screen/modal mode (not embedded)
+    if (!isEmbedded) {
+      document.body.style.overflow = $showReader ? "hidden" : "";
+    }
   }
 
   onMount(() => {

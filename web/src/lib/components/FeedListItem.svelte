@@ -316,12 +316,16 @@
     imageError = true;
   }
 
-  $: if (item.id) imageError = false;
+  let lastId = item.id;
+  $: if (item.id !== lastId) {
+    imageError = false;
+    lastId = item.id;
+  }
 </script>
 
 <!-- svelte-ignore a11y-no-noninteractive-element-to-interactive-role -->
 <article
-  class="group relative flex w-full transition-colors overflow-hidden
+  class="group relative flex w-full overflow-hidden
   {isCardLayout
     ? 'flex-col p-0 bg-surface border border-[#2c2c2e] rounded-2xl mb-4'
     : 'flex-col py-4 px-4 border-b border-[#2c2c2e] last:border-0'}
@@ -354,6 +358,8 @@
             alt=""
             class="w-full h-full object-cover"
             on:error={handleYouTubeThumbnailError}
+            decoding="async"
+            loading="lazy"
           />
           <div
             class="absolute inset-0 flex items-center justify-center bg-[#09090b]/40"
@@ -378,6 +384,8 @@
             alt=""
             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             on:error={handleImageError}
+            decoding="async"
+            loading="lazy"
           />
         </div>
       {/if}
